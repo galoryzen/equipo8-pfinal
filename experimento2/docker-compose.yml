@@ -1,0 +1,58 @@
+services:
+  db:
+    container_name: exp2-db
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: experimento2
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  catalog:
+    container_name: exp2-catalog
+    build: ./services/catalog
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/catalog/app:/app/app
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/experimento2
+      DB_POOL_SIZE: "20"
+      DB_MAX_OVERFLOW: "10"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  booking:
+    container_name: exp2-booking
+    build: ./services/booking
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/booking/app:/app/app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/experimento2
+      DB_POOL_SIZE: "10"
+      DB_MAX_OVERFLOW: "5"
+      CATALOG_SERVICE_URL: http://catalog:8000
+      CATALOG_TIMEOUT_SECONDS: "0.5"
+    depends_on:
+      db:
+        condition: service_healthy
+      catalog:
+        condition: service_started
+
+volumes:
+  pgdata:
