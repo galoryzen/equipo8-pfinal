@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "TravelHub"
+  },
+  "tabs": {
+    "home": "Explore",
+    "search": "Search",
+    "trips": "My Trips",
+    "profile": "Profile"
+  },
+  "welcome": {
+    "title": "Find your perfect stay",
+    "subtitle": "Your journey to the best stays in all over the world starts here.",
+    "searchStays": "Search Stays",
+    "loginSignup": "Log in / Sign up"
+  },
+  "home": {
+    "greeting": "Where are you going?",
+    "searchPlaceholder": "Search destinations...",
+    "popularDestinations": "Popular Destinations",
+    "recommended": "Recommended for you",
+    "perNight": "/night",
+    "guests": "Guests",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "search": "Search"
+  },
+  "search": {
+    "title": "Search Results",
+    "results": "{{count}} properties found",
+    "noResults": "No properties found",
+    "noResultsHint": "Try adjusting your filters or searching a different destination",
+    "filters": "Filters",
+    "priceRange": "Price Range",
+    "amenities": "Amenities",
+    "guestsCount": "{{count}} guest",
+    "guestsCount_plural": "{{count}} guests",
+    "clearFilters": "Clear filters",
+    "applyFilters": "Apply"
+  },
+  "property": {
+    "description": "Description",
+    "amenities": "Amenities",
+    "reviews": "Reviews",
+    "noReviews": "No reviews yet",
+    "rating": "{{rating}} ({{count}} reviews)",
+    "viewAvailability": "View Availability",
+    "location": "Location",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "trips": {
+    "title": "My Trips",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "noTrips": "No trips yet",
+    "noTripsHint": "Start exploring and book your first trip!",
+    "explore": "Explore stays"
+  },
+  "profile": {
+    "title": "Profile",
+    "login": "Log in",
+    "signup": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "phone": "Phone",
+    "continueBtn": "Continue",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "logout": "Log out"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "language": "Language"
+  }
+}

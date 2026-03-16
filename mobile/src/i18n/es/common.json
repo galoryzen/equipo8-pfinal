@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "TravelHub"
+  },
+  "tabs": {
+    "home": "Explorar",
+    "search": "Buscar",
+    "trips": "Mis Viajes",
+    "profile": "Perfil"
+  },
+  "welcome": {
+    "title": "Encuentra tu estadía perfecta",
+    "subtitle": "Tu viaje hacia las mejores estadías en todo el mundo comienza aquí.",
+    "searchStays": "Buscar Hospedajes",
+    "loginSignup": "Iniciar sesión / Registrarse"
+  },
+  "home": {
+    "greeting": "¿A dónde vas?",
+    "searchPlaceholder": "Buscar destinos...",
+    "popularDestinations": "Destinos Populares",
+    "recommended": "Recomendados para ti",
+    "perNight": "/noche",
+    "guests": "Huéspedes",
+    "checkIn": "Llegada",
+    "checkOut": "Salida",
+    "search": "Buscar"
+  },
+  "search": {
+    "title": "Resultados de Búsqueda",
+    "results": "{{count}} propiedades encontradas",
+    "noResults": "No se encontraron propiedades",
+    "noResultsHint": "Intenta ajustar tus filtros o buscar un destino diferente",
+    "filters": "Filtros",
+    "priceRange": "Rango de Precio",
+    "amenities": "Amenidades",
+    "guestsCount": "{{count}} huésped",
+    "guestsCount_plural": "{{count}} huéspedes",
+    "clearFilters": "Limpiar filtros",
+    "applyFilters": "Aplicar"
+  },
+  "property": {
+    "description": "Descripción",
+    "amenities": "Amenidades",
+    "reviews": "Reseñas",
+    "noReviews": "Sin reseñas aún",
+    "rating": "{{rating}} ({{count}} reseñas)",
+    "viewAvailability": "Ver Disponibilidad",
+    "location": "Ubicación",
+    "showMore": "Ver más",
+    "showLess": "Ver menos"
+  },
+  "trips": {
+    "title": "Mis Viajes",
+    "upcoming": "Próximos",
+    "past": "Pasados",
+    "noTrips": "Sin viajes aún",
+    "noTripsHint": "¡Empieza a explorar y reserva tu primer viaje!",
+    "explore": "Explorar hospedajes"
+  },
+  "profile": {
+    "title": "Perfil",
+    "login": "Iniciar sesión",
+    "signup": "Registrarse",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "fullName": "Nombre completo",
+    "phone": "Teléfono",
+    "continueBtn": "Continuar",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "logout": "Cerrar sesión"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "back": "Volver",
+    "language": "Idioma"
+  }
+}
