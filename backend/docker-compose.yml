@@ -1,0 +1,143 @@
+services:
+  # ── Infrastructure ──────────────────────────────────────
+  thub-postgres:
+    image: postgres:16-alpine
+    container_name: thub-postgres
+    environment:
+      POSTGRES_USER: travelhub
+      POSTGRES_PASSWORD: travelhub_dev
+      POSTGRES_DB: travelhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelhub -d travelhub"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  thub-redis:
+    image: redis:7-alpine
+    container_name: thub-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  thub-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: thub-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: travelhub
+      RABBITMQ_DEFAULT_PASS: travelhub_dev
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  thub-gateway:
+    image: nginx:alpine
+    container_name: thub-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - thub-auth
+      - thub-catalog
+      - thub-booking
+      - thub-payment
+      - thub-notification
+
+  # ── Microservices ───────────────────────────────────────
+  thub-auth:
+    build: ./services/auth
+    container_name: thub-auth
+    ports:
+      - "8001:8000"
+    environment:
+      AUTH_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      AUTH_DB_SCHEMA: "users"
+      AUTH_REDIS_URL: "redis://thub-redis:6379/0"
+      AUTH_DEBUG: "true"
+    depends_on:
+      thub-postgres:
+        condition: service_healthy
+      thub-redis:
+        condition: service_healthy
+
+  thub-catalog:
+    build: ./services/catalog
+    container_name: thub-catalog
+    ports:
+      - "8002:8000"
+    environment:
+      CATALOG_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      CATALOG_DB_SCHEMA: "catalog"
+      CATALOG_REDIS_URL: "redis://thub-redis:6379/0"
+      CATALOG_DEBUG: "true"
+    depends_on:
+      thub-postgres:
+        condition: service_healthy
+      thub-redis:
+        condition: service_healthy
+
+  thub-booking:
+    build: ./services/booking
+    container_name: thub-booking
+    ports:
+      - "8003:8000"
+    environment:
+      BOOKING_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      BOOKING_DB_SCHEMA: "booking"
+      BOOKING_REDIS_URL: "redis://thub-redis:6379/0"
+      BOOKING_DEBUG: "true"
+    depends_on:
+      thub-postgres:
+        condition: service_healthy
+      thub-redis:
+        condition: service_healthy
+
+  thub-payment:
+    build: ./services/payment
+    container_name: thub-payment
+    ports:
+      - "8004:8000"
+    environment:
+      PAYMENT_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      PAYMENT_DB_SCHEMA: "payments"
+      PAYMENT_REDIS_URL: "redis://thub-redis:6379/0"
+      PAYMENT_DEBUG: "true"
+    depends_on:
+      thub-postgres:
+        condition: service_healthy
+      thub-redis:
+        condition: service_healthy
+
+  thub-notification:
+    build: ./services/notification
+    container_name: thub-notification
+    ports:
+      - "8005:8000"
+    environment:
+      NOTIFICATION_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      NOTIFICATION_DB_SCHEMA: "notifications"
+      NOTIFICATION_REDIS_URL: "redis://thub-redis:6379/0"
+      NOTIFICATION_DEBUG: "true"
+    depends_on:
+      thub-postgres:
+        condition: service_healthy
+      thub-redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
