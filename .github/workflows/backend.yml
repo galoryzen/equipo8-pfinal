@@ -48,10 +48,17 @@ jobs:
               - 'backend/libs/**'
 
       - id: build-list
+        env:
+          AUTH: ${{ steps.filter.outputs.auth }}
+          CATALOG: ${{ steps.filter.outputs.catalog }}
+          BOOKING: ${{ steps.filter.outputs.booking }}
+          PAYMENT: ${{ steps.filter.outputs.payment }}
+          NOTIFICATION: ${{ steps.filter.outputs.notification }}
         run: |
           SERVICES="[]"
           for svc in auth catalog booking payment notification; do
-            if [ "${{ steps.filter.outputs[format('{0}', svc)] }}" == "true" ]; then
+            VAR=$(echo "$svc" | tr '[:lower:]' '[:upper:]')
+            if [ "${!VAR}" == "true" ]; then
               SERVICES=$(echo "$SERVICES" | jq -c ". + [\"$svc\"]")
             fi
           done
