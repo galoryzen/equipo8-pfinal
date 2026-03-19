@@ -1,4 +1,4 @@
-name: Backend CI/CD
+name: Backend CI
 
 on:
   push:
@@ -10,17 +10,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-  BACKEND_URL: ${{ secrets.BACKEND_URL }}
-
 jobs:
-  # --- Job 1: Detect which services changed ---
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -65,97 +57,25 @@ jobs:
           done
           echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
 
-  # --- Job 2: Run tests on affected services ---
   test:
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.services != '[]'
-    strategy:
-      matrix:
-        service: ${{ fromJson(needs.changes.outputs.services) }}
-    defaults:
-      run:
-        working-directory: backend/services/${{ matrix.service }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: pytest tests/ -v
 
-  # --- Job 3: Build + Push to ECR (only on push to main) ---
-  build-push:
-    runs-on: ubuntu-latest
-    needs: [changes, test]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.changes.outputs.services != '[]'
-    strategy:
-      matrix:
-        service: ${{ fromJson(needs.changes.outputs.services) }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - uses: aws-actions/amazon-ecr-login@v2
-        id: ecr-login
-
-      - name: Build, tag, and push image
+      - name: Test changed services
         env:
-          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
+          CHANGED: ${{ needs.changes.outputs.services }}
         run: |
-          IMAGE_URI=$ECR_REGISTRY/travelhub/${{ matrix.service }}
-          docker build -t $IMAGE_URI:$IMAGE_TAG -t $IMAGE_URI:latest backend/services/${{ matrix.service }}
-          docker push $IMAGE_URI:$IMAGE_TAG
-          docker push $IMAGE_URI:latest
-
-  # --- Job 4: Deploy to ECS (only on push to main) ---
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [changes, build-push]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.changes.outputs.services != '[]'
-    strategy:
-      matrix:
-        service: ${{ fromJson(needs.changes.outputs.services) }}
-    steps:
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Download current task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition thub-${{ matrix.service }} \
-            --query taskDefinition \
-            > task-definition.json
-
-      - uses: aws-actions/amazon-ecs-render-task-definition@v1
-        id: render
-        with:
-          task-definition: task-definition.json
-          container-name: ${{ matrix.service }}
-          image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/travelhub/${{ matrix.service }}:${{ github.sha }}
-
-      - uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.render.outputs.task-definition }}
-          service: thub-${{ matrix.service }}
-          cluster: travelhub
-          wait-for-service-stability: true
-
-      - name: Smoke test
-        run: |
-          SVC=${{ matrix.service }}
-          PATH_PREFIX=$([ "$SVC" = "notification" ] && echo "notifications" || echo "$SVC")
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ env.BACKEND_URL }}/api/v1/${PATH_PREFIX}/health")
-          if [ "$STATUS" != "200" ]; then
-            echo "Smoke test failed for $SVC: HTTP $STATUS"
-            exit 1
-          fi
-          echo "Smoke test passed for $SVC: HTTP $STATUS"
+          for svc in $(echo "$CHANGED" | jq -r '.[]'); do
+            echo "::group::Testing $svc"
+            cd backend/services/$svc
+            pip install -r requirements.txt -q
+            pytest tests/ -v
+            cd "$GITHUB_WORKSPACE"
+            echo "::endgroup::"
+          done

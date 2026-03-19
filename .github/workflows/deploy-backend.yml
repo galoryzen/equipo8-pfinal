@@ -1,0 +1,78 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      services:
+        description: "Comma-separated services to deploy (auth,catalog,booking,payment,notification)"
+        required: true
+        default: "auth,catalog,booking,payment,notification"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
+
+      - name: Build, push, and deploy services
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+          SERVICES: ${{ inputs.services }}
+        run: |
+          IFS=',' read -ra SVC_LIST <<< "$SERVICES"
+          for svc in "${SVC_LIST[@]}"; do
+            svc=$(echo "$svc" | xargs)  # trim whitespace
+            echo "::group::Deploying $svc"
+
+            # Build and push
+            IMAGE_URI=$ECR_REGISTRY/travelhub/$svc
+            docker build -t $IMAGE_URI:$IMAGE_TAG -t $IMAGE_URI:latest backend/services/$svc
+            docker push $IMAGE_URI:$IMAGE_TAG
+            docker push $IMAGE_URI:latest
+
+            # Update ECS task definition and deploy
+            aws ecs describe-task-definition \
+              --task-definition thub-$svc \
+              --query taskDefinition \
+              > task-def.json
+
+            # Update image in task definition
+            NEW_IMAGE="$IMAGE_URI:$IMAGE_TAG"
+            jq --arg img "$NEW_IMAGE" --arg name "$svc" \
+              '.containerDefinitions |= map(if .name == $name then .image = $img else . end) |
+               del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+              task-def.json > task-def-updated.json
+
+            # Register new task definition
+            NEW_TASK_DEF=$(aws ecs register-task-definition \
+              --cli-input-json file://task-def-updated.json \
+              --query taskDefinition.taskDefinitionArn \
+              --output text)
+
+            # Update service
+            aws ecs update-service \
+              --cluster travelhub \
+              --service thub-$svc \
+              --task-definition "$NEW_TASK_DEF" \
+              --force-new-deployment
+
+            echo "::endgroup::"
+          done
