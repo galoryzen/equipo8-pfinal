@@ -1,3 +1,4 @@
 #!/bin/sh
 cd frontend/travel-hub
 pnpm format:check
+pnpm lint
