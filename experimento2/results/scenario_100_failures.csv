@@ -1,2 +1,0 @@
-Method,Name,Error,Occurrences
-POST,/api/bookings/checkout-start,CatchResponseError('504 Timeout'),121

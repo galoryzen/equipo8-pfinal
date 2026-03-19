@@ -26,10 +26,10 @@ jobs:
     outputs:
       services: ${{ steps.build-list.outputs.services }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             auth:
@@ -77,8 +77,8 @@ jobs:
       run:
         working-directory: backend/services/${{ matrix.service }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
@@ -93,7 +93,7 @@ jobs:
       matrix:
         service: ${{ fromJson(needs.changes.outputs.services) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:

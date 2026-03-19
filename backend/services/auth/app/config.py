@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     DEBUG: bool = False
 
-    model_config = {"env_prefix": "AUTH_", "env_file": ".env", "extra": "ignore"}
+    model_config = {"env_prefix": "AUTH_",
+                    "env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()
