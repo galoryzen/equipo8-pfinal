@@ -1,3 +1,7 @@
+export async function generateStaticParams() {
+  return [{ id: 'placeholder' }];
+}
+
 interface Props {
   params: Promise<{ id: string }>;
 }
