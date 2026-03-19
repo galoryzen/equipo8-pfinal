@@ -9,5 +9,14 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx'],
+      thresholds: {
+        // Change this to 70 when we have more tests
+        lines: 1,
+      },
+    },
   },
 });
