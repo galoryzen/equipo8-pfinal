@@ -1,0 +1,15 @@
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"**/adapters/inbound/api/*.py" = ["B008"]  # FastAPI uses Query/Depends in function defaults by design
+
+[lint.isort]
+known-first-party = ["app"]
+
+[format]
+quote-style = "double"
