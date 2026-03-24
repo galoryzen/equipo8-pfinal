@@ -1,0 +1,435 @@
+// =============================================
+// Schema: users  →  User & Auth Service
+// =============================================
+// Contiene usuarios, autenticación y la vinculación
+// con entidades de negocio (hoteles, agencias).
+// Un user con role=HOTEL accede a propiedades
+// a través de: user → hotel_user → hotel → property.
+// Un user con role=AGENCY accede a través de:
+// user → agency_user → agency.
+
+Enum user_role {
+  TRAVELER
+  HOTEL
+  AGENCY
+  ADMIN
+}
+
+Enum partner_status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+Table users.users {
+  id uuid [pk]
+  full_name varchar
+  email varchar [not null, unique]
+  phone varchar
+  role user_role [not null]
+  country_code char(2)
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table users.hotel {
+  id uuid [pk]
+  name varchar [not null]
+  tax_id varchar
+  status partner_status [not null, default: 'ACTIVE']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table users.hotel_user {
+  id uuid [pk]
+  hotel_id uuid [not null]
+  user_id uuid [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null]
+
+  indexes {
+    (hotel_id, user_id) [unique]
+  }
+}
+
+Table users.agency {
+  id uuid [pk]
+  name varchar [not null]
+  tax_id varchar
+  status partner_status [not null, default: 'ACTIVE']
+  commission_default decimal(5,2) [not null, default: 0]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table users.agency_user {
+  id uuid [pk]
+  agency_id uuid [not null]
+  user_id uuid [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null]
+
+  indexes {
+    (agency_id, user_id) [unique]
+  }
+}
+
+// Relaciones users
+Ref: users.hotel_user.hotel_id > users.hotel.id
+Ref: users.hotel_user.user_id > users.users.id
+Ref: users.agency_user.agency_id > users.agency.id
+Ref: users.agency_user.user_id > users.users.id
+
+// =============================================
+// Schema: catalog  →  Catalog & Availability Service
+// =============================================
+
+Enum cancellation_policy_type {
+  FULL
+  PARTIAL
+  NON_REFUNDABLE
+}
+
+Enum property_status {
+  ACTIVE
+  INACTIVE
+}
+
+Enum room_type_status {
+  ACTIVE
+  INACTIVE
+}
+
+Table catalog.city {
+  id uuid [pk]
+  dane_code varchar [unique]
+  name varchar [not null]
+  department varchar
+  country varchar [not null]
+  continent varchar
+  image_url text
+
+  indexes {
+    name
+  }
+}
+
+Table catalog.cancellation_policy {
+  id uuid [pk]
+  name varchar [not null]
+  type cancellation_policy_type [not null]
+  hours_limit int
+  refund_percent int
+  active boolean [not null, default: true]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table catalog.property {
+  id uuid [pk]
+  hotel_id uuid [not null] // → users.hotel.id
+  name varchar [not null]
+  description text
+  city_id uuid [not null] // → catalog.city.id
+  address text
+  status property_status [not null, default: 'ACTIVE']
+  rating_avg decimal(3,2) [default: 0]
+  review_count int [not null, default: 0]
+  popularity_score decimal(8,2) [not null, default: 0]
+  default_cancellation_policy_id uuid
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (city_id, status)
+  }
+}
+
+Table catalog.property_image {
+  id uuid [pk]
+  property_id uuid [not null]
+  url text [not null]
+  caption varchar
+  display_order int [not null, default: 0]
+  created_at timestamp [not null]
+
+  indexes {
+    (property_id, display_order)
+  }
+}
+
+Table catalog.property_amenity {
+  property_id uuid [not null]
+  amenity_id uuid [not null]
+
+  indexes {
+    (property_id, amenity_id) [pk]
+  }
+}
+
+Enum policy_category {
+  CHECK_IN
+  CHECK_OUT
+  PETS
+  SMOKING
+  CHILDREN
+  GENERAL
+}
+
+Table catalog.property_policy {
+  id uuid [pk]
+  property_id uuid [not null]
+  category policy_category [not null]
+  description text [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (property_id, category)
+  }
+}
+
+Table catalog.room_type {
+  id uuid [pk]
+  property_id uuid [not null]
+  name varchar [not null]
+  capacity int [not null]
+  status room_type_status [not null, default: 'ACTIVE']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (property_id, capacity, status)
+  }
+}
+
+Table catalog.rate_plan {
+  id uuid [pk]
+  room_type_id uuid [not null]
+  name varchar [not null]
+  is_active boolean [not null, default: true]
+  cancellation_policy_id uuid
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (room_type_id, is_active)
+  }
+}
+
+Table catalog.rate_calendar {
+  id uuid [pk]
+  rate_plan_id uuid [not null]
+  day date [not null]
+  currency_code char(3) [not null]
+  price_amount decimal(12,2) [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (rate_plan_id, day, currency_code) [unique]
+  }
+}
+
+Table catalog.inventory_calendar {
+  id uuid [pk]
+  room_type_id uuid [not null]
+  day date [not null]
+  available_units int [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (room_type_id, day) [unique]
+  }
+}
+
+Table catalog.amenity {
+  id uuid [pk]
+  code varchar [not null, unique]
+  name varchar [not null]
+}
+
+Table catalog.room_type_amenity {
+  room_type_id uuid [not null]
+  amenity_id uuid [not null]
+
+  indexes {
+    (room_type_id, amenity_id) [pk]
+  }
+}
+
+Table catalog.review {
+  id uuid [pk]
+  booking_id uuid [not null, unique]
+  user_id uuid [not null]  // → users.users.id
+  property_id uuid [not null]
+  rating int [not null]
+  comment text
+  created_at timestamp [not null]
+}
+
+// Relaciones catalog
+Ref: catalog.property.hotel_id > users.hotel.id
+Ref: catalog.property.city_id > catalog.city.id
+Ref: catalog.property.default_cancellation_policy_id > catalog.cancellation_policy.id
+Ref: catalog.property_image.property_id > catalog.property.id
+Ref: catalog.property_amenity.property_id > catalog.property.id
+Ref: catalog.property_amenity.amenity_id > catalog.amenity.id
+Ref: catalog.property_policy.property_id > catalog.property.id
+Ref: catalog.room_type.property_id > catalog.property.id
+Ref: catalog.rate_plan.room_type_id > catalog.room_type.id
+Ref: catalog.rate_plan.cancellation_policy_id > catalog.cancellation_policy.id
+Ref: catalog.rate_calendar.rate_plan_id > catalog.rate_plan.id
+Ref: catalog.inventory_calendar.room_type_id > catalog.room_type.id
+Ref: catalog.room_type_amenity.room_type_id > catalog.room_type.id
+Ref: catalog.room_type_amenity.amenity_id > catalog.amenity.id
+Ref: catalog.review.user_id > users.users.id
+Ref: catalog.review.property_id > catalog.property.id
+
+// =============================================
+// Schema: booking  →  Booking Service
+// =============================================
+
+Enum booking_status {
+  CART
+  PENDING_PAYMENT
+  PENDING_CONFIRMATION
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+Table booking.booking {
+  id uuid [pk]
+  user_id uuid [not null] // → users.users.id
+  status booking_status [not null]
+  checkin date [not null]
+  checkout date [not null]
+  hold_expires_at timestamp
+  total_amount decimal(12,2) [not null]
+  currency_code char(3) [not null]
+  policy_type_applied cancellation_policy_type [not null]
+  policy_hours_limit_applied int
+  policy_refund_percent_applied int
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table booking.booking_item {
+  id uuid [pk]
+  booking_id uuid [not null]
+  property_id uuid [not null]  // → catalog.property.id
+  room_type_id uuid [not null] // → catalog.room_type.id
+  rate_plan_id uuid [not null] // → catalog.rate_plan.id
+  quantity int [not null, default: 1]
+  unit_price decimal(12,2) [not null]
+  subtotal decimal(12,2) [not null]
+}
+
+Table booking.booking_status_history {
+  id uuid [pk]
+  booking_id uuid [not null]
+  from_status booking_status
+  to_status booking_status [not null]
+  reason varchar
+  changed_by uuid // → users.users.id
+  changed_at timestamp [not null]
+}
+
+// Relaciones booking
+Ref: booking.booking.user_id > users.users.id
+Ref: booking.booking_item.booking_id > booking.booking.id
+Ref: booking.booking_item.property_id > catalog.property.id
+Ref: booking.booking_item.room_type_id > catalog.room_type.id
+Ref: booking.booking_item.rate_plan_id > catalog.rate_plan.id
+Ref: booking.booking_status_history.booking_id > booking.booking.id
+Ref: booking.booking_status_history.changed_by > users.users.id
+
+// =============================================
+// Schema: payments  →  Payment Service
+// =============================================
+
+Enum payment_status {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  CANCELLED
+}
+
+Table payments.payment {
+  id uuid [pk]
+  booking_id uuid [not null] // → booking.booking.id
+  provider varchar [not null]
+  status payment_status [not null]
+  authorized_amount decimal(12,2) [not null]
+  captured_amount decimal(12,2)
+  currency_code char(3) [not null]
+  payment_token varchar
+  provider_reference varchar
+  processed_at timestamp
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table payments.refund {
+  id uuid [pk]
+  payment_id uuid [not null]
+  amount decimal(12,2) [not null]
+  status varchar [not null]
+  reason varchar
+  created_at timestamp [not null]
+}
+
+// Relaciones payments
+Ref: payments.payment.booking_id > booking.booking.id
+Ref: payments.refund.payment_id > payments.payment.id
+
+// =============================================
+// Schema: notifications  →  Notification Service
+// =============================================
+
+Enum notification_channel {
+  EMAIL
+  PUSH
+}
+
+Enum notification_status {
+  PENDING
+  SENT
+  FAILED
+}
+
+Table notifications.notification {
+  id uuid [pk]
+  booking_id uuid [not null] // → booking.booking.id
+  user_id uuid [not null]    // → users.users.id
+  channel notification_channel [not null]
+  type varchar [not null]
+  status notification_status [not null, default: 'PENDING']
+  sent_at timestamp
+  created_at timestamp [not null]
+}
+
+Table notifications.device_token {
+  id uuid [pk]
+  user_id uuid [not null] // → users.users.id
+  platform varchar [not null] // ios, android, web
+  token text [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (user_id, platform)
+    (token) [unique]
+  }
+}
+
+// Relaciones notifications
+Ref: notifications.notification.booking_id > booking.booking.id
+Ref: notifications.notification.user_id > users.users.id
+Ref: notifications.device_token.user_id > users.users.id

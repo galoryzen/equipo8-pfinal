@@ -1,15 +1,42 @@
-export interface Property {
+// ── Shared sub-types (match backend schemas) ────────────
+
+export interface CityInfo {
   id: string;
   name: string;
-  city: string;
-  country_code: string;
+  department?: string;
+  country: string;
+}
+
+export interface FeaturedDestination {
+  id: string;
+  name: string;
+  department?: string;
+  country: string;
+  image_url: string;
+}
+
+export interface ImageSummary {
+  url: string;
+  caption?: string;
+}
+
+export interface AmenitySummary {
+  code: string;
+  name: string;
+}
+
+// ── Property ────────────────────────────────────────────
+
+export interface PropertySummary {
+  id: string;
+  name: string;
+  city: CityInfo;
   address?: string;
   rating_avg: number;
   review_count: number;
-  image_url?: string;
+  image?: ImageSummary;
   min_price?: number;
-  currency_code?: string;
-  amenities: string[];
+  amenities: AmenitySummary[];
 }
 
 export interface RoomType {
@@ -17,7 +44,7 @@ export interface RoomType {
   property_id: string;
   name: string;
   capacity: number;
-  amenities: string[];
+  amenities: AmenitySummary[];
   image_url?: string;
 }
 
@@ -31,14 +58,16 @@ export interface RatePlan {
 
 export interface Review {
   id: string;
-  user_name: string;
+  user_id: string;
   rating: number;
   comment?: string;
   created_at: string;
 }
 
+// ── Search ──────────────────────────────────────────────
+
 export interface SearchFilters {
-  city?: string;
+  city_id?: string;
   check_in?: string;
   check_out?: string;
   guests?: number;

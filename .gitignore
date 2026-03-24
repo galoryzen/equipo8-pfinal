@@ -216,3 +216,5 @@ crash.log
 
 # Docker
 docker-compose.override.yml
+docs/
+.vscode
