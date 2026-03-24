@@ -15,4 +15,4 @@ class FeaturedDestinationOut(BaseModel):
     name: str
     department: str | None = None
     country: str
-    image_url: str
+    image_url: str | None = None

@@ -7,10 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.inbound.api.dependencies import (
     get_cache,
-    get_city_repository,
     get_db_session,
     get_detail_use_case,
-    get_property_repository,
+    get_featured_destinations_use_case,
+    get_featured_use_case,
+    get_search_cities_use_case,
     get_search_use_case,
 )
 from app.application.ports.outbound.cache_port import CachePort
@@ -26,9 +27,8 @@ async def featured_properties(
     limit: int = Query(10, ge=1, le=50),
     session: AsyncSession = Depends(get_db_session),
 ):
-    repo = get_property_repository(session)
-    items = await repo.search_featured(limit=limit)
-    return [PropertySummary.model_validate(item) for item in items]
+    use_case = get_featured_use_case(session)
+    return await use_case.execute(limit=limit)
 
 
 @router.get("/destinations/featured", response_model=list[FeaturedDestinationOut])
@@ -36,18 +36,8 @@ async def featured_destinations(
     limit: int = Query(4, ge=1, le=20),
     session: AsyncSession = Depends(get_db_session),
 ):
-    repo = get_city_repository(session)
-    cities = await repo.get_featured(limit=limit)
-    return [
-        FeaturedDestinationOut(
-            id=c.id,
-            name=c.name,
-            department=c.department,
-            country=c.country,
-            image_url=c.image_url,
-        )
-        for c in cities
-    ]
+    use_case = get_featured_destinations_use_case(session)
+    return await use_case.execute(limit=limit)
 
 
 @router.get("/properties", response_model=PaginatedResponse[PropertySummary])
@@ -118,6 +108,5 @@ async def search_cities(
     q: str = Query(..., min_length=2),
     session: AsyncSession = Depends(get_db_session),
 ):
-    repo = get_city_repository(session)
-    cities = await repo.search(q)
-    return [CityOut(id=c.id, name=c.name, department=c.department, country=c.country) for c in cities]
+    use_case = get_search_cities_use_case(session)
+    return await use_case.execute(q=q)

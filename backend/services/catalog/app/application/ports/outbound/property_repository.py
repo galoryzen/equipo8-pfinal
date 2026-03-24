@@ -8,6 +8,10 @@ from app.domain.models import Property, Review
 
 class PropertyRepository(ABC):
     @abstractmethod
+    async def search_featured(self, limit: int = 10) -> list[dict]:
+        """Active properties ordered by popularity with today's min price."""
+
+    @abstractmethod
     async def search(
         self,
         checkin: date,
