@@ -21,6 +21,24 @@ class GetPropertyDetailUseCase:
         review_page: int = 1,
         review_page_size: int = 10,
     ) -> dict:
+        # TODO: Implementar el flujo completo del detalle de propiedad.
+        #
+        # 1. Cache: construir key con todos los params (property_id, checkin,
+        #    checkout, review_page, review_page_size). Si hay hit, retornar.
+        #
+        # 2. Obtener property vía repo.get_by_id (ORM model con relaciones).
+        #    Si no existe → raise PropertyNotFoundError.
+        #
+        # 3. Obtener reviews paginadas vía repo.get_reviews.
+        #
+        # 4. Mapeo ORM → DTOs (este use case se encarga, NO el repo):
+        #    - Property → PropertyDetail (ver schemas/property.py)
+        #    - Calcular min_price por RatePlan y RoomType filtrando
+        #      rate_calendar por checkin/checkout (si se pasan).
+        #    - Reviews → PaginatedResponse[ReviewOut]
+        #    Tip: extraer el mapeo a un método _build_detail() para claridad.
+        #
+        # 5. Guardar en cache y retornar dict con "detail" y "reviews".
         prop = await self._repo.get_by_id(property_id)
         if not prop:
             raise PropertyNotFoundError(property_id)

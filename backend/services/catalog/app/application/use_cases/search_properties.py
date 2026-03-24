@@ -28,6 +28,10 @@ class SearchPropertiesUseCase:
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[PropertySummary]:
+        # TODO: Cache — construir key con todos los params, retornar si hit,
+        # guardar después del mapeo si miss. TTL = CACHE_TTL (120s).
+        # La lógica pesada (queries SQL, filtros, disponibilidad) está en
+        # el repo.search(). Este use case solo orquesta cache + mapeo a DTOs.
         items, total = await self._repo.search(
             checkin=checkin,
             checkout=checkout,

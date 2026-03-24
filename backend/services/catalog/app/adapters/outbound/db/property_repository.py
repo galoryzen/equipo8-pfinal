@@ -113,14 +113,59 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
     # ── Stubs (not yet implemented) ──────────────────────
 
-    async def search(self, **kwargs) -> tuple[list[dict], int]:
+    async def search(
+        self,
+        checkin: date,
+        checkout: date,
+        guests: int,
+        city_id: UUID | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        amenity_codes: list[str] | None = None,
+        sort_by: str = "popularity",
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[dict], int]:
+        # Estrategia:
+        # 1. Subquery "avail_rt": room types con InventoryCalendar.available_units > 0
+        #    para TODOS los días del rango (having count(distinct day) == num_nights).
+        #    Incluir min_available_units por room_type (min de available_units en el rango).
+        #
+        # 2. Filtro de capacidad por PROPERTY (no por room type individual):
+        #    SUM(room_type.capacity * min_available_units) >= guests
+        #    Esto permite que 2 habitaciones de 3 cubran 5 huéspedes.
+        #    Agrupar avail_rt por property_id con HAVING sobre la suma.
+        #
+        # 3. Subquery "min_price_sq": min(RateCalendar.price_amount) por property
+        #    para las fechas, cruzando con avail_rt y RatePlan activos.
+        #
+        # 4. Query base: Property JOIN capacidad + min_price, WHERE status=ACTIVE.
+        #    Aplicar filtros opcionales (city_id, min/max price, amenity_codes).
+        #    Para amenities: subquery con having count(distinct code) == len(codes) (AND).
+        #
+        # 5. Count total antes de paginar.
+        # 6. Ordenar según sort_by: popularity (default), rating, price_asc, price_desc.
+        # 7. Paginar con offset/limit.
+        # 8. Batch load imágenes y amenidades (mismo patrón que search_featured).
+        # 9. Retornar (list[dict], total). Cada dict debe ser compatible con PropertySummary.
         raise NotImplementedError
 
     async def get_by_id(self, property_id: UUID) -> Property | None:
+        # Cargar Property con TODAS las relaciones eager-loaded:
+        #   - city (joined), images, amenities (selectin), policies
+        #   - room_types → rate_plans → rate_calendar + cancellation_policy
+        #   - default_cancellation_policy
+        # El use case se encarga del mapeo ORM → PropertyDetail y de calcular
+        # min_price por rate_plan/room_type filtrando rate_calendar por fechas.
         raise NotImplementedError
 
     async def get_reviews(self, property_id: UUID, page: int = 1, page_size: int = 10) -> tuple[list[Review], int]:
+        # Query Review WHERE property_id, ORDER BY created_at DESC.
+        # Retornar (list[Review], total_count) para paginación.
         raise NotImplementedError
 
     async def get_min_prices(self, property_ids: list[UUID], checkin: date, checkout: date) -> dict[UUID, Decimal]:
+        # Min RateCalendar.price_amount por property para el rango de fechas.
+        # Cruzar RoomType → RatePlan (activo) → RateCalendar.
+        # Retornar {property_id: min_price}.
         raise NotImplementedError
