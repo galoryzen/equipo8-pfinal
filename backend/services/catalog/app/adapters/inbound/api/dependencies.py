@@ -7,7 +7,10 @@ from app.adapters.outbound.db.city_repository import SqlAlchemyCityRepository
 from app.adapters.outbound.db.property_repository import SqlAlchemyPropertyRepository
 from app.adapters.outbound.db.session import async_session
 from app.application.ports.outbound.cache_port import CachePort
+from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
+from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
+from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
 
 # Singleton — created once, shared across requests
@@ -41,6 +44,21 @@ def get_property_repository(session: AsyncSession) -> SqlAlchemyPropertyReposito
 
 def get_city_repository(session: AsyncSession) -> SqlAlchemyCityRepository:
     return SqlAlchemyCityRepository(session)
+
+
+def get_featured_destinations_use_case(session: AsyncSession) -> GetFeaturedDestinationsUseCase:
+    repo = get_city_repository(session)
+    return GetFeaturedDestinationsUseCase(repo)
+
+
+def get_search_cities_use_case(session: AsyncSession) -> SearchCitiesUseCase:
+    repo = get_city_repository(session)
+    return SearchCitiesUseCase(repo)
+
+
+def get_featured_use_case(session: AsyncSession) -> GetFeaturedPropertiesUseCase:
+    repo = get_property_repository(session)
+    return GetFeaturedPropertiesUseCase(repo)
 
 
 def get_search_use_case(session: AsyncSession, cache: CachePort) -> SearchPropertiesUseCase:

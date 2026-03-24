@@ -2,19 +2,21 @@
 
 from unittest.mock import AsyncMock, patch
 
+from app.schemas.city import FeaturedDestinationOut
+from app.schemas.property import PropertySummary
 from tests.conftest import make_property_summary
 
 
 class TestFeaturedProperties:
-    @patch("app.adapters.inbound.api.properties.get_property_repository")
-    def test_returns_list(self, mock_repo_factory, client):
+    @patch("app.adapters.inbound.api.properties.get_featured_use_case")
+    def test_returns_list(self, mock_factory, client):
         """Should return a list of PropertySummary ordered by popularity."""
-        mock_repo = AsyncMock()
-        mock_repo.search_featured.return_value = [
-            make_property_summary(),
-            make_property_summary(name="Hotel Luna"),
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = [
+            PropertySummary.model_validate(make_property_summary()),
+            PropertySummary.model_validate(make_property_summary(name="Hotel Luna")),
         ]
-        mock_repo_factory.return_value = mock_repo
+        mock_factory.return_value = mock_uc
 
         resp = client.get("/api/v1/catalog/properties/featured")
         assert resp.status_code == 200
@@ -24,32 +26,32 @@ class TestFeaturedProperties:
         assert data[0]["min_price"] == "120.00"
         assert data[0]["image"] is not None
 
-    @patch("app.adapters.inbound.api.properties.get_property_repository")
-    def test_respects_limit(self, mock_repo_factory, client):
-        """Should pass limit param to repository."""
-        mock_repo = AsyncMock()
-        mock_repo.search_featured.return_value = []
-        mock_repo_factory.return_value = mock_repo
+    @patch("app.adapters.inbound.api.properties.get_featured_use_case")
+    def test_respects_limit(self, mock_factory, client):
+        """Should pass limit param to use case."""
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        mock_factory.return_value = mock_uc
 
         client.get("/api/v1/catalog/properties/featured?limit=5")
-        mock_repo.search_featured.assert_called_once_with(limit=5)
+        mock_uc.execute.assert_called_once_with(limit=5)
 
-    @patch("app.adapters.inbound.api.properties.get_property_repository")
-    def test_default_limit_10(self, mock_repo_factory, client):
+    @patch("app.adapters.inbound.api.properties.get_featured_use_case")
+    def test_default_limit_10(self, mock_factory, client):
         """Should default to limit=10."""
-        mock_repo = AsyncMock()
-        mock_repo.search_featured.return_value = []
-        mock_repo_factory.return_value = mock_repo
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        mock_factory.return_value = mock_uc
 
         client.get("/api/v1/catalog/properties/featured")
-        mock_repo.search_featured.assert_called_once_with(limit=10)
+        mock_uc.execute.assert_called_once_with(limit=10)
 
-    @patch("app.adapters.inbound.api.properties.get_property_repository")
-    def test_empty_results(self, mock_repo_factory, client):
+    @patch("app.adapters.inbound.api.properties.get_featured_use_case")
+    def test_empty_results(self, mock_factory, client):
         """Should return empty list when no featured properties."""
-        mock_repo = AsyncMock()
-        mock_repo.search_featured.return_value = []
-        mock_repo_factory.return_value = mock_repo
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        mock_factory.return_value = mock_uc
 
         resp = client.get("/api/v1/catalog/properties/featured")
         assert resp.status_code == 200
@@ -57,19 +59,20 @@ class TestFeaturedProperties:
 
 
 class TestFeaturedDestinations:
-    @patch("app.adapters.inbound.api.properties.get_city_repository")
-    def test_returns_cities_with_images(self, mock_repo_factory, client):
+    @patch("app.adapters.inbound.api.properties.get_featured_destinations_use_case")
+    def test_returns_cities_with_images(self, mock_factory, client):
         """Should return cities with image_url, name, country."""
-        mock_city = AsyncMock()
-        mock_city.id = "bbbe56fe-8f4b-4498-a876-396a342d3615"
-        mock_city.name = "CANCÚN"
-        mock_city.department = "QUINTANA ROO"
-        mock_city.country = "MÉXICO"
-        mock_city.image_url = "https://example.com/cancun.jpg"
-
-        mock_repo = AsyncMock()
-        mock_repo.get_featured.return_value = [mock_city]
-        mock_repo_factory.return_value = mock_repo
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = [
+            FeaturedDestinationOut(
+                id="bbbe56fe-8f4b-4498-a876-396a342d3615",
+                name="CANCÚN",
+                department="QUINTANA ROO",
+                country="MÉXICO",
+                image_url="https://example.com/cancun.jpg",
+            )
+        ]
+        mock_factory.return_value = mock_uc
 
         resp = client.get("/api/v1/catalog/destinations/featured")
         assert resp.status_code == 200
@@ -79,32 +82,32 @@ class TestFeaturedDestinations:
         assert data[0]["image_url"] == "https://example.com/cancun.jpg"
         assert data[0]["country"] == "MÉXICO"
 
-    @patch("app.adapters.inbound.api.properties.get_city_repository")
-    def test_respects_limit(self, mock_repo_factory, client):
-        """Should pass limit param to repository."""
-        mock_repo = AsyncMock()
-        mock_repo.get_featured.return_value = []
-        mock_repo_factory.return_value = mock_repo
+    @patch("app.adapters.inbound.api.properties.get_featured_destinations_use_case")
+    def test_respects_limit(self, mock_factory, client):
+        """Should pass limit param to use case."""
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        mock_factory.return_value = mock_uc
 
         client.get("/api/v1/catalog/destinations/featured?limit=6")
-        mock_repo.get_featured.assert_called_once_with(limit=6)
+        mock_uc.execute.assert_called_once_with(limit=6)
 
-    @patch("app.adapters.inbound.api.properties.get_city_repository")
-    def test_default_limit_4(self, mock_repo_factory, client):
+    @patch("app.adapters.inbound.api.properties.get_featured_destinations_use_case")
+    def test_default_limit_4(self, mock_factory, client):
         """Should default to limit=4."""
-        mock_repo = AsyncMock()
-        mock_repo.get_featured.return_value = []
-        mock_repo_factory.return_value = mock_repo
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        mock_factory.return_value = mock_uc
 
         client.get("/api/v1/catalog/destinations/featured")
-        mock_repo.get_featured.assert_called_once_with(limit=4)
+        mock_uc.execute.assert_called_once_with(limit=4)
 
-    @patch("app.adapters.inbound.api.properties.get_city_repository")
-    def test_empty_results(self, mock_repo_factory, client):
+    @patch("app.adapters.inbound.api.properties.get_featured_destinations_use_case")
+    def test_empty_results(self, mock_factory, client):
         """Should return empty list when no featured destinations."""
-        mock_repo = AsyncMock()
-        mock_repo.get_featured.return_value = []
-        mock_repo_factory.return_value = mock_repo
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        mock_factory.return_value = mock_uc
 
         resp = client.get("/api/v1/catalog/destinations/featured")
         assert resp.status_code == 200
