@@ -21,9 +21,6 @@ from app.schemas.property import PropertySummary
 router = APIRouter()
 
 
-# ── Featured (SCRUM-110) ────────────────────────────────
-
-
 @router.get("/properties/featured", response_model=list[PropertySummary])
 async def featured_properties(
     limit: int = Query(10, ge=1, le=50),
@@ -53,9 +50,6 @@ async def featured_destinations(
     ]
 
 
-# ── Search & Detail ─────────────────────────────────────
-
-
 @router.get("/properties", response_model=PaginatedResponse[PropertySummary])
 async def search_properties(
     checkin: date = Query(...),
@@ -64,17 +58,21 @@ async def search_properties(
     city_id: UUID | None = Query(None),
     min_price: Decimal | None = Query(None, ge=0),
     max_price: Decimal | None = Query(None, ge=0),
-    amenities: str | None = Query(None, description="Comma-separated amenity codes"),
-    sort_by: str = Query("popularity", pattern="^(popularity|rating|price_asc|price_desc)$"),
+    amenities: str | None = Query(
+        None, description="Comma-separated amenity codes"),
+    sort_by: str = Query(
+        "popularity", pattern="^(popularity|rating|price_asc|price_desc)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_db_session),
     cache: CachePort = Depends(get_cache),
 ):
     if checkout <= checkin:
-        raise HTTPException(status_code=422, detail="checkout must be after checkin")
+        raise HTTPException(
+            status_code=422, detail="checkout must be after checkin")
 
-    amenity_codes = [c.strip() for c in amenities.split(",") if c.strip()] if amenities else None
+    amenity_codes = [c.strip() for c in amenities.split(",")
+                     if c.strip()] if amenities else None
 
     use_case = get_search_use_case(session, cache)
     return await use_case.execute(
@@ -102,7 +100,8 @@ async def get_property_detail(
     cache: CachePort = Depends(get_cache),
 ) -> dict:
     if checkin and checkout and checkout <= checkin:
-        raise HTTPException(status_code=422, detail="checkout must be after checkin")
+        raise HTTPException(
+            status_code=422, detail="checkout must be after checkin")
 
     use_case = get_detail_use_case(session, cache)
     return await use_case.execute(
@@ -112,9 +111,6 @@ async def get_property_detail(
         review_page=review_page,
         review_page_size=review_page_size,
     )
-
-
-# ── Cities ───────────────────────────────────────────────
 
 
 @router.get("/cities", response_model=list[CityOut])

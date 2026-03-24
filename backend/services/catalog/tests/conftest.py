@@ -9,8 +9,6 @@ from app.adapters.inbound.api.dependencies import get_cache, get_db_session
 from app.application.ports.outbound.cache_port import CachePort
 from app.main import app
 
-# ── Fixtures ─────────────────────────────────────────────
-
 
 @pytest.fixture
 def mock_cache():
