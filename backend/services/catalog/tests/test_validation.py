@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 from app.application.exceptions import PropertyNotFoundError
+from app.schemas.common import PaginatedResponse
 
 
 class TestFeaturedPropertiesValidation:
@@ -57,6 +58,28 @@ class TestSearchPropertiesValidation:
             "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&min_price=-10"
         )
         assert resp.status_code == 422
+
+    @patch("app.adapters.inbound.api.properties.get_search_use_case")
+    def test_min_price_greater_than_max_price_returns_422(self, mock_factory, client):
+        resp = client.get(
+            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2"
+            "&min_price=300&max_price=100"
+        )
+        assert resp.status_code == 422
+        assert "min_price must be less than or equal to max_price" in resp.json()["detail"]
+
+    @patch("app.adapters.inbound.api.properties.get_search_use_case")
+    def test_equal_min_and_max_price_is_valid(self, mock_factory, client):
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = PaginatedResponse(
+            items=[], total=0, page=1, page_size=20, total_pages=0
+        )
+        mock_factory.return_value = mock_uc
+        resp = client.get(
+            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2"
+            "&min_price=100&max_price=100"
+        )
+        assert resp.status_code == 200
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_guests_below_1_returns_422(self, mock_factory, client):

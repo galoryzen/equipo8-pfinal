@@ -255,3 +255,59 @@ class TestSearchProperties:
             page=2,
             page_size=15,
         )
+
+    async def test_price_filter_only_min(self, mock_property_repo, mock_cache):
+        """When only min_price is set, max_price should be None."""
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            min_price=Decimal("100"),
+        )
+
+        call_kwargs = mock_property_repo.search.call_args.kwargs
+        assert call_kwargs["min_price"] == Decimal("100")
+        assert call_kwargs["max_price"] is None
+
+    async def test_price_filter_only_max(self, mock_property_repo, mock_cache):
+        """When only max_price is set, min_price should be None."""
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            max_price=Decimal("300"),
+        )
+
+        call_kwargs = mock_property_repo.search.call_args.kwargs
+        assert call_kwargs["min_price"] is None
+        assert call_kwargs["max_price"] == Decimal("300")
+
+    async def test_price_filter_preserves_other_filters(self, mock_property_repo, mock_cache):
+        """Changing price range should not affect other filters passed to repo."""
+        city_id = uuid4()
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=city_id,
+            min_price=Decimal("80"),
+            max_price=Decimal("150"),
+            amenity_codes=["wifi"],
+            sort_by="rating",
+        )
+
+        call_kwargs = mock_property_repo.search.call_args.kwargs
+        assert call_kwargs["min_price"] == Decimal("80")
+        assert call_kwargs["max_price"] == Decimal("150")
+        assert call_kwargs["city_id"] == city_id
+        assert call_kwargs["amenity_codes"] == ["wifi"]
+        assert call_kwargs["sort_by"] == "rating"

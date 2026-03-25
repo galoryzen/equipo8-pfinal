@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -29,8 +29,6 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
     async def search_featured(self, limit: int = 10) -> list[dict]:
         """Active properties by popularity with today's min price."""
-        from sqlalchemy import func as sa_func
-
         # Min price for today per property
         today_price_sq = (
             select(
@@ -138,11 +136,40 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         #
         # 3. Subquery "min_price_sq": min(RateCalendar.price_amount) por property
         #    para las fechas, cruzando con avail_rt y RatePlan activos.
-        #
+
+        min_price_sq = (
+            select(
+                RoomType.property_id.label("property_id"),
+                sa_func.min(RateCalendar.price_amount).label("min_price"),
+            )
+            .join(RatePlan, RatePlan.room_type_id == RoomType.id)
+            .join(RateCalendar, RateCalendar.rate_plan_id == RatePlan.id)
+            .where(
+                RoomType.status == RoomTypeStatus.ACTIVE,
+                RatePlan.is_active == True,  # noqa: E712
+                RateCalendar.day >= checkin,
+                RateCalendar.day < checkout,
+            )
+            .group_by(RoomType.property_id)
+            .subquery("min_price_sq")
+        )
+
         # 4. Query base: Property JOIN capacidad + min_price, WHERE status=ACTIVE.
         #    Aplicar filtros opcionales (city_id, min/max price, amenity_codes).
         #    Para amenities: subquery con having count(distinct code) == len(codes) (AND).
-        #
+
+        base_q = (
+            select(Property, min_price_sq.c.min_price)
+            .join(min_price_sq, min_price_sq.c.property_id == Property.id)
+            .where(Property.status == PropertyStatus.ACTIVE)
+        )
+
+        if min_price is not None:
+            base_q = base_q.where(min_price_sq.c.min_price >= min_price)
+
+        if max_price is not None:
+            base_q = base_q.where(min_price_sq.c.min_price <= max_price)
+
         # 5. Count total antes de paginar.
         # 6. Ordenar según sort_by: popularity (default), rating, price_asc, price_desc.
         # 7. Paginar con offset/limit.
