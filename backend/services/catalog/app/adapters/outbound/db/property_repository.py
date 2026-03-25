@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -29,8 +29,6 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
     async def search_featured(self, limit: int = 10) -> list[dict]:
         """Active properties by popularity with today's min price."""
-        from sqlalchemy import func as sa_func
-
         # Min price for today per property
         today_price_sq = (
             select(
@@ -138,17 +136,112 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         #
         # 3. Subquery "min_price_sq": min(RateCalendar.price_amount) por property
         #    para las fechas, cruzando con avail_rt y RatePlan activos.
-        #
+
+        min_price_sq = (
+            select(
+                RoomType.property_id.label("property_id"),
+                sa_func.min(RateCalendar.price_amount).label("min_price"),
+            )
+            .join(RatePlan, RatePlan.room_type_id == RoomType.id)
+            .join(RateCalendar, RateCalendar.rate_plan_id == RatePlan.id)
+            .where(
+                RoomType.status == RoomTypeStatus.ACTIVE,
+                RatePlan.is_active == True,  # noqa: E712
+                RateCalendar.day >= checkin,
+                RateCalendar.day < checkout,
+            )
+            .group_by(RoomType.property_id)
+            .subquery("min_price_sq")
+        )
+
         # 4. Query base: Property JOIN capacidad + min_price, WHERE status=ACTIVE.
         #    Aplicar filtros opcionales (city_id, min/max price, amenity_codes).
         #    Para amenities: subquery con having count(distinct code) == len(codes) (AND).
-        #
+
+        base_q = (
+            select(Property, min_price_sq.c.min_price)
+            .join(min_price_sq, min_price_sq.c.property_id == Property.id)
+            .where(Property.status == PropertyStatus.ACTIVE)
+            .options(joinedload(Property.city))
+        )
+
+        if min_price is not None:
+            base_q = base_q.where(min_price_sq.c.min_price >= min_price)
+
+        if max_price is not None:
+            base_q = base_q.where(min_price_sq.c.min_price <= max_price)
+
         # 5. Count total antes de paginar.
         # 6. Ordenar según sort_by: popularity (default), rating, price_asc, price_desc.
         # 7. Paginar con offset/limit.
         # 8. Batch load imágenes y amenidades (mismo patrón que search_featured).
         # 9. Retornar (list[dict], total). Cada dict debe ser compatible con PropertySummary.
-        raise NotImplementedError
+        query = base_q
+
+        # Contar total antes de paginar
+        count_q = query.with_only_columns(sa_func.count()).order_by(None)
+        total_result = await self._session.execute(count_q)
+        total = total_result.scalar_one()
+
+        # Ordenar por popularidad (default)
+        query = query.order_by(Property.popularity_score.desc())
+
+        # Paginación
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
+
+        result = await self._session.execute(query)
+        rows = result.unique().all()
+        property_ids = [row[0].id for row in rows]
+
+        # Batch load first images
+        first_images: dict[UUID, PropertyImage] = {}
+        if property_ids:
+            img_q = (
+                select(PropertyImage)
+                .where(PropertyImage.property_id.in_(property_ids))
+                .order_by(PropertyImage.property_id, PropertyImage.display_order)
+                .distinct(PropertyImage.property_id)
+            )
+            img_result = await self._session.execute(img_q)
+            for img in img_result.scalars():
+                first_images[img.property_id] = img
+
+        # Batch load amenities
+        prop_amenities: dict[UUID, list] = {pid: [] for pid in property_ids}
+        if property_ids:
+            am_q = (
+                select(property_amenity_table.c.property_id, Amenity)
+                .join(Amenity, Amenity.id == property_amenity_table.c.amenity_id)
+                .where(property_amenity_table.c.property_id.in_(property_ids))
+            )
+            am_result = await self._session.execute(am_q)
+            for pid, amenity in am_result:
+                prop_amenities[pid].append(amenity)
+
+        items = []
+        for prop, price in rows:
+            img = first_images.get(prop.id)
+            items.append(
+                {
+                    "id": prop.id,
+                    "name": prop.name,
+                    "city": {
+                        "id": prop.city.id,
+                        "name": prop.city.name,
+                        "department": prop.city.department,
+                        "country": prop.city.country,
+                    },
+                    "address": prop.address,
+                    "rating_avg": round(float(prop.rating_avg), 1) if prop.rating_avg else None,
+                    "review_count": prop.review_count,
+                    "image": {"url": img.url, "caption": img.caption} if img else None,
+                    "min_price": int(price) if price else None,
+                    "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
+                }
+            )
+
+        return items, total
 
     async def get_by_id(self, property_id: UUID) -> Property | None:
         # Cargar Property con TODAS las relaciones eager-loaded:

@@ -61,6 +61,11 @@ async def search_properties(
         raise HTTPException(
             status_code=422, detail="checkout must be after checkin")
 
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(
+            status_code=422,
+            detail="min_price must be less than or equal to max_price")
+
     amenity_codes = [c.strip() for c in amenities.split(",")
                      if c.strip()] if amenities else None
 
