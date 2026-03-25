@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { searchProperties } from '@/app/lib/api/catalog';
+import { searchProperties } from '../app/lib/api/catalog';
 
 describe('searchProperties', () => {
   it('sends min_price and max_price as query params', async () => {
