@@ -154,6 +154,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             .subquery("min_price_sq")
         )
 
+
         # 4. Query base: Property JOIN capacidad + min_price, WHERE status=ACTIVE.
         #    Aplicar filtros opcionales (city_id, min/max price, amenity_codes).
         #    Para amenities: subquery con having count(distinct code) == len(codes) (AND).
@@ -170,6 +171,17 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
         if max_price is not None:
             base_q = base_q.where(min_price_sq.c.min_price <= max_price)
+
+        # Filtro de amenidades: solo propiedades que tengan TODAS las amenidades seleccionadas
+        if amenity_codes:
+            amenity_subq = (
+                select(property_amenity_table.c.property_id)
+                .join(Amenity, Amenity.id == property_amenity_table.c.amenity_id)
+                .where(Amenity.code.in_(amenity_codes))
+                .group_by(property_amenity_table.c.property_id)
+                .having(sa_func.count(sa_func.distinct(Amenity.code)) == len(amenity_codes))
+            )
+            base_q = base_q.where(Property.id.in_(amenity_subq))
 
         # 5. Count total antes de paginar.
         # 6. Ordenar según sort_by: popularity (default), rating, price_asc, price_desc.
