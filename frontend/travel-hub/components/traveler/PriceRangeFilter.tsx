@@ -97,14 +97,12 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
           onChange={handleMinChange}
           onBlur={handleBlur}
           inputProps={{ min: 0 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
-                  $
-                </Typography>
-              ),
-            },
+          InputProps={{
+            startAdornment: (
+              <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
+                $
+              </Typography>
+            ),
           }}
           sx={{ flex: 1 }}
         />
@@ -116,17 +114,15 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
           onChange={handleMaxChange}
           onBlur={handleBlur}
           inputProps={{ min: 0 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
-                  $
-                </Typography>
-              ),
-              endAdornment: range[1] >= 2000 ? (
-                <Typography variant="body2" color="text.secondary">+</Typography>
-              ) : null,
-            },
+          InputProps={{
+            startAdornment: (
+              <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
+                $
+              </Typography>
+            ),
+            endAdornment: range[1] >= 2000 ? (
+              <Typography variant="body2" color="text.secondary">+</Typography>
+            ) : null,
           }}
           sx={{ flex: 1 }}
         />
