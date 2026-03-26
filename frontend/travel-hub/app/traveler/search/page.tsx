@@ -11,10 +11,13 @@ import Grid from '@mui/material/Grid';
 import Pagination from '@mui/material/Pagination';
 import Typography from '@mui/material/Typography';
 
+
 import PriceRangeFilter from '@/components/traveler/PriceRangeFilter';
+import AmenityFilter from '@/components/traveler/AmenityFilter';
 
 import { searchProperties } from '@/app/lib/api/catalog';
-import type { PaginatedResponse, PropertySummary } from '@/app/lib/types/catalog';
+import type { PaginatedResponse, PropertySummary, AmenitySummary } from '@/app/lib/types/catalog';
+
 
 function defaultCheckin(): string {
   const d = new Date();
@@ -28,13 +31,21 @@ function defaultCheckout(): string {
   return d.toISOString().slice(0, 10);
 }
 
-export default function SearchPage() {
+function SearchPage() {
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<PropertySummary> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Amenidades disponibles (pueden venir de API, aquí hardcodeadas)
+  const amenityOptions: AmenitySummary[] = [
+    { code: 'wifi', name: 'Wi-Fi' },
+    { code: 'pool', name: 'Piscina' },
+    { code: 'breakfast', name: 'Desayuno incluido' },
+  ];
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
@@ -46,6 +57,7 @@ export default function SearchPage() {
         guests: 2,
         min_price: minPrice,
         max_price: maxPrice,
+        amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
         page,
       });
       setData(result);
@@ -54,7 +66,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [minPrice, maxPrice, page]);
+  }, [minPrice, maxPrice, selectedAmenities, page]);
 
   useEffect(() => {
     fetchResults();
@@ -66,6 +78,11 @@ export default function SearchPage() {
     setPage(1);
   };
 
+  const handleAmenityChange = (codes: string[]) => {
+    setSelectedAmenities(codes);
+    setPage(1);
+  };
+
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
   };
@@ -73,8 +90,9 @@ export default function SearchPage() {
   return (
     <Box sx={{ display: 'flex', gap: 3, p: 3 }}>
       {/* Sidebar: filtros */}
-      <Box sx={{ width: 280, flexShrink: 0 }}>
+      <Box sx={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} onApply={handlePriceApply} />
+        <AmenityFilter amenities={amenityOptions} selected={selectedAmenities} onChange={handleAmenityChange} />
       </Box>
 
       {/* Resultados */}
@@ -97,7 +115,7 @@ export default function SearchPage() {
 
         {!loading && data && data.items.length === 0 && (
           <Typography sx={{ py: 2 }}>
-            No se encontraron hospedajes para el rango de precio seleccionado.
+            No se encontraron hospedajes para los filtros seleccionados.
           </Typography>
         )}
 
@@ -108,7 +126,7 @@ export default function SearchPage() {
             </Typography>
             <Grid container spacing={2}>
               {data.items.map((property) => (
-                <Grid key={property.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Grid key={property.id} xs={12} sm={6} md={4} item>
                   <Card>
                     {property.image && (
                       <CardMedia
@@ -157,3 +175,5 @@ export default function SearchPage() {
     </Box>
   );
 }
+
+export default SearchPage;
