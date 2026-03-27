@@ -2,22 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
-import Pagination from '@mui/material/Pagination';
-import Typography from '@mui/material/Typography';
-
-
-import PriceRangeFilter from '@/components/traveler/PriceRangeFilter';
 import AmenityFilter from '@/components/traveler/AmenityFilter';
+import PriceRangeFilter from '@/components/traveler/PriceRangeFilter';
+import PropertyCard from '@/components/traveler/PropertyCard';
+import SearchBar from '@/components/traveler/SearchBar';
 
 import { searchProperties } from '@/app/lib/api/catalog';
-import type { PaginatedResponse, PropertySummary, AmenitySummary } from '@/app/lib/types/catalog';
-
+import type { AmenitySummary, PaginatedResponse, PropertySummary } from '@/app/lib/types/catalog';
 
 function defaultCheckin(): string {
   const d = new Date();
@@ -31,20 +22,33 @@ function defaultCheckout(): string {
   return d.toISOString().slice(0, 10);
 }
 
+const SORT_OPTIONS = [
+  { key: '', label: 'Sort' },
+  { key: 'price_asc', label: 'Price' },
+  { key: 'rating_desc', label: 'Rating 4.5+' },
+] as const;
+
 function SearchPage() {
+  const [city, setCity] = useState('');
+  const [checkin, setCheckin] = useState(defaultCheckin);
+  const [checkout, setCheckout] = useState(defaultCheckout);
+  const [guests, setGuests] = useState(2);
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<PropertySummary> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Amenidades disponibles (pueden venir de API, aquí hardcodeadas)
   const amenityOptions: AmenitySummary[] = [
-    { code: 'wifi', name: 'Wi-Fi' },
-    { code: 'pool', name: 'Piscina' },
-    { code: 'breakfast', name: 'Desayuno incluido' },
+    { code: 'wifi', name: 'Wifi' },
+    { code: 'kitchen', name: 'Kitchen' },
+    { code: 'pool', name: 'Pool' },
+    { code: 'air_conditioning', name: 'Air conditioning' },
+    { code: 'breakfast', name: 'Breakfast' },
+    { code: 'parking', name: 'Parking' },
   ];
 
   const fetchResults = useCallback(async () => {
@@ -52,25 +56,34 @@ function SearchPage() {
     setError(null);
     try {
       const result = await searchProperties({
-        checkin: defaultCheckin(),
-        checkout: defaultCheckout(),
-        guests: 2,
+        checkin,
+        checkout,
+        guests,
         min_price: minPrice,
         max_price: maxPrice,
         amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
+        sort_by: sortBy || undefined,
         page,
       });
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al buscar hospedajes');
+      setError(err instanceof Error ? err.message : 'Error searching properties');
     } finally {
       setLoading(false);
     }
-  }, [minPrice, maxPrice, selectedAmenities, page]);
+  }, [checkin, checkout, guests, minPrice, maxPrice, selectedAmenities, sortBy, page]);
 
   useEffect(() => {
     fetchResults();
   }, [fetchResults]);
+
+  const handleSearch = (newCity: string, newCheckin: string, newCheckout: string, newGuests: number) => {
+    setCity(newCity);
+    setCheckin(newCheckin);
+    setCheckout(newCheckout);
+    setGuests(newGuests);
+    setPage(1);
+  };
 
   const handlePriceApply = (min: number | undefined, max: number | undefined) => {
     setMinPrice(min);
@@ -83,96 +96,154 @@ function SearchPage() {
     setPage(1);
   };
 
-  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
+  const formatDateRange = () => {
+    const fmt = (d: string) => {
+      const date = new Date(d + 'T00:00:00');
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+    return `${fmt(checkin)} - ${fmt(checkout)}`;
   };
 
   return (
-    <Box sx={{ display: 'flex', gap: 3, p: 3 }}>
-      {/* Sidebar: filtros */}
-      <Box sx={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} onApply={handlePriceApply} />
-        <AmenityFilter amenities={amenityOptions} selected={selectedAmenities} onChange={handleAmenityChange} />
-      </Box>
+    <div className="min-h-screen bg-gray-50">
+      {/* Search Bar */}
+      <div className="bg-white border-b border-gray-200 py-4 px-6">
+        <SearchBar
+          initialCity={city}
+          initialCheckin={checkin}
+          initialCheckout={checkout}
+          initialGuests={guests}
+          onSearch={handleSearch}
+        />
+      </div>
 
-      {/* Resultados */}
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="h5" gutterBottom>
-          Hospedajes disponibles
-        </Typography>
+      {/* Results header */}
+      <div className="px-6 pt-6 pb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {city ? `Stays in ${city}` : 'All stays'}
+          </h1>
+          {data && (
+            <p className="text-sm text-gray-500 mt-0.5">
+              {data.total} place{data.total !== 1 ? 's' : ''} found
+              {' · '}
+              {formatDateRange()}
+            </p>
+          )}
+        </div>
 
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        )}
+        {/* Sort chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => {
+                setSortBy(opt.key);
+                setPage(1);
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
+                sortBy === opt.key
+                  ? 'bg-blue-500 text-white border-blue-500'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              {opt.label}
+              {sortBy === opt.key && opt.key && (
+                <span className="ml-1">&#8595;</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {error && (
-          <Typography color="error" sx={{ py: 2 }}>
-            {error}
-          </Typography>
-        )}
+      {/* Main content: sidebar + grid */}
+      <div className="flex gap-6 px-6 pb-8">
+        {/* Sidebar */}
+        <aside className="w-64 shrink-0 hidden lg:block">
+          <div className="sticky top-4 flex flex-col gap-8 pt-4">
+            <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} onApply={handlePriceApply} />
 
-        {!loading && data && data.items.length === 0 && (
-          <Typography sx={{ py: 2 }}>
-            No se encontraron hospedajes para los filtros seleccionados.
-          </Typography>
-        )}
+            <div className="border-t border-gray-200 pt-6">
+              <AmenityFilter
+                amenities={amenityOptions}
+                selected={selectedAmenities}
+                onChange={handleAmenityChange}
+              />
+            </div>
+          </div>
+        </aside>
 
-        {!loading && data && data.items.length > 0 && (
-          <>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {data.total} resultado{data.total !== 1 ? 's' : ''}
-            </Typography>
-            <Grid container spacing={2}>
-              {data.items.map((property) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={property.id}>
-                  <Card>
-                    {property.image && (
-                      <CardMedia
-                        component="img"
-                        height={180}
-                        image={property.image.url}
-                        alt={property.image.caption ?? property.name}
-                      />
-                    )}
-                    <CardContent>
-                      <Typography variant="subtitle1" noWrap>
-                        {property.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {property.city.name}, {property.city.country}
-                      </Typography>
-                      {property.min_price != null && (
-                        <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                          ${property.min_price.toLocaleString()} / noche
-                        </Typography>
-                      )}
-                      {property.rating_avg != null && (
-                        <Typography variant="body2">
-                          ⭐ {property.rating_avg} ({property.review_count} reseñas)
-                        </Typography>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+        {/* Results grid */}
+        <div className="flex-1 pt-4">
+          {loading && (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
 
-            {data.total_pages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                <Pagination
-                  count={data.total_pages}
-                  page={data.page}
-                  onChange={handlePageChange}
-                  color="primary"
-                />
-              </Box>
-            )}
-          </>
-        )}
-      </Box>
-    </Box>
+          {error && (
+            <div className="bg-red-50 text-red-600 rounded-lg px-4 py-3 text-sm">
+              {error}
+            </div>
+          )}
+
+          {!loading && data && data.items.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-gray-500 text-lg">No properties found for the selected filters.</p>
+            </div>
+          )}
+
+          {!loading && data && data.items.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {data.items.map((property) => (
+                  <PropertyCard key={property.id} property={property} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {data.total_pages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: data.total_pages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === data.total_pages || Math.abs(p - page) <= 1)
+                    .map((p, idx, arr) => (
+                      <span key={p} className="flex items-center gap-1">
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="text-gray-400 px-1">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                            p === page
+                              ? 'bg-blue-500 text-white'
+                              : 'hover:bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </span>
+                    ))}
+                  <button
+                    onClick={() => setPage((p) => Math.min(data.total_pages, p + 1))}
+                    disabled={page === data.total_pages}
+                    className="px-3 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
