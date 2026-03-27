@@ -166,6 +166,9 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             .options(joinedload(Property.city))
         )
 
+        if city_id is not None:
+            base_q = base_q.where(Property.city_id == city_id)
+
         if min_price is not None:
             base_q = base_q.where(min_price_sq.c.min_price >= min_price)
 

@@ -6,6 +6,9 @@
 
 BEGIN;
 
+-- ── Extensions ────────────────────────────────────────────
+CREATE EXTENSION IF NOT EXISTS unaccent;
+
 -- ── Schemas ─────────────────────────────────────────────
 CREATE SCHEMA IF NOT EXISTS users;
 CREATE SCHEMA IF NOT EXISTS catalog;
