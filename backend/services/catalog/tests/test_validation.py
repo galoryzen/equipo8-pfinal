@@ -88,6 +88,22 @@ class TestSearchPropertiesValidation:
         )
         assert resp.status_code == 422
 
+    @patch("app.adapters.inbound.api.properties.get_search_use_case")
+    def test_city_id_filter_accepted(self, mock_factory, client):
+        """city_id should be forwarded to the use case and return 200."""
+        city_id = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = PaginatedResponse(
+            items=[], total=0, page=1, page_size=20, total_pages=0
+        )
+        mock_factory.return_value = mock_uc
+        resp = client.get(
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&city_id={city_id}"
+        )
+        assert resp.status_code == 200
+        mock_uc.execute.assert_called_once()
+        assert mock_uc.execute.call_args.kwargs["city_id"] == city_id
+
 
 class TestPropertyDetailValidation:
     @patch("app.adapters.inbound.api.properties.get_detail_use_case")

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,78 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { Card, Button } from '@src/shared/ui';
+import { Card, Button, Input } from '@src/shared/ui';
 import { useFeatured } from '@src/features/catalog/use-featured';
+import { searchCities } from '@src/features/catalog/catalog-service';
+import type { CityInfo } from '@src/types/catalog';
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { destinations, properties, loading, error, retry } = useFeatured();
+
+  // City autocomplete state
+  const [cityQuery, setCityQuery] = useState('');
+  const [citySuggestions, setCitySuggestions] = useState<CityInfo[]>([]);
+  const [selectedCity, setSelectedCity] = useState<CityInfo | null>(null);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showDropdown =
+    !selectedCity && (citySuggestions.length > 0 || loadingCities);
+
+  // Debounced city search
+  useEffect(() => {
+    if (selectedCity || cityQuery.length < 2) {
+      setCitySuggestions([]);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLoadingCities(true);
+      try {
+        const cities = await searchCities(cityQuery);
+        setCitySuggestions(cities);
+      } catch {
+        setCitySuggestions([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [cityQuery, selectedCity]);
+
+  const handleSelectCity = useCallback((city: CityInfo) => {
+    setSelectedCity(city);
+    setCityQuery(city.name);
+    setCitySuggestions([]);
+  }, []);
+
+  const handleClearCity = useCallback(() => {
+    setSelectedCity(null);
+    setCityQuery('');
+    setCitySuggestions([]);
+  }, []);
+
+  const dismissSuggestions = useCallback(() => {
+    setCitySuggestions([]);
+    setLoadingCities(false);
+  }, []);
+
+  const handleSearch = useCallback(() => {
+    if (!selectedCity) return;
+    router.push({
+      pathname: '/(tabs)/search',
+      params: {
+        cityId: selectedCity.id,
+        cityName: selectedCity.name,
+        cityCountry: selectedCity.country,
+        cityDepartment: selectedCity.department ?? '',
+      },
+    });
+  }, [selectedCity, router]);
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'es' : 'en');
@@ -30,6 +95,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -54,15 +120,31 @@ export default function HomeScreen() {
           <Text style={styles.searchCardTitle}>{t('home.planTrip')}</Text>
           <Text style={styles.searchCardSubtitle}>{t('home.planTripHint')}</Text>
 
-          <Pressable
-            style={styles.searchInput}
-            onPress={() => router.push('/search')}
-            accessibilityRole="search"
-            accessibilityLabel={t('home.searchPlaceholder')}
-          >
+          <View style={styles.searchInput}>
             <Ionicons name="search" size={20} color={colors.text.muted} />
-            <Text style={styles.searchPlaceholder}>{t('home.searchPlaceholder')}</Text>
-          </Pressable>
+            {selectedCity ? (
+              <View style={styles.selectedCityRow}>
+                <Text style={styles.selectedCityText} numberOfLines={1}>
+                  {selectedCity.name}, {selectedCity.country}
+                </Text>
+                <Pressable
+                  onPress={handleClearCity}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear selected city"
+                  hitSlop={8}
+                >
+                  <Ionicons name="close-circle" size={18} color={colors.text.muted} />
+                </Pressable>
+              </View>
+            ) : (
+              <Input
+                placeholder={t('search.searchCity')}
+                value={cityQuery}
+                onChangeText={setCityQuery}
+                style={styles.cityTextInput}
+              />
+            )}
+          </View>
 
           <View style={styles.searchFiltersRow}>
             <Pressable style={styles.filterChip} accessibilityRole="button">
@@ -82,8 +164,9 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            style={styles.searchButton}
-            onPress={() => router.push('/search')}
+            style={[styles.searchButton, !selectedCity && styles.searchButtonDisabled]}
+            onPress={handleSearch}
+            disabled={!selectedCity}
             accessibilityRole="button"
             accessibilityLabel={t('home.search')}
           >
@@ -120,10 +203,17 @@ export default function HomeScreen() {
                     <Pressable
                       key={dest.id}
                       style={styles.destinationCard}
-                      onPress={() => router.push('/search')}
+                      onPress={() =>
+                        handleSelectCity({
+                          id: dest.id,
+                          name: dest.name,
+                          country: dest.country,
+                          department: dest.department,
+                        })
+                      }
                       accessibilityRole="button"
                       accessibilityLabel={`${dest.name}, ${dest.country}`}
-                      accessibilityHint="Search stays in this destination"
+                      accessibilityHint="Select this destination"
                     >
                       <Image
                         source={{ uri: dest.image_url }}
@@ -195,6 +285,41 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* City suggestions overlay — rendered outside ScrollView for reliable touch */}
+      {showDropdown && (
+        <>
+          <Pressable
+            style={styles.suggestionsOverlay}
+            onPress={dismissSuggestions}
+          />
+          <View style={styles.suggestionsDropdown}>
+            {loadingCities && (
+              <ActivityIndicator size="small" color={colors.primary} style={{ padding: spacing.sm }} />
+            )}
+            <ScrollView style={styles.suggestionsList} keyboardShouldPersistTaps="handled">
+              {citySuggestions.map((city) => (
+                <Pressable
+                  key={city.id}
+                  style={styles.suggestionItem}
+                  onPress={() => handleSelectCity(city)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${city.name}, ${city.country}`}
+                >
+                  <Ionicons name="location-outline" size={18} color={colors.text.secondary} />
+                  <View>
+                    <Text style={styles.suggestionName}>{city.name}</Text>
+                    <Text style={styles.suggestionDetail}>
+                      {city.department ? `${city.department}, ` : ''}
+                      {city.country}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -273,10 +398,68 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
   },
-  searchPlaceholder: {
-    fontFamily: typography.fontFamily.regular,
+  cityTextInput: {
+    flex: 1,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+  },
+  selectedCityRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  selectedCityText: {
+    flex: 1,
+    fontFamily: typography.fontFamily.medium,
     fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
+    color: colors.text.primary,
+  },
+  suggestionsOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 10,
+  },
+  suggestionsDropdown: {
+    position: 'absolute',
+    top: 180,
+    left: spacing.base * 2,
+    right: spacing.base * 2,
+    backgroundColor: colors.surface.white,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    maxHeight: 280,
+    zIndex: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  suggestionsList: {
+    maxHeight: 280,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  suggestionName: {
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+  },
+  suggestionDetail: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   searchFiltersRow: {
     flexDirection: 'row',
@@ -316,6 +499,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.primary,
     ...shadows.ctaPrimary,
+  },
+  searchButtonDisabled: {
+    opacity: 0.5,
   },
   searchButtonText: {
     fontFamily: typography.fontFamily.bold,
