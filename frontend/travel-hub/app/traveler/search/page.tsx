@@ -7,7 +7,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import CircularProgress from '@mui/material/CircularProgress';
-import { Grid } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import Pagination from '@mui/material/Pagination';
 import Typography from '@mui/material/Typography';
 
@@ -126,7 +126,7 @@ function SearchPage() {
             </Typography>
             <Grid container spacing={2}>
               {data.items.map((property) => (
-                <Grid item xs={12} sm={6} md={4} key={property.id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={property.id}>
                   <Card>
                     {property.image && (
                       <CardMedia

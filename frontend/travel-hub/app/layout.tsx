@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 
 import './globals.css';
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={roboto.variable}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <ThemeProvider theme={theme}>{children}</ThemeProvider>
+        <AppRouterCacheProvider>
+          <ThemeProvider theme={theme}>{children}</ThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Catalog Service", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://travelhub.galoryzen.xyz"],
+    allow_origins=["https://travelhub.galoryzen.xyz", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
