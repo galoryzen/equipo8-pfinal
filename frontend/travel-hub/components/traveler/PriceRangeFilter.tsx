@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 
+import Box from '@mui/material/Box';
+import InputAdornment from '@mui/material/InputAdornment';
+import Slider from '@mui/material/Slider';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+
 interface PriceRangeFilterProps {
   minPrice?: number;
   maxPrice?: number;
@@ -12,12 +18,32 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
   const [range, setRange] = useState<[number, number]>([minPrice ?? 0, maxPrice ?? 1000]);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>, idx: 0 | 1) => {
-    const val = Number(e.target.value);
-    const next: [number, number] = [...range] as [number, number];
-    next[idx] = val;
-    setRange(next);
+  const handleSliderChange = (_: Event, value: number | number[]) => {
+    const [min, max] = value as number[];
+    setRange([min, max]);
     setError(null);
+  };
+
+  const handleSliderChangeCommitted = () => {
+    if (range[0] <= range[1]) {
+      onApply(range[0] || undefined, range[1] || undefined);
+    }
+  };
+
+  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    if (val >= 0) {
+      setRange([val, range[1]]);
+      setError(null);
+    }
+  };
+
+  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    if (val >= 0) {
+      setRange([range[0], val]);
+      setError(null);
+    }
   };
 
   const handleBlur = () => {
@@ -29,81 +55,75 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
     onApply(range[0] || undefined, range[1] || undefined);
   };
 
-  const sliderPercent = (val: number) => (val / 2000) * 100;
-
   return (
-    <div>
-      <h3 className="font-semibold text-gray-900 mb-1">Price range</h3>
-      <p className="text-xs text-gray-400 mb-4">Nightly prices before fees and taxes</p>
-
-      {/* Custom range slider */}
-      <div className="relative h-2 mb-6">
-        <div className="absolute inset-0 bg-gray-200 rounded-full" />
-        <div
-          className="absolute h-full bg-blue-500 rounded-full"
-          style={{
-            left: `${sliderPercent(range[0])}%`,
-            right: `${100 - sliderPercent(range[1])}%`,
-          }}
-        />
-        <input
-          type="range"
-          min={0}
-          max={2000}
-          step={10}
+    <Box>
+      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+        Price range
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+        Nightly prices before fees and taxes
+      </Typography>
+      <Slider
+        value={range}
+        onChange={handleSliderChange}
+        onChangeCommitted={handleSliderChangeCommitted}
+        valueLabelDisplay="auto"
+        min={0}
+        max={2000}
+        step={10}
+        sx={{
+          color: 'primary.main',
+          '& .MuiSlider-thumb': {
+            width: 20,
+            height: 20,
+            bgcolor: 'white',
+            border: '3px solid',
+            borderColor: 'primary.main',
+          },
+          '& .MuiSlider-track': { height: 4 },
+          '& .MuiSlider-rail': { height: 4, bgcolor: '#e2e8f0' },
+        }}
+      />
+      <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+        <TextField
+          label="Min"
+          type="number"
+          size="small"
           value={range[0]}
-          onChange={(e) => handleSliderChange(e, 0)}
-          onMouseUp={handleBlur}
-          onTouchEnd={handleBlur}
-          className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-blue-500 [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer"
+          onChange={handleMinChange}
+          onBlur={handleBlur}
+          inputProps={{ min: 0 }}
+          slotProps={{
+            input: {
+              startAdornment: <InputAdornment position="start">$</InputAdornment>,
+            },
+          }}
+          sx={{ flex: 1 }}
         />
-        <input
-          type="range"
-          min={0}
-          max={2000}
-          step={10}
+        <TextField
+          label="Max"
+          type="number"
+          size="small"
           value={range[1]}
-          onChange={(e) => handleSliderChange(e, 1)}
-          onMouseUp={handleBlur}
-          onTouchEnd={handleBlur}
-          className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-blue-500 [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer"
+          onChange={handleMaxChange}
+          onBlur={handleBlur}
+          inputProps={{ min: 0 }}
+          slotProps={{
+            input: {
+              startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              endAdornment: range[1] >= 2000 ? (
+                <InputAdornment position="end">+</InputAdornment>
+              ) : null,
+            },
+          }}
+          sx={{ flex: 1 }}
         />
-      </div>
-
-      {/* Min / Max inputs */}
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <label className="block text-[10px] text-gray-400 mb-1">Min</label>
-          <div className="flex items-center border border-gray-200 rounded-lg px-3 py-2">
-            <span className="text-sm text-gray-400 mr-1">$</span>
-            <input
-              type="number"
-              min={0}
-              value={range[0]}
-              onChange={(e) => handleSliderChange(e, 0)}
-              onBlur={handleBlur}
-              className="w-full text-sm bg-transparent outline-none"
-            />
-          </div>
-        </div>
-        <div className="flex-1">
-          <label className="block text-[10px] text-gray-400 mb-1">Max</label>
-          <div className="flex items-center border border-gray-200 rounded-lg px-3 py-2">
-            <span className="text-sm text-gray-400 mr-1">$</span>
-            <input
-              type="number"
-              min={0}
-              value={range[1]}
-              onChange={(e) => handleSliderChange(e, 1)}
-              onBlur={handleBlur}
-              className="w-full text-sm bg-transparent outline-none"
-            />
-            {range[1] >= 2000 && <span className="text-sm text-gray-400">+</span>}
-          </div>
-        </div>
-      </div>
-
-      {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
-    </div>
+      </Box>
+      {error && (
+        <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+          {error}
+        </Typography>
+      )}
+    </Box>
   );
 }

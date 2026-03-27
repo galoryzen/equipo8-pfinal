@@ -2,6 +2,13 @@
 
 import { useState } from 'react';
 
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
+import Typography from '@mui/material/Typography';
+
 import type { AmenitySummary } from '@/app/lib/types/catalog';
 
 interface AmenityFilterProps {
@@ -23,36 +30,32 @@ export default function AmenityFilter({ amenities, selected, onChange }: Amenity
   };
 
   return (
-    <div>
-      <h3 className="font-semibold text-gray-900 mb-3">Amenities</h3>
-      <div className="flex flex-col gap-2">
+    <Box>
+      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+        Amenities
+      </Typography>
+      <FormGroup>
         {visible.map((a) => (
-          <button key={a.code} type="button" onClick={() => handleToggle(a.code)} className="flex items-center gap-3 cursor-pointer group">
-            <div
-              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                selected.includes(a.code)
-                  ? 'bg-blue-500 border-blue-500'
-                  : 'border-gray-300 group-hover:border-gray-400'
-              }`}
-            >
-              {selected.includes(a.code) && (
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-            <span className="text-sm text-gray-700">{a.name}</span>
-          </button>
+          <FormControlLabel
+            key={a.code}
+            control={
+              <Checkbox
+                checked={selected.includes(a.code)}
+                onChange={() => handleToggle(a.code)}
+                sx={{
+                  '&.Mui-checked': { color: 'primary.main' },
+                }}
+              />
+            }
+            label={a.name}
+          />
         ))}
-      </div>
+      </FormGroup>
       {amenities.length > 4 && (
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className="text-blue-500 text-sm mt-2 hover:underline cursor-pointer"
-        >
+        <Button size="small" onClick={() => setShowAll(!showAll)} sx={{ textTransform: 'none', mt: 0.5 }}>
           {showAll ? 'Show less' : 'Show more'}
-        </button>
+        </Button>
       )}
-    </div>
+    </Box>
   );
 }

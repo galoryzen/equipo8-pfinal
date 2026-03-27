@@ -13,29 +13,24 @@ describe('AmenityFilter', () => {
   it('renders the title and all amenity options', () => {
     render(<AmenityFilter amenities={AMENITIES} selected={[]} onChange={vi.fn()} />);
     expect(screen.getByText('Amenities')).toBeTruthy();
-    expect(screen.getByText('Wi-Fi')).toBeTruthy();
-    expect(screen.getByText('Piscina')).toBeTruthy();
-    expect(screen.getByText('Desayuno incluido')).toBeTruthy();
+    expect(screen.getByLabelText('Wi-Fi')).toBeTruthy();
+    expect(screen.getByLabelText('Piscina')).toBeTruthy();
+    expect(screen.getByLabelText('Desayuno incluido')).toBeTruthy();
   });
 
-  it('shows visual check for selected amenities', () => {
-    const { container } = render(
-      <AmenityFilter amenities={AMENITIES} selected={['wifi', 'pool']} onChange={vi.fn()} />,
-    );
-    const buttons = container.querySelectorAll('button');
-    // wifi and pool buttons should have the blue checkbox
-    expect(buttons[0].querySelector('.bg-blue-500')).toBeTruthy();
-    expect(buttons[1].querySelector('.bg-blue-500')).toBeTruthy();
-    // breakfast should not
-    expect(buttons[2].querySelector('.bg-blue-500')).toBeNull();
+  it('checks checkboxes for selected amenities', () => {
+    render(<AmenityFilter amenities={AMENITIES} selected={['wifi', 'pool']} onChange={vi.fn()} />);
+    expect((screen.getByLabelText('Wi-Fi') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText('Piscina') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText('Desayuno incluido') as HTMLInputElement).checked).toBe(false);
   });
 
   it('calls onChange with correct codes when toggled', () => {
     const onChange = vi.fn();
     render(<AmenityFilter amenities={AMENITIES} selected={['wifi']} onChange={onChange} />);
-    fireEvent.click(screen.getByText('Piscina'));
+    fireEvent.click(screen.getByLabelText('Piscina'));
     expect(onChange).toHaveBeenCalledWith(['wifi', 'pool']);
-    fireEvent.click(screen.getByText('Wi-Fi'));
+    fireEvent.click(screen.getByLabelText('Wi-Fi'));
     expect(onChange).toHaveBeenCalledWith([]);
   });
 });

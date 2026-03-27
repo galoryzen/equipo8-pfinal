@@ -3,14 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import PriceRangeFilter from '../components/traveler/PriceRangeFilter';
 
-function getMinInput(container: HTMLElement) {
-  return container.querySelectorAll('input[type="number"]')[0] as HTMLInputElement;
-}
-
-function getMaxInput(container: HTMLElement) {
-  return container.querySelectorAll('input[type="number"]')[1] as HTMLInputElement;
-}
-
 describe('PriceRangeFilter', () => {
   it('renders the title and subtitle', () => {
     render(<PriceRangeFilter onApply={vi.fn()} />);
@@ -19,28 +11,26 @@ describe('PriceRangeFilter', () => {
   });
 
   it('renders min and max text fields', () => {
-    const { container } = render(<PriceRangeFilter onApply={vi.fn()} />);
-    expect(screen.getByText('Min')).toBeTruthy();
-    expect(screen.getByText('Max')).toBeTruthy();
-    expect(getMinInput(container)).toBeTruthy();
-    expect(getMaxInput(container)).toBeTruthy();
+    render(<PriceRangeFilter onApply={vi.fn()} />);
+    expect(screen.getByLabelText('Min')).toBeTruthy();
+    expect(screen.getByLabelText('Max')).toBeTruthy();
   });
 
   it('calls onApply with price values on blur', () => {
     const onApply = vi.fn();
-    const { container } = render(<PriceRangeFilter minPrice={100} maxPrice={500} onApply={onApply} />);
+    render(<PriceRangeFilter minPrice={100} maxPrice={500} onApply={onApply} />);
 
-    fireEvent.blur(getMinInput(container));
+    fireEvent.blur(screen.getByLabelText('Min'));
 
     expect(onApply).toHaveBeenCalledWith(100, 500);
   });
 
   it('shows validation error when min > max on blur', () => {
     const onApply = vi.fn();
-    const { container } = render(<PriceRangeFilter onApply={onApply} />);
+    render(<PriceRangeFilter onApply={onApply} />);
 
-    const minInput = getMinInput(container);
-    const maxInput = getMaxInput(container);
+    const minInput = screen.getByLabelText('Min');
+    const maxInput = screen.getByLabelText('Max');
 
     fireEvent.change(minInput, { target: { value: '500' } });
     fireEvent.change(maxInput, { target: { value: '100' } });
@@ -52,10 +42,10 @@ describe('PriceRangeFilter', () => {
 
   it('clears error when input changes after validation error', () => {
     const onApply = vi.fn();
-    const { container } = render(<PriceRangeFilter onApply={onApply} />);
+    render(<PriceRangeFilter onApply={onApply} />);
 
-    const minInput = getMinInput(container);
-    const maxInput = getMaxInput(container);
+    const minInput = screen.getByLabelText('Min');
+    const maxInput = screen.getByLabelText('Max');
 
     fireEvent.change(minInput, { target: { value: '500' } });
     fireEvent.change(maxInput, { target: { value: '100' } });
@@ -68,9 +58,9 @@ describe('PriceRangeFilter', () => {
 
   it('allows equal min and max price', () => {
     const onApply = vi.fn();
-    const { container } = render(<PriceRangeFilter minPrice={200} maxPrice={200} onApply={onApply} />);
+    render(<PriceRangeFilter minPrice={200} maxPrice={200} onApply={onApply} />);
 
-    fireEvent.blur(getMinInput(container));
+    fireEvent.blur(screen.getByLabelText('Min'));
 
     expect(onApply).toHaveBeenCalledWith(200, 200);
     expect(screen.queryByText('Min cannot be greater than max')).toBeNull();

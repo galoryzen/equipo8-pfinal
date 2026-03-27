@@ -49,20 +49,20 @@ vi.mock('@/app/lib/api/catalog', () => ({
 import { searchProperties } from '@/app/lib/api/catalog';
 const mockSearch = vi.mocked(searchProperties);
 
-describe('SearchPage — price range filter', () => {
+describe('SearchPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearch.mockResolvedValue(mockPaginatedResponse);
   });
 
   it('renders the price range filter on the page', async () => {
-    const { container } = render(<SearchPage />);
+    render(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Price range')).toBeTruthy();
     });
-    expect(screen.getByText('Min')).toBeTruthy();
-    expect(screen.getByText('Max')).toBeTruthy();
+    expect(screen.getByLabelText('Min')).toBeTruthy();
+    expect(screen.getByLabelText('Max')).toBeTruthy();
   });
 
   it('loads search results on mount', async () => {
@@ -76,15 +76,13 @@ describe('SearchPage — price range filter', () => {
   });
 
   it('re-fetches results when price filter is applied via blur', async () => {
-    const { container } = render(<SearchPage />);
+    render(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Hotel Test')).toBeTruthy();
     });
 
-    // The sidebar price filter inputs are inside the aside element
-    const aside = container.querySelector('aside')!;
-    const minInput = aside.querySelectorAll('input[type="number"]')[0] as HTMLInputElement;
+    const minInput = screen.getByLabelText('Min');
     fireEvent.change(minInput, { target: { value: '200' } });
 
     mockSearch.mockResolvedValue(emptyResponse);

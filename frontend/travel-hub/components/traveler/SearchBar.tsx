@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import InputBase from '@mui/material/InputBase';
+import Paper from '@mui/material/Paper';
+import SearchIcon from '@mui/icons-material/Search';
+import Typography from '@mui/material/Typography';
+
 interface SearchBarProps {
   initialCity?: string;
   initialCheckin?: string;
@@ -27,73 +35,90 @@ export default function SearchBar({
   };
 
   return (
-    <div className="flex items-center bg-white rounded-full shadow-md border border-gray-200 px-2 py-2 max-w-3xl mx-auto">
+    <Paper
+      elevation={1}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        borderRadius: '50px',
+        px: 1,
+        py: 1,
+        maxWidth: 700,
+        mx: 'auto',
+        border: '1px solid',
+        borderColor: 'grey.200',
+      }}
+    >
       {/* WHERE */}
-      <div className="flex-1 px-4 border-r border-gray-200">
-        <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+      <Box sx={{ flex: 1, px: 2 }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: 'grey.500', textTransform: 'uppercase', fontSize: '0.625rem', letterSpacing: 1 }}>
           Where
-        </label>
-        <input
-          type="text"
+        </Typography>
+        <InputBase
           placeholder="Search destination"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          className="w-full text-sm text-gray-800 bg-transparent outline-none placeholder-gray-400"
+          fullWidth
+          sx={{ fontSize: '0.875rem' }}
         />
-      </div>
+      </Box>
+
+      <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
 
       {/* WHEN */}
-      <div className="flex-1 px-4 border-r border-gray-200">
-        <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+      <Box sx={{ flex: 1, px: 2 }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: 'grey.500', textTransform: 'uppercase', fontSize: '0.625rem', letterSpacing: 1 }}>
           When
-        </label>
-        <div className="flex gap-1">
-          <input
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <InputBase
             type="date"
             value={checkin}
             onChange={(e) => setCheckin(e.target.value)}
-            className="w-1/2 text-sm text-gray-800 bg-transparent outline-none"
+            sx={{ fontSize: '0.875rem', flex: 1 }}
           />
-          <span className="text-gray-400 text-sm">-</span>
-          <input
+          <Typography color="text.secondary" variant="body2">-</Typography>
+          <InputBase
             type="date"
             value={checkout}
             onChange={(e) => setCheckout(e.target.value)}
-            className="w-1/2 text-sm text-gray-800 bg-transparent outline-none"
+            sx={{ fontSize: '0.875rem', flex: 1 }}
           />
-        </div>
-      </div>
+        </Box>
+      </Box>
+
+      <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
 
       {/* WHO */}
-      <div className="flex-1 px-4">
-        <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+      <Box sx={{ flex: 1, px: 2 }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: 'grey.500', textTransform: 'uppercase', fontSize: '0.625rem', letterSpacing: 1 }}>
           Who
-        </label>
-        <input
+        </Typography>
+        <InputBase
           type="number"
-          min={1}
-          max={20}
           value={guests}
           onChange={(e) => setGuests(Number(e.target.value))}
-          className="w-full text-sm text-gray-800 bg-transparent outline-none"
+          inputProps={{ min: 1, max: 20 }}
+          fullWidth
+          sx={{ fontSize: '0.875rem' }}
         />
-      </div>
+      </Box>
 
       {/* Search button */}
-      <button
+      <IconButton
         onClick={handleSubmit}
-        className="ml-2 w-12 h-12 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white shrink-0 transition-colors cursor-pointer"
         aria-label="Search"
+        sx={{
+          bgcolor: 'primary.main',
+          color: 'white',
+          width: 48,
+          height: 48,
+          ml: 1,
+          '&:hover': { bgcolor: 'primary.dark' },
+        }}
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-      </button>
-    </div>
+        <SearchIcon />
+      </IconButton>
+    </Paper>
   );
 }

@@ -1,5 +1,14 @@
 'use client';
 
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+import Chip from '@mui/material/Chip';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import StarIcon from '@mui/icons-material/Star';
+import Typography from '@mui/material/Typography';
+
 import type { PropertySummary } from '@/app/lib/types/catalog';
 
 interface PropertyCardProps {
@@ -13,77 +22,115 @@ function formatReviewCount(count: number): string {
 
 export default function PropertyCard({ property }: PropertyCardProps) {
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+    <Card
+      sx={{
+        borderRadius: 3,
+        overflow: 'hidden',
+        transition: 'box-shadow 0.2s',
+        '&:hover': { boxShadow: 4 },
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      variant="outlined"
+    >
       {/* Image */}
-      <div className="relative h-52 bg-gray-200">
-        {property.image ? (
-          <img
-            src={property.image.url}
-            alt={property.image.caption ?? property.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            No image
-          </div>
-        )}
-      </div>
+      {property.image ? (
+        <CardMedia
+          component="img"
+          height={208}
+          image={property.image.url}
+          alt={property.image.caption ?? property.name}
+          sx={{ objectFit: 'cover', height: 208 }}
+        />
+      ) : (
+        <Box
+          sx={{
+            height: 208,
+            bgcolor: 'grey.200',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography color="text.secondary">No image</Typography>
+        </Box>
+      )}
 
-      {/* Content */}
-      <div className="p-4">
+      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
         {/* Name + Rating */}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-2">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 600,
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              fontSize: '1.05rem',
+            }}
+          >
             {property.name}
-          </h3>
+          </Typography>
           {property.rating_avg != null && (
-            <div className="shrink-0 text-right">
-              <span className="inline-flex items-center gap-1 text-sm font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                {Number(property.rating_avg).toFixed(1)}
-                <svg className="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              </span>
-              <p className="text-[11px] text-gray-400">
+            <Box sx={{ flexShrink: 0, textAlign: 'right' }}>
+              <Chip
+                icon={<StarIcon sx={{ fontSize: 14 }} />}
+                label={Number(property.rating_avg).toFixed(1)}
+                size="small"
+                sx={{
+                  bgcolor: 'primary.50',
+                  color: 'primary.dark',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  '& .MuiChip-icon': { color: 'primary.main' },
+                }}
+              />
+              <Typography variant="caption" sx={{ display: 'block', color: 'grey.500', mt: 0.25 }}>
                 {formatReviewCount(property.review_count)}
-              </p>
-            </div>
+              </Typography>
+            </Box>
           )}
-        </div>
+        </Box>
 
         {/* Location */}
-        <p className="text-sm text-gray-500 mb-2 -mt-4 flex items-center gap-1">
-          <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {property.city.name}, {property.city.country}
-        </p>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+          <LocationOnIcon sx={{ fontSize: 14, color: 'grey.400' }} />
+          <Typography variant="body2" color="text.secondary">
+            {property.city.name}, {property.city.country}
+          </Typography>
+        </Box>
 
         {/* Amenities */}
         {property.amenities.length > 0 && (
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mb-3">
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
             {property.amenities.slice(0, 3).map((amenity) => (
-              <span key={amenity.code} className="text-xs text-gray-500">
-                {amenity.name}
-              </span>
+              <Chip
+                key={amenity.code}
+                label={amenity.name}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.75rem', height: 24 }}
+              />
             ))}
-          </div>
+          </Box>
         )}
 
         {/* Price */}
         {property.min_price != null && (
-          <div className="flex items-baseline justify-end gap-1 mt-auto">
-            <span className="text-xl font-bold text-gray-900">
+          <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 0.5, mt: 'auto', pt: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               ${property.min_price.toLocaleString()}
-            </span>
-            <span className="text-sm text-gray-500">/ night</span>
-          </div>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              / night
+            </Typography>
+          </Box>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

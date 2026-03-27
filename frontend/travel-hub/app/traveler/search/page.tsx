@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Grid';
+import Pagination from '@mui/material/Pagination';
+import Typography from '@mui/material/Typography';
+
 import AmenityFilter from '@/components/traveler/AmenityFilter';
 import PriceRangeFilter from '@/components/traveler/PriceRangeFilter';
 import PropertyCard from '@/components/traveler/PropertyCard';
@@ -105,9 +114,9 @@ function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
       {/* Search Bar */}
-      <div className="bg-white border-b border-gray-200 py-4 px-6">
+      <Box sx={{ bgcolor: 'white', borderBottom: '1px solid', borderColor: 'grey.200', py: 2, px: 3 }}>
         <SearchBar
           initialCity={city}
           initialCheckin={checkin}
@@ -115,135 +124,104 @@ function SearchPage() {
           initialGuests={guests}
           onSearch={handleSearch}
         />
-      </div>
+      </Box>
 
       {/* Results header */}
-      <div className="px-6 pt-6 pb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+      <Box sx={{ px: 3, pt: 3, pb: 1, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { md: 'center' }, justifyContent: 'space-between', gap: 2 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
             {city ? `Stays in ${city}` : 'All stays'}
-          </h1>
+          </Typography>
           {data && (
-            <p className="text-sm text-gray-500 mt-0.5">
-              {data.total} place{data.total !== 1 ? 's' : ''} found
-              {' · '}
-              {formatDateRange()}
-            </p>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              {data.total} place{data.total !== 1 ? 's' : ''} found · {formatDateRange()}
+            </Typography>
           )}
-        </div>
+        </Box>
 
         {/* Sort chips */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {SORT_OPTIONS.map((opt) => (
-            <button
+            <Chip
               key={opt.key}
-              onClick={() => {
-                setSortBy(opt.key);
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
-                sortBy === opt.key
-                  ? 'bg-blue-500 text-white border-blue-500'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              {opt.label}
-              {sortBy === opt.key && opt.key && (
-                <span className="ml-1">&#8595;</span>
-              )}
-            </button>
+              label={`${opt.label}${sortBy === opt.key && opt.key ? ' \u2193' : ''}`}
+              onClick={() => { setSortBy(opt.key); setPage(1); }}
+              variant={sortBy === opt.key ? 'filled' : 'outlined'}
+              color={sortBy === opt.key ? 'primary' : 'default'}
+              sx={{ fontWeight: 500 }}
+            />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Main content: sidebar + grid */}
-      <div className="flex gap-6 px-6 pb-8">
+      <Box sx={{ display: 'flex', gap: 3, px: 3, pb: 4 }}>
         {/* Sidebar */}
-        <aside className="w-64 shrink-0 hidden lg:block">
-          <div className="sticky top-4 flex flex-col gap-8 pt-4">
-            <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} onApply={handlePriceApply} />
-
-            <div className="border-t border-gray-200 pt-6">
-              <AmenityFilter
-                amenities={amenityOptions}
-                selected={selectedAmenities}
-                onChange={handleAmenityChange}
-              />
-            </div>
-          </div>
-        </aside>
+        <Box
+          component="aside"
+          sx={{
+            width: 260,
+            flexShrink: 0,
+            display: { xs: 'none', lg: 'block' },
+            position: 'sticky',
+            top: 16,
+            alignSelf: 'flex-start',
+            pt: 2,
+          }}
+        >
+          <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} onApply={handlePriceApply} />
+          <Divider sx={{ my: 3 }} />
+          <AmenityFilter amenities={amenityOptions} selected={selectedAmenities} onChange={handleAmenityChange} />
+        </Box>
 
         {/* Results grid */}
-        <div className="flex-1 pt-4">
+        <Box sx={{ flex: 1, pt: 2 }}>
           {loading && (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            </div>
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
           )}
 
           {error && (
-            <div className="bg-red-50 text-red-600 rounded-lg px-4 py-3 text-sm">
+            <Alert severity="error" sx={{ mb: 2 }}>
               {error}
-            </div>
+            </Alert>
           )}
 
           {!loading && data && data.items.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-gray-500 text-lg">No properties found for the selected filters.</p>
-            </div>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography color="text.secondary" variant="h6">
+                No properties found for the selected filters.
+              </Typography>
+            </Box>
           )}
 
           {!loading && data && data.items.length > 0 && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              <Grid container spacing={2.5}>
                 {data.items.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
+                  <Grid size={{ xs: 12, sm: 6, xl: 4 }} key={property.id}>
+                    <PropertyCard property={property} />
+                  </Grid>
                 ))}
-              </div>
+              </Grid>
 
-              {/* Pagination */}
               {data.total_pages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: data.total_pages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === data.total_pages || Math.abs(p - page) <= 1)
-                    .map((p, idx, arr) => (
-                      <span key={p} className="flex items-center gap-1">
-                        {idx > 0 && arr[idx - 1] !== p - 1 && (
-                          <span className="text-gray-400 px-1">...</span>
-                        )}
-                        <button
-                          onClick={() => setPage(p)}
-                          className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                            p === page
-                              ? 'bg-blue-500 text-white'
-                              : 'hover:bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      </span>
-                    ))}
-                  <button
-                    onClick={() => setPage((p) => Math.min(data.total_pages, p + 1))}
-                    disabled={page === data.total_pages}
-                    className="px-3 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    Next
-                  </button>
-                </div>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination
+                    count={data.total_pages}
+                    page={data.page}
+                    onChange={(_, value) => setPage(value)}
+                    color="primary"
+                    shape="rounded"
+                  />
+                </Box>
               )}
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
