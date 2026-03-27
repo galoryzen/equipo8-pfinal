@@ -230,7 +230,7 @@ describe('useSearch', () => {
     mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
 
     const { result, rerender } = renderHook(
-      ({ city }) => useSearch(city),
+      ({ city }: { city: CityInfo | null }) => useSearch(city),
       { initialProps: { city: MOCK_CITY as CityInfo | null } },
     );
 
