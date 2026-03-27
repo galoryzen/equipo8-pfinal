@@ -56,13 +56,13 @@ describe('SearchPage — price range filter', () => {
   });
 
   it('renders the price range filter on the page', async () => {
-    render(<SearchPage />);
+    const { container } = render(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Price range')).toBeTruthy();
     });
-    expect(screen.getByLabelText('Min')).toBeTruthy();
-    expect(screen.getByLabelText('Max')).toBeTruthy();
+    expect(screen.getByText('Min')).toBeTruthy();
+    expect(screen.getByText('Max')).toBeTruthy();
   });
 
   it('loads search results on mount', async () => {
@@ -76,17 +76,17 @@ describe('SearchPage — price range filter', () => {
   });
 
   it('re-fetches results when price filter is applied via blur', async () => {
-    render(<SearchPage />);
+    const { container } = render(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Hotel Test')).toBeTruthy();
     });
 
-    // Change min price and blur to trigger apply
-    const minInput = screen.getByLabelText('Min');
+    // The sidebar price filter inputs are inside the aside element
+    const aside = container.querySelector('aside')!;
+    const minInput = aside.querySelectorAll('input[type="number"]')[0] as HTMLInputElement;
     fireEvent.change(minInput, { target: { value: '200' } });
 
-    // Return filtered results
     mockSearch.mockResolvedValue(emptyResponse);
     fireEvent.blur(minInput);
 
@@ -102,7 +102,7 @@ describe('SearchPage — price range filter', () => {
     render(<SearchPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('2 resultados')).toBeTruthy();
+      expect(screen.getByText(/2 places? found/)).toBeTruthy();
     });
   });
 
@@ -112,7 +112,7 @@ describe('SearchPage — price range filter', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('No se encontraron hospedajes para los filtros seleccionados.'),
+        screen.getByText('No properties found for the selected filters.'),
       ).toBeTruthy();
     });
   });
