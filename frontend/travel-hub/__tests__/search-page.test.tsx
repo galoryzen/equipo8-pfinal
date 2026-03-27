@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import SearchPage from '@/app/traveler/search/page';
+import SearchPage from '../app/traveler/search/page';
 
 const mockPaginatedResponse = {
   items: [
@@ -112,7 +112,7 @@ describe('SearchPage — price range filter', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('No se encontraron hospedajes para el rango de precio seleccionado.'),
+        screen.getByText('No se encontraron hospedajes para los filtros seleccionados.'),
       ).toBeTruthy();
     });
   });
