@@ -5,7 +5,6 @@ from app.adapters.outbound.db.session import check_db
 
 router = APIRouter()
 
-
 @router.get("/health")
 async def health():
     return {"status": "ok", "service": settings.SERVICE_NAME}
