@@ -17,7 +17,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Auth Service", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, # type: ignore
-    allow_origins=["https://travelhub.galoryzen.xyz"],
+    allow_origins=["https://travelhub.galoryzen.xyz", "http://localhost:3000"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

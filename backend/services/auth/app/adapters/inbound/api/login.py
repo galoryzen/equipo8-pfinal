@@ -2,7 +2,8 @@ import uuid
 from datetime import UTC, datetime
 
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from shared.jwt import create_access_token, decode_access_token
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.inbound.api.dependencies import (
@@ -14,7 +15,6 @@ from app.adapters.inbound.api.dependencies import (
 from app.config import settings
 from app.domain.models import User, UserRole
 from app.schemas.login import LoginRequest, RegisterRequest
-from app.utils.jwt import create_access_token
 
 router = APIRouter()
 
@@ -84,3 +84,15 @@ async def register(request: RegisterRequest, response: Response, session: AsyncS
     )
 
     return {"id": str(created.id), "email": created.email, "role": created.role.value}
+
+
+@router.get("/me")
+async def me(access_token: str | None = Cookie(default=None)):
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    payload = decode_access_token(access_token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    return {"id": payload["sub"], "email": payload["email"], "role": payload["role"]}

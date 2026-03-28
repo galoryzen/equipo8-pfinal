@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const API_URL = 'https://api.travelhub.galoryzen.xyz/api/v1';
+const API_URL = 'http://localhost:8001/api/v1';
 
 const SERVICES = [
   { name: 'Auth', path: 'auth' },
