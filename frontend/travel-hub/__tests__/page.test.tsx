@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import Page from '../app/page';
+import Page from '../app/status/page';
 
 describe('Page', () => {
   it('should render the status heading', () => {
