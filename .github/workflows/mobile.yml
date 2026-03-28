@@ -3,15 +3,28 @@ name: Mobile CI
 on:
   push:
     branches: [main]
-    paths: [mobile/**]
   pull_request:
     branches: [main]
-    paths: [mobile/**]
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.filter.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            mobile:
+              - 'mobile/**'
+
   mobile-ci:
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     defaults:
       run:
         working-directory: mobile
@@ -25,3 +38,15 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm run test:coverage
+
+  mobile-result:
+    runs-on: ubuntu-latest
+    needs: [changes, mobile-ci]
+    if: always()
+    steps:
+      - run: |
+          if [ "${{ needs.mobile-ci.result }}" = "failure" ]; then
+            echo "Mobile tests failed"
+            exit 1
+          fi
+          echo "Mobile CI passed (tests ran: ${{ needs.mobile-ci.result != 'skipped' }})"

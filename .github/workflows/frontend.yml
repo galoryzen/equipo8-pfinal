@@ -3,10 +3,8 @@ name: Frontend CI/CD
 on:
   push:
     branches: [main]
-    paths: [frontend/**]
   pull_request:
     branches: [main]
-    paths: [frontend/**]
   workflow_dispatch:
 
 permissions:
@@ -21,8 +19,23 @@ env:
   FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+
   frontend-ci:
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     defaults:
       run:
         working-directory: frontend/travel-hub
@@ -82,3 +95,15 @@ jobs:
             exit 1
           fi
           echo "Smoke test passed: HTTP $STATUS"
+
+  frontend-result:
+    runs-on: ubuntu-latest
+    needs: [changes, frontend-ci]
+    if: always()
+    steps:
+      - run: |
+          if [ "${{ needs.frontend-ci.result }}" = "failure" ]; then
+            echo "Frontend tests failed"
+            exit 1
+          fi
+          echo "Frontend CI passed (tests ran: ${{ needs.frontend-ci.result != 'skipped' }})"
