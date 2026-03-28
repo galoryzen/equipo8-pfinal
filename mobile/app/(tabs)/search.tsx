@@ -17,6 +17,13 @@ import { Card, Chip } from '@src/shared/ui';
 import { useSearch } from '@src/features/catalog/use-search';
 import type { CityInfo } from '@src/types/catalog';
 
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const month = date.toLocaleString('en', { month: 'short' });
+  return `${d} ${month}`;
+}
+
 const AMENITIES = [
   { code: 'FREE_WIFI', label: 'WiFi' },
   { code: 'POOL', label: 'Pool' },
@@ -34,6 +41,8 @@ export default function SearchScreen() {
     cityName?: string;
     cityCountry?: string;
     cityDepartment?: string;
+    checkin?: string;
+    checkout?: string;
   }>();
 
   const initialCity: CityInfo | null =
@@ -54,7 +63,13 @@ export default function SearchScreen() {
     total,
     amenityFilters,
     toggleAmenity,
-  } = useSearch(initialCity);
+    checkin,
+    checkout,
+  } = useSearch(
+    initialCity,
+    params.checkin || undefined,
+    params.checkout || undefined,
+  );
 
   const [showFilters, setShowFilters] = useState(false);
 
@@ -72,9 +87,16 @@ export default function SearchScreen() {
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </Pressable>
           {selectedCity && (
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {selectedCity.name}, {selectedCity.country}
-            </Text>
+            <View>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {selectedCity.name}, {selectedCity.country}
+              </Text>
+              {checkin && checkout && (
+                <Text style={styles.headerDates}>
+                  {formatShortDate(checkin)} - {formatShortDate(checkout)}
+                </Text>
+              )}
+            </View>
           )}
         </View>
         <Pressable
@@ -245,6 +267,12 @@ const styles = StyleSheet.create({
   filterButtonActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  headerDates: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   filtersContainer: {
     paddingHorizontal: spacing.base,

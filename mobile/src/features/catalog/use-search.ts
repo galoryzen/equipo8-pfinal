@@ -28,9 +28,19 @@ interface UseSearchResult {
   total: number;
   amenityFilters: string[];
   toggleAmenity: (code: string) => void;
+  checkin: string;
+  checkout: string;
+  setDates: (checkin: string, checkout: string) => void;
 }
 
-export function useSearch(initialCity?: CityInfo | null): UseSearchResult {
+export function useSearch(
+  initialCity?: CityInfo | null,
+  initialCheckin?: string,
+  initialCheckout?: string,
+): UseSearchResult {
+  const defaults = getDefaultDates();
+  const [checkin, setCheckin] = useState(initialCheckin || defaults.checkin);
+  const [checkout, setCheckout] = useState(initialCheckout || defaults.checkout);
   const [query, setQuery] = useState(initialCity?.name ?? '');
   const [citySuggestions, setCitySuggestions] = useState<CityInfo[]>([]);
   const [selectedCity, setSelectedCity] = useState<CityInfo | null>(
@@ -44,6 +54,11 @@ export function useSearch(initialCity?: CityInfo | null): UseSearchResult {
   const [total, setTotal] = useState(0);
   const [amenityFilters, setAmenityFilters] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setDates = useCallback((ci: string, co: string) => {
+    setCheckin(ci);
+    setCheckout(co);
+  }, []);
 
   // City autocomplete with debounce
   useEffect(() => {
@@ -81,7 +96,6 @@ export function useSearch(initialCity?: CityInfo | null): UseSearchResult {
       setLoading(true);
       setError(null);
       try {
-        const { checkin, checkout } = getDefaultDates();
         const response = await searchProperties({
           city_id: city.id,
           checkin,
@@ -100,8 +114,14 @@ export function useSearch(initialCity?: CityInfo | null): UseSearchResult {
         setHasSearched(true);
       }
     },
-    [],
+    [checkin, checkout],
   );
+
+  // Sync dates when navigation params change
+  useEffect(() => {
+    if (initialCheckin) setCheckin(initialCheckin);
+    if (initialCheckout) setCheckout(initialCheckout);
+  }, [initialCheckin, initialCheckout]);
 
   // Auto-search when initialCity changes (e.g. navigating back with a new city)
   const prevCityIdRef = useRef<string | null>(null);
@@ -158,5 +178,8 @@ export function useSearch(initialCity?: CityInfo | null): UseSearchResult {
     total,
     amenityFilters,
     toggleAmenity,
+    checkin,
+    checkout,
+    setDates,
   };
 }
