@@ -1,4 +1,4 @@
-from app.adapters.outbound.user_repoitory import UserRepository
+from app.application.ports.outbound.user_repository import UserRepository
 from app.domain.models import User
 
 

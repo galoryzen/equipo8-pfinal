@@ -1,22 +1,21 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.application.ports.outbound.user_repository import SqlAlchemyUserRepository
+from app.application.ports.outbound.user_repository import UserRepository
 from app.domain.models import User
 
 
-class UserRepository(SqlAlchemyUserRepository):
+class SqlAlchemyUserRepository(UserRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
     async def get_by_email(self, email: str) -> User | None:
         result = await self._session.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
-        return user
+        return result.scalar_one_or_none()
 
     async def check_user_exists(self, email: str) -> bool:
-        result = self.get_by_email(email)
-        return result is not None
+        user = await self.get_by_email(email)
+        return user is not None
 
     async def create_user(self, user: User) -> User:
         self._session.add(user)

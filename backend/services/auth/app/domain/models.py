@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     DateTime,
+    Enum,
     String,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -25,7 +26,7 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     phone: Mapped[str] = mapped_column(String)
-    role: Mapped[UserRole] = mapped_column(UserRole, nullable=False)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False)
     country_code: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

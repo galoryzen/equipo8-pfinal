@@ -1,4 +1,4 @@
-from app.adapters.outbound.user_repoitory import UserRepository
+from app.application.ports.outbound.user_repository import UserRepository
 
 
 class CheckUserExistsUseCase:
@@ -7,5 +7,4 @@ class CheckUserExistsUseCase:
         self._repo = repo
 
     async def execute(self, email: str) -> bool:
-        user = await self._repo.get_by_email(email)
-        return user is not None
+        return await self._repo.check_user_exists(email)

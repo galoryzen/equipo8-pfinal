@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.adapters.inbound.api.health import router as health_router
+from app.adapters.inbound.api.login import router as login_router
 from app.adapters.outbound.db.session import engine
 
 
@@ -21,3 +22,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(health_router, prefix="/api/v1/auth")
+app.include_router(login_router, prefix="/api/v1/auth")
