@@ -1,5 +1,7 @@
 import re
-from pydantic import BaseModel, field_validator, Field
+
+from pydantic import BaseModel, Field, field_validator
+
 
 class LoginRequest(BaseModel):
     email: str = Field(..., description="The email address of the user", min_length=1, max_length=255)
