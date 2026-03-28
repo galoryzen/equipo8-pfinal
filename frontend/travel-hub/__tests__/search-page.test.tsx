@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import SearchPage from '../app/traveler/search/page';
+import SearchPage from '@/app/traveler/search/page';
+import { searchProperties } from '@/app/lib/api/catalog';
 
 const mockPaginatedResponse = {
   items: [
@@ -46,7 +47,6 @@ vi.mock('@/app/lib/api/catalog', () => ({
   searchProperties: vi.fn(),
 }));
 
-import { searchProperties } from '@/app/lib/api/catalog';
 const mockSearch = vi.mocked(searchProperties);
 
 describe('SearchPage', () => {
