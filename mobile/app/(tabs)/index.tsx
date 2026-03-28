@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   ScrollView,
   StyleSheet,
   Pressable,
@@ -13,10 +14,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { Card, Button, Input } from '@src/shared/ui';
+import { Card, Button, DateRangePicker } from '@src/shared/ui';
 import { useFeatured } from '@src/features/catalog/use-featured';
 import { searchCities } from '@src/features/catalog/catalog-service';
 import type { CityInfo } from '@src/types/catalog';
+
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const day = date.getDate();
+  const month = date.toLocaleString('en', { month: 'short' });
+  return `${month} ${day}`;
+}
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
@@ -30,8 +39,27 @@ export default function HomeScreen() {
   const [loadingCities, setLoadingCities] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showDropdown =
-    !selectedCity && (citySuggestions.length > 0 || loadingCities);
+  // Search input position for dropdown
+  const searchInputRef = useRef<View>(null);
+  const [dropdownTop, setDropdownTop] = useState(0);
+
+  const measureSearchInput = useCallback(() => {
+    searchInputRef.current?.measureInWindow((_x, y, _w, h) => {
+      setDropdownTop(y + h + spacing.xs);
+    });
+  }, []);
+
+  // Date picker state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [checkin, setCheckin] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<string | null>(null);
+
+  const handleDatesConfirm = useCallback((ci: string, co: string) => {
+    setCheckin(ci);
+    setCheckout(co);
+  }, []);
+
+  const showDropdown = !selectedCity && citySuggestions.length > 0;
 
   // Debounced city search
   useEffect(() => {
@@ -82,9 +110,11 @@ export default function HomeScreen() {
         cityName: selectedCity.name,
         cityCountry: selectedCity.country,
         cityDepartment: selectedCity.department ?? '',
+        checkin: checkin ?? '',
+        checkout: checkout ?? '',
       },
     });
-  }, [selectedCity, router]);
+  }, [selectedCity, router, checkin, checkout]);
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'es' : 'en');
@@ -120,7 +150,7 @@ export default function HomeScreen() {
           <Text style={styles.searchCardTitle}>{t('home.planTrip')}</Text>
           <Text style={styles.searchCardSubtitle}>{t('home.planTripHint')}</Text>
 
-          <View style={styles.searchInput}>
+          <View ref={searchInputRef} onLayout={measureSearchInput} style={styles.searchInput}>
             <Ionicons name="search" size={20} color={colors.text.muted} />
             {selectedCity ? (
               <View style={styles.selectedCityRow}>
@@ -137,8 +167,9 @@ export default function HomeScreen() {
                 </Pressable>
               </View>
             ) : (
-              <Input
+              <TextInput
                 placeholder={t('search.searchCity')}
+                placeholderTextColor={colors.text.muted}
                 value={cityQuery}
                 onChangeText={setCityQuery}
                 style={styles.cityTextInput}
@@ -146,20 +177,27 @@ export default function HomeScreen() {
             )}
           </View>
 
+          {loadingCities && (
+            <ActivityIndicator size="small" color={colors.primary} style={styles.inlineLoader} />
+          )}
+
           <View style={styles.searchFiltersRow}>
-            <Pressable style={styles.filterChip} accessibilityRole="button">
-              <Ionicons name="calendar-outline" size={16} color={colors.text.secondary} />
-              <View>
-                <Text style={styles.filterLabel}>{t('home.checkIn')}</Text>
-                <Text style={styles.filterValue}>{t('home.addDates')}</Text>
-              </View>
+            <Pressable
+              style={[styles.filterChip, checkin && styles.filterChipActive]}
+              onPress={() => setShowDatePicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.addDates')}
+            >
+              <Ionicons name="calendar-outline" size={16} color={checkin ? colors.primary : colors.text.secondary} />
+              <Text style={[styles.filterValue, checkin && styles.filterValueActive]}>
+                {checkin && checkout
+                  ? `${formatShortDate(checkin)} - ${formatShortDate(checkout)}`
+                  : t('home.addDates')}
+              </Text>
             </Pressable>
             <Pressable style={styles.filterChip} accessibilityRole="button">
               <Ionicons name="people-outline" size={16} color={colors.text.secondary} />
-              <View>
-                <Text style={styles.filterLabel}>{t('home.guests')}</Text>
-                <Text style={styles.filterValue}>{t('home.addGuests')}</Text>
-              </View>
+              <Text style={styles.filterValue}>{t('home.addGuests')}</Text>
             </Pressable>
           </View>
 
@@ -204,16 +242,21 @@ export default function HomeScreen() {
                       key={dest.id}
                       style={styles.destinationCard}
                       onPress={() =>
-                        handleSelectCity({
-                          id: dest.id,
-                          name: dest.name,
-                          country: dest.country,
-                          department: dest.department,
+                        router.push({
+                          pathname: '/(tabs)/search',
+                          params: {
+                            cityId: dest.id,
+                            cityName: dest.name,
+                            cityCountry: dest.country,
+                            cityDepartment: dest.department ?? '',
+                            checkin: checkin ?? '',
+                            checkout: checkout ?? '',
+                          },
                         })
                       }
                       accessibilityRole="button"
                       accessibilityLabel={`${dest.name}, ${dest.country}`}
-                      accessibilityHint="Select this destination"
+                      accessibilityHint="Search this destination"
                     >
                       <Image
                         source={{ uri: dest.image_url }}
@@ -286,17 +329,14 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* City suggestions overlay — rendered outside ScrollView for reliable touch */}
+      {/* City suggestions — inline overlay, rendered last so it sits on top */}
       {showDropdown && (
         <>
           <Pressable
-            style={styles.suggestionsOverlay}
+            style={styles.suggestionsBackdrop}
             onPress={dismissSuggestions}
           />
-          <View style={styles.suggestionsDropdown}>
-            {loadingCities && (
-              <ActivityIndicator size="small" color={colors.primary} style={{ padding: spacing.sm }} />
-            )}
+          <View style={[styles.suggestionsDropdown, { top: dropdownTop }]}>
             <ScrollView style={styles.suggestionsList} keyboardShouldPersistTaps="handled">
               {citySuggestions.map((city) => (
                 <Pressable
@@ -320,6 +360,15 @@ export default function HomeScreen() {
           </View>
         </>
       )}
+
+      {/* Date Range Picker */}
+      <DateRangePicker
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        onConfirm={handleDatesConfirm}
+        initialCheckin={checkin ?? undefined}
+        initialCheckout={checkout ?? undefined}
+      />
     </SafeAreaView>
   );
 }
@@ -400,8 +449,10 @@ const styles = StyleSheet.create({
   },
   cityTextInput: {
     flex: 1,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
+    height: 44,
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
   },
   selectedCityRow: {
     flex: 1,
@@ -416,22 +467,23 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.primary,
   },
-  suggestionsOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 10,
+  suggestionsBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   suggestionsDropdown: {
     position: 'absolute',
-    top: 180,
-    left: spacing.base * 2,
-    right: spacing.base * 2,
+    left: spacing.base,
+    right: spacing.base,
     backgroundColor: colors.surface.white,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border.default,
     maxHeight: 280,
-    zIndex: 20,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -461,6 +513,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 2,
   },
+  inlineLoader: {
+    marginTop: spacing.sm,
+    alignSelf: 'center',
+  },
   searchFiltersRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -472,11 +528,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.base,
     borderRadius: radius.md,
     backgroundColor: colors.surface.white,
     borderWidth: 1,
     borderColor: colors.border.default,
+  },
+  filterChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary10,
   },
   filterLabel: {
     fontFamily: typography.fontFamily.medium,
@@ -488,6 +548,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.sm,
     color: colors.text.muted,
+  },
+  filterValueActive: {
+    color: colors.primary,
+    fontFamily: typography.fontFamily.medium,
   },
   searchButton: {
     flexDirection: 'row',

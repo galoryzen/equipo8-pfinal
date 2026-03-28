@@ -226,6 +226,61 @@ describe('useSearch', () => {
     expect(result.current.amenityFilters).toEqual(['POOL']);
   });
 
+  it('initializes with default dates when none provided', () => {
+    const { result } = renderHook(() => useSearch());
+
+    // Should have dates set (tomorrow and day after by default)
+    expect(result.current.checkin).toBeTruthy();
+    expect(result.current.checkout).toBeTruthy();
+    expect(result.current.checkin < result.current.checkout).toBe(true);
+  });
+
+  it('initializes with provided dates', () => {
+    const { result } = renderHook(() =>
+      useSearch(null, '2026-04-10', '2026-04-15'),
+    );
+
+    expect(result.current.checkin).toBe('2026-04-10');
+    expect(result.current.checkout).toBe('2026-04-15');
+  });
+
+  it('setDates updates checkin and checkout', () => {
+    const { result } = renderHook(() => useSearch());
+
+    act(() => {
+      result.current.setDates('2026-05-01', '2026-05-05');
+    });
+
+    expect(result.current.checkin).toBe('2026-05-01');
+    expect(result.current.checkout).toBe('2026-05-05');
+  });
+
+  it('search() sends user-selected dates to API', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() =>
+      useSearch(null, '2026-06-01', '2026-06-05'),
+    );
+
+    act(() => {
+      result.current.selectCity(MOCK_CITY);
+    });
+
+    await act(async () => {
+      result.current.search();
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(mockedService.searchProperties).toHaveBeenCalledWith(
+      expect.objectContaining({
+        city_id: 'city-1',
+        checkin: '2026-06-01',
+        checkout: '2026-06-05',
+      }),
+    );
+  });
+
   it('re-searches when initialCity changes', async () => {
     mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
 
