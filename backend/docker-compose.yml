@@ -3,8 +3,6 @@ services:
   thub-postgres:
     image: postgres:16-alpine
     container_name: thub-postgres
-    networks:
-      - thub-net
     environment:
       POSTGRES_USER: travelhub
       POSTGRES_PASSWORD: travelhub_dev
@@ -26,8 +24,6 @@ services:
   thub-redis:
     image: redis:7-alpine
     container_name: thub-redis
-    networks:
-      - thub-net
     ports:
       - "6380:6379"
     healthcheck:
@@ -39,8 +35,6 @@ services:
   thub-rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: thub-rabbitmq
-    networks:
-      - thub-net
     environment:
       RABBITMQ_DEFAULT_USER: travelhub
       RABBITMQ_DEFAULT_PASS: travelhub_dev
@@ -56,8 +50,6 @@ services:
   thub-gateway:
     image: nginx:alpine
     container_name: thub-gateway
-    networks:
-      - thub-net
     ports:
       - "8080:80"
     volumes:
@@ -75,8 +67,6 @@ services:
       context: .
       dockerfile: services/auth/Dockerfile
     container_name: thub-auth
-    networks:
-      - thub-net
     ports:
       - "8001:8000"
     volumes:
@@ -103,8 +93,6 @@ services:
       context: .
       dockerfile: services/catalog/Dockerfile
     container_name: thub-catalog
-    networks:
-      - thub-net
     ports:
       - "8002:8000"
     volumes:
@@ -130,8 +118,6 @@ services:
       context: .
       dockerfile: services/booking/Dockerfile
     container_name: thub-booking
-    networks:
-      - thub-net
     ports:
       - "8003:8000"
     volumes:
@@ -157,8 +143,6 @@ services:
       context: .
       dockerfile: services/payment/Dockerfile
     container_name: thub-payment
-    networks:
-      - thub-net
     ports:
       - "8004:8000"
     volumes:
@@ -184,8 +168,6 @@ services:
       context: .
       dockerfile: services/notification/Dockerfile
     container_name: thub-notification
-    networks:
-      - thub-net
     ports:
       - "8005:8000"
     volumes:
@@ -205,10 +187,6 @@ services:
         condition: service_healthy
       thub-redis:
         condition: service_healthy
-
-networks:
-  thub-net:
-    driver: bridge
 
 volumes:
   pgdata:

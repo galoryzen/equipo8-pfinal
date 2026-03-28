@@ -6,6 +6,8 @@
 
 BEGIN;
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- ── Schemas ─────────────────────────────────────────────
 CREATE SCHEMA IF NOT EXISTS users;
 CREATE SCHEMA IF NOT EXISTS catalog;
@@ -46,6 +48,7 @@ CREATE TABLE users.users (
     phone       VARCHAR,
     role        user_role NOT NULL,
     country_code CHAR(2),
+    password    BYTEA NOT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT now(),
     updated_at  TIMESTAMP NOT NULL DEFAULT now()
 );

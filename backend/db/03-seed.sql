@@ -5,27 +5,28 @@
 BEGIN;
 
 -- ── users.users ─────────────────────────────────────────
+-- All seed users share the dev password: "travelhub"
 -- Travelers
-INSERT INTO users.users (id, full_name, email, phone, role, country_code) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'Carlos García',    'carlos@example.com',   '+5215512345678', 'TRAVELER', 'MX'),
-  ('a0000000-0000-0000-0000-000000000002', 'María López',      'maria@example.com',    '+573001234567',  'TRAVELER', 'CO'),
-  ('a0000000-0000-0000-0000-000000000003', 'Lucía Fernández',  'lucia@example.com',    '+5491123456789', 'TRAVELER', 'AR'),
-  ('a0000000-0000-0000-0000-000000000004', 'Pablo Ruiz',       'pablo@example.com',    '+34612345678',   'TRAVELER', 'ES'),
-  ('a0000000-0000-0000-0000-000000000005', 'Emily Johnson',    'emily@example.com',    '+12025551234',   'TRAVELER', 'US');
+INSERT INTO users.users (id, full_name, email, phone, role, country_code, password) VALUES
+  ('a0000000-0000-0000-0000-000000000001', 'Carlos García',    'carlos@example.com',   '+5215512345678', 'TRAVELER', 'MX', crypt('travelhub', gen_salt('bf'))::bytea),
+  ('a0000000-0000-0000-0000-000000000002', 'María López',      'maria@example.com',    '+573001234567',  'TRAVELER', 'CO', crypt('travelhub', gen_salt('bf'))::bytea),
+  ('a0000000-0000-0000-0000-000000000003', 'Lucía Fernández',  'lucia@example.com',    '+5491123456789', 'TRAVELER', 'AR', crypt('travelhub', gen_salt('bf'))::bytea),
+  ('a0000000-0000-0000-0000-000000000004', 'Pablo Ruiz',       'pablo@example.com',    '+34612345678',   'TRAVELER', 'ES', crypt('travelhub', gen_salt('bf'))::bytea),
+  ('a0000000-0000-0000-0000-000000000005', 'Emily Johnson',    'emily@example.com',    '+12025551234',   'TRAVELER', 'US', crypt('travelhub', gen_salt('bf'))::bytea);
 
 -- Hotel managers
-INSERT INTO users.users (id, full_name, email, phone, role, country_code) VALUES
-  ('b0000000-0000-0000-0000-000000000001', 'Roberto Sol',      'roberto@cadenadelsol.com',  '+5215598761234', 'HOTEL', 'MX'),
-  ('b0000000-0000-0000-0000-000000000002', 'Andrea Luna',      'andrea@hotelesluna.com',    '+573009876543',  'HOTEL', 'CO'),
-  ('b0000000-0000-0000-0000-000000000003', 'Javier Estrella',  'javier@grupoestrella.com',  '+34698765432',   'HOTEL', 'ES');
+INSERT INTO users.users (id, full_name, email, phone, role, country_code, password) VALUES
+  ('b0000000-0000-0000-0000-000000000001', 'Roberto Sol',      'roberto@cadenadelsol.com',  '+5215598761234', 'HOTEL', 'MX', crypt('travelhub', gen_salt('bf'))::bytea),
+  ('b0000000-0000-0000-0000-000000000002', 'Andrea Luna',      'andrea@hotelesluna.com',    '+573009876543',  'HOTEL', 'CO', crypt('travelhub', gen_salt('bf'))::bytea),
+  ('b0000000-0000-0000-0000-000000000003', 'Javier Estrella',  'javier@grupoestrella.com',  '+34698765432',   'HOTEL', 'ES', crypt('travelhub', gen_salt('bf'))::bytea);
 
 -- Agency user
-INSERT INTO users.users (id, full_name, email, phone, role, country_code) VALUES
-  ('c0000000-0000-0000-0000-000000000001', 'Diana Viajes',     'diana@viajesexpress.com',   '+5215534567890', 'AGENCY', 'MX');
+INSERT INTO users.users (id, full_name, email, phone, role, country_code, password) VALUES
+  ('c0000000-0000-0000-0000-000000000001', 'Diana Viajes',     'diana@viajesexpress.com',   '+5215534567890', 'AGENCY', 'MX', crypt('travelhub', gen_salt('bf'))::bytea);
 
 -- Admin
-INSERT INTO users.users (id, full_name, email, phone, role, country_code) VALUES
-  ('d0000000-0000-0000-0000-000000000001', 'Admin TravelHub',  'admin@travelhub.com',       NULL,             'ADMIN',  NULL);
+INSERT INTO users.users (id, full_name, email, phone, role, country_code, password) VALUES
+  ('d0000000-0000-0000-0000-000000000001', 'Admin TravelHub',  'admin@travelhub.com',       NULL,             'ADMIN',  NULL, crypt('travelhub', gen_salt('bf'))::bytea);
 
 -- ── users.hotel ─────────────────────────────────────────
 INSERT INTO users.hotel (id, name, tax_id, status) VALUES

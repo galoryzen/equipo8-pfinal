@@ -23,8 +23,34 @@ import { useRouter } from 'next/navigation';
 
 import { registerUser } from '@/app/lib/api/auth';
 
-const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/d667e649-301a-4522-9381-336988f5a181';
-const LOGO_IMAGE = 'https://www.figma.com/api/mcp/asset/c71e5652-b605-499c-80d4-8ea1d2860418';
+const HERO_IMAGE =
+  'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
+
+function LogoIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 50 47"
+      width="50"
+      height="47"
+      fill="none"
+      aria-hidden
+    >
+      {/* Globe */}
+      <circle cx="25" cy="24" r="18" stroke="#0ea5e9" strokeWidth="2.5" />
+      <ellipse cx="25" cy="24" rx="9" ry="18" stroke="#0ea5e9" strokeWidth="2" />
+      <line x1="7" y1="24" x2="43" y2="24" stroke="#0ea5e9" strokeWidth="2" />
+      <line x1="10" y1="14" x2="40" y2="14" stroke="#0ea5e9" strokeWidth="1.5" />
+      <line x1="10" y1="34" x2="40" y2="34" stroke="#0ea5e9" strokeWidth="1.5" />
+      {/* Plane */}
+      <path
+        d="M32 10 L38 7 L36 13 L28 17 L30 22 L33 21 L32 24 L27 23 L22 30 L19 29 L23 21 L14 18 L14 15 L22 16 Z"
+        fill="#0ea5e9"
+        opacity="0.85"
+      />
+    </svg>
+  );
+}
 
 const COUNTRY_CODES = [
   { code: 'MX', dial: '+52', flag: '🇲🇽' },
@@ -200,6 +226,7 @@ export default function TravelerRegisterPage() {
   }
 
   const emailIsValid = !!(touched.email && !errors.email && values.email);
+  const formIsInvalid = Object.keys(errors).length > 0;
 
   return (
     <div className="bg-[#f8f6f6] flex flex-col items-center justify-center px-4 py-10 min-h-screen relative overflow-hidden">
@@ -222,11 +249,7 @@ export default function TravelerRegisterPage() {
         {/* Logo section */}
         <Box display="flex" flexDirection="column" alignItems="center">
           <Box height={47} width={50} mb={1.5}>
-            <img
-              alt="TravelHub logo"
-              src={LOGO_IMAGE}
-              style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
-            />
+            <LogoIcon />
           </Box>
           <Typography
             variant="h1"
@@ -446,7 +469,7 @@ export default function TravelerRegisterPage() {
                 type="submit"
                 variant="contained"
                 fullWidth
-                disabled={loading}
+                disabled={loading || formIsInvalid}
                 endIcon={!loading && <ArrowForwardIcon sx={{ fontSize: '18px !important' }} />}
                 sx={{
                   height: 56,

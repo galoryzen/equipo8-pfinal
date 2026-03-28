@@ -51,7 +51,7 @@ async def register(request: RegisterRequest, response: Response, session: AsyncS
     if exists:
         raise HTTPException(status_code=409, detail="Email already registered")
 
-    now = datetime.now(UTC)
+    now = datetime.now(UTC).replace(tzinfo=None)
     hashed_password = bcrypt.hashpw(request.password.encode("utf-8"), bcrypt.gensalt())
 
     user = User(
