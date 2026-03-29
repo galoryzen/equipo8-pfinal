@@ -45,7 +45,7 @@ async def search_properties(
     checkin: date = Query(...),
     checkout: date = Query(...),
     guests: int = Query(..., ge=1),
-    city_id: UUID | None = Query(None),
+    city_id: UUID = Query(...),
     min_price: Decimal | None = Query(None, ge=0),
     max_price: Decimal | None = Query(None, ge=0),
     amenities: str | None = Query(
