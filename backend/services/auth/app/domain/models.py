@@ -1,6 +1,7 @@
 import enum
 import uuid
 from datetime import datetime
+from typing import ClassVar
 
 from sqlalchemy import (
     DateTime,
@@ -14,6 +15,8 @@ from sqlalchemy.types import LargeBinary
 
 class UserRole(enum.Enum):
     TRAVELER = "TRAVELER"
+    HOTEL = "HOTEL"
+    AGENCY = "AGENCY"
     ADMIN = "ADMIN"
 
 class Base(DeclarativeBase):
@@ -21,6 +24,7 @@ class Base(DeclarativeBase):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__: ClassVar[dict] = {"schema": "users"}
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     full_name: Mapped[str] = mapped_column(String, nullable=False)

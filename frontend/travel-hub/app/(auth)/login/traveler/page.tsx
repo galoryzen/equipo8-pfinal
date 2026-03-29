@@ -111,10 +111,12 @@ export default function TravelerLoginPage() {
       await loginUser(values.email, values.password);
       setSnackbar({ open: true, message: 'Welcome back! Redirecting…', severity: 'success' });
       setTimeout(() => router.push('/traveler/search'), 1200);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-      setSnackbar({ open: true, message, severity: 'error' });
+    } catch {
+      setSnackbar({
+        open: true,
+        message: 'The email or password is not valid. Please try again.',
+        severity: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -282,16 +284,6 @@ export default function TravelerLoginPage() {
                 }}
                 sx={inputSx(!!(touched.password && errors.password))}
               />
-              <Box display="flex" justifyContent="flex-end" mt={0.5}>
-                <MuiLink
-                  component={NextLink}
-                  href="#"
-                  underline="none"
-                  sx={{ color: '#0ea5e9', fontSize: '12px', fontWeight: 500 }}
-                >
-                  Forgot Password?
-                </MuiLink>
-              </Box>
             </Box>
 
             {/* Submit */}
