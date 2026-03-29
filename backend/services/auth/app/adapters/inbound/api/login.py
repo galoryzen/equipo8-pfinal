@@ -1,39 +1,22 @@
-import uuid
-from datetime import UTC, datetime
-
-import bcrypt
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
-from shared.jwt import create_access_token, decode_access_token
+from fastapi import APIRouter, Cookie, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.inbound.api.dependencies import (
-    get_check_user_exists_use_case,
-    get_create_user_use_case,
     get_db_session,
-    get_user_by_email_use_case,
+    get_login_use_case,
+    get_register_use_case,
+    get_token_adapter,
+    get_validate_token_use_case,
 )
+from app.application.exceptions import InvalidTokenError
+from app.application.ports.outbound.token_port import TokenPort
 from app.config import settings
-from app.domain.models import User, UserRole
 from app.schemas.login import LoginRequest, RegisterRequest
 
 router = APIRouter()
 
-@router.post("/login")
-async def login(request: LoginRequest, response: Response, session: AsyncSession = Depends(get_db_session)):
-    user = await get_user_by_email_use_case(session).execute(request.email)
 
-    if user is None:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    if not bcrypt.checkpw(request.password.encode("utf-8"), user.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    token = create_access_token(
-        subject=str(user.id),
-        email=user.email,
-        role=user.role.value,
-    )
-
+def _set_token_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key="access_token",
         value=token,
@@ -43,56 +26,48 @@ async def login(request: LoginRequest, response: Response, session: AsyncSession
         max_age=settings.JWT_EXPIRE_MINUTES * 60,
     )
 
-    return {"id": str(user.id), "email": user.email, "role": user.role.value}
+
+@router.post("/login")
+async def login(
+    request: LoginRequest,
+    response: Response,
+    session: AsyncSession = Depends(get_db_session),
+    token: TokenPort = Depends(get_token_adapter),
+):
+    use_case = get_login_use_case(session, token)
+    result = await use_case.execute(request.email, request.password)
+
+    _set_token_cookie(response, result["token"])
+    return {"id": result["id"], "email": result["email"], "role": result["role"]}
+
 
 @router.post("/register", status_code=201)
-async def register(request: RegisterRequest, response: Response, session: AsyncSession = Depends(get_db_session)):
-    exists = await get_check_user_exists_use_case(session).execute(request.email)
-    if exists:
-        raise HTTPException(status_code=409, detail="Email already registered")
-
-    now = datetime.now(UTC).replace(tzinfo=None)
-    hashed_password = bcrypt.hashpw(request.password.encode("utf-8"), bcrypt.gensalt())
-
-    user = User(
-        id=uuid.uuid4(),
+async def register(
+    request: RegisterRequest,
+    response: Response,
+    session: AsyncSession = Depends(get_db_session),
+    token: TokenPort = Depends(get_token_adapter),
+):
+    use_case = get_register_use_case(session, token)
+    result = await use_case.execute(
         email=request.email,
-        full_name=request.username,
+        username=request.username,
         phone=request.phone,
         country_code=request.country_code,
-        role=UserRole.TRAVELER,
-        password=hashed_password,
-        created_at=now,
-        updated_at=now,
+        password=request.password,
     )
 
-    created = await get_create_user_use_case(session).execute(user)
-
-    token = create_access_token(
-        subject=str(created.id),
-        email=created.email,
-        role=created.role.value,
-    )
-
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        secure=not settings.DEBUG,
-        samesite="lax",
-        max_age=settings.JWT_EXPIRE_MINUTES * 60,
-    )
-
-    return {"id": str(created.id), "email": created.email, "role": created.role.value}
+    _set_token_cookie(response, result["token"])
+    return {"id": result["id"], "email": result["email"], "role": result["role"]}
 
 
 @router.get("/me")
-async def me(access_token: str | None = Cookie(default=None)):
+async def me(
+    access_token: str | None = Cookie(default=None),
+    token: TokenPort = Depends(get_token_adapter),
+):
     if not access_token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise InvalidTokenError()
 
-    payload = decode_access_token(access_token)
-    if payload is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    return {"id": payload["sub"], "email": payload["email"], "role": payload["role"]}
+    use_case = get_validate_token_use_case(token)
+    return use_case.execute(access_token)
