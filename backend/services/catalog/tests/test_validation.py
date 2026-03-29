@@ -102,6 +102,22 @@ class TestSearchPropertiesValidation:
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
+    def test_guests_negative_returns_422(self, mock_factory, client):
+        cid = uuid4()
+        resp = client.get(
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=-3&city_id={cid}"
+        )
+        assert resp.status_code == 422
+
+    @patch("app.adapters.inbound.api.properties.get_search_use_case")
+    def test_guests_non_numeric_returns_422(self, mock_factory, client):
+        cid = uuid4()
+        resp = client.get(
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=two&city_id={cid}"
+        )
+        assert resp.status_code == 422
+
+    @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_city_id_required_and_forwarded_to_use_case(self, mock_factory, client):
         city_id = uuid4()
         mock_uc = AsyncMock()

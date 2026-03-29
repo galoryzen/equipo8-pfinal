@@ -401,3 +401,56 @@ class TestSearchProperties:
         assert mock_property_repo.search.call_count == 2
         assert mock_property_repo.search.call_args_list[0].kwargs["city_id"] == CANCUN_CITY_ID
         assert mock_property_repo.search.call_args_list[1].kwargs["city_id"] == other_city
+
+    async def test_changing_guests_preserves_city_dates_and_other_filters(self, mock_property_repo, mock_cache):
+        """AC3/AC4: al variar solo guests, ciudad/fechas/price siguen en la llamada al repo."""
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+        checkin = date(2026, 10, 1)
+        checkout = date(2026, 10, 5)
+
+        await uc.execute(
+            checkin=checkin,
+            checkout=checkout,
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+            min_price=Decimal("40"),
+            max_price=Decimal("250"),
+        )
+        await uc.execute(
+            checkin=checkin,
+            checkout=checkout,
+            guests=4,
+            city_id=CANCUN_CITY_ID,
+            min_price=Decimal("40"),
+            max_price=Decimal("250"),
+        )
+
+        assert mock_property_repo.search.call_count == 2
+        first = mock_property_repo.search.call_args_list[0].kwargs
+        second = mock_property_repo.search.call_args_list[1].kwargs
+        assert first["guests"] == 2
+        assert second["guests"] == 4
+        assert first["checkin"] == second["checkin"] == checkin
+        assert first["checkout"] == second["checkout"] == checkout
+        assert first["city_id"] == second["city_id"] == CANCUN_CITY_ID
+        assert first["min_price"] == second["min_price"] == Decimal("40")
+        assert first["max_price"] == second["max_price"] == Decimal("250")
+
+    async def test_extreme_guests_empty_repo_gets_standard_empty_message(self, mock_property_repo, mock_cache):
+        """AC5: guests muy alto sin matches → mismo mensaje de vacío que el resto de búsquedas."""
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 11, 1),
+            checkout=date(2026, 11, 4),
+            guests=500,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        mock_property_repo.search.assert_called_once()
+        assert mock_property_repo.search.call_args.kwargs["guests"] == 500
+        assert result.items == []
+        assert result.total == 0
+        assert result.message == SEARCH_EMPTY_MSG
