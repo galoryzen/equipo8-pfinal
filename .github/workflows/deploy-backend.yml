@@ -42,9 +42,16 @@ jobs:
             svc=$(echo "$svc" | xargs)  # trim whitespace
             echo "::group::Deploying $svc"
 
-            # Build and push
+            # Build and push (using ECR latest as layer cache)
             IMAGE_URI=$ECR_REGISTRY/travelhub/$svc
-            docker build -t $IMAGE_URI:$IMAGE_TAG -t $IMAGE_URI:latest backend/services/$svc
+            docker pull $IMAGE_URI:latest || true
+            DOCKER_BUILDKIT=1 docker build \
+              --build-arg BUILDKIT_INLINE_CACHE=1 \
+              --cache-from $IMAGE_URI:latest \
+              -f backend/services/$svc/Dockerfile \
+              -t $IMAGE_URI:$IMAGE_TAG \
+              -t $IMAGE_URI:latest \
+              backend
             docker push $IMAGE_URI:$IMAGE_TAG
             docker push $IMAGE_URI:latest
 
