@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     DB_SCHEMA: str = "users"
     REDIS_URL: str = "redis://redis:6379/0"
     DEBUG: bool = False
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 60
 
     model_config = {"env_prefix": "AUTH_",
                     "env_file": ".env", "extra": "ignore"}

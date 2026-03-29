@@ -1,3 +1,5 @@
+.PHONY: up down reset-db logs test coverage lint lint-fix format format-check install
+
 SERVICES := auth catalog booking payment notification
 
 # ── Docker ───────────────────────────────────────────────

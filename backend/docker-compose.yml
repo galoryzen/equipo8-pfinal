@@ -63,18 +63,25 @@ services:
 
   # ── Microservices ───────────────────────────────────────
   thub-auth:
-    build: ./services/auth
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
     container_name: thub-auth
     ports:
       - "8001:8000"
     volumes:
       - ./services/auth/app:/app/app
+      - ./libs/shared:/app/shared
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       AUTH_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
       AUTH_DB_SCHEMA: "users"
       AUTH_REDIS_URL: "redis://thub-redis:6379/0"
       AUTH_DEBUG: "true"
+      JWT_SECRET: "change-me-in-production"
+      JWT_ALGORITHM: "HS256"
+      JWT_EXPIRE_MINUTES: "60"
+      PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
         condition: service_healthy
@@ -82,18 +89,24 @@ services:
         condition: service_healthy
 
   thub-catalog:
-    build: ./services/catalog
+    build:
+      context: .
+      dockerfile: services/catalog/Dockerfile
     container_name: thub-catalog
     ports:
       - "8002:8000"
     volumes:
       - ./services/catalog/app:/app/app
+      - ./libs/shared:/app/shared
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       CATALOG_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
       CATALOG_DB_SCHEMA: "catalog"
       CATALOG_REDIS_URL: "redis://thub-redis:6379/0"
       CATALOG_DEBUG: "true"
+      JWT_SECRET: "change-me-in-production"
+      JWT_ALGORITHM: "HS256"
+      PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
         condition: service_healthy
@@ -101,18 +114,24 @@ services:
         condition: service_healthy
 
   thub-booking:
-    build: ./services/booking
+    build:
+      context: .
+      dockerfile: services/booking/Dockerfile
     container_name: thub-booking
     ports:
       - "8003:8000"
     volumes:
       - ./services/booking/app:/app/app
+      - ./libs/shared:/app/shared
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       BOOKING_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
       BOOKING_DB_SCHEMA: "booking"
       BOOKING_REDIS_URL: "redis://thub-redis:6379/0"
       BOOKING_DEBUG: "true"
+      JWT_SECRET: "change-me-in-production"
+      JWT_ALGORITHM: "HS256"
+      PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
         condition: service_healthy
@@ -120,18 +139,24 @@ services:
         condition: service_healthy
 
   thub-payment:
-    build: ./services/payment
+    build:
+      context: .
+      dockerfile: services/payment/Dockerfile
     container_name: thub-payment
     ports:
       - "8004:8000"
     volumes:
       - ./services/payment/app:/app/app
+      - ./libs/shared:/app/shared
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       PAYMENT_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
       PAYMENT_DB_SCHEMA: "payments"
       PAYMENT_REDIS_URL: "redis://thub-redis:6379/0"
       PAYMENT_DEBUG: "true"
+      JWT_SECRET: "change-me-in-production"
+      JWT_ALGORITHM: "HS256"
+      PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
         condition: service_healthy
@@ -139,18 +164,24 @@ services:
         condition: service_healthy
 
   thub-notification:
-    build: ./services/notification
+    build:
+      context: .
+      dockerfile: services/notification/Dockerfile
     container_name: thub-notification
     ports:
       - "8005:8000"
     volumes:
       - ./services/notification/app:/app/app
+      - ./libs/shared:/app/shared
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       NOTIFICATION_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
       NOTIFICATION_DB_SCHEMA: "notifications"
       NOTIFICATION_REDIS_URL: "redis://thub-redis:6379/0"
       NOTIFICATION_DEBUG: "true"
+      JWT_SECRET: "change-me-in-production"
+      JWT_ALGORITHM: "HS256"
+      PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
         condition: service_healthy

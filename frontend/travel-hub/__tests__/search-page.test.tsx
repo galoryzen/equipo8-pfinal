@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import SearchPage from '../app/traveler/search/page';
+import SearchPage from '@/app/traveler/search/page';
+import { searchProperties } from '@/app/lib/api/catalog';
 
 const mockPaginatedResponse = {
   items: [
@@ -46,7 +47,6 @@ vi.mock('@/app/lib/api/catalog', () => ({
   searchProperties: vi.fn(),
 }));
 
-import { searchProperties } from '@/app/lib/api/catalog';
 const mockSearch = vi.mocked(searchProperties);
 
 describe('SearchPage', () => {
@@ -121,6 +121,66 @@ describe('SearchPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Network error')).toBeTruthy();
+    });
+  });
+
+  it('updates the heading when the search button is clicked with a city', async () => {
+    render(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    fireEvent.change(screen.getByPlaceholderText(/search destination/i), {
+      target: { value: 'Paris' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /search/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Stays in Paris/i)).toBeTruthy();
+    });
+  });
+
+  it('re-fetches with amenities when an amenity checkbox is toggled', async () => {
+    render(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /wifi/i }));
+
+    await waitFor(() => {
+      const lastCall = mockSearch.mock.calls.at(-1)![0];
+      expect(lastCall.amenities).toContain('wifi');
+    });
+  });
+
+  it('re-fetches with sort_by when a sort chip is clicked', async () => {
+    render(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    fireEvent.click(screen.getByText('Price'));
+
+    await waitFor(() => {
+      const lastCall = mockSearch.mock.calls.at(-1)![0];
+      expect(lastCall.sort_by).toBe('price_asc');
+    });
+  });
+
+  it('shows pagination and re-fetches when a page is selected', async () => {
+    const multiPageResponse = {
+      ...mockPaginatedResponse,
+      total: 40,
+      page: 1,
+      total_pages: 3,
+    };
+    mockSearch.mockResolvedValue(multiPageResponse);
+    render(<SearchPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('navigation')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /go to page 2/i }));
+
+    await waitFor(() => {
+      const lastCall = mockSearch.mock.calls.at(-1)![0];
+      expect(lastCall.page).toBe(2);
     });
   });
 });

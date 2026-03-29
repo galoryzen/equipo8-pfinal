@@ -9,17 +9,28 @@ function getRoleFromToken(token: string): string | null {
   }
 }
 
+const ROUTES = [
+  { prefix: '/traveler', role: 'traveler', login: '/login/traveler', home: '/traveler/search' },
+  { prefix: '/manager',  role: 'manager',  login: '/login/manager',  home: '/manager'         },
+] as const;
+
+function redirect(to: string, request: NextRequest) {
+  return NextResponse.redirect(new URL(to, request.url));
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('session')?.value ?? null;
   const role = token ? getRoleFromToken(token) : null;
 
-  if (pathname.startsWith('/traveler') && role !== 'traveler') {
-    return NextResponse.redirect(new URL('/login/traveler', request.url));
+  if (pathname === '/') {
+    const route = ROUTES.find((r) => r.role === role);
+    return redirect(route?.home ?? '/login/traveler', request);
   }
 
-  if (pathname.startsWith('/manager') && role !== 'manager') {
-    return NextResponse.redirect(new URL('/login/manager', request.url));
+  const match = ROUTES.find((r) => pathname.startsWith(r.prefix));
+  if (match && role !== match.role) {
+    return redirect(match.login, request);
   }
 
   return NextResponse.next();
