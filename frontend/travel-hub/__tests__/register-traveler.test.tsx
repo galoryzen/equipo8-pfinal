@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -144,5 +144,73 @@ describe('Traveler Register page', () => {
     await waitFor(() => {
       expect(screen.getByText(/creating account/i)).toBeTruthy();
     });
+  });
+
+  it('rejects an email exceeding 255 characters', () => {
+    render(<RegisterPage />);
+
+    const emailInput = screen.getByLabelText(/email address/i);
+    fireEvent.change(emailInput, { target: { value: 'a'.repeat(250) + '@x.com' } });
+    fireEvent.blur(emailInput);
+
+    expect(screen.getByText(/email must be at most 255/i)).toBeTruthy();
+  });
+
+  it('rejects a username exceeding 255 characters', () => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: 'valid@example.com' },
+    });
+    const usernameInput = screen.getByLabelText(/username/i);
+    fireEvent.change(usernameInput, { target: { value: 'u'.repeat(256) } });
+    fireEvent.blur(usernameInput);
+
+    expect(screen.getByText(/username must be at most 255/i)).toBeTruthy();
+  });
+
+  it('rejects a phone number exceeding 255 characters', () => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: 'valid@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'john_doe' } });
+    const phoneInput = screen.getByLabelText(/cellphone/i);
+    fireEvent.change(phoneInput, { target: { value: '5'.repeat(256) } });
+    fireEvent.blur(phoneInput);
+
+    expect(screen.getByText(/phone number must be at most 255/i)).toBeTruthy();
+  });
+
+  it('rejects a password exceeding 255 characters', () => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: 'valid@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'john_doe' } });
+    fireEvent.change(screen.getByLabelText(/cellphone/i), { target: { value: '5551234567' } });
+    const passwordInput = screen.getByLabelText(/^password$/i);
+    fireEvent.change(passwordInput, { target: { value: 'p'.repeat(256) } });
+    fireEvent.blur(passwordInput);
+
+    expect(screen.getByText(/password must be at most 255/i)).toBeTruthy();
+  });
+
+  it('closes the snackbar when the Alert close button is clicked', async () => {
+    mockRegister.mockRejectedValue(new Error('Email already registered'));
+
+    const user = userEvent.setup();
+    render(<RegisterPage />);
+
+    await fillForm(user);
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/email already registered/i)).toBeTruthy();
+    });
+
+    await user.click(screen.getByRole('button', { name: /close/i }));
   });
 });

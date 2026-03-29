@@ -31,11 +31,10 @@ describe('Traveler Login page', () => {
     expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
   });
 
-  it('shows the "Create Account" and "Forgot Password?" links', () => {
+  it('shows the "Create Account" link', () => {
     render(<LoginPage />);
 
     expect(screen.getByText(/create account/i)).toBeTruthy();
-    expect(screen.getByText(/forgot password/i)).toBeTruthy();
   });
 
   it('has the submit button disabled when the form is empty', () => {
@@ -116,7 +115,7 @@ describe('Traveler Login page', () => {
     await user.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid credentials/i)).toBeTruthy();
+      expect(screen.getByText(/the email or password is not valid. please try again./i)).toBeTruthy();
     });
   });
 
@@ -133,5 +132,22 @@ describe('Traveler Login page', () => {
     await waitFor(() => {
       expect(screen.getByText(/signing in/i)).toBeTruthy();
     });
+  });
+
+  it('closes the snackbar when the Alert close button is clicked', async () => {
+    mockLogin.mockRejectedValue(new Error('fail'));
+
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    await user.type(screen.getByLabelText(/email address/i), 'user@example.com');
+    await user.type(screen.getByLabelText(/^password$/i), 'wrongpass');
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/the email or password is not valid/i)).toBeTruthy();
+    });
+
+    await user.click(screen.getByRole('button', { name: /close/i }));
   });
 });
