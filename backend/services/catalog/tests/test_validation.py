@@ -34,35 +34,46 @@ class TestFeaturedDestinationsValidation:
 class TestSearchPropertiesValidation:
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_missing_required_params_returns_422(self, mock_factory, client):
-        """checkin, checkout, guests are required."""
+        """checkin, checkout, guests, city_id are required."""
         resp = client.get("/api/v1/catalog/properties")
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
-    def test_checkout_before_checkin_returns_422(self, mock_factory, client):
+    def test_missing_city_id_returns_422(self, mock_factory, client):
         resp = client.get(
-            "/api/v1/catalog/properties?checkin=2026-04-05&checkout=2026-04-01&guests=2"
+            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2"
+        )
+        assert resp.status_code == 422
+
+    @patch("app.adapters.inbound.api.properties.get_search_use_case")
+    def test_checkout_before_checkin_returns_422(self, mock_factory, client):
+        cid = uuid4()
+        resp = client.get(
+            f"/api/v1/catalog/properties?checkin=2026-04-05&checkout=2026-04-01&guests=2&city_id={cid}"
         )
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_invalid_sort_by_returns_422(self, mock_factory, client):
+        cid = uuid4()
         resp = client.get(
-            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&sort_by=invalid"
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&city_id={cid}&sort_by=invalid"
         )
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_negative_price_returns_422(self, mock_factory, client):
+        cid = uuid4()
         resp = client.get(
-            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&min_price=-10"
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&city_id={cid}&min_price=-10"
         )
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_min_price_greater_than_max_price_returns_422(self, mock_factory, client):
+        cid = uuid4()
         resp = client.get(
-            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2"
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&city_id={cid}"
             "&min_price=300&max_price=100"
         )
         assert resp.status_code == 422
@@ -70,31 +81,32 @@ class TestSearchPropertiesValidation:
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_equal_min_and_max_price_is_valid(self, mock_factory, client):
+        cid = uuid4()
         mock_uc = AsyncMock()
         mock_uc.execute.return_value = PaginatedResponse(
-            items=[], total=0, page=1, page_size=20, total_pages=0
+            items=[], total=0, page=1, page_size=20, total_pages=0, message=None
         )
         mock_factory.return_value = mock_uc
         resp = client.get(
-            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2"
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&city_id={cid}"
             "&min_price=100&max_price=100"
         )
         assert resp.status_code == 200
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_guests_below_1_returns_422(self, mock_factory, client):
+        cid = uuid4()
         resp = client.get(
-            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=0"
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=0&city_id={cid}"
         )
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
-    def test_city_id_filter_accepted(self, mock_factory, client):
-        """city_id should be forwarded to the use case and return 200."""
+    def test_city_id_required_and_forwarded_to_use_case(self, mock_factory, client):
         city_id = uuid4()
         mock_uc = AsyncMock()
         mock_uc.execute.return_value = PaginatedResponse(
-            items=[], total=0, page=1, page_size=20, total_pages=0
+            items=[], total=0, page=1, page_size=20, total_pages=0, message=None
         )
         mock_factory.return_value = mock_uc
         resp = client.get(

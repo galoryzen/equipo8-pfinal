@@ -20,6 +20,8 @@ from app.schemas.city import CityOut, FeaturedDestinationOut
 from app.schemas.property import PropertySummary
 from tests.conftest import CANCUN_CITY_ID, CANCUN_PROPERTY_ID, make_property_summary
 
+SEARCH_EMPTY_MSG = SearchPropertiesUseCase.EMPTY_RESULTS_MESSAGE
+
 
 # ── Fixtures ────────────────────────────────────────────
 
@@ -199,6 +201,7 @@ class TestSearchProperties:
             checkin=date(2026, 4, 1),
             checkout=date(2026, 4, 5),
             guests=2,
+            city_id=CANCUN_CITY_ID,
         )
 
         assert result.total == 2
@@ -206,6 +209,31 @@ class TestSearchProperties:
         assert result.total_pages == 1
         assert len(result.items) == 2
         assert all(isinstance(i, PropertySummary) for i in result.items)
+        assert all(i.city.id == CANCUN_CITY_ID for i in result.items)
+
+    async def test_ac1_repo_results_for_city_query_map_to_summaries(self, mock_property_repo, mock_cache):
+        """AC1: for a given city_id query, every item in the page matches that city (repo is source of truth)."""
+        other_id = uuid4()
+        mock_property_repo.search.return_value = (
+            [
+                make_property_summary(),
+                make_property_summary(name="Otro", id=other_id),
+            ],
+            2,
+        )
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        mock_property_repo.search.assert_called_once()
+        assert mock_property_repo.search.call_args.kwargs["city_id"] == CANCUN_CITY_ID
+        assert len(result.items) == 2
+        assert all(i.city.id == CANCUN_CITY_ID for i in result.items)
 
     async def test_calculates_total_pages(self, mock_property_repo, mock_cache):
         mock_property_repo.search.return_value = (
@@ -218,6 +246,7 @@ class TestSearchProperties:
             checkin=date(2026, 4, 1),
             checkout=date(2026, 4, 5),
             guests=1,
+            city_id=CANCUN_CITY_ID,
             page=1,
             page_size=10,
         )
@@ -265,6 +294,7 @@ class TestSearchProperties:
             checkin=date(2026, 4, 1),
             checkout=date(2026, 4, 5),
             guests=2,
+            city_id=CANCUN_CITY_ID,
             min_price=Decimal("100"),
         )
 
@@ -281,6 +311,7 @@ class TestSearchProperties:
             checkin=date(2026, 4, 1),
             checkout=date(2026, 4, 5),
             guests=2,
+            city_id=CANCUN_CITY_ID,
             max_price=Decimal("300"),
         )
 
@@ -311,3 +342,62 @@ class TestSearchProperties:
         assert call_kwargs["city_id"] == city_id
         assert call_kwargs["amenity_codes"] == ["wifi"]
         assert call_kwargs["sort_by"] == "rating"
+
+    async def test_empty_total_sets_clear_message(self, mock_property_repo, mock_cache):
+        """AC2–AC4: no inventory-eligible properties → empty list and clear message."""
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        assert result.items == []
+        assert result.total == 0
+        assert result.message == SEARCH_EMPTY_MSG
+
+    async def test_non_empty_total_has_no_empty_message(self, mock_property_repo, mock_cache):
+        mock_property_repo.search.return_value = ([make_property_summary()], 1)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        assert result.message is None
+
+    async def test_two_sequential_searches_recalculate(self, mock_property_repo, mock_cache):
+        """AC5: each execute reflects that request's filters (no stale merge)."""
+        other_city = uuid4()
+        mock_property_repo.search.side_effect = [
+            ([make_property_summary()], 1),
+            ([], 0),
+        ]
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        r1 = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 3),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+        )
+        r2 = await uc.execute(
+            checkin=date(2026, 5, 1),
+            checkout=date(2026, 5, 10),
+            guests=1,
+            city_id=other_city,
+        )
+
+        assert len(r1.items) == 1
+        assert r1.total == 1
+        assert r2.total == 0
+        assert r2.message == SEARCH_EMPTY_MSG
+        assert mock_property_repo.search.call_count == 2
+        assert mock_property_repo.search.call_args_list[0].kwargs["city_id"] == CANCUN_CITY_ID
+        assert mock_property_repo.search.call_args_list[1].kwargs["city_id"] == other_city

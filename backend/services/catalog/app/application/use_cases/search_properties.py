@@ -10,6 +10,9 @@ from app.schemas.property import PropertySummary
 
 class SearchPropertiesUseCase:
     CACHE_TTL = 120
+    EMPTY_RESULTS_MESSAGE = (
+        "No hay hospedajes disponibles para la ubicación y fechas seleccionadas."
+    )
 
     def __init__(self, repo: PropertyRepository, cache: CachePort):
         self._repo = repo
@@ -20,7 +23,7 @@ class SearchPropertiesUseCase:
         checkin: date,
         checkout: date,
         guests: int,
-        city_id: UUID | None = None,
+        city_id: UUID,
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,
@@ -45,4 +48,5 @@ class SearchPropertiesUseCase:
             page_size=page_size,
         )
         summaries = [PropertySummary.model_validate(item) for item in items]
-        return PaginatedResponse.build(summaries, total, page, page_size)
+        empty_msg = self.EMPTY_RESULTS_MESSAGE if total == 0 else None
+        return PaginatedResponse.build(summaries, total, page, page_size, message=empty_msg)

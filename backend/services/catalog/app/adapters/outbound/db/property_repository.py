@@ -11,6 +11,7 @@ from app.application.ports.outbound.property_repository import (
 )
 from app.domain.models import (
     Amenity,
+    InventoryCalendar,
     Property,
     PropertyImage,
     PropertyStatus,
@@ -109,14 +110,12 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
         return items
 
-    # ── Stubs (not yet implemented) ──────────────────────
-
     async def search(
         self,
         checkin: date,
         checkout: date,
         guests: int,
-        city_id: UUID | None = None,
+        city_id: UUID,
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,
@@ -124,18 +123,40 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:
-        # Estrategia:
-        # 1. Subquery "avail_rt": room types con InventoryCalendar.available_units > 0
-        #    para TODOS los días del rango (having count(distinct day) == num_nights).
-        #    Incluir min_available_units por room_type (min de available_units en el rango).
-        #
-        # 2. Filtro de capacidad por PROPERTY (no por room type individual):
-        #    SUM(room_type.capacity * min_available_units) >= guests
-        #    Esto permite que 2 habitaciones de 3 cubran 5 huéspedes.
-        #    Agrupar avail_rt por property_id con HAVING sobre la suma.
-        #
-        # 3. Subquery "min_price_sq": min(RateCalendar.price_amount) por property
-        #    para las fechas, cruzando con avail_rt y RatePlan activos.
+        nights = (checkout - checkin).days
+
+        inv_subq = (
+            select(
+                InventoryCalendar.room_type_id.label("room_type_id"),
+                sa_func.min(InventoryCalendar.available_units).label("min_units"),
+            )
+            .where(
+                InventoryCalendar.day >= checkin,
+                InventoryCalendar.day < checkout,
+                InventoryCalendar.available_units > 0,
+            )
+            .group_by(InventoryCalendar.room_type_id)
+            .having(sa_func.count(sa_func.distinct(InventoryCalendar.day)) == nights)
+        ).subquery("inv_subq")
+
+        rt_avail = (
+            select(
+                RoomType.property_id.label("property_id"),
+                RoomType.capacity.label("capacity"),
+                inv_subq.c.min_units.label("min_units"),
+            )
+            .join(inv_subq, inv_subq.c.room_type_id == RoomType.id)
+            .where(RoomType.status == RoomTypeStatus.ACTIVE)
+        ).subquery("rt_avail")
+
+        prop_capacity = (
+            select(
+                rt_avail.c.property_id.label("property_id"),
+                sa_func.sum(rt_avail.c.capacity * rt_avail.c.min_units).label("guest_slots"),
+            )
+            .group_by(rt_avail.c.property_id)
+            .having(sa_func.sum(rt_avail.c.capacity * rt_avail.c.min_units) >= guests)
+        ).subquery("prop_capacity")
 
         min_price_sq = (
             select(
@@ -144,6 +165,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             )
             .join(RatePlan, RatePlan.room_type_id == RoomType.id)
             .join(RateCalendar, RateCalendar.rate_plan_id == RatePlan.id)
+            .join(inv_subq, inv_subq.c.room_type_id == RoomType.id)
             .where(
                 RoomType.status == RoomTypeStatus.ACTIVE,
                 RatePlan.is_active == True,  # noqa: E712
@@ -151,23 +173,18 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                 RateCalendar.day < checkout,
             )
             .group_by(RoomType.property_id)
-            .subquery("min_price_sq")
-        )
-
-
-        # 4. Query base: Property JOIN capacidad + min_price, WHERE status=ACTIVE.
-        #    Aplicar filtros opcionales (city_id, min/max price, amenity_codes).
-        #    Para amenities: subquery con having count(distinct code) == len(codes) (AND).
+        ).subquery("min_price_sq")
 
         base_q = (
             select(Property, min_price_sq.c.min_price)
             .join(min_price_sq, min_price_sq.c.property_id == Property.id)
-            .where(Property.status == PropertyStatus.ACTIVE)
+            .join(prop_capacity, prop_capacity.c.property_id == Property.id)
+            .where(
+                Property.status == PropertyStatus.ACTIVE,
+                Property.city_id == city_id,
+            )
             .options(joinedload(Property.city))
         )
-
-        if city_id is not None:
-            base_q = base_q.where(Property.city_id == city_id)
 
         if min_price is not None:
             base_q = base_q.where(min_price_sq.c.min_price >= min_price)
@@ -175,7 +192,6 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         if max_price is not None:
             base_q = base_q.where(min_price_sq.c.min_price <= max_price)
 
-        # Filtro de amenidades: solo propiedades que tengan TODAS las amenidades seleccionadas
         if amenity_codes:
             amenity_subq = (
                 select(property_amenity_table.c.property_id)
@@ -186,20 +202,20 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             )
             base_q = base_q.where(Property.id.in_(amenity_subq))
 
-        # 5. Count total antes de paginar.
-        # 6. Ordenar según sort_by: popularity (default), rating, price_asc, price_desc.
-        # 7. Paginar con offset/limit.
-        # 8. Batch load imágenes y amenidades (mismo patrón que search_featured).
-        # 9. Retornar (list[dict], total). Cada dict debe ser compatible con PropertySummary.
         query = base_q
 
-        # Contar total antes de paginar
         count_q = query.with_only_columns(sa_func.count()).order_by(None)
         total_result = await self._session.execute(count_q)
         total = total_result.scalar_one()
 
-        # Ordenar por popularidad (default)
-        query = query.order_by(Property.popularity_score.desc())
+        if sort_by == "rating":
+            query = query.order_by(Property.rating_avg.desc().nulls_last(), Property.id)
+        elif sort_by == "price_asc":
+            query = query.order_by(min_price_sq.c.min_price.asc().nulls_last(), Property.id)
+        elif sort_by == "price_desc":
+            query = query.order_by(min_price_sq.c.min_price.desc().nulls_last(), Property.id)
+        else:
+            query = query.order_by(Property.popularity_score.desc(), Property.id)
 
         # Paginación
         offset = (page - 1) * page_size
