@@ -33,6 +33,15 @@ export interface PaginatedResponse<T> {
   page: number;
   page_size: number;
   total_pages: number;
+  /** Set by catalog search when total === 0 */
+  message?: string | null;
+}
+
+export interface CityOut {
+  id: string;
+  name: string;
+  department: string | null;
+  country: string;
 }
 
 export interface SearchFilters {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -16,7 +16,7 @@ import PriceRangeFilter from '@/components/traveler/PriceRangeFilter';
 import PropertyCard from '@/components/traveler/PropertyCard';
 import SearchBar from '@/components/traveler/SearchBar';
 
-import { searchProperties } from '@/app/lib/api/catalog';
+import { getFeaturedProperties, searchProperties } from '@/app/lib/api/catalog';
 import type { AmenitySummary, PaginatedResponse, PropertySummary } from '@/app/lib/types/catalog';
 
 function defaultCheckin(): string {
@@ -34,11 +34,19 @@ function defaultCheckout(): string {
 const SORT_OPTIONS = [
   { key: '', label: 'Sort' },
   { key: 'price_asc', label: 'Price' },
-  { key: 'rating_desc', label: 'Rating 4.5+' },
+  { key: 'rating', label: 'Rating' },
 ] as const;
 
+const PAGE_SIZE = 20;
+
+function errorToMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return 'Error searching properties';
+}
+
 function SearchPage() {
-  const [city, setCity] = useState('');
+  const [cityId, setCityId] = useState<string | null>(null);
+  const [cityLabel, setCityLabel] = useState('');
   const [checkin, setCheckin] = useState(defaultCheckin);
   const [checkout, setCheckout] = useState(defaultCheckout);
   const [guests, setGuests] = useState(2);
@@ -47,6 +55,7 @@ function SearchPage() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('');
   const [page, setPage] = useState(1);
+  const [featuredRaw, setFeaturedRaw] = useState<PropertySummary[]>([]);
   const [data, setData] = useState<PaginatedResponse<PropertySummary> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,37 +69,115 @@ function SearchPage() {
     { code: 'parking', name: 'Parking' },
   ];
 
-  const fetchResults = useCallback(async () => {
+  const loadFeatured = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const list = await getFeaturedProperties();
+      setFeaturedRaw(list);
+      setData(null);
+    } catch (err) {
+      setError(errorToMessage(err));
+      setFeaturedRaw([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadSearch = useCallback(async () => {
+    if (!cityId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const sortParam =
+        sortBy === 'rating' ? 'rating' : sortBy === 'price_asc' ? 'price_asc' : sortBy || undefined;
       const result = await searchProperties({
         checkin,
         checkout,
         guests,
+        city_id: cityId,
         min_price: minPrice,
         max_price: maxPrice,
         amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
-        sort_by: sortBy || undefined,
+        sort_by: sortParam,
         page,
+        page_size: PAGE_SIZE,
       });
       setData(result);
+      setFeaturedRaw([]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error searching properties');
+      setError(errorToMessage(err));
+      setData(null);
     } finally {
       setLoading(false);
     }
-  }, [checkin, checkout, guests, minPrice, maxPrice, selectedAmenities, sortBy, page]);
+  }, [
+    cityId,
+    checkin,
+    checkout,
+    guests,
+    minPrice,
+    maxPrice,
+    selectedAmenities,
+    sortBy,
+    page,
+  ]);
 
   useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+    if (!cityId) {
+      void loadFeatured();
+    }
+  }, [cityId, loadFeatured]);
 
-  const handleSearch = (newCity: string, newCheckin: string, newCheckout: string, newGuests: number) => {
-    setCity(newCity);
-    setCheckin(newCheckin);
-    setCheckout(newCheckout);
-    setGuests(newGuests);
+  useEffect(() => {
+    if (cityId) {
+      void loadSearch();
+    }
+  }, [cityId, loadSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [minPrice, maxPrice, selectedAmenities, sortBy]);
+
+  const browsePaginated = useMemo((): PaginatedResponse<PropertySummary> | null => {
+    if (cityId) return null;
+    let items = [...featuredRaw];
+    if (minPrice != null) {
+      items = items.filter((p) => p.min_price != null && Number(p.min_price) >= minPrice);
+    }
+    if (maxPrice != null) {
+      items = items.filter((p) => p.min_price != null && Number(p.min_price) <= maxPrice);
+    }
+    if (selectedAmenities.length > 0) {
+      items = items.filter((p) =>
+        selectedAmenities.every((code) => p.amenities.some((a) => a.code === code))
+      );
+    }
+    if (sortBy === 'price_asc') {
+      items.sort((a, b) => Number(a.min_price ?? 0) - Number(b.min_price ?? 0));
+    } else if (sortBy === 'rating') {
+      items.sort((a, b) => Number(b.rating_avg ?? 0) - Number(a.rating_avg ?? 0));
+    }
+    const total = items.length;
+    const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);
+    const safePage = totalPages === 0 ? 1 : Math.min(page, totalPages);
+    const start = (safePage - 1) * PAGE_SIZE;
+    const slice = items.slice(start, start + PAGE_SIZE);
+    return {
+      items: slice,
+      total,
+      page: safePage,
+      page_size: PAGE_SIZE,
+      total_pages: totalPages,
+      message: null,
+    };
+  }, [cityId, featuredRaw, minPrice, maxPrice, selectedAmenities, sortBy, page]);
+
+  const gridData: PaginatedResponse<PropertySummary> | null = cityId ? data : browsePaginated;
+
+  const handleSearch = (newCityId: string | null, label: string) => {
+    setCityId(newCityId);
+    setCityLabel(newCityId ? label : '');
     setPage(1);
   };
 
@@ -113,39 +200,63 @@ function SearchPage() {
     return `${fmt(checkin)} - ${fmt(checkout)}`;
   };
 
+  const emptyMessage = useMemo(() => {
+    if (!gridData || gridData.items.length > 0) return '';
+    const backendMsg = gridData.message?.trim();
+    if (backendMsg) return backendMsg;
+    if (cityId) return 'No properties found for the selected destination and dates.';
+    if (featuredRaw.length === 0) return 'No featured stays available right now.';
+    return 'No properties match the selected filters.';
+  }, [gridData, cityId, featuredRaw.length]);
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      {/* Search Bar */}
       <Box sx={{ bgcolor: 'white', borderBottom: '1px solid', borderColor: 'grey.200', py: 2, px: 3 }}>
         <SearchBar
-          initialCity={city}
-          initialCheckin={checkin}
-          initialCheckout={checkout}
-          initialGuests={guests}
+          initialCityLabel={cityLabel}
+          checkin={checkin}
+          checkout={checkout}
+          guests={guests}
+          onCheckinChange={setCheckin}
+          onCheckoutChange={setCheckout}
+          onGuestsChange={setGuests}
           onSearch={handleSearch}
         />
       </Box>
 
-      {/* Results header */}
-      <Box sx={{ px: 3, pt: 3, pb: 1, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { md: 'center' }, justifyContent: 'space-between', gap: 2 }}>
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 1,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { md: 'center' },
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
         <Box>
           <Typography variant="h5" fontWeight={700}>
-            {city ? `Stays in ${city}` : 'All stays'}
+            {cityId && cityLabel ? `Stays in ${cityLabel}` : 'All stays'}
           </Typography>
-          {data && (
+          {gridData && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-              {data.total} place{data.total !== 1 ? 's' : ''} found · {formatDateRange()}
+              {gridData.total} place{gridData.total !== 1 ? 's' : ''} found · {formatDateRange()}
+              {cityId ? '' : ' · browse popular destinations'}
             </Typography>
           )}
         </Box>
 
-        {/* Sort chips */}
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {SORT_OPTIONS.map((opt) => (
             <Chip
-              key={opt.key}
+              key={opt.label}
               label={`${opt.label}${sortBy === opt.key && opt.key ? ' \u2193' : ''}`}
-              onClick={() => { setSortBy(opt.key); setPage(1); }}
+              onClick={() => {
+                setSortBy(opt.key);
+                setPage(1);
+              }}
               variant={sortBy === opt.key ? 'filled' : 'outlined'}
               color={sortBy === opt.key ? 'primary' : 'default'}
               sx={{ fontWeight: 500 }}
@@ -154,9 +265,7 @@ function SearchPage() {
         </Box>
       </Box>
 
-      {/* Main content: sidebar + grid */}
       <Box sx={{ display: 'flex', gap: 3, px: 3, pb: 4 }}>
-        {/* Sidebar */}
         <Box
           component="aside"
           sx={{
@@ -174,7 +283,6 @@ function SearchPage() {
           <AmenityFilter amenities={amenityOptions} selected={selectedAmenities} onChange={handleAmenityChange} />
         </Box>
 
-        {/* Results grid */}
         <Box sx={{ flex: 1, pt: 2 }}>
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -188,29 +296,29 @@ function SearchPage() {
             </Alert>
           )}
 
-          {!loading && data && data.items.length === 0 && (
+          {!loading && gridData && gridData.items.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <Typography color="text.secondary" variant="h6">
-                No properties found for the selected filters.
+                {emptyMessage}
               </Typography>
             </Box>
           )}
 
-          {!loading && data && data.items.length > 0 && (
+          {!loading && gridData && gridData.items.length > 0 && (
             <>
               <Grid container spacing={2.5}>
-                {data.items.map((property) => (
+                {gridData.items.map((property) => (
                   <Grid size={{ xs: 12, sm: 6, xl: 4 }} key={property.id}>
                     <PropertyCard property={property} />
                   </Grid>
                 ))}
               </Grid>
 
-              {data.total_pages > 1 && (
+              {gridData.total_pages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                   <Pagination
-                    count={data.total_pages}
-                    page={data.page}
+                    count={gridData.total_pages}
+                    page={gridData.page}
                     onChange={(_, value) => setPage(value)}
                     color="primary"
                     shape="rounded"
