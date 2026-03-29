@@ -6,6 +6,8 @@
 
 BEGIN;
 
+-- ── Extensions ────────────────────────────────────────────
+CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ── Schemas ─────────────────────────────────────────────

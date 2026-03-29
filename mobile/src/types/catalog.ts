@@ -64,14 +64,27 @@ export interface Review {
   created_at: string;
 }
 
+// ── Pagination ─────────────────────────────────────────
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 // ── Search ──────────────────────────────────────────────
 
 export interface SearchFilters {
   city_id?: string;
-  check_in?: string;
-  check_out?: string;
-  guests?: number;
+  checkin: string;
+  checkout: string;
+  guests: number;
   min_price?: number;
   max_price?: number;
   amenities?: string[];
+  sort_by?: string;
+  page?: number;
+  page_size?: number;
 }

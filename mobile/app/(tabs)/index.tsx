@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   ScrollView,
   StyleSheet,
   Pressable,
@@ -13,13 +14,107 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { Card, Button } from '@src/shared/ui';
+import { Card, Button, DateRangePicker } from '@src/shared/ui';
 import { useFeatured } from '@src/features/catalog/use-featured';
+import { searchCities } from '@src/features/catalog/catalog-service';
+import type { CityInfo } from '@src/types/catalog';
+
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const day = date.getDate();
+  const month = date.toLocaleString('en', { month: 'short' });
+  return `${month} ${day}`;
+}
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { destinations, properties, loading, error, retry } = useFeatured();
+
+  // City autocomplete state
+  const [cityQuery, setCityQuery] = useState('');
+  const [citySuggestions, setCitySuggestions] = useState<CityInfo[]>([]);
+  const [selectedCity, setSelectedCity] = useState<CityInfo | null>(null);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Search input position for dropdown
+  const searchInputRef = useRef<View>(null);
+  const [dropdownTop, setDropdownTop] = useState(0);
+
+  const measureSearchInput = useCallback(() => {
+    searchInputRef.current?.measureInWindow((_x, y, _w, h) => {
+      setDropdownTop(y + h + spacing.xs);
+    });
+  }, []);
+
+  // Date picker state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [checkin, setCheckin] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<string | null>(null);
+
+  const handleDatesConfirm = useCallback((ci: string, co: string) => {
+    setCheckin(ci);
+    setCheckout(co);
+  }, []);
+
+  const showDropdown = !selectedCity && citySuggestions.length > 0;
+
+  // Debounced city search
+  useEffect(() => {
+    if (selectedCity || cityQuery.length < 2) {
+      setCitySuggestions([]);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLoadingCities(true);
+      try {
+        const cities = await searchCities(cityQuery);
+        setCitySuggestions(cities);
+      } catch {
+        setCitySuggestions([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [cityQuery, selectedCity]);
+
+  const handleSelectCity = useCallback((city: CityInfo) => {
+    setSelectedCity(city);
+    setCityQuery(city.name);
+    setCitySuggestions([]);
+  }, []);
+
+  const handleClearCity = useCallback(() => {
+    setSelectedCity(null);
+    setCityQuery('');
+    setCitySuggestions([]);
+  }, []);
+
+  const dismissSuggestions = useCallback(() => {
+    setCitySuggestions([]);
+    setLoadingCities(false);
+  }, []);
+
+  const handleSearch = useCallback(() => {
+    if (!selectedCity) return;
+    router.push({
+      pathname: '/(tabs)/search',
+      params: {
+        cityId: selectedCity.id,
+        cityName: selectedCity.name,
+        cityCountry: selectedCity.country,
+        cityDepartment: selectedCity.department ?? '',
+        checkin: checkin ?? '',
+        checkout: checkout ?? '',
+      },
+    });
+  }, [selectedCity, router, checkin, checkout]);
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'es' : 'en');
@@ -30,6 +125,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -54,36 +150,61 @@ export default function HomeScreen() {
           <Text style={styles.searchCardTitle}>{t('home.planTrip')}</Text>
           <Text style={styles.searchCardSubtitle}>{t('home.planTripHint')}</Text>
 
-          <Pressable
-            style={styles.searchInput}
-            onPress={() => router.push('/search')}
-            accessibilityRole="search"
-            accessibilityLabel={t('home.searchPlaceholder')}
-          >
+          <View ref={searchInputRef} onLayout={measureSearchInput} style={styles.searchInput}>
             <Ionicons name="search" size={20} color={colors.text.muted} />
-            <Text style={styles.searchPlaceholder}>{t('home.searchPlaceholder')}</Text>
-          </Pressable>
+            {selectedCity ? (
+              <View style={styles.selectedCityRow}>
+                <Text style={styles.selectedCityText} numberOfLines={1}>
+                  {selectedCity.name}, {selectedCity.country}
+                </Text>
+                <Pressable
+                  onPress={handleClearCity}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear selected city"
+                  hitSlop={8}
+                >
+                  <Ionicons name="close-circle" size={18} color={colors.text.muted} />
+                </Pressable>
+              </View>
+            ) : (
+              <TextInput
+                placeholder={t('search.searchCity')}
+                placeholderTextColor={colors.text.muted}
+                value={cityQuery}
+                onChangeText={setCityQuery}
+                style={styles.cityTextInput}
+              />
+            )}
+          </View>
+
+          {loadingCities && (
+            <ActivityIndicator size="small" color={colors.primary} style={styles.inlineLoader} />
+          )}
 
           <View style={styles.searchFiltersRow}>
-            <Pressable style={styles.filterChip} accessibilityRole="button">
-              <Ionicons name="calendar-outline" size={16} color={colors.text.secondary} />
-              <View>
-                <Text style={styles.filterLabel}>{t('home.checkIn')}</Text>
-                <Text style={styles.filterValue}>{t('home.addDates')}</Text>
-              </View>
+            <Pressable
+              style={[styles.filterChip, checkin && styles.filterChipActive]}
+              onPress={() => setShowDatePicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.addDates')}
+            >
+              <Ionicons name="calendar-outline" size={16} color={checkin ? colors.primary : colors.text.secondary} />
+              <Text style={[styles.filterValue, checkin && styles.filterValueActive]}>
+                {checkin && checkout
+                  ? `${formatShortDate(checkin)} - ${formatShortDate(checkout)}`
+                  : t('home.addDates')}
+              </Text>
             </Pressable>
             <Pressable style={styles.filterChip} accessibilityRole="button">
               <Ionicons name="people-outline" size={16} color={colors.text.secondary} />
-              <View>
-                <Text style={styles.filterLabel}>{t('home.guests')}</Text>
-                <Text style={styles.filterValue}>{t('home.addGuests')}</Text>
-              </View>
+              <Text style={styles.filterValue}>{t('home.addGuests')}</Text>
             </Pressable>
           </View>
 
           <Pressable
-            style={styles.searchButton}
-            onPress={() => router.push('/search')}
+            style={[styles.searchButton, !selectedCity && styles.searchButtonDisabled]}
+            onPress={handleSearch}
+            disabled={!selectedCity}
             accessibilityRole="button"
             accessibilityLabel={t('home.search')}
           >
@@ -120,10 +241,22 @@ export default function HomeScreen() {
                     <Pressable
                       key={dest.id}
                       style={styles.destinationCard}
-                      onPress={() => router.push('/search')}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(tabs)/search',
+                          params: {
+                            cityId: dest.id,
+                            cityName: dest.name,
+                            cityCountry: dest.country,
+                            cityDepartment: dest.department ?? '',
+                            checkin: checkin ?? '',
+                            checkout: checkout ?? '',
+                          },
+                        })
+                      }
                       accessibilityRole="button"
                       accessibilityLabel={`${dest.name}, ${dest.country}`}
-                      accessibilityHint="Search stays in this destination"
+                      accessibilityHint="Search this destination"
                     >
                       <Image
                         source={{ uri: dest.image_url }}
@@ -195,6 +328,47 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* City suggestions — inline overlay, rendered last so it sits on top */}
+      {showDropdown && (
+        <>
+          <Pressable
+            style={styles.suggestionsBackdrop}
+            onPress={dismissSuggestions}
+          />
+          <View style={[styles.suggestionsDropdown, { top: dropdownTop }]}>
+            <ScrollView style={styles.suggestionsList} keyboardShouldPersistTaps="handled">
+              {citySuggestions.map((city) => (
+                <Pressable
+                  key={city.id}
+                  style={styles.suggestionItem}
+                  onPress={() => handleSelectCity(city)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${city.name}, ${city.country}`}
+                >
+                  <Ionicons name="location-outline" size={18} color={colors.text.secondary} />
+                  <View>
+                    <Text style={styles.suggestionName}>{city.name}</Text>
+                    <Text style={styles.suggestionDetail}>
+                      {city.department ? `${city.department}, ` : ''}
+                      {city.country}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </>
+      )}
+
+      {/* Date Range Picker */}
+      <DateRangePicker
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        onConfirm={handleDatesConfirm}
+        initialCheckin={checkin ?? undefined}
+        initialCheckout={checkout ?? undefined}
+      />
     </SafeAreaView>
   );
 }
@@ -273,10 +447,75 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
   },
-  searchPlaceholder: {
+  cityTextInput: {
+    flex: 1,
+    height: 44,
     fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+  },
+  selectedCityRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  selectedCityText: {
+    flex: 1,
+    fontFamily: typography.fontFamily.medium,
     fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
+    color: colors.text.primary,
+  },
+  suggestionsBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  suggestionsDropdown: {
+    position: 'absolute',
+    left: spacing.base,
+    right: spacing.base,
+    backgroundColor: colors.surface.white,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    maxHeight: 280,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  suggestionsList: {
+    maxHeight: 280,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  suggestionName: {
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+  },
+  suggestionDetail: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  inlineLoader: {
+    marginTop: spacing.sm,
+    alignSelf: 'center',
   },
   searchFiltersRow: {
     flexDirection: 'row',
@@ -289,11 +528,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.base,
     borderRadius: radius.md,
     backgroundColor: colors.surface.white,
     borderWidth: 1,
     borderColor: colors.border.default,
+  },
+  filterChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary10,
   },
   filterLabel: {
     fontFamily: typography.fontFamily.medium,
@@ -306,6 +549,10 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.muted,
   },
+  filterValueActive: {
+    color: colors.primary,
+    fontFamily: typography.fontFamily.medium,
+  },
   searchButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -316,6 +563,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.primary,
     ...shadows.ctaPrimary,
+  },
+  searchButtonDisabled: {
+    opacity: 0.5,
   },
   searchButtonText: {
     fontFamily: typography.fontFamily.bold,

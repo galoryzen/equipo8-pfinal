@@ -5,82 +5,99 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@src/theme';
-import { Input, Card, Chip } from '@src/shared/ui';
+import { Card, Chip } from '@src/shared/ui';
+import { useSearch } from '@src/features/catalog/use-search';
+import type { CityInfo } from '@src/types/catalog';
 
-const AMENITIES = ['WiFi', 'Pool', 'Spa', 'Gym', 'Parking', 'Breakfast'];
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const month = date.toLocaleString('en', { month: 'short' });
+  return `${d} ${month}`;
+}
 
-const MOCK_RESULTS = [
-  {
-    id: '1',
-    name: 'Hotel Boutique San Blas',
-    city: 'Cusco, Peru',
-    rating: 4.8,
-    reviewCount: 124,
-    price: 85,
-    amenities: ['WiFi', 'Breakfast', 'Spa'],
-  },
-  {
-    id: '2',
-    name: 'Casa del Mar Resort',
-    city: 'Cartagena, Colombia',
-    rating: 4.6,
-    reviewCount: 89,
-    price: 120,
-    amenities: ['WiFi', 'Pool', 'Gym'],
-  },
-  {
-    id: '3',
-    name: 'Copacabana Palace',
-    city: 'Río de Janeiro, Brazil',
-    rating: 4.9,
-    reviewCount: 256,
-    price: 200,
-    amenities: ['WiFi', 'Pool', 'Spa', 'Gym'],
-  },
-  {
-    id: '4',
-    name: 'Hotel Zócalo Central',
-    city: 'Ciudad de México, Mexico',
-    rating: 4.5,
-    reviewCount: 178,
-    price: 95,
-    amenities: ['WiFi', 'Parking', 'Breakfast'],
-  },
+const AMENITIES = [
+  { code: 'FREE_WIFI', label: 'WiFi' },
+  { code: 'POOL', label: 'Pool' },
+  { code: 'SPA', label: 'Spa' },
+  { code: 'GYM', label: 'Gym' },
+  { code: 'PARKING', label: 'Parking' },
+  { code: 'BREAKFAST', label: 'Breakfast' },
 ];
 
 export default function SearchScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [searchText, setSearchText] = useState('');
+  const params = useLocalSearchParams<{
+    cityId?: string;
+    cityName?: string;
+    cityCountry?: string;
+    cityDepartment?: string;
+    checkin?: string;
+    checkout?: string;
+  }>();
 
-  const toggleAmenity = (amenity: string) => {
-    setSelectedAmenities((prev) =>
-      prev.includes(amenity)
-        ? prev.filter((a) => a !== amenity)
-        : [...prev, amenity],
-    );
-  };
+  const initialCity: CityInfo | null =
+    params.cityId && params.cityName && params.cityCountry
+      ? {
+          id: params.cityId,
+          name: params.cityName,
+          country: params.cityCountry,
+          department: params.cityDepartment || undefined,
+        }
+      : null;
+
+  const {
+    selectedCity,
+    results,
+    loading,
+    error,
+    total,
+    amenityFilters,
+    toggleAmenity,
+    checkin,
+    checkout,
+  } = useSearch(
+    initialCity,
+    params.checkin || undefined,
+    params.checkout || undefined,
+  );
+
+  const [showFilters, setShowFilters] = useState(false);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Search Header */}
-      <View style={styles.searchHeader}>
-        <View style={styles.searchInputRow}>
-          <Ionicons name="search" size={20} color={colors.text.muted} />
-          <Input
-            placeholder={t('home.searchPlaceholder')}
-            value={searchText}
-            onChangeText={setSearchText}
-            style={styles.searchInput}
-          />
+      {/* Header with city name and filter toggle */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
+            hitSlop={8}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+          </Pressable>
+          {selectedCity && (
+            <View>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {selectedCity.name}, {selectedCity.country}
+              </Text>
+              {checkin && checkout && (
+                <Text style={styles.headerDates}>
+                  {formatShortDate(checkin)} - {formatShortDate(checkout)}
+                </Text>
+              )}
+            </View>
+          )}
         </View>
         <Pressable
           style={[styles.filterButton, showFilters && styles.filterButtonActive]}
@@ -108,66 +125,108 @@ export default function SearchScreen() {
           >
             {AMENITIES.map((amenity) => (
               <Chip
-                key={amenity}
-                label={amenity}
-                selected={selectedAmenities.includes(amenity)}
-                onPress={() => toggleAmenity(amenity)}
+                key={amenity.code}
+                label={amenity.label}
+                selected={amenityFilters.includes(amenity.code)}
+                onPress={() => toggleAmenity(amenity.code)}
               />
             ))}
           </ScrollView>
         </View>
       )}
 
+      {/* Loading */}
+      {loading && (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      )}
+
+      {/* Error */}
+      {error && !loading && (
+        <View style={styles.emptyState}>
+          <Ionicons name="cloud-offline-outline" size={48} color={colors.text.muted} />
+          <Text style={styles.emptyStateText}>{error}</Text>
+        </View>
+      )}
+
       {/* Results count */}
-      <Text style={styles.resultsCount}>
-        {t('search.results', { count: MOCK_RESULTS.length })}
-      </Text>
+      {!loading && !error && (
+        <Text style={styles.resultsCount}>
+          {total > 0
+            ? t('search.results', { count: total })
+            : t('search.noResults')}
+        </Text>
+      )}
+
+      {/* No results */}
+      {!loading && !error && total === 0 && (
+        <View style={styles.emptyState}>
+          <Ionicons name="bed-outline" size={48} color={colors.text.muted} />
+          <Text style={styles.emptyStateText}>{t('search.noResults')}</Text>
+          <Text style={styles.emptyStateHint}>{t('search.noResultsHint')}</Text>
+        </View>
+      )}
 
       {/* Results */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.resultsList}
-      >
-        {MOCK_RESULTS.map((property) => (
-          <Card
-            key={property.id}
-            elevated
-            onPress={() => router.push(`/property/${property.id}`)}
-            accessibilityLabel={`${property.name}, ${property.city}. ${property.rating} stars, ${property.reviewCount} reviews. $${property.price} per night. ${property.amenities.join(', ')}`}
-            accessibilityHint="View property details"
-            style={styles.resultCard}
-          >
-            <View style={styles.resultImagePlaceholder}>
-              <Ionicons name="image-outline" size={40} color={colors.border.default} />
-            </View>
-            <View style={styles.resultInfo}>
-              <Text style={styles.resultName} numberOfLines={1}>
-                {property.name}
-              </Text>
-              <Text style={styles.resultCity}>{property.city}</Text>
-              <View style={styles.amenitiesRow}>
-                {property.amenities.slice(0, 3).map((a) => (
-                  <View key={a} style={styles.miniChip}>
-                    <Text style={styles.miniChipText}>{a}</Text>
-                  </View>
-                ))}
-              </View>
-              <View style={styles.resultFooter}>
-                <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={14} color="#F59E0B" />
-                  <Text style={styles.ratingText}>
-                    {property.rating} ({property.reviewCount})
-                  </Text>
+      {results.length > 0 && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.resultsList}
+        >
+          {results.map((property) => (
+            <Card
+              key={property.id}
+              elevated
+              onPress={() => router.push(`/property/${property.id}`)}
+              accessibilityLabel={`${property.name}, ${property.city.name}. ${property.rating_avg} stars, ${property.review_count} reviews. $${property.min_price ?? '—'} per night. ${property.amenities.map((a) => a.name).join(', ')}`}
+              accessibilityHint="View property details"
+              style={styles.resultCard}
+            >
+              {property.image?.url ? (
+                <Image
+                  source={{ uri: property.image.url }}
+                  style={styles.resultImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.resultImagePlaceholder}>
+                  <Ionicons name="image-outline" size={40} color={colors.border.default} />
                 </View>
-                <Text style={styles.priceText}>
-                  ${property.price}
-                  <Text style={styles.perNight}>{t('home.perNight')}</Text>
+              )}
+              <View style={styles.resultInfo}>
+                <Text style={styles.resultName} numberOfLines={1}>
+                  {property.name}
                 </Text>
+                <Text style={styles.resultCity}>
+                  {property.city.name}, {property.city.country}
+                </Text>
+                <View style={styles.amenitiesRow}>
+                  {property.amenities.slice(0, 3).map((a) => (
+                    <View key={a.code} style={styles.miniChip}>
+                      <Text style={styles.miniChipText}>{a.name}</Text>
+                    </View>
+                  ))}
+                </View>
+                <View style={styles.resultFooter}>
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={14} color="#F59E0B" />
+                    <Text style={styles.ratingText}>
+                      {property.rating_avg} ({property.review_count})
+                    </Text>
+                  </View>
+                  {property.min_price != null && (
+                    <Text style={styles.priceText}>
+                      ${property.min_price}
+                      <Text style={styles.perNight}>{t('home.perNight')}</Text>
+                    </Text>
+                  )}
+                </View>
               </View>
-            </View>
-          </Card>
-        ))}
-      </ScrollView>
+            </Card>
+          ))}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -177,28 +236,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surface.white,
   },
-  searchHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    gap: spacing.sm,
   },
-  searchInputRow: {
+  headerLeft: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface.soft,
-    borderRadius: radius.md,
-    paddingLeft: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.default,
+    gap: spacing.md,
   },
-  searchInput: {
+  headerTitle: {
     flex: 1,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
+    fontFamily: typography.fontFamily.bold,
+    fontSize: typography.fontSize.lg,
+    color: colors.text.primary,
   },
   filterButton: {
     width: 48,
@@ -212,6 +267,12 @@ const styles = StyleSheet.create({
   filterButtonActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  headerDates: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   filtersContainer: {
     paddingHorizontal: spacing.base,
@@ -235,6 +296,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
   },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl * 2,
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+  },
+  emptyStateText: {
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  emptyStateHint: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.sm,
+    color: colors.text.muted,
+    textAlign: 'center',
+  },
   resultsList: {
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.xl,
@@ -243,6 +323,10 @@ const styles = StyleSheet.create({
   resultCard: {
     padding: 0,
     overflow: 'hidden',
+  },
+  resultImage: {
+    width: '100%',
+    height: 140,
   },
   resultImagePlaceholder: {
     height: 140,

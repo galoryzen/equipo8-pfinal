@@ -29,6 +29,7 @@
     "guests": "Guests",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
+    "selectDates": "Select dates",
     "search": "Search"
   },
   "search": {
@@ -42,7 +43,9 @@
     "guestsCount": "{{count}} guest",
     "guestsCount_plural": "{{count}} guests",
     "clearFilters": "Clear filters",
-    "applyFilters": "Apply"
+    "applyFilters": "Apply",
+    "searchCity": "Search by city or destination",
+    "selectDestination": "Select a destination"
   },
   "property": {
     "description": "Description",

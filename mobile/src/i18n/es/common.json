@@ -29,6 +29,7 @@
     "guests": "Huéspedes",
     "checkIn": "Llegada",
     "checkOut": "Salida",
+    "selectDates": "Seleccionar fechas",
     "search": "Buscar"
   },
   "search": {
@@ -42,7 +43,9 @@
     "guestsCount": "{{count}} huésped",
     "guestsCount_plural": "{{count}} huéspedes",
     "clearFilters": "Limpiar filtros",
-    "applyFilters": "Aplicar"
+    "applyFilters": "Aplicar",
+    "searchCity": "Buscar por ciudad o destino",
+    "selectDestination": "Selecciona un destino"
   },
   "property": {
     "description": "Descripción",
