@@ -311,7 +311,8 @@ class TestGetPropertyDetail:
         )
 
         room = result["detail"]["room_types"][0]
-        assert room["min_price"] == 150.0
+        # model_dump(mode="json") serializa Decimal como string
+        assert room["min_price"] == "150.00"
 
     async def test_result_is_cached_on_second_call(self, mock_property_repo, mock_cache):
         """On cache hit, repo should NOT be called."""
