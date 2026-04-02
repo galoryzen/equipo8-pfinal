@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PropertyDetailView from '@/components/traveler/PropertyDetailView';
-import { getPropertyDetail } from '@/app/lib/api/catalog';
+import { CatalogNotFoundError, getPropertyDetail } from '@/app/lib/api/catalog';
 import type { PropertyDetailResponse } from '@/app/lib/types/catalog';
 
 // ── Mock next/link ─────────────────────────────────────────────────────────
@@ -23,10 +23,14 @@ vi.mock('@/app/lib/hooks/useAuthAction', () => ({
   useAuthAction: () => ({ requireAuth: vi.fn() }),
 }));
 
-// ── Mock catalog API ───────────────────────────────────────────────────────
-vi.mock('@/app/lib/api/catalog', () => ({
-  getPropertyDetail: vi.fn(),
-}));
+// ── Mock catalog API (conserva CatalogNotFoundError e isCatalogNotFoundError) ─
+vi.mock('@/app/lib/api/catalog', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/app/lib/api/catalog')>();
+  return {
+    ...actual,
+    getPropertyDetail: vi.fn(),
+  };
+});
 
 const mockGetPropertyDetail = vi.mocked(getPropertyDetail);
 
@@ -208,14 +212,24 @@ describe('PropertyDetailView', () => {
     });
   });
 
-  it('shows error message and retry button on API failure', async () => {
-    mockGetPropertyDetail.mockRejectedValue(new Error('Property not found'));
+  it('shows error message and retry button on non-404 API failure', async () => {
+    mockGetPropertyDetail.mockRejectedValue(new Error('Error de red'));
     render(<PropertyDetailView id={PROPERTY_ID} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Property not found')).toBeTruthy();
+      expect(screen.getByText('Error de red')).toBeTruthy();
     });
     expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy();
+  });
+
+  it('shows shared 404 view when hotel does not exist (API 404)', async () => {
+    mockGetPropertyDetail.mockRejectedValue(new CatalogNotFoundError());
+    render(<PropertyDetailView id={PROPERTY_ID} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alojamiento no encontrado')).toBeTruthy();
+    });
+    expect(screen.getByRole('link', { name: /buscar alojamientos/i })).toBeTruthy();
   });
 
   it('passes property id to getPropertyDetail', async () => {

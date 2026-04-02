@@ -20,7 +20,8 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import FreeBreakfastIcon from '@mui/icons-material/FreeBreakfast';
 import PoolIcon from '@mui/icons-material/Pool';
 
-import { getPropertyDetail } from '@/app/lib/api/catalog';
+import { getPropertyDetail, isCatalogNotFoundError } from '@/app/lib/api/catalog';
+import NotFoundView from '@/components/NotFoundView';
 import type { PaginatedResponse, PropertyDetail, ReviewOut } from '@/app/lib/types/catalog';
 import AmenityList from './AmenityList';
 import ImageGallery from './ImageGallery';
@@ -43,7 +44,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
   const [detail, setDetail] = useState<PropertyDetail | null>(null);
   const [reviews, setReviews] = useState<PaginatedResponse<ReviewOut> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [checkin, setCheckin] = useState<string | undefined>(undefined);
   const [checkout, setCheckout] = useState<string | undefined>(undefined);
   const [reviewPage, setReviewPage] = useState(1);
@@ -68,7 +69,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
               : data.reviews
         );
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load property');
+        setError(err instanceof Error ? err : new Error('Failed to load property'));
       } finally {
         setLoading(false);
       }
@@ -102,10 +103,13 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
   }
 
   if (error) {
+    if (isCatalogNotFoundError(error)) {
+      return <NotFoundView variant="property" />;
+    }
     return (
       <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
         <Typography variant="h6" color="error" gutterBottom>
-          {error}
+          {error.message}
         </Typography>
         <Button variant="outlined" onClick={() => fetchDetail(checkin, checkout)}>
           Try again

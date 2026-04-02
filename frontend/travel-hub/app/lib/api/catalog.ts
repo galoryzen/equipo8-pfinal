@@ -36,6 +36,20 @@ export function formatApiErrorBody(body: unknown, status: number): string {
   return `Error ${status}`;
 }
 
+/** Respuesta HTTP 404 del catálogo (p. ej. propiedad inexistente). */
+export class CatalogNotFoundError extends Error {
+  readonly statusCode = 404 as const;
+
+  constructor(message = 'No encontramos este alojamiento') {
+    super(message);
+    this.name = 'CatalogNotFoundError';
+  }
+}
+
+export function isCatalogNotFoundError(err: unknown): err is CatalogNotFoundError {
+  return err instanceof CatalogNotFoundError;
+}
+
 export async function searchCities(q: string): Promise<CityOut[]> {
   const res = await fetch(`${API_URL}/api/v1/catalog/cities?q=${encodeURIComponent(q)}`);
   if (!res.ok) {
@@ -95,6 +109,9 @@ export async function getPropertyDetail(
   const url = `${API_URL}/api/v1/catalog/properties/${propertyId}${qs ? `?${qs}` : ''}`;
   const res = await fetch(url);
   if (!res.ok) {
+    if (res.status === 404) {
+      throw new CatalogNotFoundError();
+    }
     const body = await res.json().catch(() => null);
     throw new Error(formatApiErrorBody(body, res.status));
   }
