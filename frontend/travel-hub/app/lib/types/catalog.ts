@@ -56,3 +56,72 @@ export interface SearchFilters {
   page?: number;
   page_size?: number;
 }
+
+// ── Property Detail types ─────────────────────────────────────────────────
+
+export interface PropertyImageOut {
+  id: string;
+  url: string;
+  caption: string | null;
+  display_order: number;
+}
+
+export interface CancellationPolicyOut {
+  id: string;
+  name: string;
+  type: string;
+  hours_limit: number | null;
+  refund_percent: number | null;
+}
+
+export interface RatePlanOut {
+  id: string;
+  name: string;
+  cancellation_policy: CancellationPolicyOut | null;
+  min_price: number | null;
+}
+
+export interface RoomTypeOut {
+  id: string;
+  name: string;
+  capacity: number;
+  amenities: AmenitySummary[];
+  rate_plans: RatePlanOut[];
+  min_price: number | null;
+}
+
+export interface ReviewOut {
+  id: string;
+  user_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface PropertyPolicyOut {
+  id: string;
+  category: string;
+  description: string;
+}
+
+export interface PropertyDetail {
+  id: string;
+  hotel_id: string;
+  name: string;
+  description: string | null;
+  city: CitySummary;
+  address: string | null;
+  rating_avg: number | null;
+  review_count: number;
+  popularity_score: number;
+  default_cancellation_policy: CancellationPolicyOut | null;
+  images: PropertyImageOut[];
+  amenities: AmenitySummary[];
+  policies: PropertyPolicyOut[];
+  room_types: RoomTypeOut[];
+}
+
+export interface PropertyDetailResponse {
+  detail: PropertyDetail;
+  reviews: PaginatedResponse<ReviewOut>;
+}

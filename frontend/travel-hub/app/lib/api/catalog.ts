@@ -1,4 +1,10 @@
-import type { CityOut, PaginatedResponse, PropertySummary, SearchFilters } from '@/app/lib/types/catalog';
+import type {
+  CityOut,
+  PaginatedResponse,
+  PropertyDetailResponse,
+  PropertySummary,
+  SearchFilters,
+} from '@/app/lib/types/catalog';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
@@ -72,5 +78,25 @@ export async function searchProperties(
     throw new Error(formatApiErrorBody(body, res.status));
   }
 
+  return res.json();
+}
+
+export async function getPropertyDetail(
+  propertyId: string,
+  options?: { checkin?: string; checkout?: string; review_page?: number; review_page_size?: number }
+): Promise<PropertyDetailResponse> {
+  const query = new URLSearchParams();
+  if (options?.checkin) query.set('checkin', options.checkin);
+  if (options?.checkout) query.set('checkout', options.checkout);
+  if (options?.review_page != null) query.set('review_page', String(options.review_page));
+  if (options?.review_page_size != null) query.set('review_page_size', String(options.review_page_size));
+
+  const qs = query.toString();
+  const url = `${API_URL}/api/v1/catalog/properties/${propertyId}${qs ? `?${qs}` : ''}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
   return res.json();
 }
