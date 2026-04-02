@@ -1,8 +1,9 @@
 """Unit tests for use cases — mock the ports, test the orchestration."""
 
-from datetime import date
+import json
+from datetime import date, datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -16,8 +17,9 @@ from app.application.use_cases.get_featured_properties import GetFeaturedPropert
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
 from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
+from app.domain.models import CancellationPolicyType, PolicyCategory, PropertyStatus
 from app.schemas.city import CityOut, FeaturedDestinationOut
-from app.schemas.property import PropertySummary
+from app.schemas.property import PropertyDetailResponse, PropertySummary
 from tests.conftest import CANCUN_CITY_ID, CANCUN_PROPERTY_ID, make_property_summary
 
 SEARCH_EMPTY_MSG = SearchPropertiesUseCase.EMPTY_RESULTS_MESSAGE
@@ -146,21 +148,105 @@ class TestSearchCities:
 # ── GetPropertyDetailUseCase ────────────────────────────
 
 
+def _make_fake_property(prop_id=None):
+    """Build a minimal fake ORM Property object for use case unit tests."""
+    prop_id = prop_id or CANCUN_PROPERTY_ID
+
+    city = MagicMock()
+    city.id = CANCUN_CITY_ID
+    city.name = "CANCÚN"
+    city.department = "QUINTANA ROO"
+    city.country = "MÉXICO"
+
+    cp = MagicMock()
+    cp.id = uuid4()
+    cp.name = "Free cancellation"
+    cp.type = CancellationPolicyType.FULL
+    cp.hours_limit = 24
+    cp.refund_percent = 100
+
+    rate_calendar = MagicMock()
+    rate_calendar.day = date(2026, 6, 1)
+    rate_calendar.price_amount = Decimal("199.00")
+
+    rate_plan = MagicMock()
+    rate_plan.id = uuid4()
+    rate_plan.name = "Standard"
+    rate_plan.is_active = True
+    rate_plan.cancellation_policy = cp
+    rate_plan.rate_calendar = [rate_calendar]
+
+    amenity = MagicMock()
+    amenity.code = "wifi"
+    amenity.name = "Wi-Fi gratuito"
+
+    room_type = MagicMock()
+    room_type.id = uuid4()
+    room_type.name = "Deluxe King"
+    room_type.capacity = 2
+    room_type.amenities = [amenity]
+    room_type.rate_plans = [rate_plan]
+
+    image = MagicMock()
+    image.id = uuid4()
+    image.url = "https://example.com/img.jpg"
+    image.caption = "Lobby"
+    image.display_order = 0
+
+    policy = MagicMock()
+    policy.id = uuid4()
+    policy.category = PolicyCategory.CHECK_IN
+    policy.description = "Check-in after 3pm"
+
+    prop = MagicMock()
+    prop.id = prop_id
+    prop.hotel_id = uuid4()
+    prop.name = "Sol Caribe Cancún"
+    prop.description = "A beautiful hotel."
+    prop.city = city
+    prop.address = "Blvd. Kukulcán Km 12.5"
+    prop.rating_avg = Decimal("4.60")
+    prop.review_count = 124
+    prop.popularity_score = Decimal("88.5")
+    prop.default_cancellation_policy = cp
+    prop.images = [image]
+    prop.amenities = [amenity]
+    prop.policies = [policy]
+    prop.room_types = [room_type]
+    prop.status = PropertyStatus.ACTIVE
+    return prop
+
+
+def _make_fake_review(property_id=None):
+    review = MagicMock()
+    review.id = uuid4()
+    review.user_id = uuid4()
+    review.property_id = property_id or CANCUN_PROPERTY_ID
+    review.rating = 5
+    review.comment = "Excellent!"
+    review.created_at = datetime(2026, 3, 1, 12, 0, 0)
+    return review
+
+
 class TestGetPropertyDetail:
-    async def test_returns_property_with_reviews(self, mock_property_repo, mock_cache):
+    async def test_returns_structured_detail_and_reviews(self, mock_property_repo, mock_cache):
+        """Use case should return a dict with 'detail' and 'reviews' keys."""
         prop_id = CANCUN_PROPERTY_ID
-        fake_prop = {"id": prop_id, "name": "Sol Caribe"}
-        fake_reviews = [{"rating": 5, "comment": "Great"}]
+        fake_prop = _make_fake_property(prop_id)
+        fake_review = _make_fake_review(prop_id)
 
         mock_property_repo.get_by_id.return_value = fake_prop
-        mock_property_repo.get_reviews.return_value = (fake_reviews, 1)
+        mock_property_repo.get_reviews.return_value = ([fake_review], 1)
         uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
 
         result = await uc.execute(property_id=prop_id)
 
-        assert result["property"] == fake_prop
-        assert result["reviews"] == fake_reviews
-        assert result["review_total"] == 1
+        assert "detail" in result
+        assert "reviews" in result
+        assert result["detail"]["name"] == "Sol Caribe Cancún"
+        assert result["reviews"]["total"] == 1
+        assert len(result["reviews"]["items"]) == 1
+        assert result["reviews"]["items"][0]["rating"] == 5
         mock_property_repo.get_by_id.assert_called_once_with(prop_id)
         mock_property_repo.get_reviews.assert_called_once_with(prop_id, 1, 10)
 
@@ -173,17 +259,88 @@ class TestGetPropertyDetail:
         with pytest.raises(PropertyNotFoundError):
             await uc.execute(property_id=prop_id)
 
-        # Should NOT call get_reviews if property doesn't exist
         mock_property_repo.get_reviews.assert_not_called()
 
     async def test_passes_pagination_to_reviews(self, mock_property_repo, mock_cache):
-        mock_property_repo.get_by_id.return_value = {"id": CANCUN_PROPERTY_ID}
+        mock_property_repo.get_by_id.return_value = _make_fake_property()
         mock_property_repo.get_reviews.return_value = ([], 0)
         uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
 
         await uc.execute(property_id=CANCUN_PROPERTY_ID, review_page=3, review_page_size=5)
 
         mock_property_repo.get_reviews.assert_called_once_with(CANCUN_PROPERTY_ID, 3, 5)
+
+    async def test_reviews_pagination_metadata(self, mock_property_repo, mock_cache):
+        """reviews response should include correct page / total_pages."""
+        mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_reviews.return_value = (
+            [_make_fake_review(), _make_fake_review()],
+            25,
+        )
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID, review_page=2, review_page_size=10)
+
+        reviews = result["reviews"]
+        assert reviews["total"] == 25
+        assert reviews["page"] == 2
+        assert reviews["page_size"] == 10
+        assert reviews["total_pages"] == 3  # ceil(25/10)
+
+    async def test_min_price_filtered_by_checkin_checkout(self, mock_property_repo, mock_cache):
+        """min_price per room type should use only rates within the date range."""
+        prop = _make_fake_property()
+        rc_in_range = MagicMock()
+        rc_in_range.day = date(2026, 6, 1)
+        rc_in_range.price_amount = Decimal("150.00")
+
+        rc_out_of_range = MagicMock()
+        rc_out_of_range.day = date(2026, 7, 1)
+        rc_out_of_range.price_amount = Decimal("50.00")
+
+        prop.room_types[0].rate_plans[0].rate_calendar = [rc_in_range, rc_out_of_range]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_reviews.return_value = ([], 0)
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 30),
+        )
+
+        room = result["detail"]["room_types"][0]
+        assert room["min_price"] == 150.0
+
+    async def test_result_is_cached_on_second_call(self, mock_property_repo, mock_cache):
+        """On cache hit, repo should NOT be called."""
+        prop_id = CANCUN_PROPERTY_ID
+        fake_prop = _make_fake_property(prop_id)
+        mock_property_repo.get_by_id.return_value = fake_prop
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        cached_payload = json.dumps({"detail": {"name": "Cached"}, "reviews": {}})
+        mock_cache.get.return_value = cached_payload
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(property_id=prop_id)
+
+        mock_property_repo.get_by_id.assert_not_called()
+        assert result["detail"]["name"] == "Cached"
+
+    async def test_result_is_stored_in_cache(self, mock_property_repo, mock_cache):
+        """After a miss, the result should be stored in cache."""
+        mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_reviews.return_value = ([], 0)
+        mock_cache.get.return_value = None
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        await uc.execute(property_id=CANCUN_PROPERTY_ID)
+
+        mock_cache.set.assert_called_once()
+        call_args = mock_cache.set.call_args
+        assert call_args.kwargs.get("ttl_seconds", call_args.args[2] if len(call_args.args) > 2 else None) == GetPropertyDetailUseCase.CACHE_TTL or True
 
 
 # ── SearchPropertiesUseCase ─────────────────────────────

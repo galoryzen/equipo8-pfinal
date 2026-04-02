@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.application.ports.outbound.property_repository import (
     PropertyRepository as PropertyRepositoryPort,
@@ -275,21 +275,60 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         return items, total
 
     async def get_by_id(self, property_id: UUID) -> Property | None:
-        # Cargar Property con TODAS las relaciones eager-loaded:
-        #   - city (joined), images, amenities (selectin), policies
-        #   - room_types → rate_plans → rate_calendar + cancellation_policy
-        #   - default_cancellation_policy
-        # El use case se encarga del mapeo ORM → PropertyDetail y de calcular
-        # min_price por rate_plan/room_type filtrando rate_calendar por fechas.
-        raise NotImplementedError
+        stmt = (
+            select(Property)
+            .options(
+                joinedload(Property.city),
+                joinedload(Property.default_cancellation_policy),
+                selectinload(Property.images),
+                selectinload(Property.amenities),
+                selectinload(Property.policies),
+                selectinload(Property.room_types).selectinload(RoomType.amenities),
+                selectinload(Property.room_types)
+                .selectinload(RoomType.rate_plans)
+                .joinedload(RatePlan.cancellation_policy),
+                selectinload(Property.room_types)
+                .selectinload(RoomType.rate_plans)
+                .selectinload(RatePlan.rate_calendar),
+            )
+            .where(
+                Property.id == property_id,
+                Property.status == PropertyStatus.ACTIVE,
+            )
+        )
+        result = await self._session.execute(stmt)
+        return result.unique().scalar_one_or_none()
 
     async def get_reviews(self, property_id: UUID, page: int = 1, page_size: int = 10) -> tuple[list[Review], int]:
-        # Query Review WHERE property_id, ORDER BY created_at DESC.
-        # Retornar (list[Review], total_count) para paginación.
-        raise NotImplementedError
+        count_stmt = (
+            select(sa_func.count())
+            .select_from(Review)
+            .where(Review.property_id == property_id)
+        )
+        total = (await self._session.execute(count_stmt)).scalar() or 0
+
+        stmt = (
+            select(Review)
+            .where(Review.property_id == property_id)
+            .order_by(Review.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        rows = (await self._session.execute(stmt)).scalars().all()
+        return list(rows), total
 
     async def get_min_prices(self, property_ids: list[UUID], checkin: date, checkout: date) -> dict[UUID, Decimal]:
-        # Min RateCalendar.price_amount por property para el rango de fechas.
-        # Cruzar RoomType → RatePlan (activo) → RateCalendar.
-        # Retornar {property_id: min_price}.
-        raise NotImplementedError
+        stmt = (
+            select(RoomType.property_id, sa_func.min(RateCalendar.price_amount))
+            .join(RatePlan, RatePlan.room_type_id == RoomType.id)
+            .join(RateCalendar, RateCalendar.rate_plan_id == RatePlan.id)
+            .where(
+                RoomType.property_id.in_(property_ids),
+                RatePlan.is_active.is_(True),
+                RateCalendar.day >= checkin,
+                RateCalendar.day < checkout,
+            )
+            .group_by(RoomType.property_id)
+        )
+        rows = (await self._session.execute(stmt)).all()
+        return {row[0]: row[1] for row in rows}
