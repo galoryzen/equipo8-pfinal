@@ -40,8 +40,8 @@
     "filters": "Filters",
     "priceRange": "Price Range",
     "amenities": "Amenities",
-    "guestsCount": "{{count}} guest",
-    "guestsCount_plural": "{{count}} guests",
+    "guestsCount_one": "{{count}} guest",
+    "guestsCount_other": "{{count}} guests",
     "clearFilters": "Clear filters",
     "applyFilters": "Apply",
     "searchCity": "Search by city or destination",
@@ -78,6 +78,10 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "logout": "Log out"
+  },
+  "guests": {
+    "decrease": "Decrease guests",
+    "increase": "Increase guests"
   },
   "common": {
     "loading": "Loading...",

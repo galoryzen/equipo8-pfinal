@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { Card, Button, DateRangePicker } from '@src/shared/ui';
+import { Card, Button, DateRangePicker, GuestPicker } from '@src/shared/ui';
 import { useFeatured } from '@src/features/catalog/use-featured';
 import { searchCities } from '@src/features/catalog/catalog-service';
 import type { CityInfo } from '@src/types/catalog';
@@ -49,10 +49,22 @@ export default function HomeScreen() {
     });
   }, []);
 
-  // Date picker state
+  // Date picker state — default to tomorrow / day-after so search always has dates
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [checkin, setCheckin] = useState<string | null>(null);
-  const [checkout, setCheckout] = useState<string | null>(null);
+  const [checkin, setCheckin] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  });
+  const [checkout, setCheckout] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return d.toISOString().split('T')[0];
+  });
+
+  // Guest picker state
+  const [showGuestPicker, setShowGuestPicker] = useState(false);
+  const [guests, setGuests] = useState(1);
 
   const handleDatesConfirm = useCallback((ci: string, co: string) => {
     setCheckin(ci);
@@ -110,11 +122,12 @@ export default function HomeScreen() {
         cityName: selectedCity.name,
         cityCountry: selectedCity.country,
         cityDepartment: selectedCity.department ?? '',
-        checkin: checkin ?? '',
-        checkout: checkout ?? '',
+        checkin,
+        checkout,
+        guests: String(guests),
       },
     });
-  }, [selectedCity, router, checkin, checkout]);
+  }, [selectedCity, router, checkin, checkout, guests]);
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'es' : 'en');
@@ -183,21 +196,28 @@ export default function HomeScreen() {
 
           <View style={styles.searchFiltersRow}>
             <Pressable
-              style={[styles.filterChip, checkin && styles.filterChipActive]}
+              style={[styles.filterChip, styles.filterChipActive]}
               onPress={() => setShowDatePicker(true)}
               accessibilityRole="button"
               accessibilityLabel={t('home.addDates')}
             >
-              <Ionicons name="calendar-outline" size={16} color={checkin ? colors.primary : colors.text.secondary} />
-              <Text style={[styles.filterValue, checkin && styles.filterValueActive]}>
-                {checkin && checkout
-                  ? `${formatShortDate(checkin)} - ${formatShortDate(checkout)}`
-                  : t('home.addDates')}
+              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+              <Text style={[styles.filterValue, styles.filterValueActive, { flex: 1 }]}>
+                {formatShortDate(checkin)} - {formatShortDate(checkout)}
               </Text>
+              <Ionicons name="chevron-down" size={14} color={colors.primary} />
             </Pressable>
-            <Pressable style={styles.filterChip} accessibilityRole="button">
-              <Ionicons name="people-outline" size={16} color={colors.text.secondary} />
-              <Text style={styles.filterValue}>{t('home.addGuests')}</Text>
+            <Pressable
+              style={[styles.filterChip, styles.filterChipActive]}
+              onPress={() => setShowGuestPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.addGuests')}
+            >
+              <Ionicons name="people-outline" size={16} color={colors.primary} />
+              <Text style={[styles.filterValue, styles.filterValueActive, { flex: 1 }]}>
+                {t('search.guestsCount', { count: guests })}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={colors.primary} />
             </Pressable>
           </View>
 
@@ -249,8 +269,9 @@ export default function HomeScreen() {
                             cityName: dest.name,
                             cityCountry: dest.country,
                             cityDepartment: dest.department ?? '',
-                            checkin: checkin ?? '',
-                            checkout: checkout ?? '',
+                            checkin,
+                            checkout,
+                            guests: String(guests),
                           },
                         })
                       }
@@ -366,8 +387,16 @@ export default function HomeScreen() {
         visible={showDatePicker}
         onClose={() => setShowDatePicker(false)}
         onConfirm={handleDatesConfirm}
-        initialCheckin={checkin ?? undefined}
-        initialCheckout={checkout ?? undefined}
+        initialCheckin={checkin}
+        initialCheckout={checkout}
+      />
+
+      {/* Guest Picker */}
+      <GuestPicker
+        visible={showGuestPicker}
+        onClose={() => setShowGuestPicker(false)}
+        onConfirm={setGuests}
+        initialGuests={guests}
       />
     </SafeAreaView>
   );

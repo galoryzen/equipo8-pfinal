@@ -281,6 +281,91 @@ describe('useSearch', () => {
     );
   });
 
+  it('starts with default guests of 1', () => {
+    const { result } = renderHook(() => useSearch());
+    expect(result.current.guests).toBe(1);
+  });
+
+  it('initializes with provided guests', () => {
+    const { result } = renderHook(() => useSearch(null, undefined, undefined, 3));
+    expect(result.current.guests).toBe(3);
+  });
+
+  it('syncs guests when initialGuests changes (re-navigation)', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result, rerender } = renderHook(
+      ({ guests }: { guests: number }) => useSearch(MOCK_CITY, undefined, undefined, guests),
+      { initialProps: { guests: 3 } },
+    );
+
+    await waitFor(() => expect(result.current.hasSearched).toBe(true));
+    expect(result.current.guests).toBe(3);
+
+    // Simulate navigating back and returning with different guests
+    rerender({ guests: 10 });
+
+    expect(result.current.guests).toBe(10);
+
+    await waitFor(() =>
+      expect(mockedService.searchProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ guests: 10 }),
+      ),
+    );
+  });
+
+  it('setGuests updates guest count', () => {
+    const { result } = renderHook(() => useSearch());
+
+    act(() => {
+      result.current.setGuests(4);
+    });
+
+    expect(result.current.guests).toBe(4);
+  });
+
+  it('search() sends guest count to API', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch(null, undefined, undefined, 3));
+
+    act(() => {
+      result.current.selectCity(MOCK_CITY);
+    });
+
+    await act(async () => {
+      result.current.search();
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(mockedService.searchProperties).toHaveBeenCalledWith(
+      expect.objectContaining({ city_id: 'city-1', guests: 3 }),
+    );
+  });
+
+  it('auto re-searches when guests change after initial search', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch(MOCK_CITY));
+
+    await waitFor(() => expect(result.current.hasSearched).toBe(true));
+
+    expect(mockedService.searchProperties).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.setGuests(5);
+    });
+
+    await waitFor(() =>
+      expect(mockedService.searchProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ guests: 5 }),
+      ),
+    );
+
+    expect(mockedService.searchProperties).toHaveBeenCalledTimes(2);
+  });
+
   it('re-searches when initialCity changes', async () => {
     mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
 

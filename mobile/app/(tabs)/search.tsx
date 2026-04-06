@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@src/theme';
-import { Card, Chip } from '@src/shared/ui';
+import { Card, Chip, GuestPicker } from '@src/shared/ui';
 import { useSearch } from '@src/features/catalog/use-search';
 import type { CityInfo } from '@src/types/catalog';
 
@@ -43,6 +43,7 @@ export default function SearchScreen() {
     cityDepartment?: string;
     checkin?: string;
     checkout?: string;
+    guests?: string;
   }>();
 
   const initialCity: CityInfo | null =
@@ -55,6 +56,8 @@ export default function SearchScreen() {
         }
       : null;
 
+  const initialGuests = params.guests ? parseInt(params.guests, 10) : undefined;
+
   const {
     selectedCity,
     results,
@@ -65,13 +68,17 @@ export default function SearchScreen() {
     toggleAmenity,
     checkin,
     checkout,
+    guests,
+    setGuests,
   } = useSearch(
     initialCity,
     params.checkin || undefined,
     params.checkout || undefined,
+    initialGuests,
   );
 
   const [showFilters, setShowFilters] = useState(false);
+  const [showGuestPicker, setShowGuestPicker] = useState(false);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -94,6 +101,7 @@ export default function SearchScreen() {
               {checkin && checkout && (
                 <Text style={styles.headerDates}>
                   {formatShortDate(checkin)} - {formatShortDate(checkout)}
+                  {` · ${t('search.guestsCount', { count: guests })}`}
                 </Text>
               )}
             </View>
@@ -117,7 +125,20 @@ export default function SearchScreen() {
       {/* Filters */}
       {showFilters && (
         <View style={styles.filtersContainer}>
-          <Text style={styles.filterLabel}>{t('search.amenities')}</Text>
+          <Text style={styles.filterLabel}>{t('home.guests')}</Text>
+          <Pressable
+            style={styles.guestChip}
+            onPress={() => setShowGuestPicker(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.addGuests')}
+          >
+            <Ionicons name="people-outline" size={16} color={colors.primary} />
+            <Text style={styles.guestChipText}>
+              {t('search.guestsCount', { count: guests })}
+            </Text>
+          </Pressable>
+
+          <Text style={[styles.filterLabel, { marginTop: spacing.md }]}>{t('search.amenities')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -227,6 +248,13 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
       )}
+      {/* Guest Picker */}
+      <GuestPicker
+        visible={showGuestPicker}
+        onClose={() => setShowGuestPicker(false)}
+        onConfirm={setGuests}
+        initialGuests={guests}
+      />
     </SafeAreaView>
   );
 }
@@ -285,6 +313,24 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     marginBottom: spacing.sm,
+  },
+  guestChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primary10,
+    marginBottom: spacing.sm,
+  },
+  guestChipText: {
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.sm,
+    color: colors.primary,
   },
   chipRow: {
     gap: spacing.sm,
