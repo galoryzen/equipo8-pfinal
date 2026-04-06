@@ -31,12 +31,15 @@ interface UseSearchResult {
   checkin: string;
   checkout: string;
   setDates: (checkin: string, checkout: string) => void;
+  guests: number;
+  setGuests: (n: number) => void;
 }
 
 export function useSearch(
   initialCity?: CityInfo | null,
   initialCheckin?: string,
   initialCheckout?: string,
+  initialGuests?: number,
 ): UseSearchResult {
   const defaults = getDefaultDates();
   const [checkin, setCheckin] = useState(initialCheckin || defaults.checkin);
@@ -53,6 +56,7 @@ export function useSearch(
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [amenityFilters, setAmenityFilters] = useState<string[]>([]);
+  const [guests, setGuestsState] = useState(initialGuests ?? 1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setDates = useCallback((ci: string, co: string) => {
@@ -100,7 +104,7 @@ export function useSearch(
           city_id: city.id,
           checkin,
           checkout,
-          guests: 1,
+          guests,
           amenities: amenities.length > 0 ? amenities : undefined,
         });
         setResults(response.items);
@@ -114,14 +118,18 @@ export function useSearch(
         setHasSearched(true);
       }
     },
-    [checkin, checkout],
+    [checkin, checkout, guests],
   );
 
-  // Sync dates when navigation params change
+  // Sync dates and guests when navigation params change
   useEffect(() => {
     if (initialCheckin) setCheckin(initialCheckin);
     if (initialCheckout) setCheckout(initialCheckout);
   }, [initialCheckin, initialCheckout]);
+
+  useEffect(() => {
+    if (initialGuests != null) setGuestsState(initialGuests);
+  }, [initialGuests]);
 
   // Auto-search when initialCity changes (e.g. navigating back with a new city)
   const prevCityIdRef = useRef<string | null>(null);
@@ -156,6 +164,19 @@ export function useSearch(
     setHasSearched(false);
   }, []);
 
+  const setGuests = useCallback((n: number) => {
+    setGuestsState(n);
+  }, []);
+
+  // Auto re-search when guests change and there are previous results
+  const prevGuestsRef = useRef(guests);
+  useEffect(() => {
+    if (prevGuestsRef.current !== guests && hasSearched && selectedCity) {
+      prevGuestsRef.current = guests;
+      fetchProperties(selectedCity, amenityFilters);
+    }
+  }, [guests, hasSearched, selectedCity, amenityFilters, fetchProperties]);
+
   const toggleAmenity = useCallback((code: string) => {
     setAmenityFilters((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
@@ -181,5 +202,7 @@ export function useSearch(
     checkin,
     checkout,
     setDates,
+    guests,
+    setGuests,
   };
 }
