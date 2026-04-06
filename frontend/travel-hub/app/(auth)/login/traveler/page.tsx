@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -18,7 +18,7 @@ import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import NextLink from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { loginUser } from '@/app/lib/api/auth';
 
@@ -72,8 +72,10 @@ function inputSx(hasError: boolean) {
   };
 }
 
-export default function TravelerLoginPage() {
+function TravelerLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') ?? '/traveler/search';
 
   const [values, setValues] = useState<FormValues>({ email: '', password: '' });
   const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});
@@ -110,7 +112,7 @@ export default function TravelerLoginPage() {
     try {
       await loginUser(values.email, values.password);
       setSnackbar({ open: true, message: 'Welcome back! Redirecting…', severity: 'success' });
-      setTimeout(() => router.push('/traveler/search'), 1200);
+      setTimeout(() => router.push(redirectTo), 1200);
     } catch {
       setSnackbar({
         open: true,
@@ -398,5 +400,13 @@ export default function TravelerLoginPage() {
         </Alert>
       </Snackbar>
     </div>
+  );
+}
+
+export default function TravelerLoginPage() {
+  return (
+    <Suspense>
+      <TravelerLoginForm />
+    </Suspense>
   );
 }

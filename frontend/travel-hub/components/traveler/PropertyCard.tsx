@@ -1,5 +1,7 @@
 'use client';
 
+import NextLink from 'next/link';
+
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -22,6 +24,7 @@ function formatReviewCount(count: number): string {
 
 export default function PropertyCard({ property }: PropertyCardProps) {
   return (
+    <NextLink href={`/traveler/hotel?id=${property.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
     <Card
       sx={{
         borderRadius: 3,
@@ -132,5 +135,6 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         )}
       </CardContent>
     </Card>
+    </NextLink>
   );
 }

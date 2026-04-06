@@ -17,7 +17,7 @@ from app.adapters.inbound.api.dependencies import (
 from app.application.ports.outbound.cache_port import CachePort
 from app.schemas.city import CityOut, FeaturedDestinationOut
 from app.schemas.common import PaginatedResponse
-from app.schemas.property import PropertySummary
+from app.schemas.property import PropertyDetailResponse, PropertySummary
 
 router = APIRouter()
 
@@ -84,7 +84,7 @@ async def search_properties(
     )
 
 
-@router.get("/properties/{property_id}")
+@router.get("/properties/{property_id}", response_model=PropertyDetailResponse)
 async def get_property_detail(
     property_id: UUID,
     checkin: date | None = Query(None),

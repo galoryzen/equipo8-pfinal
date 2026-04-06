@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.schemas.common import PaginatedResponse
+
 # ── Shared sub-schemas ───────────────────────────────────
 
 
@@ -102,3 +104,8 @@ class PropertyDetail(BaseModel):
     amenities: list[AmenitySummary] = []
     policies: list[PropertyPolicyOut] = []
     room_types: list[RoomTypeOut] = []
+
+
+class PropertyDetailResponse(BaseModel):
+    detail: PropertyDetail
+    reviews: PaginatedResponse[ReviewOut]

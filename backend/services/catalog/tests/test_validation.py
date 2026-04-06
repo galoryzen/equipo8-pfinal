@@ -7,6 +7,36 @@ from app.application.exceptions import PropertyNotFoundError
 from app.schemas.common import PaginatedResponse
 
 
+def _make_detail_response(pid):
+    """Minimal valid PropertyDetailResponse dict for API wiring tests."""
+    return {
+        "detail": {
+            "id": str(pid),
+            "hotel_id": str(uuid4()),
+            "name": "Test Hotel",
+            "description": "Desc",
+            "city": {"id": str(uuid4()), "name": "City", "department": None, "country": "MX"},
+            "address": "123 Main St",
+            "rating_avg": "4.5",
+            "review_count": 10,
+            "popularity_score": "80.0",
+            "default_cancellation_policy": None,
+            "images": [],
+            "amenities": [],
+            "policies": [],
+            "room_types": [],
+        },
+        "reviews": {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "page_size": 10,
+            "total_pages": 0,
+            "message": None,
+        },
+    }
+
+
 class TestFeaturedPropertiesValidation:
     @patch("app.adapters.inbound.api.properties.get_featured_use_case")
     def test_limit_below_minimum_returns_422(self, mock_factory, client):
@@ -161,6 +191,39 @@ class TestPropertyDetailValidation:
 
         assert resp.status_code == 404
         assert resp.json()["trace_id"] == "trace-abc-123"
+
+    @patch("app.adapters.inbound.api.properties.get_detail_use_case")
+    def test_valid_request_returns_200_with_detail_and_reviews(self, mock_factory, client):
+        """Happy path: use case returns dict → endpoint serialises to 200."""
+        pid = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _make_detail_response(pid)
+        mock_factory.return_value = mock_uc
+
+        resp = client.get(f"/api/v1/catalog/properties/{pid}")
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "detail" in body
+        assert "reviews" in body
+        assert body["detail"]["name"] == "Test Hotel"
+
+    @patch("app.adapters.inbound.api.properties.get_detail_use_case")
+    def test_checkin_checkout_forwarded_to_use_case(self, mock_factory, client):
+        """Date params should be passed through to the use case."""
+        pid = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _make_detail_response(pid)
+        mock_factory.return_value = mock_uc
+
+        resp = client.get(
+            f"/api/v1/catalog/properties/{pid}?checkin=2026-06-01&checkout=2026-06-05"
+        )
+
+        assert resp.status_code == 200
+        call_kwargs = mock_uc.execute.call_args.kwargs
+        assert str(call_kwargs["checkin"]) == "2026-06-01"
+        assert str(call_kwargs["checkout"]) == "2026-06-05"
 
 
 class TestCitiesValidation:
