@@ -1,9 +1,12 @@
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+
 export default function TravelerLayout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <nav>Traveler Navbar</nav>
+      <Navbar />
       <main>{children}</main>
-      <footer>TravelHub Footer</footer>
+      <Footer />
     </div>
   );
 }

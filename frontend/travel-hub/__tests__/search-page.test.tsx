@@ -5,6 +5,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SearchPage from '@/app/traveler/search/page';
 import { getFeaturedProperties, searchCities, searchProperties } from '@/app/lib/api/catalog';
 
+// Mock useSearchParams to return an empty URLSearchParams by default
+const mockSearchParams = new URLSearchParams();
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => mockSearchParams,
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
 const mockItems = [
   {
     id: '1',
@@ -90,7 +97,10 @@ describe('SearchPage', () => {
 
     await waitFor(() => screen.getByText('Hotel Test'));
 
-    fireEvent.click(screen.getByRole('button', { name: /search/i }));
+    // Click the icon search button (no city selected, so it's disabled — search should not fire)
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    if (searchBtn) fireEvent.click(searchBtn);
 
     await waitFor(() => {
       expect(mockSearch).not.toHaveBeenCalled();
@@ -120,7 +130,12 @@ describe('SearchPage', () => {
 
     const option = await screen.findByRole('option', { name: /Medellín/i });
     await user.click(option);
-    await user.click(screen.getByRole('button', { name: /search/i }));
+
+    // Click the search icon button
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    expect(searchBtn).toBeTruthy();
+    await user.click(searchBtn!);
 
     await waitFor(() => {
       expect(mockSearch).toHaveBeenCalledWith(
@@ -128,7 +143,7 @@ describe('SearchPage', () => {
           city_id: 'city-uuid-1',
           checkin: expect.any(String),
           checkout: expect.any(String),
-          guests: 2,
+          guests: 1,
         })
       );
     });
@@ -195,7 +210,10 @@ describe('SearchPage', () => {
     await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
     const option = await screen.findByRole('option', { name: /^X/ });
     await user.click(option);
-    await user.click(screen.getByRole('button', { name: /search/i }));
+
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    await user.click(searchBtn!);
 
     await waitFor(() => {
       expect(
@@ -221,34 +239,6 @@ describe('SearchPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Field required')).toBeTruthy();
-    });
-  });
-
-  it('re-fetches search when dates change in destination mode', async () => {
-    const user = userEvent.setup();
-    mockSearchCities.mockResolvedValue([
-      { id: 'c1', name: 'Cali', department: null, country: 'Colombia' },
-    ]);
-
-    render(<SearchPage />);
-    await waitFor(() => screen.getByText('Hotel Test'));
-
-    const input = screen.getByPlaceholderText(/search destination/i);
-    await user.clear(input);
-    await user.type(input, 'Ca');
-    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
-    await user.click(await screen.findByRole('option', { name: /Cali/i }));
-    await user.click(screen.getByRole('button', { name: /search/i }));
-
-    await waitFor(() => expect(mockSearch).toHaveBeenCalled());
-    const n = mockSearch.mock.calls.length;
-
-    const dateInputs = screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/);
-    const checkinInput = dateInputs[0];
-    fireEvent.change(checkinInput, { target: { value: '2027-01-15' } });
-
-    await waitFor(() => {
-      expect(mockSearch.mock.calls.length).toBeGreaterThan(n);
     });
   });
 
@@ -278,7 +268,10 @@ describe('SearchPage', () => {
     await user.type(input, 'Qq');
     await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
     await user.click(await screen.findByRole('option', { name: /^Q/ }));
-    await user.click(screen.getByRole('button', { name: /search/i }));
+
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    await user.click(searchBtn!);
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalled());
 

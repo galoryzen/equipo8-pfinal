@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -14,20 +15,20 @@ import Typography from '@mui/material/Typography';
 import AmenityFilter from '@/components/traveler/AmenityFilter';
 import PriceRangeFilter from '@/components/traveler/PriceRangeFilter';
 import PropertyCard from '@/components/traveler/PropertyCard';
-import SearchBar from '@/components/traveler/SearchBar';
+import SearchBar from '@/components/search/SearchBar';
 
 import { getFeaturedProperties, searchProperties } from '@/app/lib/api/catalog';
-import type { AmenitySummary, PaginatedResponse, PropertySummary } from '@/app/lib/types/catalog';
+import type { AmenitySummary, CityOut, PaginatedResponse, PropertySummary } from '@/app/lib/types/catalog';
 
 function defaultCheckin(): string {
   const d = new Date();
-  d.setDate(d.getDate() + 7);
+  d.setDate(d.getDate() + 1);
   return d.toISOString().slice(0, 10);
 }
 
 function defaultCheckout(): string {
   const d = new Date();
-  d.setDate(d.getDate() + 10);
+  d.setDate(d.getDate() + 2);
   return d.toISOString().slice(0, 10);
 }
 
@@ -44,12 +45,24 @@ function errorToMessage(err: unknown): string {
   return 'Error searching properties';
 }
 
-function SearchPage() {
-  const [cityId, setCityId] = useState<string | null>(null);
-  const [cityLabel, setCityLabel] = useState('');
-  const [checkin, setCheckin] = useState(defaultCheckin);
-  const [checkout, setCheckout] = useState(defaultCheckout);
-  const [guests, setGuests] = useState(2);
+function SearchPageContent() {
+  const params = useSearchParams();
+
+  // Parse initial city from URL params
+  const initialCity = useMemo((): CityOut | null => {
+    const id = params.get('cityId');
+    const name = params.get('cityName');
+    const country = params.get('cityCountry');
+    if (!id || !name || !country) return null;
+    return { id, name, country, department: params.get('cityDepartment') };
+  }, [params]);
+
+  const [cityId, setCityId] = useState<string | null>(initialCity?.id ?? null);
+  const [cityLabel, setCityLabel] = useState(initialCity?.name ?? '');
+  const [currentCity, setCurrentCity] = useState<CityOut | null>(initialCity);
+  const [checkin, setCheckin] = useState(params.get('checkin') || defaultCheckin);
+  const [checkout, setCheckout] = useState(params.get('checkout') || defaultCheckout);
+  const [guests, setGuests] = useState(Number(params.get('guests')) || 1);
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -59,6 +72,7 @@ function SearchPage() {
   const [data, setData] = useState<PaginatedResponse<PropertySummary> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const initialSearchDone = useRef(false);
 
   const amenityOptions: AmenitySummary[] = [
     { code: 'wifi', name: 'Wifi' },
@@ -84,18 +98,22 @@ function SearchPage() {
     }
   }, []);
 
-  const loadSearch = useCallback(async () => {
-    if (!cityId) return;
+  const loadSearch = useCallback(async (
+    searchCityId: string,
+    searchCheckin: string,
+    searchCheckout: string,
+    searchGuests: number,
+  ) => {
     setLoading(true);
     setError(null);
     try {
       const sortParam =
         sortBy === 'rating' ? 'rating' : sortBy === 'price_asc' ? 'price_asc' : sortBy || undefined;
       const result = await searchProperties({
-        checkin,
-        checkout,
-        guests,
-        city_id: cityId,
+        checkin: searchCheckin,
+        checkout: searchCheckout,
+        guests: searchGuests,
+        city_id: searchCityId,
         min_price: minPrice,
         max_price: maxPrice,
         amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
@@ -111,29 +129,28 @@ function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [
-    cityId,
-    checkin,
-    checkout,
-    guests,
-    minPrice,
-    maxPrice,
-    selectedAmenities,
-    sortBy,
-    page,
-  ]);
+  }, [minPrice, maxPrice, selectedAmenities, sortBy, page]);
 
+  // Auto-search from URL params on first load
   useEffect(() => {
-    if (!cityId) {
+    if (initialSearchDone.current) return;
+    initialSearchDone.current = true;
+
+    if (initialCity) {
+      void loadSearch(initialCity.id, checkin, checkout, guests);
+    } else {
       void loadFeatured();
     }
-  }, [cityId, loadFeatured]);
+  }, [initialCity, params, checkin, checkout, guests, loadFeatured, loadSearch]);
 
+  // Re-search when filters change (only if we have a city)
   useEffect(() => {
+    if (!initialSearchDone.current) return;
     if (cityId) {
-      void loadSearch();
+      void loadSearch(cityId, checkin, checkout, guests);
     }
-  }, [cityId, loadSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minPrice, maxPrice, selectedAmenities, sortBy, page]);
 
   useEffect(() => {
     setPage(1);
@@ -175,10 +192,12 @@ function SearchPage() {
 
   const gridData: PaginatedResponse<PropertySummary> | null = cityId ? data : browsePaginated;
 
-  const handleSearch = (newCityId: string | null, label: string) => {
-    setCityId(newCityId);
-    setCityLabel(newCityId ? label : '');
+  const handleSearch = (city: CityOut) => {
+    setCityId(city.id);
+    setCityLabel(city.name);
+    setCurrentCity(city);
     setPage(1);
+    void loadSearch(city.id, checkin, checkout, guests);
   };
 
   const handlePriceApply = (min: number | undefined, max: number | undefined) => {
@@ -212,16 +231,19 @@ function SearchPage() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
       <Box sx={{ bgcolor: 'white', borderBottom: '1px solid', borderColor: 'grey.200', py: 2, px: 3 }}>
-        <SearchBar
-          initialCityLabel={cityLabel}
-          checkin={checkin}
-          checkout={checkout}
-          guests={guests}
-          onCheckinChange={setCheckin}
-          onCheckoutChange={setCheckout}
-          onGuestsChange={setGuests}
-          onSearch={handleSearch}
-        />
+        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+          <SearchBar
+            checkin={checkin}
+            checkout={checkout}
+            guests={guests}
+            onCheckinChange={setCheckin}
+            onCheckoutChange={setCheckout}
+            onGuestsChange={setGuests}
+            onSearch={handleSearch}
+            initialCity={currentCity}
+            variant="icon"
+          />
+        </Box>
       </Box>
 
       <Box
@@ -333,4 +355,10 @@ function SearchPage() {
   );
 }
 
-export default SearchPage;
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+      <SearchPageContent />
+    </Suspense>
+  );
+}

@@ -3,67 +3,77 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RootPage from '@/app/page';
 import * as authApi from '@/app/lib/api/auth';
-
-const mockReplace = vi.fn();
+import * as catalogApi from '@/app/lib/api/catalog';
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mockReplace }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock('@/app/lib/api/auth', () => ({
   getMe: vi.fn(),
 }));
 
-const mockGetMe = vi.mocked(authApi.getMe);
+vi.mock('@/app/lib/api/catalog', () => ({
+  getFeaturedProperties: vi.fn(),
+  getFeaturedDestinations: vi.fn(),
+  searchCities: vi.fn(),
+}));
 
-describe('Root page redirect logic', () => {
+const mockGetMe = vi.mocked(authApi.getMe);
+const mockFeatured = vi.mocked(catalogApi.getFeaturedProperties);
+const mockDestinations = vi.mocked(catalogApi.getFeaturedDestinations);
+
+describe('Home page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetMe.mockResolvedValue(null);
+    mockFeatured.mockResolvedValue([]);
+    mockDestinations.mockResolvedValue([]);
   });
 
-  it('shows a loading spinner while checking auth', () => {
-    mockGetMe.mockImplementation(() => new Promise(() => {}));
+  it('renders the hero heading', async () => {
     render(<RootPage />);
-    expect(screen.getByRole('progressbar')).toBeTruthy();
+    expect(screen.getByText('Find your next stay')).toBeTruthy();
   });
 
-  it('redirects to /login/traveler when not authenticated', async () => {
+  it('renders the navbar with TravelHub branding', async () => {
+    render(<RootPage />);
+    expect(screen.getByText('TravelHub')).toBeTruthy();
+  });
+
+  it('shows Log in link when not authenticated', async () => {
     mockGetMe.mockResolvedValue(null);
     render(<RootPage />);
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/login/traveler');
+      expect(screen.getByText('Log in')).toBeTruthy();
     });
   });
 
-  it('redirects to /manager when user has HOTEL role', async () => {
-    mockGetMe.mockResolvedValue({ id: '1', email: 'h@test.com', role: 'HOTEL' });
+  it('shows username when authenticated', async () => {
+    mockGetMe.mockResolvedValue({ id: '1', email: 'john@test.com', role: 'TRAVELER' });
     render(<RootPage />);
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/manager');
+      expect(screen.getByText('john')).toBeTruthy();
     });
   });
 
-  it('redirects to /manager when user has AGENCY role', async () => {
-    mockGetMe.mockResolvedValue({ id: '1', email: 'a@test.com', role: 'AGENCY' });
+  it('renders the Popular Destinations section', () => {
     render(<RootPage />);
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/manager');
-    });
+    expect(screen.getByText('Popular Destinations')).toBeTruthy();
   });
 
-  it('redirects to /manager when user has ADMIN role', async () => {
-    mockGetMe.mockResolvedValue({ id: '1', email: 'ad@test.com', role: 'ADMIN' });
+  it('renders the Recommended for You section', () => {
     render(<RootPage />);
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/manager');
-    });
+    expect(screen.getByText('Recommended for You')).toBeTruthy();
   });
 
-  it('redirects to /traveler/search for any other role (TRAVELER)', async () => {
-    mockGetMe.mockResolvedValue({ id: '1', email: 't@test.com', role: 'TRAVELER' });
+  it('renders the newsletter section', () => {
     render(<RootPage />);
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/traveler/search');
-    });
+    expect(screen.getByText('Plan your dream getaway today')).toBeTruthy();
+  });
+
+  it('renders the search destination input', () => {
+    render(<RootPage />);
+    expect(screen.getByPlaceholderText('Search destination')).toBeTruthy();
   });
 });
