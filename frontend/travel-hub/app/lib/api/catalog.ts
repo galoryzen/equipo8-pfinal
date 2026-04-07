@@ -1,5 +1,6 @@
 import type {
   CityOut,
+  FeaturedDestination,
   PaginatedResponse,
   PropertyDetailResponse,
   PropertySummary,
@@ -52,6 +53,15 @@ export function isCatalogNotFoundError(err: unknown): err is CatalogNotFoundErro
 
 export async function searchCities(q: string): Promise<CityOut[]> {
   const res = await fetch(`${API_URL}/api/v1/catalog/cities?q=${encodeURIComponent(q)}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function getFeaturedDestinations(limit = 4): Promise<FeaturedDestination[]> {
+  const res = await fetch(`${API_URL}/api/v1/catalog/destinations/featured?limit=${limit}`);
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(formatApiErrorBody(body, res.status));

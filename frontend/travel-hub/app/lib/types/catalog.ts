@@ -5,6 +5,14 @@ export interface CitySummary {
   country: string;
 }
 
+export interface FeaturedDestination {
+  id: string;
+  name: string;
+  department?: string;
+  country: string;
+  image_url: string;
+}
+
 export interface AmenitySummary {
   code: string;
   name: string;
