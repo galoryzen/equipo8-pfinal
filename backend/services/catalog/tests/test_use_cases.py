@@ -15,11 +15,12 @@ from app.application.ports.outbound.property_repository import PropertyRepositor
 from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
+from app.application.use_cases.list_amenities import ListAmenitiesUseCase
 from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
 from app.domain.models import CancellationPolicyType, PolicyCategory, PropertyStatus
 from app.schemas.city import CityOut, FeaturedDestinationOut
-from app.schemas.property import PropertyDetailResponse, PropertySummary
+from app.schemas.property import PropertySummary
 from tests.conftest import CANCUN_CITY_ID, CANCUN_PROPERTY_ID, make_property_summary
 
 SEARCH_EMPTY_MSG = SearchPropertiesUseCase.EMPTY_RESULTS_MESSAGE
@@ -502,7 +503,7 @@ class TestSearchProperties:
         assert call_kwargs["sort_by"] == "rating"
 
     async def test_empty_total_sets_clear_message(self, mock_property_repo, mock_cache):
-        """AC2–AC4: no inventory-eligible properties → empty list and clear message."""
+        """AC2-AC4: no inventory-eligible properties -> empty list and clear message."""
         mock_property_repo.search.return_value = ([], 0)
         uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
 
@@ -559,3 +560,41 @@ class TestSearchProperties:
         assert mock_property_repo.search.call_count == 2
         assert mock_property_repo.search.call_args_list[0].kwargs["city_id"] == CANCUN_CITY_ID
         assert mock_property_repo.search.call_args_list[1].kwargs["city_id"] == other_city
+
+
+# ── ListAmenitiesUseCase ──────────────────────────────
+
+
+class TestListAmenities:
+    async def test_maps_amenities_to_summaries(self, mock_property_repo):
+        amenity_wifi = MagicMock(**{"code": "wifi", "name": "Wi-Fi gratuito"})
+        amenity_wifi.code = "wifi"
+        amenity_wifi.name = "Wi-Fi gratuito"
+        amenity_pool = MagicMock()
+        amenity_pool.code = "pool"
+        amenity_pool.name = "Piscina"
+        mock_property_repo.list_amenities.return_value = [amenity_wifi, amenity_pool]
+
+        uc = ListAmenitiesUseCase(mock_property_repo)
+        result = await uc.execute()
+
+        assert len(result) == 2
+        assert result[0].code == "wifi"
+        assert result[0].name == "Wi-Fi gratuito"
+        assert result[1].code == "pool"
+        mock_property_repo.list_amenities.assert_called_once()
+
+    async def test_returns_empty_list_when_no_amenities(self, mock_property_repo):
+        mock_property_repo.list_amenities.return_value = []
+        uc = ListAmenitiesUseCase(mock_property_repo)
+
+        result = await uc.execute()
+
+        assert result == []
+
+    async def test_propagates_repo_error(self, mock_property_repo):
+        mock_property_repo.list_amenities.side_effect = RuntimeError("db down")
+        uc = ListAmenitiesUseCase(mock_property_repo)
+
+        with pytest.raises(RuntimeError):
+            await uc.execute()

@@ -3,10 +3,14 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from app.domain.models import Property, Review
+from app.domain.models import Amenity, Property, Review
 
 
 class PropertyRepository(ABC):
+    @abstractmethod
+    async def list_amenities(self) -> list[Amenity]:
+        """All amenities ordered by name."""
+
     @abstractmethod
     async def search_featured(self, limit: int = 10) -> list[dict]:
         """Active properties ordered by popularity with today's min price."""

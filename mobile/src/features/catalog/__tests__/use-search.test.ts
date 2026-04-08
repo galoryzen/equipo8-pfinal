@@ -20,6 +20,12 @@ const MOCK_CITY_2: CityInfo = {
   country: 'Colombia',
 };
 
+const MOCK_AMENITIES = [
+  { code: 'wifi', name: 'Wi-Fi gratuito' },
+  { code: 'pool', name: 'Piscina' },
+  { code: 'breakfast', name: 'Desayuno incluido' },
+];
+
 const MOCK_SEARCH_RESPONSE = {
   items: [
     {
@@ -29,7 +35,7 @@ const MOCK_SEARCH_RESPONSE = {
       rating_avg: 4.5,
       review_count: 10,
       min_price: 120,
-      amenities: [{ code: 'FREE_WIFI', name: 'Free Wi-Fi' }],
+      amenities: [{ code: 'wifi', name: 'Wi-Fi gratuito' }],
     },
   ],
   total: 1,
@@ -42,6 +48,7 @@ describe('useSearch', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    mockedService.getAmenities.mockResolvedValue(MOCK_AMENITIES);
   });
 
   afterEach(() => {
@@ -208,22 +215,22 @@ describe('useSearch', () => {
     const { result } = renderHook(() => useSearch());
 
     act(() => {
-      result.current.toggleAmenity('FREE_WIFI');
+      result.current.toggleAmenity('wifi');
     });
 
-    expect(result.current.amenityFilters).toEqual(['FREE_WIFI']);
+    expect(result.current.amenityFilters).toEqual(['wifi']);
 
     act(() => {
-      result.current.toggleAmenity('POOL');
+      result.current.toggleAmenity('pool');
     });
 
-    expect(result.current.amenityFilters).toEqual(['FREE_WIFI', 'POOL']);
+    expect(result.current.amenityFilters).toEqual(['wifi', 'pool']);
 
     act(() => {
-      result.current.toggleAmenity('FREE_WIFI');
+      result.current.toggleAmenity('wifi');
     });
 
-    expect(result.current.amenityFilters).toEqual(['POOL']);
+    expect(result.current.amenityFilters).toEqual(['pool']);
   });
 
   it('initializes with default dates when none provided', () => {
@@ -389,5 +396,138 @@ describe('useSearch', () => {
 
     expect(result.current.selectedCity).toEqual(MOCK_CITY_2);
     expect(result.current.query).toBe('Bogotá');
+  });
+
+  // ── New: available amenities from backend ──────────────
+
+  it('loads available amenities from backend on mount', async () => {
+    const { result } = renderHook(() => useSearch());
+
+    await waitFor(() =>
+      expect(result.current.availableAmenities).toEqual(MOCK_AMENITIES),
+    );
+
+    expect(mockedService.getAmenities).toHaveBeenCalledTimes(1);
+  });
+
+  it('sets empty amenities when getAmenities fails', async () => {
+    mockedService.getAmenities.mockRejectedValue(new Error('fail'));
+
+    const { result } = renderHook(() => useSearch());
+
+    await waitFor(() =>
+      expect(mockedService.getAmenities).toHaveBeenCalled(),
+    );
+
+    expect(result.current.availableAmenities).toEqual([]);
+  });
+
+  // ── New: amenity auto-refetch ──────────────────────────
+
+  it('auto re-searches when amenity filters change after initial search', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch(MOCK_CITY));
+
+    await waitFor(() => expect(result.current.hasSearched).toBe(true));
+    expect(mockedService.searchProperties).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.toggleAmenity('wifi');
+    });
+
+    await waitFor(() =>
+      expect(mockedService.searchProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ amenities: ['wifi'] }),
+      ),
+    );
+
+    expect(mockedService.searchProperties).toHaveBeenCalledTimes(2);
+  });
+
+  // ── New: price range ───────────────────────────────────
+
+  it('starts with undefined price range', () => {
+    const { result } = renderHook(() => useSearch());
+
+    expect(result.current.minPrice).toBeUndefined();
+    expect(result.current.maxPrice).toBeUndefined();
+  });
+
+  it('setPriceRange updates min and max price', () => {
+    const { result } = renderHook(() => useSearch());
+
+    act(() => {
+      result.current.setPriceRange(50, 200);
+    });
+
+    expect(result.current.minPrice).toBe(50);
+    expect(result.current.maxPrice).toBe(200);
+  });
+
+  it('search() sends price range to API', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch());
+
+    act(() => {
+      result.current.selectCity(MOCK_CITY);
+    });
+
+    act(() => {
+      result.current.setPriceRange(100, 500);
+    });
+
+    await act(async () => {
+      result.current.search();
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(mockedService.searchProperties).toHaveBeenCalledWith(
+      expect.objectContaining({
+        city_id: 'city-1',
+        min_price: 100,
+        max_price: 500,
+      }),
+    );
+  });
+
+  it('auto re-searches when price range changes after initial search', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch(MOCK_CITY));
+
+    await waitFor(() => expect(result.current.hasSearched).toBe(true));
+    expect(mockedService.searchProperties).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.setPriceRange(50, 300);
+    });
+
+    await waitFor(() =>
+      expect(mockedService.searchProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ min_price: 50, max_price: 300 }),
+      ),
+    );
+
+    expect(mockedService.searchProperties).toHaveBeenCalledTimes(2);
+  });
+
+  it('setPriceRange with undefined clears the filter', () => {
+    const { result } = renderHook(() => useSearch());
+
+    act(() => {
+      result.current.setPriceRange(50, 200);
+    });
+
+    expect(result.current.minPrice).toBe(50);
+
+    act(() => {
+      result.current.setPriceRange(undefined, undefined);
+    });
+
+    expect(result.current.minPrice).toBeUndefined();
+    expect(result.current.maxPrice).toBeUndefined();
   });
 });

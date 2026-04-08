@@ -4,3 +4,4 @@ export { Card } from './Card';
 export { Chip } from './Chip';
 export { DateRangePicker } from './DateRangePicker';
 export { GuestPicker } from './GuestPicker';
+export { PriceRangePicker } from './PriceRangePicker';

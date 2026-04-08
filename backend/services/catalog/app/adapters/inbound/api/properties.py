@@ -11,15 +11,24 @@ from app.adapters.inbound.api.dependencies import (
     get_detail_use_case,
     get_featured_destinations_use_case,
     get_featured_use_case,
+    get_list_amenities_use_case,
     get_search_cities_use_case,
     get_search_use_case,
 )
 from app.application.ports.outbound.cache_port import CachePort
 from app.schemas.city import CityOut, FeaturedDestinationOut
 from app.schemas.common import PaginatedResponse
-from app.schemas.property import PropertyDetailResponse, PropertySummary
+from app.schemas.property import AmenitySummary, PropertyDetailResponse, PropertySummary
 
 router = APIRouter()
+
+
+@router.get("/amenities", response_model=list[AmenitySummary])
+async def list_amenities(
+    session: AsyncSession = Depends(get_db_session),
+):
+    use_case = get_list_amenities_use_case(session)
+    return await use_case.execute()
 
 
 @router.get("/properties/featured", response_model=list[PropertySummary])

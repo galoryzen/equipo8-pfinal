@@ -1,5 +1,6 @@
 import api from '@src/services/api';
 import type {
+  AmenitySummary,
   CityInfo,
   FeaturedDestination,
   PaginatedResponse,
@@ -24,6 +25,11 @@ export async function getFeaturedProperties(
     '/v1/catalog/properties/featured',
     { params: { limit } },
   );
+  return data;
+}
+
+export async function getAmenities(): Promise<AmenitySummary[]> {
+  const { data } = await api.get<AmenitySummary[]>('/v1/catalog/amenities');
   return data;
 }
 
