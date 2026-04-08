@@ -1,5 +1,6 @@
 import api from '@src/services/api';
 import {
+  getAmenities,
   getFeaturedDestinations,
   getFeaturedProperties,
   searchCities,
@@ -85,6 +86,28 @@ describe('catalog-service', () => {
       mockedApi.get.mockResolvedValue({ data: mockData });
 
       const result = await getFeaturedProperties();
+
+      expect(result).toEqual(mockData);
+    });
+  });
+
+  describe('getAmenities', () => {
+    it('calls the correct endpoint', async () => {
+      mockedApi.get.mockResolvedValue({ data: [] });
+
+      await getAmenities();
+
+      expect(mockedApi.get).toHaveBeenCalledWith('/v1/catalog/amenities');
+    });
+
+    it('returns data from response', async () => {
+      const mockData = [
+        { code: 'wifi', name: 'Wi-Fi gratuito' },
+        { code: 'pool', name: 'Piscina' },
+      ];
+      mockedApi.get.mockResolvedValue({ data: mockData });
+
+      const result = await getAmenities();
 
       expect(result).toEqual(mockData);
     });

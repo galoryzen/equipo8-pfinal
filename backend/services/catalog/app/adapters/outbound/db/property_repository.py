@@ -2,7 +2,8 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import func as sa_func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -27,6 +28,12 @@ from app.domain.models import (
 class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
     def __init__(self, session: AsyncSession):
         self._session = session
+
+    async def list_amenities(self) -> list[Amenity]:
+        result = await self._session.execute(
+            select(Amenity).order_by(Amenity.name)
+        )
+        return list(result.scalars().all())
 
     async def search_featured(self, limit: int = 10) -> list[dict]:
         """Active properties by popularity with today's min price."""

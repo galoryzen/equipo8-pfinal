@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { CityInfo, PropertySummary } from '@src/types/catalog';
-import { searchCities, searchProperties } from './catalog-service';
+import type { AmenitySummary, CityInfo, PropertySummary } from '@src/types/catalog';
+import { getAmenities, searchCities, searchProperties } from './catalog-service';
 
 function getDefaultDates() {
   const tomorrow = new Date();
@@ -28,11 +28,15 @@ interface UseSearchResult {
   total: number;
   amenityFilters: string[];
   toggleAmenity: (code: string) => void;
+  availableAmenities: AmenitySummary[];
   checkin: string;
   checkout: string;
   setDates: (checkin: string, checkout: string) => void;
   guests: number;
   setGuests: (n: number) => void;
+  minPrice: number | undefined;
+  maxPrice: number | undefined;
+  setPriceRange: (min?: number, max?: number) => void;
 }
 
 export function useSearch(
@@ -56,12 +60,26 @@ export function useSearch(
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [amenityFilters, setAmenityFilters] = useState<string[]>([]);
+  const [availableAmenities, setAvailableAmenities] = useState<AmenitySummary[]>([]);
   const [guests, setGuestsState] = useState(initialGuests ?? 1);
+  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Refs to access latest state from callbacks without stale closures
+  const stateRef = useRef({ hasSearched, selectedCity, amenityFilters, guests, minPrice, maxPrice });
+  stateRef.current = { hasSearched, selectedCity, amenityFilters, guests, minPrice, maxPrice };
 
   const setDates = useCallback((ci: string, co: string) => {
     setCheckin(ci);
     setCheckout(co);
+  }, []);
+
+  // Load available amenities from backend on mount
+  useEffect(() => {
+    getAmenities()
+      .then(setAvailableAmenities)
+      .catch(() => setAvailableAmenities([]));
   }, []);
 
   // City autocomplete with debounce
@@ -94,9 +112,15 @@ export function useSearch(
     };
   }, [query, selectedCity]);
 
-  // Explicit search triggered by user
+  // Core fetch — all parameters explicit, no filter state read from closure
   const fetchProperties = useCallback(
-    async (city: CityInfo, amenities: string[]) => {
+    async (
+      city: CityInfo,
+      guestCount: number,
+      amenities: string[],
+      priceMin?: number,
+      priceMax?: number,
+    ) => {
       setLoading(true);
       setError(null);
       try {
@@ -104,8 +128,10 @@ export function useSearch(
           city_id: city.id,
           checkin,
           checkout,
-          guests,
+          guests: guestCount,
           amenities: amenities.length > 0 ? amenities : undefined,
+          min_price: priceMin,
+          max_price: priceMax,
         });
         setResults(response.items);
         setTotal(response.total);
@@ -118,7 +144,24 @@ export function useSearch(
         setHasSearched(true);
       }
     },
-    [checkin, checkout, guests],
+    [checkin, checkout],
+  );
+
+  // Helper: re-fetch with current filters (reads latest state via ref)
+  const refetch = useCallback(
+    (overrides?: { city?: CityInfo; guests?: number; amenities?: string[]; minPrice?: number; maxPrice?: number }) => {
+      const s = stateRef.current;
+      const city = overrides?.city ?? s.selectedCity;
+      if (!s.hasSearched || !city) return;
+      fetchProperties(
+        city,
+        overrides?.guests ?? s.guests,
+        overrides?.amenities ?? s.amenityFilters,
+        overrides?.minPrice !== undefined ? overrides.minPrice : s.minPrice,
+        overrides?.maxPrice !== undefined ? overrides.maxPrice : s.maxPrice,
+      );
+    },
+    [fetchProperties],
   );
 
   // Sync dates and guests when navigation params change
@@ -128,8 +171,11 @@ export function useSearch(
   }, [initialCheckin, initialCheckout]);
 
   useEffect(() => {
-    if (initialGuests != null) setGuestsState(initialGuests);
-  }, [initialGuests]);
+    if (initialGuests != null) {
+      setGuestsState(initialGuests);
+      refetch({ guests: initialGuests });
+    }
+  }, [initialGuests, refetch]);
 
   // Auto-search when initialCity changes (e.g. navigating back with a new city)
   const prevCityIdRef = useRef<string | null>(null);
@@ -139,15 +185,18 @@ export function useSearch(
       setSelectedCity(initialCity);
       setQuery(initialCity.name);
       setAmenityFilters([]);
-      fetchProperties(initialCity, []);
+      setMinPrice(undefined);
+      setMaxPrice(undefined);
+      fetchProperties(initialCity, initialGuests ?? 1, []);
     }
-  }, [initialCity, fetchProperties]);
+  }, [initialCity, initialGuests, fetchProperties]);
 
   const search = useCallback(() => {
-    if (selectedCity) {
-      fetchProperties(selectedCity, amenityFilters);
+    const s = stateRef.current;
+    if (s.selectedCity) {
+      fetchProperties(s.selectedCity, s.guests, s.amenityFilters, s.minPrice, s.maxPrice);
     }
-  }, [selectedCity, amenityFilters, fetchProperties]);
+  }, [fetchProperties]);
 
   const selectCity = useCallback((city: CityInfo) => {
     setSelectedCity(city);
@@ -164,24 +213,25 @@ export function useSearch(
     setHasSearched(false);
   }, []);
 
+  // Setters that trigger re-fetch directly — no useEffect needed
   const setGuests = useCallback((n: number) => {
     setGuestsState(n);
-  }, []);
-
-  // Auto re-search when guests change and there are previous results
-  const prevGuestsRef = useRef(guests);
-  useEffect(() => {
-    if (prevGuestsRef.current !== guests && hasSearched && selectedCity) {
-      prevGuestsRef.current = guests;
-      fetchProperties(selectedCity, amenityFilters);
-    }
-  }, [guests, hasSearched, selectedCity, amenityFilters, fetchProperties]);
+    refetch({ guests: n });
+  }, [refetch]);
 
   const toggleAmenity = useCallback((code: string) => {
-    setAmenityFilters((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
-    );
-  }, []);
+    setAmenityFilters((prev) => {
+      const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code];
+      refetch({ amenities: next });
+      return next;
+    });
+  }, [refetch]);
+
+  const setPriceRange = useCallback((min?: number, max?: number) => {
+    setMinPrice(min);
+    setMaxPrice(max);
+    refetch({ minPrice: min, maxPrice: max });
+  }, [refetch]);
 
   return {
     query,
@@ -199,10 +249,14 @@ export function useSearch(
     total,
     amenityFilters,
     toggleAmenity,
+    availableAmenities,
     checkin,
     checkout,
     setDates,
     guests,
     setGuests,
+    minPrice,
+    maxPrice,
+    setPriceRange,
   };
 }

@@ -10,6 +10,7 @@ from app.application.ports.outbound.cache_port import CachePort
 from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
+from app.application.use_cases.list_amenities import ListAmenitiesUseCase
 from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
 
@@ -69,3 +70,8 @@ def get_search_use_case(session: AsyncSession, cache: CachePort) -> SearchProper
 def get_detail_use_case(session: AsyncSession, cache: CachePort) -> GetPropertyDetailUseCase:
     repo = get_property_repository(session)
     return GetPropertyDetailUseCase(repo, cache)
+
+
+def get_list_amenities_use_case(session: AsyncSession) -> ListAmenitiesUseCase:
+    repo = get_property_repository(session)
+    return ListAmenitiesUseCase(repo)

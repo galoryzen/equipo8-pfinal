@@ -1,7 +1,6 @@
 import json
 from datetime import date
 from decimal import Decimal
-from math import ceil
 from uuid import UUID
 
 from app.application.exceptions import PropertyNotFoundError
