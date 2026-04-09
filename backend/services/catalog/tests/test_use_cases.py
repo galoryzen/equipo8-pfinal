@@ -20,6 +20,7 @@ from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
 from app.domain.models import CancellationPolicyType, PolicyCategory, PropertyStatus
 from app.schemas.city import CityOut, FeaturedDestinationOut
+from app.schemas.common import PaginatedResponse
 from app.schemas.property import PropertySummary
 from tests.conftest import CANCUN_CITY_ID, CANCUN_PROPERTY_ID, make_property_summary
 
@@ -560,6 +561,63 @@ class TestSearchProperties:
         assert mock_property_repo.search.call_count == 2
         assert mock_property_repo.search.call_args_list[0].kwargs["city_id"] == CANCUN_CITY_ID
         assert mock_property_repo.search.call_args_list[1].kwargs["city_id"] == other_city
+
+    async def test_cache_hit_returns_without_calling_repo(self, mock_property_repo, mock_cache):
+        """When cache has data, repo.search should not be called."""
+        cached_response = PaginatedResponse.build(
+            items=[PropertySummary.model_validate(make_property_summary())],
+            total=1,
+            page=1,
+            page_size=20,
+        )
+        mock_cache.get.return_value = cached_response.model_dump_json()
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        mock_property_repo.search.assert_not_called()
+        assert result.total == 1
+        assert result.items[0].name == "Sol Caribe Cancún"
+
+    async def test_cache_miss_calls_repo_and_stores_in_cache(self, mock_property_repo, mock_cache):
+        """When cache misses, should query repo and store result in cache."""
+        mock_cache.get.return_value = None
+        mock_property_repo.search.return_value = (
+            [make_property_summary()],
+            1,
+        )
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        mock_property_repo.search.assert_called_once()
+        mock_cache.set.assert_called_once()
+        assert result.total == 1
+
+    async def test_cache_set_uses_correct_ttl(self, mock_property_repo, mock_cache):
+        mock_cache.get.return_value = None
+        mock_property_repo.search.return_value = ([make_property_summary()], 1)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        _, kwargs = mock_cache.set.call_args
+        assert kwargs.get("ttl_seconds", mock_cache.set.call_args[0][2] if len(mock_cache.set.call_args[0]) > 2 else None) == 120
 
 
 # ── ListAmenitiesUseCase ──────────────────────────────
