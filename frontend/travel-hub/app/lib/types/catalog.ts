@@ -56,6 +56,7 @@ export interface SearchFilters {
   checkin: string;
   checkout: string;
   guests: number;
+  /** If omitted, catalog searches all cities (backend supports optional city_id). */
   city_id?: string;
   min_price?: number;
   max_price?: number;

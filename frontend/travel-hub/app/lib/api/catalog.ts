@@ -79,14 +79,14 @@ export async function getFeaturedProperties(limit = 50): Promise<PropertySummary
 }
 
 export async function searchProperties(
-  filters: SearchFilters & { city_id: string }
+  filters: SearchFilters
 ): Promise<PaginatedResponse<PropertySummary>> {
   const params = new URLSearchParams();
 
   params.set('checkin', filters.checkin);
   params.set('checkout', filters.checkout);
   params.set('guests', String(filters.guests));
-  params.set('city_id', filters.city_id);
+  if (filters.city_id) params.set('city_id', filters.city_id);
 
   if (filters.min_price != null) params.set('min_price', String(filters.min_price));
   if (filters.max_price != null) params.set('max_price', String(filters.max_price));

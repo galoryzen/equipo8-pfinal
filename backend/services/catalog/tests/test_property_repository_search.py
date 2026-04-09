@@ -48,7 +48,7 @@ async def test_search_sql_requires_aggregated_capacity_at_least_guests():
         checkin=date(2026, 4, 1),
         checkout=date(2026, 4, 3),
         guests=guests_threshold,
-        city_id=uuid4(),
+        city_id=None,
     )
 
     first_stmt = session.execute.await_args_list[0].args[0]

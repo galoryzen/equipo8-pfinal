@@ -122,7 +122,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         checkin: date,
         checkout: date,
         guests: int,
-        city_id: UUID,
+        city_id: UUID | None = None,
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,
@@ -186,12 +186,11 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             select(Property, min_price_sq.c.min_price)
             .join(min_price_sq, min_price_sq.c.property_id == Property.id)
             .join(prop_capacity, prop_capacity.c.property_id == Property.id)
-            .where(
-                Property.status == PropertyStatus.ACTIVE,
-                Property.city_id == city_id,
-            )
+            .where(Property.status == PropertyStatus.ACTIVE)
             .options(joinedload(Property.city))
         )
+        if city_id is not None:
+            base_q = base_q.where(Property.city_id == city_id)
 
         if min_price is not None:
             base_q = base_q.where(min_price_sq.c.min_price >= min_price)

@@ -29,7 +29,7 @@ export interface SearchBarProps {
   onCheckinChange: (v: string) => void;
   onCheckoutChange: (v: string) => void;
   onGuestsChange: (v: number) => void;
-  onSearch: (city: CityOut) => void;
+  onSearch: (city: CityOut | null) => void;
   initialCity?: CityOut | null;
   variant?: 'button' | 'icon';
 }
@@ -54,6 +54,14 @@ function formatDateRange(checkin: string, checkout: string): string {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
   return `${fmt(checkin)} - ${fmt(checkout)}`;
+}
+
+function parseGuestsCommit(raw: string): number {
+  const digits = raw.replace(/\D/g, '');
+  if (digits === '') return 1;
+  const n = parseInt(digits, 10);
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(1, n);
 }
 
 const labelSx = {
@@ -91,8 +99,13 @@ export default function SearchBar({
   const [loadingCities, setLoadingCities] = useState(false);
   const [dateAnchor, setDateAnchor] = useState<HTMLElement | null>(null);
   const [guestAnchor, setGuestAnchor] = useState<HTMLElement | null>(null);
+  const [guestInput, setGuestInput] = useState(() => String(guests));
   const dateRef = useRef<HTMLDivElement>(null);
   const guestRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setGuestInput(String(guests));
+  }, [guests]);
 
   useEffect(() => {
     if (initialCity) {
@@ -126,8 +139,20 @@ export default function SearchBar({
     };
   }, [inputValue, selected]);
 
+  const commitGuests = () => {
+    const n = parseGuestsCommit(guestInput);
+    onGuestsChange(n);
+    setGuestInput(String(n));
+  };
+
   const handleSearch = () => {
-    if (selected) onSearch(selected);
+    commitGuests();
+    onSearch(selected);
+  };
+
+  const closeGuestPopover = () => {
+    commitGuests();
+    setGuestAnchor(null);
   };
 
   return (
@@ -242,7 +267,10 @@ export default function SearchBar({
         {/* WHO */}
         <Box
           ref={guestRef}
-          onClick={() => setGuestAnchor(guestRef.current)}
+          onClick={() => {
+            setGuestInput(String(guests));
+            setGuestAnchor(guestRef.current);
+          }}
           sx={{ flex: 0.7, display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5, cursor: 'pointer' }}
         >
           <GroupOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
@@ -257,18 +285,26 @@ export default function SearchBar({
         <Popover
           open={Boolean(guestAnchor)}
           anchorEl={guestAnchor}
-          onClose={() => setGuestAnchor(null)}
+          onClose={closeGuestPopover}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           transformOrigin={{ vertical: 'top', horizontal: 'center' }}
           slotProps={{ paper: { sx: { borderRadius: 3, p: 3, mt: 1 } } }}
         >
           <Typography sx={{ fontWeight: 600, color: 'grey.700', mb: 1.5 }}>Guests</Typography>
           <TextField
-            type="number"
-            value={guests}
-            onChange={(e) => onGuestsChange(Math.max(1, Math.min(20, Number(e.target.value))))}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={guestInput}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === '' || /^\d+$/.test(v)) setGuestInput(v);
+            }}
+            onBlur={commitGuests}
+            placeholder="1"
             size="small"
-            slotProps={{ input: { inputProps: { min: 1, max: 20 } } }}
+            sx={{ minWidth: 120 }}
+            helperText="Minimum 1 guest"
           />
         </Popover>
 
@@ -277,7 +313,6 @@ export default function SearchBar({
           <Button
             variant="contained"
             onClick={handleSearch}
-            disabled={!selected}
             startIcon={<SearchIcon />}
             sx={{
               bgcolor: '#0EA5E9',
@@ -298,7 +333,6 @@ export default function SearchBar({
         ) : (
           <IconButton
             onClick={handleSearch}
-            disabled={!selected}
             sx={{
               bgcolor: '#0EA5E9',
               color: 'white',

@@ -11,7 +11,7 @@ export interface HeroSectionProps {
   onCheckinChange: (v: string) => void;
   onCheckoutChange: (v: string) => void;
   onGuestsChange: (v: number) => void;
-  onSearch: (city: CityOut) => void;
+  onSearch: (city: CityOut | null) => void;
 }
 
 export default function HeroSection({

@@ -46,8 +46,27 @@ describe('searchProperties', () => {
 
     const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(calledUrl).toContain('city_id=bbbe56fe-8f4b-4498-a876-396a342d3615');
+    expect(calledUrl).toContain('guests=2');
     expect(calledUrl).toContain('min_price=100');
     expect(calledUrl).toContain('max_price=500');
+  });
+
+  it('omits city_id when not provided (all destinations)', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
+    });
+
+    await searchProperties({
+      checkin: '2026-04-01',
+      checkout: '2026-04-05',
+      guests: 4,
+    });
+
+    const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('guests=4');
+    expect(calledUrl).not.toContain('city_id');
   });
 
   it('omits price params when not provided', async () => {
