@@ -96,6 +96,10 @@ resource "aws_ecs_task_definition" "services" {
           value = local.db_schemas[each.key]
         },
         {
+          name  = "${upper(each.key)}_REDIS_URL"
+          value = "rediss://${aws_elasticache_serverless_cache.main.endpoint[0].address}:6379/0"
+        },
+        {
           name  = "${upper(each.key)}_DEBUG"
           value = "false"
         }
