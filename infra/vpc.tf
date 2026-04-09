@@ -72,6 +72,14 @@ resource "aws_security_group" "fck_nat" {
     cidr_blocks = [for s in aws_subnet.private : s.cidr_block]
   }
 
+  ingress {
+    description = "SSH from admin"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.admin_ip]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -82,11 +90,19 @@ resource "aws_security_group" "fck_nat" {
   tags = { Name = "${var.project_name}-fck-nat-sg" }
 }
 
+resource "aws_key_pair" "bastion" {
+  key_name   = "${var.project_name}-bastion"
+  public_key = file("~/.ssh/travelhub-bastion.pub")
+
+  tags = { Name = "${var.project_name}-bastion-key" }
+}
+
 resource "aws_instance" "fck_nat" {
   ami                    = data.aws_ami.fck_nat.id
   instance_type          = "t4g.nano"
   subnet_id              = aws_subnet.public[0].id
   vpc_security_group_ids = [aws_security_group.fck_nat.id]
+  key_name               = aws_key_pair.bastion.key_name
   source_dest_check      = false
 
   tags = { Name = "${var.project_name}-fck-nat" }

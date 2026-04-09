@@ -56,6 +56,12 @@ variable "db_password" {
 
 # --- GitHub Actions ---
 
+variable "admin_ip" {
+  description = "Admin IP CIDR for direct DB access (e.g. 1.2.3.4/32)"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
 variable "github_repo" {
   description = "GitHub repository (org/repo) for OIDC trust"
   type        = string

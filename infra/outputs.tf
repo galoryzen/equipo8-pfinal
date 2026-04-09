@@ -46,6 +46,11 @@ output "rds_endpoint" {
   value       = aws_db_instance.main.endpoint
 }
 
+output "redis_endpoint" {
+  description = "ElastiCache Redis endpoint"
+  value       = aws_elasticache_serverless_cache.main.endpoint[0].address
+}
+
 output "backend_url" {
   description = "Backend API URL"
   value       = "https://${var.backend_domain}"

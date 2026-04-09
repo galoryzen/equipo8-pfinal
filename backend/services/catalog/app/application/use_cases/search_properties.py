@@ -31,10 +31,17 @@ class SearchPropertiesUseCase:
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[PropertySummary]:
-        # TODO: Cache — construir key con todos los params, retornar si hit,
-        # guardar después del mapeo si miss. TTL = CACHE_TTL (120s).
-        # La lógica pesada (queries SQL, filtros, disponibilidad) está en
-        # el repo.search(). Este use case solo orquesta cache + mapeo a DTOs.
+        cache_key = (
+            f"search:{city_id}:{checkin}:{checkout}:g={guests}"
+            f":p={min_price}-{max_price}"
+            f":a={','.join(sorted(amenity_codes)) if amenity_codes else ''}"
+            f":s={sort_by}:pg={page}:ps={page_size}"
+        )
+
+        cached = await self._cache.get(cache_key)
+        if cached:
+            return PaginatedResponse[PropertySummary].model_validate_json(cached)
+
         items, total = await self._repo.search(
             checkin=checkin,
             checkout=checkout,
@@ -49,4 +56,8 @@ class SearchPropertiesUseCase:
         )
         summaries = [PropertySummary.model_validate(item) for item in items]
         empty_msg = self.EMPTY_RESULTS_MESSAGE if total == 0 else None
-        return PaginatedResponse.build(summaries, total, page, page_size, message=empty_msg)
+        response = PaginatedResponse.build(summaries, total, page, page_size, message=empty_msg)
+
+        await self._cache.set(cache_key, response.model_dump_json(), self.CACHE_TTL)
+
+        return response
