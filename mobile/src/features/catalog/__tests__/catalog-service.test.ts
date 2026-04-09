@@ -3,6 +3,7 @@ import {
   getAmenities,
   getFeaturedDestinations,
   getFeaturedProperties,
+  getPropertyDetail,
   searchCities,
   searchProperties,
 } from '../catalog-service';
@@ -214,6 +215,35 @@ describe('catalog-service', () => {
         checkout: '2026-04-05',
         guests: 1,
       });
+
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('getPropertyDetail', () => {
+    it('calls the correct endpoint with property id', async () => {
+      mockedApi.get.mockResolvedValue({ data: { detail: {}, reviews: {} } });
+
+      await getPropertyDetail('prop-123');
+
+      expect(mockedApi.get).toHaveBeenCalledWith(
+        '/v1/catalog/properties/prop-123',
+      );
+    });
+
+    it('returns property detail response', async () => {
+      const mockResponse = {
+        detail: {
+          id: 'prop-123',
+          name: 'Hotel Test',
+          description: 'A nice hotel',
+          amenities: [{ code: 'wifi', name: 'Wi-Fi' }],
+        },
+        reviews: { items: [], total: 0, page: 1, page_size: 10, total_pages: 0 },
+      };
+      mockedApi.get.mockResolvedValue({ data: mockResponse });
+
+      const result = await getPropertyDetail('prop-123');
 
       expect(result).toEqual(mockResponse);
     });

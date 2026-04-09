@@ -74,6 +74,67 @@ export interface PaginatedResponse<T> {
   total_pages: number;
 }
 
+// ── Detail ─────────────────────────────────────────────
+
+export interface PropertyImageOut {
+  id: string;
+  url: string;
+  caption?: string;
+  display_order: number;
+}
+
+export interface PropertyPolicyOut {
+  id: string;
+  category: string;
+  description: string;
+}
+
+export interface CancellationPolicyOut {
+  id: string;
+  name: string;
+  type: string;
+  hours_limit?: number;
+  refund_percent?: number;
+}
+
+export interface RatePlanOut {
+  id: string;
+  name: string;
+  cancellation_policy?: CancellationPolicyOut;
+  min_price?: number;
+}
+
+export interface RoomTypeOut {
+  id: string;
+  name: string;
+  capacity: number;
+  amenities: AmenitySummary[];
+  rate_plans: RatePlanOut[];
+  min_price?: number;
+}
+
+export interface PropertyDetail {
+  id: string;
+  hotel_id: string;
+  name: string;
+  description?: string;
+  city: CityInfo;
+  address?: string;
+  rating_avg?: number;
+  review_count: number;
+  popularity_score: number;
+  default_cancellation_policy?: CancellationPolicyOut;
+  images: PropertyImageOut[];
+  amenities: AmenitySummary[];
+  policies: PropertyPolicyOut[];
+  room_types: RoomTypeOut[];
+}
+
+export interface PropertyDetailResponse {
+  detail: PropertyDetail;
+  reviews: PaginatedResponse<Review>;
+}
+
 // ── Search ──────────────────────────────────────────────
 
 export interface SearchFilters {
