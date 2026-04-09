@@ -25,6 +25,26 @@ from app.domain.models import (
 )
 
 
+def _review_stats_subquery():
+    """Per-property AVG(rating) and COUNT from review (same source as property detail)."""
+    return (
+        select(
+            Review.property_id.label("property_id"),
+            sa_func.avg(Review.rating).label("review_avg"),
+            sa_func.count().label("review_cnt"),
+        )
+        .group_by(Review.property_id)
+        .subquery("review_stats")
+    )
+
+
+def _summary_rating_from_review_stats(raw_avg, raw_cnt) -> tuple[float | None, int]:
+    cnt = int(raw_cnt or 0)
+    if cnt == 0:
+        return None, 0
+    return round(float(raw_avg), 1), cnt
+
+
 class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
     def __init__(self, session: AsyncSession):
         self._session = session
@@ -54,9 +74,16 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             .subquery("today_price")
         )
 
+        review_stats = _review_stats_subquery()
         q = (
-            select(Property, today_price_sq.c.min_price)
+            select(
+                Property,
+                today_price_sq.c.min_price,
+                review_stats.c.review_avg,
+                review_stats.c.review_cnt,
+            )
             .outerjoin(today_price_sq, today_price_sq.c.property_id == Property.id)
+            .outerjoin(review_stats, review_stats.c.property_id == Property.id)
             .where(Property.status == PropertyStatus.ACTIVE)
             .options(joinedload(Property.city))
             .order_by(Property.popularity_score.desc())
@@ -94,7 +121,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                 prop_amenities[pid].append(amenity)
 
         items = []
-        for prop, price in rows:
+        for prop, price, rev_avg, rev_cnt in rows:
+            rating_avg, review_count = _summary_rating_from_review_stats(rev_avg, rev_cnt)
             img = first_images.get(prop.id)
             items.append(
                 {
@@ -107,8 +135,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                         "country": prop.city.country,
                     },
                     "address": prop.address,
-                    "rating_avg": round(float(prop.rating_avg), 1) if prop.rating_avg else None,
-                    "review_count": prop.review_count,
+                    "rating_avg": rating_avg,
+                    "review_count": review_count,
                     "image": {"url": img.url, "caption": img.caption} if img else None,
                     "min_price": int(price) if price else None,
                     "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
@@ -182,10 +210,17 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             .group_by(RoomType.property_id)
         ).subquery("min_price_sq")
 
+        review_stats = _review_stats_subquery()
         base_q = (
-            select(Property, min_price_sq.c.min_price)
+            select(
+                Property,
+                min_price_sq.c.min_price,
+                review_stats.c.review_avg,
+                review_stats.c.review_cnt,
+            )
             .join(min_price_sq, min_price_sq.c.property_id == Property.id)
             .join(prop_capacity, prop_capacity.c.property_id == Property.id)
+            .outerjoin(review_stats, review_stats.c.property_id == Property.id)
             .where(Property.status == PropertyStatus.ACTIVE)
             .options(joinedload(Property.city))
         )
@@ -215,7 +250,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         total = total_result.scalar_one()
 
         if sort_by == "rating":
-            query = query.order_by(Property.rating_avg.desc().nulls_last(), Property.id)
+            query = query.order_by(review_stats.c.review_avg.desc().nulls_last(), Property.id)
         elif sort_by == "price_asc":
             query = query.order_by(min_price_sq.c.min_price.asc().nulls_last(), Property.id)
         elif sort_by == "price_desc":
@@ -257,7 +292,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                 prop_amenities[pid].append(amenity)
 
         items = []
-        for prop, price in rows:
+        for prop, price, rev_avg, rev_cnt in rows:
+            rating_avg, review_count = _summary_rating_from_review_stats(rev_avg, rev_cnt)
             img = first_images.get(prop.id)
             items.append(
                 {
@@ -270,8 +306,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                         "country": prop.city.country,
                     },
                     "address": prop.address,
-                    "rating_avg": round(float(prop.rating_avg), 1) if prop.rating_avg else None,
-                    "review_count": prop.review_count,
+                    "rating_avg": rating_avg,
+                    "review_count": review_count,
                     "image": {"url": img.url, "caption": img.caption} if img else None,
                     "min_price": int(price) if price else None,
                     "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],

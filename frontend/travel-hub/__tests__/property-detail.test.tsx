@@ -145,6 +145,27 @@ describe('PropertyDetailView', () => {
     });
   });
 
+  it('renders compact review count in header like the design mock', async () => {
+    mockGetPropertyDetail.mockResolvedValue(makeDetailResponse());
+    render(<PropertyDetailView id={PROPERTY_ID} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/\(2\.4k reviews\)/)).toBeTruthy();
+    });
+  });
+
+  it('does not show a numeric rating when rating_avg is null', async () => {
+    mockGetPropertyDetail.mockResolvedValue(
+      makeDetailResponse({ rating_avg: null, review_count: 0 })
+    );
+    render(<PropertyDetailView id={PROPERTY_ID} />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('No reviews yet').length).toBeGreaterThanOrEqual(1);
+    });
+    expect(screen.queryByText('0.0')).toBeNull();
+  });
+
   it('renders the property description', async () => {
     mockGetPropertyDetail.mockResolvedValue(makeDetailResponse());
     render(<PropertyDetailView id={PROPERTY_ID} />);

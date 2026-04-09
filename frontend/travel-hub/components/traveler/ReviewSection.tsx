@@ -24,19 +24,27 @@ export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: Review
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <StarIcon sx={{ color: '#f59e0b', fontSize: 28 }} />
-          <Typography variant="h5" fontWeight={700}>
-            {ratingAvg != null ? Number(ratingAvg).toFixed(1) : '—'}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        {ratingAvg != null ? (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <StarIcon sx={{ color: '#f59e0b', fontSize: 28 }} aria-hidden />
+              <Typography variant="h5" fontWeight={700} component="span">
+                {Number(ratingAvg).toFixed(1)}
+              </Typography>
+            </Box>
+            <Typography variant="body1" color="text.secondary" component="span">
+              · {reviews.total.toLocaleString()} reviews
+            </Typography>
+          </>
+        ) : (
+          <Typography variant="body1" color="text.secondary" fontWeight={500}>
+            No reviews yet
           </Typography>
-        </Box>
-        <Typography variant="body1" color="text.secondary">
-          · {reviews.total.toLocaleString()} reviews
-        </Typography>
+        )}
       </Box>
 
-      {reviews.items.length === 0 && (
+      {reviews.items.length === 0 && ratingAvg != null && (
         <Typography color="text.secondary">No reviews yet.</Typography>
       )}
 

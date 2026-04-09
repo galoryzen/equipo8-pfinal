@@ -8,7 +8,10 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.dialects import postgresql
 
-from app.adapters.outbound.db.property_repository import SqlAlchemyPropertyRepository
+from app.adapters.outbound.db.property_repository import (
+    SqlAlchemyPropertyRepository,
+    _summary_rating_from_review_stats,
+)
 
 
 @pytest.mark.asyncio
@@ -62,6 +65,12 @@ async def test_search_sql_requires_aggregated_capacity_at_least_guests():
     lower = sql.lower()
     assert "having" in lower
     assert str(guests_threshold) in sql
+
+
+def test_summary_rating_from_review_stats_matches_detail_rounding():
+    """Same 1-decimal rule as get_review_aggregate / property detail."""
+    assert _summary_rating_from_review_stats(4.666666666666667, 3) == (4.7, 3)
+    assert _summary_rating_from_review_stats(None, 0) == (None, 0)
 
 
 @pytest.mark.asyncio
