@@ -305,6 +305,19 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         result = await self._session.execute(stmt)
         return result.unique().scalar_one_or_none()
 
+    async def get_review_aggregate(self, property_id: UUID) -> tuple[Decimal | None, int]:
+        stmt = (
+            select(
+                sa_func.avg(Review.rating),
+                sa_func.count(),
+            ).where(Review.property_id == property_id)
+        )
+        row = (await self._session.execute(stmt)).one()
+        avg_val, count = row[0], int(row[1] or 0)
+        if count == 0:
+            return None, 0
+        return Decimal(str(round(float(avg_val), 1))), count
+
     async def get_reviews(self, property_id: UUID, page: int = 1, page_size: int = 10) -> tuple[list[Review], int]:
         count_stmt = (
             select(sa_func.count())

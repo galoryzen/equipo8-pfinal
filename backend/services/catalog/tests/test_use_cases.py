@@ -237,6 +237,7 @@ class TestGetPropertyDetail:
         fake_review = _make_fake_review(prop_id)
 
         mock_property_repo.get_by_id.return_value = fake_prop
+        mock_property_repo.get_review_aggregate.return_value = (Decimal("5.0"), 1)
         mock_property_repo.get_reviews.return_value = ([fake_review], 1)
         uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
 
@@ -245,10 +246,13 @@ class TestGetPropertyDetail:
         assert "detail" in result
         assert "reviews" in result
         assert result["detail"]["name"] == "Sol Caribe Cancún"
+        assert result["detail"]["rating_avg"] == "5.0"
+        assert result["detail"]["review_count"] == 1
         assert result["reviews"]["total"] == 1
         assert len(result["reviews"]["items"]) == 1
         assert result["reviews"]["items"][0]["rating"] == 5
         mock_property_repo.get_by_id.assert_called_once_with(prop_id)
+        mock_property_repo.get_review_aggregate.assert_called_once_with(prop_id)
         mock_property_repo.get_reviews.assert_called_once_with(prop_id, 1, 10)
 
     async def test_raises_not_found_when_property_missing(self, mock_property_repo, mock_cache):
@@ -260,10 +264,12 @@ class TestGetPropertyDetail:
         with pytest.raises(PropertyNotFoundError):
             await uc.execute(property_id=prop_id)
 
+        mock_property_repo.get_review_aggregate.assert_not_called()
         mock_property_repo.get_reviews.assert_not_called()
 
     async def test_passes_pagination_to_reviews(self, mock_property_repo, mock_cache):
         mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_review_aggregate.return_value = (None, 0)
         mock_property_repo.get_reviews.return_value = ([], 0)
         uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
 
@@ -274,6 +280,7 @@ class TestGetPropertyDetail:
     async def test_reviews_pagination_metadata(self, mock_property_repo, mock_cache):
         """reviews response should include correct page / total_pages."""
         mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_review_aggregate.return_value = (Decimal("4.5"), 25)
         mock_property_repo.get_reviews.return_value = (
             [_make_fake_review(), _make_fake_review()],
             25,
@@ -283,6 +290,8 @@ class TestGetPropertyDetail:
         result = await uc.execute(property_id=CANCUN_PROPERTY_ID, review_page=2, review_page_size=10)
 
         reviews = result["reviews"]
+        assert result["detail"]["rating_avg"] == "4.5"
+        assert result["detail"]["review_count"] == 25
         assert reviews["total"] == 25
         assert reviews["page"] == 2
         assert reviews["page_size"] == 10
@@ -302,6 +311,7 @@ class TestGetPropertyDetail:
         prop.room_types[0].rate_plans[0].rate_calendar = [rc_in_range, rc_out_of_range]
 
         mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_aggregate.return_value = (None, 0)
         mock_property_repo.get_reviews.return_value = ([], 0)
         uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
 
@@ -311,6 +321,8 @@ class TestGetPropertyDetail:
             checkout=date(2026, 6, 30),
         )
 
+        assert result["detail"]["rating_avg"] is None
+        assert result["detail"]["review_count"] == 0
         room = result["detail"]["room_types"][0]
         # model_dump(mode="json") serializa Decimal como string
         assert room["min_price"] == "150.00"
@@ -320,6 +332,7 @@ class TestGetPropertyDetail:
         prop_id = CANCUN_PROPERTY_ID
         fake_prop = _make_fake_property(prop_id)
         mock_property_repo.get_by_id.return_value = fake_prop
+        mock_property_repo.get_review_aggregate.return_value = (None, 0)
         mock_property_repo.get_reviews.return_value = ([], 0)
 
         cached_payload = json.dumps({"detail": {"name": "Cached"}, "reviews": {}})
@@ -334,6 +347,7 @@ class TestGetPropertyDetail:
     async def test_result_is_stored_in_cache(self, mock_property_repo, mock_cache):
         """After a miss, the result should be stored in cache."""
         mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_review_aggregate.return_value = (None, 0)
         mock_property_repo.get_reviews.return_value = ([], 0)
         mock_cache.get.return_value = None
 
@@ -343,6 +357,60 @@ class TestGetPropertyDetail:
         mock_cache.set.assert_called_once()
         call_args = mock_cache.set.call_args
         assert call_args.kwargs.get("ttl_seconds", call_args.args[2] if len(call_args.args) > 2 else None) == GetPropertyDetailUseCase.CACHE_TTL or True
+
+    async def test_detail_reflects_aggregate_average_multiple_ratings(
+        self, mock_property_repo, mock_cache
+    ):
+        """Detail rating_avg and review_count come from aggregate (e.g. 5+4+5 → 4.7 at repo)."""
+        mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_review_aggregate.return_value = (Decimal("4.7"), 3)
+        mock_property_repo.get_reviews.return_value = (
+            [_make_fake_review(), _make_fake_review(), _make_fake_review()],
+            3,
+        )
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID)
+        assert result["detail"]["rating_avg"] == "4.7"
+        assert result["detail"]["review_count"] == 3
+
+    async def test_detail_without_reviews_has_null_rating_and_zero_count(
+        self, mock_property_repo, mock_cache
+    ):
+        mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_review_aggregate.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID)
+        assert result["detail"]["rating_avg"] is None
+        assert result["detail"]["review_count"] == 0
+        assert result["detail"]["popularity_score"] == "88.5"
+
+    async def test_detail_response_shape_unchanged_for_regression(
+        self, mock_property_repo, mock_cache
+    ):
+        mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_review_aggregate.return_value = (Decimal("4.0"), 2)
+        mock_property_repo.get_reviews.return_value = ([_make_fake_review()], 2)
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID)
+        detail = result["detail"]
+        for key in (
+            "id",
+            "hotel_id",
+            "name",
+            "city",
+            "address",
+            "rating_avg",
+            "review_count",
+            "popularity_score",
+            "images",
+            "amenities",
+            "policies",
+            "room_types",
+        ):
+            assert key in detail
+        rev = result["reviews"]
+        assert "items" in rev and "total" in rev and "total_pages" in rev
 
 
 # ── SearchPropertiesUseCase ─────────────────────────────

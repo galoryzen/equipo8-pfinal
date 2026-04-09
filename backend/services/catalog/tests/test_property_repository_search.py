@@ -1,6 +1,7 @@
 """SqlAlchemyPropertyRepository.search — smoke tests with mocked session."""
 
 from datetime import date
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -61,3 +62,32 @@ async def test_search_sql_requires_aggregated_capacity_at_least_guests():
     lower = sql.lower()
     assert "having" in lower
     assert str(guests_threshold) in sql
+
+
+@pytest.mark.asyncio
+async def test_get_review_aggregate_returns_none_when_no_reviews():
+    session = AsyncMock()
+    agg_result = MagicMock()
+    agg_result.one.return_value = (None, 0)
+    session.execute = AsyncMock(return_value=agg_result)
+
+    repo = SqlAlchemyPropertyRepository(session)
+    avg, count = await repo.get_review_aggregate(uuid4())
+
+    assert avg is None
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_get_review_aggregate_rounds_average_to_one_decimal():
+    """AVG(5,4,5) = 4.666… → 4.7 aligned with list endpoints."""
+    session = AsyncMock()
+    agg_result = MagicMock()
+    agg_result.one.return_value = (4.666666666666667, 3)
+    session.execute = AsyncMock(return_value=agg_result)
+
+    repo = SqlAlchemyPropertyRepository(session)
+    avg, count = await repo.get_review_aggregate(uuid4())
+
+    assert avg == Decimal("4.7")
+    assert count == 3
