@@ -4,6 +4,7 @@ import type {
   CityInfo,
   FeaturedDestination,
   PaginatedResponse,
+  PropertyDetailResponse,
   PropertySummary,
   SearchFilters,
 } from '@src/types/catalog';
@@ -60,6 +61,15 @@ export async function searchProperties(
   const { data } = await api.get<PaginatedResponse<PropertySummary>>(
     '/v1/catalog/properties',
     { params },
+  );
+  return data;
+}
+
+export async function getPropertyDetail(
+  id: string,
+): Promise<PropertyDetailResponse> {
+  const { data } = await api.get<PropertyDetailResponse>(
+    `/v1/catalog/properties/${id}`,
   );
   return data;
 }
