@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import bcrypt
 
@@ -26,7 +26,7 @@ class RegisterUserUseCase:
         if exists:
             raise EmailAlreadyExistsError(email)
 
-        now = datetime.now(UTC).replace(tzinfo=None)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
         user = User(
