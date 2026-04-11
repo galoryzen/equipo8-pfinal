@@ -64,23 +64,16 @@ class TestFeaturedDestinationsValidation:
 class TestSearchPropertiesValidation:
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_missing_required_params_returns_422(self, mock_factory, client):
-        """checkin, checkout, guests are required; city_id is optional."""
+        """checkin, checkout, guests, and city_id are required."""
         resp = client.get("/api/v1/catalog/properties")
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
-    def test_omit_city_id_calls_use_case_with_none(self, mock_factory, client):
-        mock_uc = AsyncMock()
-        mock_uc.execute.return_value = PaginatedResponse(
-            items=[], total=0, page=1, page_size=20, total_pages=0, message=None
-        )
-        mock_factory.return_value = mock_uc
+    def test_omit_city_id_returns_422(self, mock_factory, client):
         resp = client.get(
             "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2"
         )
-        assert resp.status_code == 200
-        mock_uc.execute.assert_called_once()
-        assert mock_uc.execute.call_args.kwargs["city_id"] is None
+        assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_checkout_before_checkin_returns_422(self, mock_factory, client):

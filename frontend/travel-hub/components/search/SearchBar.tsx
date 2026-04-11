@@ -146,6 +146,7 @@ export default function SearchBar({
   };
 
   const handleSearch = () => {
+    if (!selected) return;
     commitGuests();
     onSearch(selected);
   };
@@ -313,6 +314,7 @@ export default function SearchBar({
           <Button
             variant="contained"
             onClick={handleSearch}
+            disabled={!selected}
             startIcon={<SearchIcon />}
             sx={{
               bgcolor: '#0EA5E9',
@@ -333,6 +335,7 @@ export default function SearchBar({
         ) : (
           <IconButton
             onClick={handleSearch}
+            disabled={!selected}
             sx={{
               bgcolor: '#0EA5E9',
               color: 'white',

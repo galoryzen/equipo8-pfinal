@@ -49,7 +49,6 @@ export default function HomePage() {
         checkin,
         checkout,
         guests: String(guests),
-        globalSearch: '1',
       });
       router.push(`/traveler/search?${params.toString()}`);
     }

@@ -92,7 +92,7 @@ describe('SearchPage', () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  it('calls searchProperties without city_id when search is clicked with no destination', async () => {
+  it('keeps search disabled without a destination and does not call searchProperties', async () => {
     render(<SearchPage />);
 
     await waitFor(() => screen.getByText('Hotel Test'));
@@ -100,13 +100,40 @@ describe('SearchPage', () => {
     const searchButtons = screen.getAllByRole('button');
     const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
     expect(searchBtn).toBeTruthy();
+    expect(searchBtn).toHaveProperty('disabled', true);
     fireEvent.click(searchBtn!);
 
-    await waitFor(() => {
-      expect(mockSearch).toHaveBeenCalled();
-    });
-    expect(mockSearch.mock.calls[0][0].city_id).toBeUndefined();
+    expect(mockSearch).not.toHaveBeenCalled();
     expect(mockFeatured).toHaveBeenCalledTimes(1);
+  });
+
+  it('enables search after selecting a city', async () => {
+    const user = userEvent.setup();
+    mockSearchCities.mockResolvedValue([
+      { id: 'city-enable', name: 'Medellín', department: 'Antioquia', country: 'Colombia' },
+    ]);
+
+    render(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    expect(searchBtn).toHaveProperty('disabled', true);
+
+    const input = screen.getByPlaceholderText(/search destination/i);
+    await user.clear(input);
+    await user.type(input, 'Me');
+
+    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
+    await user.click(await screen.findByRole('option', { name: /Medellín/i }));
+
+    await waitFor(() => {
+      const btn = screen
+        .getAllByRole('button')
+        .find(b => b.querySelector('[data-testid="SearchIcon"]'));
+      expect(btn).toBeTruthy();
+      expect(btn).toHaveProperty('disabled', false);
+    });
   });
 
   it('calls searchProperties with city_id after selecting a city and searching', async () => {

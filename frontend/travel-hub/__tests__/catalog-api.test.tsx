@@ -51,7 +51,7 @@ describe('searchProperties', () => {
     expect(calledUrl).toContain('max_price=500');
   });
 
-  it('omits city_id when not provided (all destinations)', async () => {
+  it('includes city_id in the request URL for filtered search', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
@@ -62,11 +62,12 @@ describe('searchProperties', () => {
       checkin: '2026-04-01',
       checkout: '2026-04-05',
       guests: 4,
+      city_id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
     });
 
     const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(calledUrl).toContain('guests=4');
-    expect(calledUrl).not.toContain('city_id');
+    expect(calledUrl).toContain('city_id=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
   });
 
   it('omits price params when not provided', async () => {

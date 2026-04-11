@@ -71,10 +71,8 @@ function SearchPageContent() {
   const [page, setPage] = useState(1);
   const [featuredRaw, setFeaturedRaw] = useState<PropertySummary[]>([]);
   const [data, setData] = useState<PaginatedResponse<PropertySummary> | null>(null);
-  /** True when results come from catalog /search (with or without city); false for featured browse. */
-  const [catalogMode, setCatalogMode] = useState(
-    () => !!initialCity || params.get('globalSearch') === '1'
-  );
+  /** True when results come from filtered catalog search (requires city); false for featured browse. */
+  const [catalogMode, setCatalogMode] = useState(() => !!initialCity);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initialSearchDone = useRef(false);
@@ -107,7 +105,7 @@ function SearchPageContent() {
   }, []);
 
   const loadSearch = useCallback(async (
-    searchCityId: string | null,
+    searchCityId: string,
     searchCheckin: string,
     searchCheckout: string,
     searchGuests: number,
@@ -122,7 +120,7 @@ function SearchPageContent() {
         checkin: searchCheckin,
         checkout: searchCheckout,
         guests: searchGuests,
-        ...(searchCityId ? { city_id: searchCityId } : {}),
+        city_id: searchCityId,
         min_price: minPrice,
         max_price: maxPrice,
         amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
@@ -148,20 +146,18 @@ function SearchPageContent() {
     if (initialCity) {
       suppressCatalogRefetchRef.current = true;
       void loadSearch(initialCity.id, checkin, checkout, guests);
-    } else if (params.get('globalSearch') === '1') {
-      suppressCatalogRefetchRef.current = true;
-      void loadSearch(null, checkin, checkout, guests);
     } else {
       void loadFeatured();
     }
   }, [initialCity, params, checkin, checkout, guests, loadFeatured, loadSearch]);
 
-  // Re-search when filters change (catalog API: with or without city).
+  // Re-search when filters change in catalog mode (filtered search always has a city_id).
   // Dependency array length must stay fixed (React / Fast Refresh). catalogMode is always listed;
   // suppressCatalogRefetchRef avoids duplicating a fetch right after handleSearch or initial loadSearch.
   useEffect(() => {
     if (!initialSearchDone.current) return;
     if (!catalogMode) return;
+    if (!cityId) return;
     if (suppressCatalogRefetchRef.current) {
       suppressCatalogRefetchRef.current = false;
       return;
@@ -237,18 +233,13 @@ function SearchPageContent() {
   const gridData: PaginatedResponse<PropertySummary> | null = catalogMode ? data : browsePaginated;
 
   const handleSearch = (city: CityOut | null) => {
-    if (city) {
-      setCityId(city.id);
-      setCityLabel(city.name);
-      setCurrentCity(city);
-    } else {
-      setCityId(null);
-      setCityLabel('');
-      setCurrentCity(null);
-    }
+    if (!city) return;
+    setCityId(city.id);
+    setCityLabel(city.name);
+    setCurrentCity(city);
     setPage(1);
     suppressCatalogRefetchRef.current = true;
-    void loadSearch(city?.id ?? null, checkin, checkout, guests);
+    void loadSearch(city.id, checkin, checkout, guests);
   };
 
   const handlePriceApply = (min: number | undefined, max: number | undefined) => {
@@ -275,7 +266,6 @@ function SearchPageContent() {
     const backendMsg = gridData.message?.trim();
     if (backendMsg) return backendMsg;
     if (catalogMode && cityId) return 'No properties found for the selected destination and dates.';
-    if (catalogMode && !cityId) return 'No properties found for your dates and guest count.';
     if (featuredRaw.length === 0) return 'No featured stays available right now.';
     return 'No properties match the selected filters.';
   }, [gridData, cityId, catalogMode, featuredRaw.length]);
@@ -313,11 +303,7 @@ function SearchPageContent() {
       >
         <Box>
           <Typography variant="h5" fontWeight={700}>
-            {catalogMode && cityId && cityLabel
-              ? `Stays in ${cityLabel}`
-              : catalogMode && !cityId
-                ? 'Search results'
-                : 'All stays'}
+            {catalogMode && cityId && cityLabel ? `Stays in ${cityLabel}` : 'All stays'}
           </Typography>
           {gridData && (
             <>
@@ -329,9 +315,8 @@ function SearchPageContent() {
               </Typography>
               {catalogMode && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                  Listings match your dates and minimum guest count
-                  {cityId ? ' in this destination' : ' (all destinations)'}. Per-room capacity is on each
-                  property detail page.
+                  Listings match your dates and minimum guest count in this destination. Per-room capacity is on
+                  each property detail page.
                 </Typography>
               )}
             </>
