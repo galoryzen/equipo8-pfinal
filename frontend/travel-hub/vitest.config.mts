@@ -11,7 +11,7 @@ export default defineConfig({
     globals: true,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov'],
+      reporter: ['text', 'lcov', 'json-summary'],
       include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx'],
       exclude: [
         // Layouts — pure wrappers with no testable logic
