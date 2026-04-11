@@ -11,6 +11,7 @@ module.exports = {
     "^@theme/(.*)$": "<rootDir>/src/theme/$1",
     "^@services/(.*)$": "<rootDir>/src/services/$1",
   },
+  coverageReporters: ["json", "json-summary", "lcov", "text"],
   coverageThreshold: {
     global: {
       branches: 70,

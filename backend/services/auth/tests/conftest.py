@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import bcrypt
@@ -37,7 +37,7 @@ def client(mock_token_adapter):
 
 @pytest.fixture
 def sample_user() -> User:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     return User(
         id=uuid.uuid4(),
         email="user@example.com",

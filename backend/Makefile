@@ -33,10 +33,10 @@ coverage:
 	@if [ -z "$(s)" ]; then \
 		for svc in $(SERVICES); do \
 			echo "\n══ $$svc ══"; \
-			cd services/$$svc && python3 -m pytest tests/ -v --cov=app --cov-report=term-missing --tb=short && cd ../..; \
+			cd services/$$svc && python3 -m pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=json:coverage.json --tb=short && cd ../..; \
 		done; \
 	else \
-		cd services/$(s) && python3 -m pytest tests/ -v --cov=app --cov-report=term-missing --tb=short; \
+		cd services/$(s) && python3 -m pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=json:coverage.json --tb=short; \
 	fi
 
 # ── Lint & Format ────────────────────────────────────────
