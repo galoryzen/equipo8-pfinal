@@ -21,7 +21,7 @@ class PropertyRepository(ABC):
         checkin: date,
         checkout: date,
         guests: int,
-        city_id: UUID,
+        city_id: UUID | None = None,
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,
@@ -29,7 +29,7 @@ class PropertyRepository(ABC):
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:
-        """Return (items_as_dicts, total_count) for paginated search by city and stay dates."""
+        """Return (items_as_dicts, total_count) for paginated search by stay dates; optional city filter."""
 
     @abstractmethod
     async def get_by_id(self, property_id: UUID) -> Property | None:

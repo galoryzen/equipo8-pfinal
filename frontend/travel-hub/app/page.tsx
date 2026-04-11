@@ -32,17 +32,26 @@ export default function HomePage() {
   const [checkout, setCheckout] = useState(defaultCheckout);
   const [guests, setGuests] = useState(1);
 
-  const handleSearch = (city: CityOut) => {
-    const params = new URLSearchParams({
-      cityId: city.id,
-      cityName: city.name,
-      cityCountry: city.country,
-      checkin,
-      checkout,
-      guests: String(guests),
-    });
-    if (city.department) params.set('cityDepartment', city.department);
-    router.push(`/traveler/search?${params.toString()}`);
+  const handleSearch = (city: CityOut | null) => {
+    if (city) {
+      const params = new URLSearchParams({
+        cityId: city.id,
+        cityName: city.name,
+        cityCountry: city.country,
+        checkin,
+        checkout,
+        guests: String(guests),
+      });
+      if (city.department) params.set('cityDepartment', city.department);
+      router.push(`/traveler/search?${params.toString()}`);
+    } else {
+      const params = new URLSearchParams({
+        checkin,
+        checkout,
+        guests: String(guests),
+      });
+      router.push(`/traveler/search?${params.toString()}`);
+    }
   };
 
   return (

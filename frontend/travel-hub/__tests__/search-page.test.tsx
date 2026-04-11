@@ -51,7 +51,7 @@ const emptyResponse = {
   page: 1,
   page_size: 20,
   total_pages: 0,
-  message: 'No hay hospedajes disponibles para la ubicación y fechas seleccionadas.',
+  message: 'No hay hospedajes disponibles para las fechas y número de huéspedes seleccionados.',
 };
 
 vi.mock('@/app/lib/api/catalog', () => ({
@@ -92,20 +92,48 @@ describe('SearchPage', () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  it('does not call filtered search until a city-based search is performed', async () => {
+  it('keeps search disabled without a destination and does not call searchProperties', async () => {
     render(<SearchPage />);
 
     await waitFor(() => screen.getByText('Hotel Test'));
 
-    // Click the icon search button (no city selected, so it's disabled — search should not fire)
     const searchButtons = screen.getAllByRole('button');
     const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
-    if (searchBtn) fireEvent.click(searchBtn);
+    expect(searchBtn).toBeTruthy();
+    expect(searchBtn).toHaveProperty('disabled', true);
+    fireEvent.click(searchBtn!);
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    expect(mockFeatured).toHaveBeenCalledTimes(1);
+  });
+
+  it('enables search after selecting a city', async () => {
+    const user = userEvent.setup();
+    mockSearchCities.mockResolvedValue([
+      { id: 'city-enable', name: 'Medellín', department: 'Antioquia', country: 'Colombia' },
+    ]);
+
+    render(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    expect(searchBtn).toHaveProperty('disabled', true);
+
+    const input = screen.getByPlaceholderText(/search destination/i);
+    await user.clear(input);
+    await user.type(input, 'Me');
+
+    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
+    await user.click(await screen.findByRole('option', { name: /Medellín/i }));
 
     await waitFor(() => {
-      expect(mockSearch).not.toHaveBeenCalled();
+      const btn = screen
+        .getAllByRole('button')
+        .find(b => b.querySelector('[data-testid="SearchIcon"]'));
+      expect(btn).toBeTruthy();
+      expect(btn).toHaveProperty('disabled', false);
     });
-    expect(mockFeatured.mock.calls.length).toBe(1);
   });
 
   it('calls searchProperties with city_id after selecting a city and searching', async () => {
@@ -147,6 +175,104 @@ describe('SearchPage', () => {
         })
       );
     });
+  });
+
+  it('re-fetches search when guest count changes after a destination search', async () => {
+    const user = userEvent.setup();
+    mockSearchCities.mockResolvedValue([
+      { id: 'city-uuid-1', name: 'Medellín', department: 'Antioquia', country: 'Colombia' },
+    ]);
+
+    render(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    const input = screen.getByPlaceholderText(/search destination/i);
+    await user.clear(input);
+    await user.type(input, 'Me');
+
+    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
+
+    const option = await screen.findByRole('option', { name: /Medellín/i });
+    await user.click(option);
+
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    await user.click(searchBtn!);
+
+    await waitFor(() => expect(mockSearch).toHaveBeenCalled());
+    mockSearch.mockClear();
+
+    await user.click(screen.getByText(/^1 guest$/i));
+    const guestsInput = screen.getByPlaceholderText('1');
+    fireEvent.change(guestsInput, { target: { value: '4' } });
+    fireEvent.blur(guestsInput);
+
+    await waitFor(() => {
+      expect(mockSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          city_id: 'city-uuid-1',
+          guests: 4,
+        })
+      );
+    });
+  });
+
+  it('changing guests after search keeps sort_by and other filters in the request', async () => {
+    const user = userEvent.setup();
+    mockSearchCities.mockResolvedValue([
+      { id: 'cid-sort', name: 'Q', department: null, country: 'Z' },
+    ]);
+
+    render(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    const input = screen.getByPlaceholderText(/search destination/i);
+    await user.clear(input);
+    await user.type(input, 'Qq');
+    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
+    await user.click(await screen.findByRole('option', { name: /^Q/ }));
+
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    await user.click(searchBtn!);
+
+    await waitFor(() => expect(mockSearch).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByText('Price'));
+    await waitFor(() => {
+      expect(mockSearch.mock.calls.at(-1)![0].sort_by).toBe('price_asc');
+    });
+
+    mockSearch.mockClear();
+
+    await user.click(screen.getByText(/^1 guest$/i));
+    const guestsField = screen.getByPlaceholderText('1');
+    fireEvent.change(guestsField, { target: { value: '3' } });
+    fireEvent.blur(guestsField);
+
+    await waitFor(() => {
+      const last = mockSearch.mock.calls.at(-1)![0];
+      expect(last.guests).toBe(3);
+      expect(last.sort_by).toBe('price_asc');
+      expect(last.city_id).toBe('cid-sort');
+    });
+  });
+
+  it('does not call searchProperties when changing guests in browse mode (no city)', async () => {
+    render(<SearchPage />);
+
+    await waitFor(() => screen.getByText('Hotel Test'));
+    mockSearch.mockClear();
+
+    fireEvent.click(screen.getByText(/^1 guest$/i));
+    const g = screen.getByPlaceholderText('1');
+    fireEvent.change(g, { target: { value: '5' } });
+    fireEvent.blur(g);
+
+    await waitFor(() => {
+      expect(screen.getByText(/5 guests/i)).toBeTruthy();
+    });
+    expect(mockSearch).not.toHaveBeenCalled();
   });
 
   it('applies price filter client-side in browse mode without extra API calls', async () => {
@@ -217,7 +343,7 @@ describe('SearchPage', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('No hay hospedajes disponibles para la ubicación y fechas seleccionadas.')
+        screen.getByText('No hay hospedajes disponibles para las fechas y número de huéspedes seleccionados.')
       ).toBeTruthy();
     });
   });

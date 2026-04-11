@@ -11,7 +11,7 @@ from app.schemas.property import PropertySummary
 class SearchPropertiesUseCase:
     CACHE_TTL = 120
     EMPTY_RESULTS_MESSAGE = (
-        "No hay hospedajes disponibles para la ubicación y fechas seleccionadas."
+        "No hay hospedajes disponibles para las fechas y número de huéspedes seleccionados."
     )
 
     def __init__(self, repo: PropertyRepository, cache: CachePort):
@@ -23,7 +23,7 @@ class SearchPropertiesUseCase:
         checkin: date,
         checkout: date,
         guests: int,
-        city_id: UUID,
+        city_id: UUID | None = None,
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,

@@ -8,6 +8,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import LinearProgress from '@mui/material/LinearProgress';
 import Grid from '@mui/material/Grid';
 import Pagination from '@mui/material/Pagination';
 import Typography from '@mui/material/Typography';
@@ -70,9 +71,13 @@ function SearchPageContent() {
   const [page, setPage] = useState(1);
   const [featuredRaw, setFeaturedRaw] = useState<PropertySummary[]>([]);
   const [data, setData] = useState<PaginatedResponse<PropertySummary> | null>(null);
+  /** True when results come from filtered catalog search (requires city); false for featured browse. */
+  const [catalogMode, setCatalogMode] = useState(() => !!initialCity);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initialSearchDone = useRef(false);
+  /** Skips one catalog refetch when loadSearch was already invoked (initial load or search button). */
+  const suppressCatalogRefetchRef = useRef(false);
 
   const amenityOptions: AmenitySummary[] = [
     { code: 'wifi', name: 'Wifi' },
@@ -84,6 +89,7 @@ function SearchPageContent() {
   ];
 
   const loadFeatured = useCallback(async () => {
+    setCatalogMode(false);
     setLoading(true);
     setError(null);
     try {
@@ -104,6 +110,7 @@ function SearchPageContent() {
     searchCheckout: string,
     searchGuests: number,
   ) => {
+    setCatalogMode(true);
     setLoading(true);
     setError(null);
     try {
@@ -137,27 +144,60 @@ function SearchPageContent() {
     initialSearchDone.current = true;
 
     if (initialCity) {
+      suppressCatalogRefetchRef.current = true;
       void loadSearch(initialCity.id, checkin, checkout, guests);
     } else {
       void loadFeatured();
     }
   }, [initialCity, params, checkin, checkout, guests, loadFeatured, loadSearch]);
 
-  // Re-search when filters change (only if we have a city)
+  // Re-search when filters change in catalog mode (filtered search always has a city_id).
+  // Dependency array length must stay fixed (React / Fast Refresh). catalogMode is always listed;
+  // suppressCatalogRefetchRef avoids duplicating a fetch right after handleSearch or initial loadSearch.
   useEffect(() => {
     if (!initialSearchDone.current) return;
-    if (cityId) {
-      void loadSearch(cityId, checkin, checkout, guests);
+    if (!catalogMode) return;
+    if (!cityId) return;
+    if (suppressCatalogRefetchRef.current) {
+      suppressCatalogRefetchRef.current = false;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [minPrice, maxPrice, selectedAmenities, sortBy, page]);
+    void loadSearch(cityId, checkin, checkout, guests);
+  }, [
+    catalogMode,
+    cityId,
+    checkin,
+    checkout,
+    guests,
+    minPrice,
+    maxPrice,
+    selectedAmenities,
+    sortBy,
+    page,
+    loadSearch,
+  ]);
 
   useEffect(() => {
     setPage(1);
   }, [minPrice, maxPrice, selectedAmenities, sortBy]);
 
+  const handleCheckinChange = useCallback((v: string) => {
+    setPage(1);
+    setCheckin(v);
+  }, []);
+
+  const handleCheckoutChange = useCallback((v: string) => {
+    setPage(1);
+    setCheckout(v);
+  }, []);
+
+  const handleGuestsChange = useCallback((n: number) => {
+    setPage(1);
+    setGuests(n);
+  }, []);
+
   const browsePaginated = useMemo((): PaginatedResponse<PropertySummary> | null => {
-    if (cityId) return null;
+    if (catalogMode) return null;
     let items = [...featuredRaw];
     if (minPrice != null) {
       items = items.filter((p) => p.min_price != null && Number(p.min_price) >= minPrice);
@@ -188,15 +228,17 @@ function SearchPageContent() {
       total_pages: totalPages,
       message: null,
     };
-  }, [cityId, featuredRaw, minPrice, maxPrice, selectedAmenities, sortBy, page]);
+  }, [catalogMode, featuredRaw, minPrice, maxPrice, selectedAmenities, sortBy, page]);
 
-  const gridData: PaginatedResponse<PropertySummary> | null = cityId ? data : browsePaginated;
+  const gridData: PaginatedResponse<PropertySummary> | null = catalogMode ? data : browsePaginated;
 
-  const handleSearch = (city: CityOut) => {
+  const handleSearch = (city: CityOut | null) => {
+    if (!city) return;
     setCityId(city.id);
     setCityLabel(city.name);
     setCurrentCity(city);
     setPage(1);
+    suppressCatalogRefetchRef.current = true;
     void loadSearch(city.id, checkin, checkout, guests);
   };
 
@@ -223,10 +265,10 @@ function SearchPageContent() {
     if (!gridData || gridData.items.length > 0) return '';
     const backendMsg = gridData.message?.trim();
     if (backendMsg) return backendMsg;
-    if (cityId) return 'No properties found for the selected destination and dates.';
+    if (catalogMode && cityId) return 'No properties found for the selected destination and dates.';
     if (featuredRaw.length === 0) return 'No featured stays available right now.';
     return 'No properties match the selected filters.';
-  }, [gridData, cityId, featuredRaw.length]);
+  }, [gridData, cityId, catalogMode, featuredRaw.length]);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
@@ -236,15 +278,16 @@ function SearchPageContent() {
             checkin={checkin}
             checkout={checkout}
             guests={guests}
-            onCheckinChange={setCheckin}
-            onCheckoutChange={setCheckout}
-            onGuestsChange={setGuests}
+            onCheckinChange={handleCheckinChange}
+            onCheckoutChange={handleCheckoutChange}
+            onGuestsChange={handleGuestsChange}
             onSearch={handleSearch}
             initialCity={currentCity}
             variant="icon"
           />
         </Box>
       </Box>
+      {loading && catalogMode ? <LinearProgress color="primary" sx={{ height: 3 }} /> : null}
 
       <Box
         sx={{
@@ -260,13 +303,23 @@ function SearchPageContent() {
       >
         <Box>
           <Typography variant="h5" fontWeight={700}>
-            {cityId && cityLabel ? `Stays in ${cityLabel}` : 'All stays'}
+            {catalogMode && cityId && cityLabel ? `Stays in ${cityLabel}` : 'All stays'}
           </Typography>
           {gridData && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-              {gridData.total} place{gridData.total !== 1 ? 's' : ''} found · {formatDateRange()}
-              {cityId ? '' : ' · browse popular destinations'}
-            </Typography>
+            <>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                {gridData.total} place{gridData.total !== 1 ? 's' : ''} found · {formatDateRange()}
+                {catalogMode
+                  ? ` · at least ${guests} guest${guests !== 1 ? 's' : ''}`
+                  : ' · browse popular destinations'}
+              </Typography>
+              {catalogMode && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  Listings match your dates and minimum guest count in this destination. Per-room capacity is on
+                  each property detail page.
+                </Typography>
+              )}
+            </>
           )}
         </Box>
 

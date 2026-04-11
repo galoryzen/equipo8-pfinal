@@ -79,7 +79,7 @@ export async function getFeaturedProperties(limit = 50): Promise<PropertySummary
 }
 
 export async function searchProperties(
-  filters: SearchFilters & { city_id: string }
+  filters: SearchFilters
 ): Promise<PaginatedResponse<PropertySummary>> {
   const params = new URLSearchParams();
 

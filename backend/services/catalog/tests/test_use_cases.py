@@ -445,6 +445,75 @@ class TestSearchProperties:
             page_size=15,
         )
 
+    async def test_guests_forwarded_to_repo_for_minimum_capacity(self, mock_property_repo, mock_cache):
+        """Only properties with aggregated capacity >= guests appear: repo receives the threshold."""
+        mock_property_repo.search.return_value = ([make_property_summary()], 1)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=6,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        assert mock_property_repo.search.call_args.kwargs["guests"] == 6
+
+    async def test_city_checkin_checkout_and_guests_forwarded_together(self, mock_property_repo, mock_cache):
+        """Combined location + stay dates + guest count reach the repository unchanged."""
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        await uc.execute(
+            checkin=date(2026, 6, 10),
+            checkout=date(2026, 6, 15),
+            guests=4,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        kwargs = mock_property_repo.search.call_args.kwargs
+        assert kwargs["checkin"] == date(2026, 6, 10)
+        assert kwargs["checkout"] == date(2026, 6, 15)
+        assert kwargs["guests"] == 4
+        assert kwargs["city_id"] == CANCUN_CITY_ID
+
+    async def test_changing_guests_preserves_other_filters(self, mock_property_repo, mock_cache):
+        """When the traveler changes only guest count, city/dates/price/amenities/sort stay applied."""
+        city_id = CANCUN_CITY_ID
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+        base = dict(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            city_id=city_id,
+            min_price=Decimal("50"),
+            max_price=Decimal("500"),
+            amenity_codes=["wifi"],
+            sort_by="rating",
+            page=2,
+            page_size=10,
+        )
+
+        await uc.execute(guests=2, **base)
+        await uc.execute(guests=8, **base)
+
+        c0 = mock_property_repo.search.call_args_list[0].kwargs
+        c1 = mock_property_repo.search.call_args_list[1].kwargs
+        assert c0["guests"] == 2
+        assert c1["guests"] == 8
+        for key in (
+            "checkin",
+            "checkout",
+            "city_id",
+            "min_price",
+            "max_price",
+            "amenity_codes",
+            "sort_by",
+            "page",
+            "page_size",
+        ):
+            assert c0[key] == c1[key]
+
     async def test_price_filter_only_min(self, mock_property_repo, mock_cache):
         """When only min_price is set, max_price should be None."""
         mock_property_repo.search.return_value = ([], 0)
@@ -518,6 +587,24 @@ class TestSearchProperties:
         assert result.items == []
         assert result.total == 0
         assert result.message == SEARCH_EMPTY_MSG
+
+    async def test_empty_when_no_property_meets_guest_capacity(self, mock_property_repo, mock_cache):
+        """No stays match minimum guest capacity: same empty response as other no-match searches."""
+        mock_property_repo.search.return_value = ([], 0)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=20,
+            city_id=CANCUN_CITY_ID,
+        )
+
+        assert result.items == []
+        assert result.total == 0
+        assert result.message == SEARCH_EMPTY_MSG
+        mock_property_repo.search.assert_called_once()
+        assert mock_property_repo.search.call_args.kwargs["guests"] == 20
 
     async def test_non_empty_total_has_no_empty_message(self, mock_property_repo, mock_cache):
         mock_property_repo.search.return_value = ([make_property_summary()], 1)

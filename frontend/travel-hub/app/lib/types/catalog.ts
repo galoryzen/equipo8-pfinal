@@ -56,7 +56,7 @@ export interface SearchFilters {
   checkin: string;
   checkout: string;
   guests: number;
-  city_id?: string;
+  city_id: string;
   min_price?: number;
   max_price?: number;
   amenities?: string;
