@@ -129,8 +129,8 @@ services:
       BOOKING_DB_SCHEMA: "booking"
       BOOKING_REDIS_URL: "redis://thub-redis:6379/0"
       BOOKING_DEBUG: "true"
-      JWT_SECRET: "change-me-in-production"
-      JWT_ALGORITHM: "HS256"
+      BOOKING_JWT_SECRET: "change-me-in-production"
+      BOOKING_JWT_ALGORITHM: "HS256"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
