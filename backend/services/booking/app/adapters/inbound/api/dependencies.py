@@ -2,15 +2,15 @@ from collections.abc import AsyncGenerator
 from uuid import UUID
 
 from fastapi import Cookie, Depends, Header
-from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.db.booking_repository import SqlAlchemyBookingRepository
 from app.adapters.outbound.db.session import async_session
+from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.application.exceptions import InvalidTokenError
+from app.application.ports.outbound.token_port import TokenPort
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
-from app.config import settings
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -18,9 +18,14 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+def get_token_adapter() -> TokenPort:
+    return JwtTokenAdapter()
+
+
 def get_current_user_id(
     authorization: str | None = Header(None),
     access_token: str | None = Cookie(default=None),
+    token_adapter: TokenPort = Depends(get_token_adapter),
 ) -> UUID:
     raw: str | None = None
     if authorization and authorization.lower().startswith("bearer "):
@@ -30,12 +35,11 @@ def get_current_user_id(
     if not raw:
         raise InvalidTokenError("Authentication required")
 
-    try:
-        payload = jwt.decode(raw, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-    except JWTError as e:
-        raise InvalidTokenError("Invalid or expired token") from e
+    payload = token_adapter.decode_access_token(raw)
+    if not payload:
+        raise InvalidTokenError("Invalid or expired token")
 
-    sub = payload.get("sub") if payload else None
+    sub = payload.get("sub")
     if not sub:
         raise InvalidTokenError("Invalid token payload")
 

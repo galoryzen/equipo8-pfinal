@@ -48,7 +48,9 @@ describe('useSearch', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
-    mockedService.getAmenities.mockResolvedValue(MOCK_AMENITIES);
+    // Use a never-resolving promise so the mount effect doesn't trigger
+    // a state update outside act(). Tests that need amenities resolve it explicitly.
+    mockedService.getAmenities.mockReturnValue(new Promise(() => {}));
   });
 
   afterEach(() => {
@@ -401,6 +403,8 @@ describe('useSearch', () => {
   // ── New: available amenities from backend ──────────────
 
   it('loads available amenities from backend on mount', async () => {
+    mockedService.getAmenities.mockResolvedValue(MOCK_AMENITIES);
+
     const { result } = renderHook(() => useSearch());
 
     await waitFor(() =>
