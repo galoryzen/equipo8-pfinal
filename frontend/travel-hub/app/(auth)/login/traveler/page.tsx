@@ -75,7 +75,7 @@ function inputSx(hasError: boolean) {
 function TravelerLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') ?? '/traveler/search';
+  const redirectTo = searchParams.get('redirect') ?? '/';
 
   const [values, setValues] = useState<FormValues>({ email: '', password: '' });
   const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});

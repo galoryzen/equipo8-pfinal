@@ -79,7 +79,7 @@ jobs:
             echo "::group::Testing $svc"
             cd backend/services/$svc
             pip install -r requirements.txt -q
-            pytest tests/ -v
+            pytest tests/ -v --cov=app --cov-fail-under=70
             cd "$GITHUB_WORKSPACE"
             echo "::endgroup::"
           done
