@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const API_URL = 'http://localhost:8001/api/v1';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz'}/api/v1`;
 
 const SERVICES = [
   { name: 'Auth', path: 'auth' },
@@ -20,7 +20,7 @@ interface ServiceStatus {
 
 export default function LandingPage() {
   const [services, setServices] = useState<ServiceStatus[]>(
-    SERVICES.map((s) => ({ name: s.name, status: 'loading' })),
+    SERVICES.map((s) => ({ name: s.name, status: 'loading' }))
   );
 
   useEffect(() => {
