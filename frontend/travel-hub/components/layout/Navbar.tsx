@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import NextLink from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -12,7 +13,10 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 import { getMe } from '@/app/lib/api/auth';
 
+const navLinkActive = '#0EA5E9';
+
 export default function Navbar() {
+  const pathname = usePathname();
   const [user, setUser] = useState<{ email: string; role: string } | null>(null);
 
   useEffect(() => {
@@ -44,14 +48,33 @@ export default function Navbar() {
           component={NextLink}
           href="/traveler/search"
           sx={{
-            fontWeight: 500,
+            fontWeight: pathname.startsWith('/traveler/search') ? 600 : 500,
             fontSize: '0.875rem',
-            color: 'grey.500',
+            color: pathname.startsWith('/traveler/search') ? navLinkActive : 'grey.500',
             textDecoration: 'none',
-            '&:hover': { color: '#0EA5E9' },
+            borderBottom: pathname.startsWith('/traveler/search') ? `2px solid ${navLinkActive}` : '2px solid transparent',
+            pb: 0.25,
+            '&:hover': { color: navLinkActive },
           }}
         >
           Stays
+        </Typography>
+
+        <Typography
+          component={NextLink}
+          href="/traveler/my-trips"
+          sx={{
+            ml: 3,
+            fontWeight: pathname.startsWith('/traveler/my-trips') ? 600 : 500,
+            fontSize: '0.875rem',
+            color: pathname.startsWith('/traveler/my-trips') ? navLinkActive : 'grey.500',
+            textDecoration: 'none',
+            borderBottom: pathname.startsWith('/traveler/my-trips') ? `2px solid ${navLinkActive}` : '2px solid transparent',
+            pb: 0.25,
+            '&:hover': { color: navLinkActive },
+          }}
+        >
+          My Trips
         </Typography>
 
         <Box sx={{ flex: 1 }} />

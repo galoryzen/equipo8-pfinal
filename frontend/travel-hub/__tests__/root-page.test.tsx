@@ -7,6 +7,7 @@ import * as catalogApi from '@/app/lib/api/catalog';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/',
 }));
 
 vi.mock('@/app/lib/api/auth', () => ({
