@@ -51,11 +51,13 @@ class GetPropertyDetailUseCase:
         if not prop:
             raise PropertyNotFoundError(property_id)
 
+        rating_avg, review_count = await self._repo.get_review_stats(property_id)
+
         reviews_list, review_total = await self._repo.get_reviews(
             property_id, review_page, review_page_size
         )
 
-        detail = self._build_detail(prop, checkin, checkout)
+        detail = self._build_detail(prop, checkin, checkout, rating_avg, review_count)
         reviews_page = PaginatedResponse[ReviewOut].build(
             items=[self._map_review(r) for r in reviews_list],
             total=review_total,
@@ -76,6 +78,8 @@ class GetPropertyDetailUseCase:
         prop: Property,
         checkin: date | None,
         checkout: date | None,
+        rating_avg: Decimal | None,
+        review_count: int,
     ) -> PropertyDetail:
         city = prop.city
         cancellation_policy = (
@@ -96,8 +100,8 @@ class GetPropertyDetailUseCase:
                 country=city.country,
             ),
             address=prop.address,
-            rating_avg=prop.rating_avg,
-            review_count=prop.review_count,
+            rating_avg=rating_avg,
+            review_count=review_count,
             popularity_score=prop.popularity_score,
             default_cancellation_policy=cancellation_policy,
             images=[

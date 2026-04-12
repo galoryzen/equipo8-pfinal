@@ -40,5 +40,12 @@ class PropertyRepository(ABC):
         """Paginated reviews for a property."""
 
     @abstractmethod
+    async def get_review_stats(self, property_id: UUID) -> tuple[Decimal | None, int]:
+        """Average rating and total count from ``review`` rows for a property.
+
+        When there are no reviews, returns ``(None, 0)``.
+        """
+
+    @abstractmethod
     async def get_min_prices(self, property_ids: list[UUID], checkin: date, checkout: date) -> dict[UUID, Decimal]:
         """Min nightly price per property for the date range."""
