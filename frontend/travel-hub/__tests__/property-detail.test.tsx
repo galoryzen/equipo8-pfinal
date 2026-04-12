@@ -259,6 +259,38 @@ describe('PropertyDetailView', () => {
     });
     expect(screen.queryByText('About this property')).toBeFalsy();
   });
+
+  it('shows aggregate rating and review count in header when data exists', async () => {
+    mockGetPropertyDetail.mockResolvedValue(makeDetailResponse());
+    render(<PropertyDetailView id={PROPERTY_ID} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('(2.4k reviews)')).toBeTruthy();
+    });
+    expect(screen.getAllByText('4.8').length).toBeGreaterThan(0);
+  });
+
+  it('shows rating unavailable in header and reviews block when there are no reviews', async () => {
+    mockGetPropertyDetail.mockResolvedValue({
+      ...makeDetailResponse({ rating_avg: null, review_count: 0 }),
+      reviews: {
+        items: [],
+        total: 0,
+        page: 1,
+        page_size: 4,
+        total_pages: 0,
+        message: null,
+      },
+    });
+
+    render(<PropertyDetailView id={PROPERTY_ID} />);
+
+    await waitFor(() => {
+      const unavailable = screen.getAllByText('Rating not available');
+      expect(unavailable.length).toBeGreaterThanOrEqual(2);
+    });
+    expect(screen.queryByText('4.8')).toBeFalsy();
+  });
 });
 
 // ── PropertyCard link test ──────────────────────────────────────────────────

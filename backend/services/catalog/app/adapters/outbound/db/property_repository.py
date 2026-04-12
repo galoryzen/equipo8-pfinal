@@ -1,9 +1,8 @@
 from datetime import date
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import func as sa_func
-from sqlalchemy import select
+from sqlalchemy import desc, func as sa_func, nulls_last, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -25,9 +24,45 @@ from app.domain.models import (
 )
 
 
+def _quantize_avg_from_raw(avg_raw, count: int) -> tuple[Decimal | None, int]:
+    """Same rules as ``get_review_stats`` — single place for list/detail consistency."""
+    count_int = int(count)
+    if count_int == 0 or avg_raw is None:
+        return None, 0
+    q = Decimal("0.01")
+    avg_q = Decimal(str(avg_raw)).quantize(q, rounding=ROUND_HALF_UP)
+    return avg_q, count_int
+
+
 class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
     def __init__(self, session: AsyncSession):
         self._session = session
+
+    async def _review_stats_map(self, property_ids: list[UUID]) -> dict[UUID, tuple[Decimal | None, int]]:
+        """Batch AVG/COUNT from ``review`` — aligned with ``get_review_stats`` per property."""
+        if not property_ids:
+            return {}
+        stmt = (
+            select(
+                Review.property_id,
+                sa_func.avg(Review.rating),
+                sa_func.count(Review.id),
+            )
+            .where(Review.property_id.in_(property_ids))
+            .group_by(Review.property_id)
+        )
+        rows = (await self._session.execute(stmt)).all()
+        out: dict[UUID, tuple[Decimal | None, int]] = {}
+        for pid, avg_raw, cnt in rows:
+            out[pid] = _quantize_avg_from_raw(avg_raw, cnt)
+        for pid in property_ids:
+            out.setdefault(pid, (None, 0))
+        return out
+
+    @staticmethod
+    def _rating_for_list_payload(avg_q: Decimal | None) -> float | None:
+        """JSON-serializable value; frontend uses same toFixed(1) as detail."""
+        return float(avg_q) if avg_q is not None else None
 
     async def list_amenities(self) -> list[Amenity]:
         result = await self._session.execute(
@@ -93,9 +128,12 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             for pid, amenity in am_result:
                 prop_amenities[pid].append(amenity)
 
+        stats_map = await self._review_stats_map(property_ids)
+
         items = []
         for prop, price in rows:
             img = first_images.get(prop.id)
+            avg_q, rc = stats_map.get(prop.id, (None, 0))
             items.append(
                 {
                     "id": prop.id,
@@ -107,8 +145,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                         "country": prop.city.country,
                     },
                     "address": prop.address,
-                    "rating_avg": round(float(prop.rating_avg), 1) if prop.rating_avg else None,
-                    "review_count": prop.review_count,
+                    "rating_avg": self._rating_for_list_payload(avg_q),
+                    "review_count": rc,
                     "image": {"url": img.url, "caption": img.caption} if img else None,
                     "min_price": int(price) if price else None,
                     "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
@@ -182,10 +220,19 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             .group_by(RoomType.property_id)
         ).subquery("min_price_sq")
 
+        review_avg_sq = (
+            select(
+                Review.property_id.label("property_id"),
+                sa_func.avg(Review.rating).label("review_avg_rating"),
+            )
+            .group_by(Review.property_id)
+        ).subquery("review_avg_sq")
+
         base_q = (
             select(Property, min_price_sq.c.min_price)
             .join(min_price_sq, min_price_sq.c.property_id == Property.id)
             .join(prop_capacity, prop_capacity.c.property_id == Property.id)
+            .outerjoin(review_avg_sq, review_avg_sq.c.property_id == Property.id)
             .where(Property.status == PropertyStatus.ACTIVE)
             .options(joinedload(Property.city))
         )
@@ -215,7 +262,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         total = total_result.scalar_one()
 
         if sort_by == "rating":
-            query = query.order_by(Property.rating_avg.desc().nulls_last(), Property.id)
+            query = query.order_by(nulls_last(desc(review_avg_sq.c.review_avg_rating)), Property.id)
         elif sort_by == "price_asc":
             query = query.order_by(min_price_sq.c.min_price.asc().nulls_last(), Property.id)
         elif sort_by == "price_desc":
@@ -256,9 +303,12 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             for pid, amenity in am_result:
                 prop_amenities[pid].append(amenity)
 
+        stats_map = await self._review_stats_map(property_ids)
+
         items = []
         for prop, price in rows:
             img = first_images.get(prop.id)
+            avg_q, rc = stats_map.get(prop.id, (None, 0))
             items.append(
                 {
                     "id": prop.id,
@@ -270,8 +320,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                         "country": prop.city.country,
                     },
                     "address": prop.address,
-                    "rating_avg": round(float(prop.rating_avg), 1) if prop.rating_avg else None,
-                    "review_count": prop.review_count,
+                    "rating_avg": self._rating_for_list_payload(avg_q),
+                    "review_count": rc,
                     "image": {"url": img.url, "caption": img.caption} if img else None,
                     "min_price": int(price) if price else None,
                     "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
@@ -304,6 +354,16 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         )
         result = await self._session.execute(stmt)
         return result.unique().scalar_one_or_none()
+
+    async def get_review_stats(self, property_id: UUID) -> tuple[Decimal | None, int]:
+        stmt = (
+            select(
+                sa_func.avg(Review.rating),
+                sa_func.count(Review.id),
+            ).where(Review.property_id == property_id)
+        )
+        row = (await self._session.execute(stmt)).one()
+        return _quantize_avg_from_raw(row[0], row[1])
 
     async def get_reviews(self, property_id: UUID, page: int = 1, page_size: int = 10) -> tuple[list[Review], int]:
         count_stmt = (

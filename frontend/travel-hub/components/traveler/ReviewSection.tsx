@@ -23,20 +23,28 @@ function formatDate(iso: string) {
 export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: ReviewSectionProps) {
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <StarIcon sx={{ color: '#f59e0b', fontSize: 28 }} />
-          <Typography variant="h5" fontWeight={700}>
-            {ratingAvg != null ? Number(ratingAvg).toFixed(1) : '—'}
+      {/* Header — aligned with PropertyDetailView: show aggregate or unavailable */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        {ratingAvg != null ? (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <StarIcon sx={{ color: '#f59e0b', fontSize: 28 }} aria-hidden />
+              <Typography variant="h5" component="p" fontWeight={700}>
+                {Number(ratingAvg).toFixed(1)}
+              </Typography>
+            </Box>
+            <Typography variant="body1" color="text.secondary" component="span">
+              · {reviews.total.toLocaleString()} reviews
+            </Typography>
+          </>
+        ) : (
+          <Typography variant="h6" fontWeight={600} color="text.secondary" component="p">
+            Rating not available
           </Typography>
-        </Box>
-        <Typography variant="body1" color="text.secondary">
-          · {reviews.total.toLocaleString()} reviews
-        </Typography>
+        )}
       </Box>
 
-      {reviews.items.length === 0 && (
+      {reviews.items.length === 0 && ratingAvg != null && (
         <Typography color="text.secondary">No reviews yet.</Typography>
       )}
 

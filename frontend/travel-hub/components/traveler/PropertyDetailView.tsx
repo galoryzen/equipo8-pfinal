@@ -33,6 +33,11 @@ interface PropertyDetailViewProps {
   id: string;
 }
 
+function formatReviewCount(count: number): string {
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k reviews`;
+  return `${count} reviews`;
+}
+
 function computeMinPrice(detail: PropertyDetail): number | null {
   const prices = detail.room_types.flatMap((rt) =>
     rt.rate_plans.map((rp) => rp.min_price).filter((p): p is number => p != null)
@@ -144,18 +149,31 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
             {detail.name}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {detail.rating_avg != null && (
+            {detail.rating_avg != null ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <StarIcon sx={{ fontSize: 16, color: '#f59e0b' }} />
-                <Typography variant="body2" fontWeight={700}>{Number(detail.rating_avg).toFixed(1)}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'underline', cursor: 'pointer' }}>
-                  ({detail.review_count.toLocaleString()} reviews)
+                <StarIcon sx={{ fontSize: 16, color: '#f59e0b' }} aria-hidden />
+                <Typography variant="body2" component="span" fontWeight={700}>
+                  {Number(detail.rating_avg).toFixed(1)}
+                </Typography>
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ textDecoration: 'underline', textUnderlineOffset: 2 }}
+                >
+                  ({formatReviewCount(detail.review_count)})
                 </Typography>
               </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary" component="span">
+                Rating not available
+              </Typography>
             )}
-            <Typography variant="body2" color="text.secondary">|</Typography>
+            <Typography variant="body2" color="text.secondary" component="span" sx={{ userSelect: 'none' }}>
+              |
+            </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <LocationOnIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+              <LocationOnIcon sx={{ fontSize: 15, color: 'primary.main' }} aria-hidden />
               <Typography variant="body2" color="text.secondary">
                 {detail.address ?? `${detail.city.name}, ${detail.city.country}`}
               </Typography>
