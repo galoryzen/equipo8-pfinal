@@ -39,6 +39,7 @@ class Base(DeclarativeBase):
 BOOKING_SCHEMA = "booking"
 
 
+
 class Booking(Base):
     __tablename__ = "booking"
     __table_args__: ClassVar[dict] = {"schema": BOOKING_SCHEMA}
@@ -70,3 +71,29 @@ class Booking(Base):
     )
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
+
+    confirmed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    items: Mapped[list["BookingItem"]] = relationship(
+        back_populates="booking",
+    )
+
+
+class BookingItem(Base):
+    __tablename__ = "booking_item"
+    __table_args__ = {"schema": BOOKING_SCHEMA}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    booking_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(Booking.id),
+        nullable=False,
+    )
+    property_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    room_type_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    rate_plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+
+    booking: Mapped[Booking] = relationship(back_populates="items")
