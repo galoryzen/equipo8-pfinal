@@ -32,6 +32,7 @@ class Base(DeclarativeBase):
 BOOKING_SCHEMA = "booking"
 
 
+
 class Booking(Base):
     __tablename__ = "booking"
     __table_args__ = {"schema": BOOKING_SCHEMA}
@@ -55,6 +56,10 @@ class Booking(Base):
     policy_refund_percent_applied: Mapped[int | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
+
+    # Nuevos campos para soporte de confirmación manual
+    internal_notes: Mapped[str | None] = mapped_column(String, nullable=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     items: Mapped[list["BookingItem"]] = relationship(
         back_populates="booking",

@@ -42,6 +42,16 @@ class SqlAlchemyBookingRepository(BookingRepository):
         await self._session.merge(booking)
         await self._session.commit()
 
+    async def update(self, booking: Booking) -> None:
+        self._session.add(booking)
+        await self._session.commit()
+
+    async def check_inventory(self, booking: Booking) -> bool:
+        return True
+
+    async def decrement_inventory(self, booking: Booking) -> None:
+        pass
+
     async def find_active_cart(
         self,
         user_id: UUID,

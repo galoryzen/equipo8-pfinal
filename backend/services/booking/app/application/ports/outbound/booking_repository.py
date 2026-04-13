@@ -23,6 +23,18 @@ class BookingRepository(ABC):
         """Merge and persist changes to an existing booking."""
 
     @abstractmethod
+    async def update(self, booking: Booking) -> None:
+        """Update booking in the database."""
+
+    @abstractmethod
+    async def check_inventory(self, booking: Booking) -> bool:
+        """Check if there is enough inventory to confirm the booking."""
+
+    @abstractmethod
+    async def decrement_inventory(self, booking: Booking) -> None:
+        """Decrement inventory for the confirmed booking."""
+
+    @abstractmethod
     async def find_active_cart(
         self,
         user_id: UUID,
