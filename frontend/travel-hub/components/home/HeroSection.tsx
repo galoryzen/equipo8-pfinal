@@ -1,5 +1,8 @@
+'use client';
+
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 import SearchBar from '@/components/search/SearchBar';
 import type { CityOut } from '@/app/lib/types/catalog';
@@ -23,6 +26,7 @@ export default function HeroSection({
   onGuestsChange,
   onSearch,
 }: HeroSectionProps) {
+  const { t } = useTranslation();
   return (
     <Box sx={{ bgcolor: 'white', py: { xs: 4, md: 8 }, textAlign: 'center' }}>
       <Box sx={{ maxWidth: 1280, mx: 'auto', px: { xs: 2, md: 4 } }}>
@@ -37,7 +41,7 @@ export default function HeroSection({
             mb: 2,
           }}
         >
-          Find your next stay
+          {t('hero.title')}
         </Typography>
 
         <Typography
@@ -50,7 +54,7 @@ export default function HeroSection({
             mb: 5,
           }}
         >
-          Unlock exclusive deals on your favorite hotels, homes, and more in Latin America.
+          {t('hero.subtitle')}
         </Typography>
 
         <Box sx={{ maxWidth: 900, mx: 'auto' }}>

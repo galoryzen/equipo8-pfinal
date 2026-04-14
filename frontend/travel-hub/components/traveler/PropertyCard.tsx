@@ -10,6 +10,8 @@ import Chip from '@mui/material/Chip';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import StarIcon from '@mui/icons-material/Star';
 import Typography from '@mui/material/Typography';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 import type { PropertySummary } from '@/app/lib/types/catalog';
 
@@ -17,12 +19,13 @@ interface PropertyCardProps {
   property: PropertySummary;
 }
 
-function formatReviewCount(count: number): string {
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}k reviews`;
-  return `${count} reviews`;
+function formatReviewCount(count: number, t: TFunction): string {
+  if (count >= 1000) return t('propertyCard.reviewsShort', { count: (count / 1000).toFixed(1) });
+  return t('propertyCard.reviews', { count });
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
+  const { t } = useTranslation();
   return (
     <NextLink href={`/traveler/hotel?id=${property.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
     <Card
@@ -56,7 +59,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             justifyContent: 'center',
           }}
         >
-          <Typography color="text.secondary">No image</Typography>
+          <Typography color="text.secondary">{t('propertyCard.noImage')}</Typography>
         </Box>
       )}
 
@@ -93,7 +96,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
                 }}
               />
               <Typography variant="caption" sx={{ display: 'block', color: 'grey.500', mt: 0.25 }}>
-                {formatReviewCount(property.review_count)}
+                {formatReviewCount(property.review_count, t)}
               </Typography>
             </Box>
           )}
@@ -129,7 +132,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               ${property.min_price.toLocaleString()}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              / night
+              {t('propertyCard.perNight')}
             </Typography>
           </Box>
         )}

@@ -8,8 +8,10 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import FlightIcon from '@mui/icons-material/Flight';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import { useTranslation } from 'react-i18next';
 
 export default function NewsletterSection() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
 
   return (
@@ -28,16 +30,15 @@ export default function NewsletterSection() {
       {/* Left content */}
       <Box sx={{ flex: 1 }}>
         <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '1.875rem', color: 'grey.900', mb: 2 }}>
-          Plan your dream getaway today
+          {t('newsletter.title')}
         </Typography>
         <Typography sx={{ fontSize: '1rem', color: 'grey.500', mb: 2 }}>
-          Join thousands of travelers finding the best deals in Latin America. Sign up for our
-          newsletter to get exclusive offers.
+          {t('newsletter.body')}
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 1.5, pt: 1, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'stretch' }}>
           <TextField
-            placeholder="Your email address"
+            placeholder={t('newsletter.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             sx={{
@@ -63,7 +64,7 @@ export default function NewsletterSection() {
               '&:hover': { bgcolor: '#0284C7' },
             }}
           >
-            Subscribe
+            {t('newsletter.subscribe')}
           </Button>
         </Box>
       </Box>

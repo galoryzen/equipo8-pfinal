@@ -8,11 +8,13 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import StarIcon from '@mui/icons-material/Star';
+import { useTranslation } from 'react-i18next';
 
 import { getFeaturedProperties } from '@/app/lib/api/catalog';
 import type { PropertySummary } from '@/app/lib/types/catalog';
 
 function PropertyCard({ property }: { property: PropertySummary }) {
+  const { t } = useTranslation();
   return (
     <Box
       component={NextLink}
@@ -50,7 +52,7 @@ function PropertyCard({ property }: { property: PropertySummary }) {
             justifyContent: 'center',
           }}
         >
-          <Typography sx={{ color: 'grey.400', fontSize: '0.875rem' }}>No image</Typography>
+          <Typography sx={{ color: 'grey.400', fontSize: '0.875rem' }}>{t('recommended.noImage')}</Typography>
         </Box>
       )}
 
@@ -136,7 +138,7 @@ function PropertyCard({ property }: { property: PropertySummary }) {
             <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', color: '#0EA5E9' }}>
               ${property.min_price.toLocaleString()}
             </Typography>
-            <Typography sx={{ fontSize: '0.75rem', color: 'grey.500' }}>/ night</Typography>
+            <Typography sx={{ fontSize: '0.75rem', color: 'grey.500' }}>{t('recommended.perNight')}</Typography>
           </Box>
         )}
       </Box>
@@ -145,6 +147,7 @@ function PropertyCard({ property }: { property: PropertySummary }) {
 }
 
 export default function RecommendedSection() {
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<PropertySummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -159,10 +162,10 @@ export default function RecommendedSection() {
     <Box>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'grey.900' }}>
-          Recommended for You
+          {t('recommended.title')}
         </Typography>
         <Typography sx={{ fontSize: '1rem', color: 'grey.500', mt: 0.5 }}>
-          Properties based on your recent activity
+          {t('recommended.subtitle')}
         </Typography>
       </Box>
 
@@ -172,7 +175,7 @@ export default function RecommendedSection() {
         </Box>
       ) : properties.length === 0 ? (
         <Typography sx={{ color: 'grey.500', textAlign: 'center', py: 6 }}>
-          No properties available right now.
+          {t('recommended.empty')}
         </Typography>
       ) : (
         <Box

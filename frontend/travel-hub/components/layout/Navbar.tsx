@@ -16,17 +16,20 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import LanguageIcon from '@mui/icons-material/Language';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { useTranslation } from 'react-i18next';
 
 import { getMe } from '@/app/lib/api/auth';
+import { defaultLocale } from '@/lib/i18n/settings';
 
 const navLinkActive = '#0EA5E9';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [user, setUser] = useState<{ email: string; role: string } | null>(null);
-  const [lang, setLang] = useState<'EN' | 'ES'>('EN');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const langLabel = i18n.language.startsWith('es') ? 'ES' : 'EN';
 
   useEffect(() => {
     getMe().then(setUser).catch(() => setUser(null));
@@ -54,9 +57,9 @@ export default function Navbar() {
             href="/"
             sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}
           >
-            <Box component="img" src="/icon.svg" alt="TravelHub" sx={{ width: 26, height: 25 }} />
+            <Box component="img" src="/icon.svg" alt={t('brand.name')} sx={{ width: 26, height: 25 }} />
             <Typography sx={{ fontWeight: 700, fontSize: '1.25rem', color: 'grey.900', letterSpacing: '-0.025em' }}>
-              TravelHub
+              {t('brand.name')}
             </Typography>
           </Box>
 
@@ -73,7 +76,7 @@ export default function Navbar() {
               '&:hover': { color: navLinkActive },
             }}
           >
-            Explore
+            {t('nav.explore')}
           </Typography>
 
           {user && (
@@ -90,7 +93,7 @@ export default function Navbar() {
                 '&:hover': { color: navLinkActive },
               }}
             >
-              My Trips
+              {t('nav.myTrips')}
             </Typography>
           )}
         </Box>
@@ -100,12 +103,14 @@ export default function Navbar() {
         {/* Right section */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <IconButton
-            onClick={() => setLang((prev) => (prev === 'EN' ? 'ES' : 'EN'))}
+            onClick={() =>
+              void i18n.changeLanguage(i18n.language.startsWith('es') ? defaultLocale : 'es-CO')
+            }
             sx={{ color: 'grey.500', borderRadius: '8px', gap: 0.5, fontSize: '0.8rem' }}
           >
             <LanguageIcon sx={{ fontSize: 20 }} />
             <Typography component="span" sx={{ fontSize: '0.75rem', fontWeight: 500, color: 'grey.600' }}>
-              {lang}
+              {langLabel}
             </Typography>
           </IconButton>
 
@@ -151,7 +156,7 @@ export default function Navbar() {
                   <ListItemIcon>
                     <LogoutIcon sx={{ fontSize: 18, color: 'grey.500' }} />
                   </ListItemIcon>
-                  Log out
+                  {t('nav.logOut')}
                 </MenuItem>
               </Menu>
             </>
@@ -167,7 +172,7 @@ export default function Navbar() {
                 '&:hover': { color: '#0EA5E9' },
               }}
             >
-              Log in
+              {t('nav.logIn')}
             </Typography>
           )}
         </Box>

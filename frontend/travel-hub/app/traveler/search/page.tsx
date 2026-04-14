@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -20,6 +21,7 @@ import SearchBar from '@/components/search/SearchBar';
 
 import { getFeaturedProperties, searchProperties } from '@/app/lib/api/catalog';
 import type { AmenitySummary, CityOut, PaginatedResponse, PropertySummary } from '@/app/lib/types/catalog';
+import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
 
 function defaultCheckin(): string {
   const d = new Date();
@@ -33,21 +35,41 @@ function defaultCheckout(): string {
   return d.toISOString().slice(0, 10);
 }
 
-const SORT_OPTIONS = [
-  { key: '', label: 'Sort' },
-  { key: 'price_asc', label: 'Price' },
-  { key: 'rating', label: 'Rating' },
-] as const;
-
 const PAGE_SIZE = 20;
 
-function errorToMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return 'Error searching properties';
-}
-
 function SearchPageContent() {
+  const { t, i18n } = useTranslation();
   const params = useSearchParams();
+
+  const sortOptions = useMemo(
+    () =>
+      [
+        { key: '', label: t('searchPage.sort') },
+        { key: 'price_asc', label: t('searchPage.price') },
+        { key: 'rating', label: t('searchPage.rating') },
+      ] as const,
+    [t],
+  );
+
+  const amenityOptions: AmenitySummary[] = useMemo(
+    () => [
+      { code: 'wifi', name: t('searchAmenities.wifi') },
+      { code: 'kitchen', name: t('searchAmenities.kitchen') },
+      { code: 'pool', name: t('searchAmenities.pool') },
+      { code: 'air_conditioning', name: t('searchAmenities.air_conditioning') },
+      { code: 'breakfast', name: t('searchAmenities.breakfast') },
+      { code: 'parking', name: t('searchAmenities.parking') },
+    ],
+    [t],
+  );
+
+  const errorToMessage = useCallback(
+    (err: unknown): string => {
+      if (err instanceof Error) return err.message;
+      return t('searchPage.errorGeneric');
+    },
+    [t],
+  );
 
   // Parse initial city from URL params
   const initialCity = useMemo((): CityOut | null => {
@@ -79,15 +101,6 @@ function SearchPageContent() {
   /** Skips one catalog refetch when loadSearch was already invoked (initial load or search button). */
   const suppressCatalogRefetchRef = useRef(false);
 
-  const amenityOptions: AmenitySummary[] = [
-    { code: 'wifi', name: 'Wifi' },
-    { code: 'kitchen', name: 'Kitchen' },
-    { code: 'pool', name: 'Pool' },
-    { code: 'air_conditioning', name: 'Air conditioning' },
-    { code: 'breakfast', name: 'Breakfast' },
-    { code: 'parking', name: 'Parking' },
-  ];
-
   const loadFeatured = useCallback(async () => {
     setCatalogMode(false);
     setLoading(true);
@@ -102,7 +115,7 @@ function SearchPageContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [errorToMessage]);
 
   const loadSearch = useCallback(async (
     searchCityId: string,
@@ -136,7 +149,7 @@ function SearchPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [minPrice, maxPrice, selectedAmenities, sortBy, page]);
+  }, [minPrice, maxPrice, selectedAmenities, sortBy, page, errorToMessage]);
 
   // Auto-search from URL params on first load
   useEffect(() => {
@@ -253,10 +266,12 @@ function SearchPageContent() {
     setPage(1);
   };
 
+  const dateLocale = dateFormattingLocale(i18n.language);
+
   const formatDateRange = () => {
     const fmt = (d: string) => {
       const date = new Date(d + 'T00:00:00');
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
     };
     return `${fmt(checkin)} - ${fmt(checkout)}`;
   };
@@ -265,10 +280,10 @@ function SearchPageContent() {
     if (!gridData || gridData.items.length > 0) return '';
     const backendMsg = gridData.message?.trim();
     if (backendMsg) return backendMsg;
-    if (catalogMode && cityId) return 'No properties found for the selected destination and dates.';
-    if (featuredRaw.length === 0) return 'No featured stays available right now.';
-    return 'No properties match the selected filters.';
-  }, [gridData, cityId, catalogMode, featuredRaw.length]);
+    if (catalogMode && cityId) return t('searchPage.emptyCatalog');
+    if (featuredRaw.length === 0) return t('searchPage.emptyFeatured');
+    return t('searchPage.emptyFilters');
+  }, [gridData, cityId, catalogMode, featuredRaw.length, t]);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
@@ -303,20 +318,19 @@ function SearchPageContent() {
       >
         <Box>
           <Typography variant="h5" fontWeight={700}>
-            {catalogMode && cityId && cityLabel ? `Stays in ${cityLabel}` : 'All stays'}
+            {catalogMode && cityId && cityLabel
+              ? t('searchPage.staysIn', { city: cityLabel })
+              : t('searchPage.allStays')}
           </Typography>
           {gridData && (
             <>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                {gridData.total} place{gridData.total !== 1 ? 's' : ''} found · {formatDateRange()}
-                {catalogMode
-                  ? ` · at least ${guests} guest${guests !== 1 ? 's' : ''}`
-                  : ' · browse popular destinations'}
+                {t('searchPage.placesFound', { count: gridData.total })} · {formatDateRange()} ·{' '}
+                {catalogMode ? t('searchPage.guestTail', { count: guests }) : t('searchPage.browseTail')}
               </Typography>
               {catalogMode && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                  Listings match your dates and minimum guest count in this destination. Per-room capacity is on
-                  each property detail page.
+                  {t('searchPage.catalogHint')}
                 </Typography>
               )}
             </>
@@ -324,7 +338,7 @@ function SearchPageContent() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {SORT_OPTIONS.map((opt) => (
+          {sortOptions.map((opt) => (
             <Chip
               key={opt.label}
               label={`${opt.label}${sortBy === opt.key && opt.key ? ' \u2193' : ''}`}
