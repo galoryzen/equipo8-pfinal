@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "title": "TravelHub — Find Your Next Stay",
+    "description": "Unlock exclusive deals on hotels, homes, and more across Latin America."
+  },
+  "brand": {
+    "name": "TravelHub"
+  },
+  "nav": {
+    "explore": "Explore",
+    "myTrips": "My Trips",
+    "logIn": "Log in",
+    "logOut": "Log out"
+  },
+  "hero": {
+    "title": "Find your next stay",
+    "subtitle": "Unlock exclusive deals on your favorite hotels, homes, and more in Latin America."
+  },
+  "search": {
+    "where": "Where",
+    "when": "When",
+    "who": "Who",
+    "searchDestination": "Search destination",
+    "typeTwoChars": "Type at least 2 letters",
+    "noCities": "No cities found",
+    "selectDates": "Select dates",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "guestsMinHelper": "Minimum 1 guest",
+    "search": "Search",
+    "guestsCount_one": "{{count}} guest",
+    "guestsCount_other": "{{count}} guests"
+  },
+  "popular": {
+    "title": "Popular Destinations",
+    "subtitle": "Trending places for travelers like you",
+    "seeAll": "See all",
+    "empty": "No destinations available right now."
+  },
+  "recommended": {
+    "title": "Recommended for You",
+    "subtitle": "Properties based on your recent activity",
+    "empty": "No properties available right now.",
+    "noImage": "No image",
+    "perNight": "/ night"
+  },
+  "newsletter": {
+    "title": "Plan your dream getaway today",
+    "body": "Join thousands of travelers finding the best deals in Latin America. Sign up for our newsletter to get exclusive offers.",
+    "emailPlaceholder": "Your email address",
+    "subscribe": "Subscribe"
+  },
+  "footer": {
+    "support": {
+      "title": "Support",
+      "links": [
+        "Help Center",
+        "Safety information",
+        "Cancellation options",
+        "Report a concern"
+      ]
+    },
+    "community": {
+      "title": "Community",
+      "links": ["TravelHub Blog", "Community Forum", "Travel Guides"]
+    },
+    "hosting": {
+      "title": "Hosting",
+      "links": ["List your property", "Host resources", "Community forum"]
+    },
+    "about": {
+      "title": "About",
+      "links": ["Newsroom", "Learn about new features", "Careers", "Investors"]
+    },
+    "copyright": "© 2026 TravelHub, Inc.",
+    "legal": ["Privacy", "Terms", "Sitemap"]
+  },
+  "priceRange": {
+    "title": "Price range",
+    "caption": "Nightly prices before fees and taxes",
+    "min": "Min",
+    "max": "Max",
+    "minGreaterThanMax": "Min cannot be greater than max"
+  },
+  "amenityFilter": {
+    "title": "Amenities",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "propertyCard": {
+    "noImage": "No image",
+    "perNight": "/ night",
+    "reviews_one": "{{count}} review",
+    "reviews_other": "{{count}} reviews",
+    "reviewsShort": "{{count}}k reviews"
+  },
+  "searchPage": {
+    "sort": "Sort",
+    "price": "Price",
+    "rating": "Rating",
+    "allStays": "All stays",
+    "staysIn": "Stays in {{city}}",
+    "placesFound_one": "{{count}} place found",
+    "placesFound_other": "{{count}} places found",
+    "guestTail_one": "at least {{count}} guest",
+    "guestTail_other": "at least {{count}} guests",
+    "browseTail": "browse popular destinations",
+    "catalogHint": "Listings match your dates and minimum guest count in this destination. Per-room capacity is on each property detail page.",
+    "errorGeneric": "Error searching properties",
+    "emptyCatalog": "No properties found for the selected destination and dates.",
+    "emptyFeatured": "No featured stays available right now.",
+    "emptyFilters": "No properties match the selected filters."
+  },
+  "searchAmenities": {
+    "wifi": "Wifi",
+    "kitchen": "Kitchen",
+    "pool": "Pool",
+    "air_conditioning": "Air conditioning",
+    "breakfast": "Breakfast",
+    "parking": "Parking"
+  }
+}
