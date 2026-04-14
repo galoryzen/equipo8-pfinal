@@ -34,7 +34,7 @@ describe('Home page', () => {
 
   it('renders the hero heading', async () => {
     render(<RootPage />);
-    expect(screen.getByText('Find your next stay')).toBeTruthy();
+    expect(screen.getByText('Find your next host')).toBeTruthy();
   });
 
   it('renders the navbar with TravelHub branding', async () => {

@@ -37,7 +37,7 @@ export default function HeroSection({
             mb: 2,
           }}
         >
-          Find your next stay
+          Find your next host
         </Typography>
 
         <Typography
