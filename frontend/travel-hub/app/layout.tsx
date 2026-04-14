@@ -7,7 +7,7 @@ import './globals.css';
 import { roboto, theme } from './theme';
 
 export const metadata: Metadata = {
-  title: 'TravelHub — Find Your Next Host',
+  title: 'TravelHub — Find Your Next Stay',
   description: 'Unlock exclusive deals on hotels, homes, and more across Latin America.',
 };
 
