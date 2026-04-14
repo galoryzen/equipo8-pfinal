@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RootPage from '@/app/page';
+import { renderWithI18n } from '@/__tests__/test-utils';
 import * as authApi from '@/app/lib/api/auth';
 import * as catalogApi from '@/app/lib/api/catalog';
 
@@ -33,18 +34,18 @@ describe('Home page', () => {
   });
 
   it('renders the hero heading', async () => {
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     expect(screen.getByText('Find your next stay')).toBeTruthy();
   });
 
   it('renders the navbar with TravelHub branding', async () => {
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     expect(screen.getByText('TravelHub')).toBeTruthy();
   });
 
   it('shows Log in link when not authenticated', async () => {
     mockGetMe.mockResolvedValue(null);
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     await waitFor(() => {
       expect(screen.getByText('Log in')).toBeTruthy();
     });
@@ -52,29 +53,29 @@ describe('Home page', () => {
 
   it('shows username when authenticated', async () => {
     mockGetMe.mockResolvedValue({ id: '1', email: 'john@test.com', role: 'TRAVELER' });
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     await waitFor(() => {
       expect(screen.getByText('john')).toBeTruthy();
     });
   });
 
   it('renders the Popular Destinations section', () => {
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     expect(screen.getByText('Popular Destinations')).toBeTruthy();
   });
 
   it('renders the Recommended for You section', () => {
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     expect(screen.getByText('Recommended for You')).toBeTruthy();
   });
 
   it('renders the newsletter section', () => {
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     expect(screen.getByText('Plan your dream getaway today')).toBeTruthy();
   });
 
   it('renders the search destination input', () => {
-    render(<RootPage />);
+    renderWithI18n(<RootPage />);
     expect(screen.getByPlaceholderText('Search destination')).toBeTruthy();
   });
 });

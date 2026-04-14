@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import SearchPage from '@/app/traveler/search/page';
+import { renderWithI18n } from '@/__tests__/test-utils';
 import { getFeaturedProperties, searchCities, searchProperties } from '@/app/lib/api/catalog';
 
 // Mock useSearchParams to return an empty URLSearchParams by default
@@ -73,7 +74,7 @@ describe('SearchPage', () => {
   });
 
   it('renders the price range filter on the page', async () => {
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Price range')).toBeTruthy();
@@ -83,7 +84,7 @@ describe('SearchPage', () => {
   });
 
   it('loads featured stays on mount without calling filtered search', async () => {
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Hotel Test')).toBeTruthy();
@@ -93,7 +94,7 @@ describe('SearchPage', () => {
   });
 
   it('keeps search disabled without a destination and does not call searchProperties', async () => {
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => screen.getByText('Hotel Test'));
 
@@ -113,7 +114,7 @@ describe('SearchPage', () => {
       { id: 'city-enable', name: 'Medellín', department: 'Antioquia', country: 'Colombia' },
     ]);
 
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const searchButtons = screen.getAllByRole('button');
@@ -142,7 +143,7 @@ describe('SearchPage', () => {
       { id: 'city-uuid-1', name: 'Medellín', department: 'Antioquia', country: 'Colombia' },
     ]);
 
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const input = screen.getByPlaceholderText(/search destination/i);
@@ -183,7 +184,7 @@ describe('SearchPage', () => {
       { id: 'city-uuid-1', name: 'Medellín', department: 'Antioquia', country: 'Colombia' },
     ]);
 
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const input = screen.getByPlaceholderText(/search destination/i);
@@ -223,7 +224,7 @@ describe('SearchPage', () => {
       { id: 'cid-sort', name: 'Q', department: null, country: 'Z' },
     ]);
 
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const input = screen.getByPlaceholderText(/search destination/i);
@@ -259,7 +260,7 @@ describe('SearchPage', () => {
   });
 
   it('does not call searchProperties when changing guests in browse mode (no city)', async () => {
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => screen.getByText('Hotel Test'));
     mockSearch.mockClear();
@@ -276,7 +277,7 @@ describe('SearchPage', () => {
   });
 
   it('applies price filter client-side in browse mode without extra API calls', async () => {
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Hotel Test')).toBeTruthy();
@@ -296,7 +297,7 @@ describe('SearchPage', () => {
   });
 
   it('displays result count', async () => {
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText(/2 places? found/)).toBeTruthy();
@@ -305,7 +306,7 @@ describe('SearchPage', () => {
 
   it('shows empty state when browse filters exclude all properties', async () => {
     mockFeatured.mockResolvedValue(mockItems);
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Hotel Test')).toBeTruthy();
@@ -327,7 +328,7 @@ describe('SearchPage', () => {
     ]);
     mockSearch.mockResolvedValue(emptyResponse);
 
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const input = screen.getByPlaceholderText(/search destination/i);
@@ -350,7 +351,7 @@ describe('SearchPage', () => {
 
   it('shows readable error message on API failure', async () => {
     mockFeatured.mockRejectedValue(new Error('Network error'));
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Network error')).toBeTruthy();
@@ -361,7 +362,7 @@ describe('SearchPage', () => {
     mockFeatured.mockRejectedValue(
       new Error('Field required')
     );
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Field required')).toBeTruthy();
@@ -369,7 +370,7 @@ describe('SearchPage', () => {
   });
 
   it('re-fetches with amenities when an amenity checkbox is toggled in browse mode', async () => {
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
 
     fireEvent.click(screen.getByRole('checkbox', { name: /wifi/i }));
@@ -386,7 +387,7 @@ describe('SearchPage', () => {
       { id: 'cid', name: 'Q', department: null, country: 'Z' },
     ]);
 
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const input = screen.getByPlaceholderText(/search destination/i);
@@ -417,7 +418,7 @@ describe('SearchPage', () => {
     }));
     mockFeatured.mockResolvedValue(many);
 
-    render(<SearchPage />);
+    renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
       expect(screen.getByRole('navigation')).toBeTruthy();

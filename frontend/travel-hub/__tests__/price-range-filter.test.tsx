@@ -1,24 +1,25 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import PriceRangeFilter from '../components/traveler/PriceRangeFilter';
+import { renderWithI18n } from '@/__tests__/test-utils';
 
 describe('PriceRangeFilter', () => {
   it('renders the title and subtitle', () => {
-    render(<PriceRangeFilter onApply={vi.fn()} />);
+    renderWithI18n(<PriceRangeFilter onApply={vi.fn()} />);
     expect(screen.getByText('Price range')).toBeTruthy();
     expect(screen.getByText('Nightly prices before fees and taxes')).toBeTruthy();
   });
 
   it('renders min and max text fields', () => {
-    render(<PriceRangeFilter onApply={vi.fn()} />);
+    renderWithI18n(<PriceRangeFilter onApply={vi.fn()} />);
     expect(screen.getByLabelText('Min')).toBeTruthy();
     expect(screen.getByLabelText('Max')).toBeTruthy();
   });
 
   it('calls onApply with price values on blur', () => {
     const onApply = vi.fn();
-    render(<PriceRangeFilter minPrice={100} maxPrice={500} onApply={onApply} />);
+    renderWithI18n(<PriceRangeFilter minPrice={100} maxPrice={500} onApply={onApply} />);
 
     fireEvent.blur(screen.getByLabelText('Min'));
 
@@ -27,7 +28,7 @@ describe('PriceRangeFilter', () => {
 
   it('shows validation error when min > max on blur', () => {
     const onApply = vi.fn();
-    render(<PriceRangeFilter onApply={onApply} />);
+    renderWithI18n(<PriceRangeFilter onApply={onApply} />);
 
     const minInput = screen.getByLabelText('Min');
     const maxInput = screen.getByLabelText('Max');
@@ -42,7 +43,7 @@ describe('PriceRangeFilter', () => {
 
   it('clears error when input changes after validation error', () => {
     const onApply = vi.fn();
-    render(<PriceRangeFilter onApply={onApply} />);
+    renderWithI18n(<PriceRangeFilter onApply={onApply} />);
 
     const minInput = screen.getByLabelText('Min');
     const maxInput = screen.getByLabelText('Max');
@@ -58,7 +59,7 @@ describe('PriceRangeFilter', () => {
 
   it('allows equal min and max price', () => {
     const onApply = vi.fn();
-    render(<PriceRangeFilter minPrice={200} maxPrice={200} onApply={onApply} />);
+    renderWithI18n(<PriceRangeFilter minPrice={200} maxPrice={200} onApply={onApply} />);
 
     fireEvent.blur(screen.getByLabelText('Min'));
 
