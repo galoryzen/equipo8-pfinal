@@ -28,6 +28,6 @@ Strings are defined per locale under the **TravelHub** app:
 5. **Interpolation** — Use `{{name}}` in JSON and pass values: `t('searchPage.staysIn', { city: cityName })`.
 6. **Plurals** — Use `_one` / `_other` (and other plural forms as needed) under the same parent key, then call `t('search.guestsCount', { count: n })`. Add matching plural keys in both locale files.
 
-The i18n instance is configured in [`travel-hub/lib/i18n/client.ts`](./travel-hub/lib/i18n/client.ts); the app is wrapped with `I18nProvider` in [`travel-hub/app/layout.tsx`](./travel-hub/app/layout.tsx). For tests, use `renderWithI18n` from [`travel-hub/__tests__/test-utils.tsx`](./travel-hub/__tests__/test-utils.tsx).
+The i18n instance is configured in [`travel-hub/lib/i18n/client.ts`](./travel-hub/lib/i18n/client.ts); the app is wrapped with `I18nProvider` in [`travel-hub/app/layout.tsx`](./travel-hub/app/layout.tsx). After hydration, [`LanguageSync`](./travel-hub/components/i18n/LanguageSync.tsx) applies the user’s saved language from `localStorage` (or the browser language when nothing is saved) so the first server render and the first client render both use **`en-US`**, avoiding React hydration mismatches. For tests, use `renderWithI18n` from [`travel-hub/__tests__/test-utils.tsx`](./travel-hub/__tests__/test-utils.tsx).
 
-**Locales:** `en-US` (default) and `es-CO`. The navbar language toggle switches between them; the choice is stored in `localStorage` (`i18nextLng`).
+**Locales:** `en-US` (default for SSR and first paint) and `es-CO`. The navbar language toggle switches between them; changes are persisted under `localStorage` (`i18nextLng`).

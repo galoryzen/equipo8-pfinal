@@ -1,5 +1,4 @@
 import i18n from 'i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
 import { defaultLocale, locales } from '@/lib/i18n/settings';
@@ -7,36 +6,34 @@ import { defaultLocale, locales } from '@/lib/i18n/settings';
 import enUS from '@/lib/i18n/locales/en-US/common.json';
 import esCO from '@/lib/i18n/locales/es-CO/common.json';
 
-void i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources: {
-      'en-US': { common: enUS },
-      'es-CO': { common: esCO },
-    },
-    fallbackLng: defaultLocale,
-    supportedLngs: [...locales],
-    defaultNS: 'common',
-    ns: ['common'],
-    detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'],
-    },
-    interpolation: { escapeValue: false },
-    react: { useSuspense: false },
-  });
+const STORAGE_KEY = 'i18nextLng';
 
-function normalizeToSupported(lng: string): string {
-  const base = lng.split('-')[0]?.toLowerCase() ?? 'en';
-  if (base === 'es') return 'es-CO';
-  return defaultLocale;
-}
-
-i18n.on('initialized', () => {
-  const lng = i18n.language;
-  const next = normalizeToSupported(lng);
-  if (lng !== next) void i18n.changeLanguage(next);
+/**
+ * Fixed initial language for SSR and the first client render so markup matches (avoids hydration errors).
+ * User preference is applied after mount in `LanguageSync`.
+ */
+void i18n.use(initReactI18next).init({
+  lng: defaultLocale,
+  fallbackLng: defaultLocale,
+  supportedLngs: [...locales],
+  resources: {
+    'en-US': { common: enUS },
+    'es-CO': { common: esCO },
+  },
+  defaultNS: 'common',
+  ns: ['common'],
+  interpolation: { escapeValue: false },
+  react: { useSuspense: false },
 });
+
+if (typeof window !== 'undefined') {
+  i18n.on('languageChanged', (lng) => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, lng);
+    } catch {
+      /* ignore */
+    }
+  });
+}
 
 export default i18n;

@@ -8,6 +8,7 @@ import { roboto, theme } from './theme';
 
 import { DocumentLang } from '@/components/i18n/DocumentLang';
 import { I18nProvider } from '@/components/i18n/I18nProvider';
+import { LanguageSync } from '@/components/i18n/LanguageSync';
 import { TranslatedMeta } from '@/components/i18n/TranslatedMeta';
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en-US" className={roboto.variable} suppressHydrationWarning>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <I18nProvider>
+          <LanguageSync />
           <DocumentLang />
           <TranslatedMeta />
           <AppRouterCacheProvider>
