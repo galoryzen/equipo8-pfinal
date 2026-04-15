@@ -1,5 +1,4 @@
 import ManagerNotificationsPage from '@/app/manager/notifications/page';
-
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -57,8 +56,6 @@ describe('ManagerNotificationsPage', () => {
     // Click en el botón del modal (el último con ese texto)
     const modalButtons = screen.getAllByRole('button', { name: /Confirmar reserva/ });
     fireEvent.click(modalButtons[modalButtons.length - 1]);
-    await waitFor(() =>
-      expect(screen.getByText(/no hay disponibilidad suficiente/i)).toBeTruthy()
-    );
+    await waitFor(() => expect(screen.getByText(/no hay disponibilidad suficiente/i)).toBeTruthy());
   });
 });
