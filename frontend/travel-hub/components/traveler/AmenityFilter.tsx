@@ -8,6 +8,7 @@ import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 import type { AmenitySummary } from '@/app/lib/types/catalog';
 
@@ -18,6 +19,7 @@ interface AmenityFilterProps {
 }
 
 export default function AmenityFilter({ amenities, selected, onChange }: AmenityFilterProps) {
+  const { t } = useTranslation();
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? amenities : amenities.slice(0, 4);
 
@@ -53,7 +55,7 @@ export default function AmenityFilter({ amenities, selected, onChange }: Amenity
       </FormGroup>
       {amenities.length > 4 && (
         <Button size="small" onClick={() => setShowAll(!showAll)} sx={{ textTransform: 'none', mt: 0.5 }}>
-          {showAll ? 'Show less' : 'Show more'}
+          {showAll ? t('amenityFilter.showLess') : t('amenityFilter.showMore')}
         </Button>
       )}
     </Box>

@@ -7,6 +7,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { useTranslation } from 'react-i18next';
 
 import { getFeaturedDestinations } from '@/app/lib/api/catalog';
 import type { FeaturedDestination } from '@/app/lib/types/catalog';
@@ -18,6 +19,7 @@ interface PopularDestinationsProps {
 }
 
 export default function PopularDestinations({ checkin, checkout, guests }: PopularDestinationsProps) {
+  const { t } = useTranslation();
   const [destinations, setDestinations] = useState<FeaturedDestination[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,10 +49,10 @@ export default function PopularDestinations({ checkin, checkout, guests }: Popul
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 3 }}>
         <Box>
           <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'grey.900' }}>
-            Popular Destinations
+            {t('popular.title')}
           </Typography>
           <Typography sx={{ fontSize: '1rem', color: 'grey.500', mt: 0.5 }}>
-            Trending places for travelers like you
+            {t('popular.subtitle')}
           </Typography>
         </Box>
         <Typography
@@ -64,7 +66,7 @@ export default function PopularDestinations({ checkin, checkout, guests }: Popul
             '&:hover': { textDecoration: 'underline' },
           }}
         >
-          See all
+          {t('popular.seeAll')}
         </Typography>
       </Box>
 
@@ -75,7 +77,7 @@ export default function PopularDestinations({ checkin, checkout, guests }: Popul
         </Box>
       ) : destinations.length === 0 ? (
         <Typography sx={{ color: 'grey.500', textAlign: 'center', py: 6 }}>
-          No destinations available right now.
+          {t('popular.empty')}
         </Typography>
       ) : (
         <Box

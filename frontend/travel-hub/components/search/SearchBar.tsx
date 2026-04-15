@@ -18,8 +18,10 @@ import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { useTranslation } from 'react-i18next';
 
 import { searchCities } from '@/app/lib/api/catalog';
+import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
 import type { CityOut } from '@/app/lib/types/catalog';
 
 export interface SearchBarProps {
@@ -48,10 +50,10 @@ function toIso(date: Date | null): string | null {
   return date.toISOString().slice(0, 10);
 }
 
-function formatDateRange(checkin: string, checkout: string): string {
+function formatDateRange(checkin: string, checkout: string, locale: string): string {
   const fmt = (d: string) => {
     const date = new Date(d + 'T00:00:00');
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   };
   return `${fmt(checkin)} - ${fmt(checkout)}`;
 }
@@ -93,6 +95,8 @@ export default function SearchBar({
   initialCity = null,
   variant = 'button',
 }: SearchBarProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = dateFormattingLocale(i18n.language);
   const [selected, setSelected] = useState<CityOut | null>(initialCity);
   const [inputValue, setInputValue] = useState(initialCity ? formatCity(initialCity) : '');
   const [options, setOptions] = useState<CityOut[]>([]);
@@ -176,7 +180,7 @@ export default function SearchBar({
         <Box sx={{ flex: 1.2, display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5, minWidth: 0 }}>
           <LocationOnOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={labelSx}>Where</Typography>
+            <Typography sx={labelSx}>{t('search.where')}</Typography>
             <Autocomplete
               options={options}
               loading={loadingCities}
@@ -190,12 +194,12 @@ export default function SearchBar({
               }}
               filterOptions={(x) => x}
               isOptionEqualToValue={(a, b) => a.id === b.id}
-              noOptionsText={inputValue.trim().length < 2 ? 'Type at least 2 letters' : 'No cities found'}
+              noOptionsText={inputValue.trim().length < 2 ? t('search.typeTwoChars') : t('search.noCities')}
               fullWidth
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  placeholder="Search destination"
+                  placeholder={t('search.searchDestination')}
                   variant="standard"
                   slotProps={{
                     input: {
@@ -231,8 +235,8 @@ export default function SearchBar({
         >
           <CalendarTodayOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
           <Box>
-            <Typography sx={labelSx}>When</Typography>
-            <Typography sx={valueSx}>{formatDateRange(checkin, checkout)}</Typography>
+            <Typography sx={labelSx}>{t('search.when')}</Typography>
+            <Typography sx={valueSx}>{formatDateRange(checkin, checkout, dateLocale)}</Typography>
           </Box>
         </Box>
 
@@ -244,17 +248,17 @@ export default function SearchBar({
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           slotProps={{ paper: { sx: { borderRadius: 3, p: 3, mt: 1, display: 'flex', flexDirection: 'column', gap: 2 } } }}
         >
-          <Typography sx={{ fontWeight: 600, color: 'grey.700' }}>Select dates</Typography>
+          <Typography sx={{ fontWeight: 600, color: 'grey.700' }}>{t('search.selectDates')}</Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <DatePicker
-              label="Check-in"
+              label={t('search.checkIn')}
               value={toDate(checkin)}
               onChange={(d) => { const iso = toIso(d); if (iso) onCheckinChange(iso); }}
               disablePast
               slotProps={{ textField: { size: 'small' } }}
             />
             <DatePicker
-              label="Check-out"
+              label={t('search.checkOut')}
               value={toDate(checkout)}
               onChange={(d) => { const iso = toIso(d); if (iso) onCheckoutChange(iso); }}
               minDate={toDate(checkin)}
@@ -276,10 +280,8 @@ export default function SearchBar({
         >
           <GroupOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
           <Box>
-            <Typography sx={labelSx}>Who</Typography>
-            <Typography sx={valueSx}>
-              {guests} guest{guests !== 1 ? 's' : ''}
-            </Typography>
+            <Typography sx={labelSx}>{t('search.who')}</Typography>
+            <Typography sx={valueSx}>{t('search.guestsCount', { count: guests })}</Typography>
           </Box>
         </Box>
 
@@ -291,7 +293,7 @@ export default function SearchBar({
           transformOrigin={{ vertical: 'top', horizontal: 'center' }}
           slotProps={{ paper: { sx: { borderRadius: 3, p: 3, mt: 1 } } }}
         >
-          <Typography sx={{ fontWeight: 600, color: 'grey.700', mb: 1.5 }}>Guests</Typography>
+          <Typography sx={{ fontWeight: 600, color: 'grey.700', mb: 1.5 }}>{t('search.guests')}</Typography>
           <TextField
             type="text"
             inputMode="numeric"
@@ -305,7 +307,7 @@ export default function SearchBar({
             placeholder="1"
             size="small"
             sx={{ minWidth: 120 }}
-            helperText="Minimum 1 guest"
+            helperText={t('search.guestsMinHelper')}
           />
         </Popover>
 
@@ -330,7 +332,7 @@ export default function SearchBar({
               '&.Mui-disabled': { bgcolor: 'grey.300', color: 'white' },
             }}
           >
-            Search
+            {t('search.search')}
           </Button>
         ) : (
           <IconButton

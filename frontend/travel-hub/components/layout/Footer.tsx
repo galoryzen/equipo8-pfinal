@@ -1,27 +1,15 @@
+'use client';
+
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import FacebookIcon from '@mui/icons-material/Facebook';
+import { useTranslation } from 'react-i18next';
 
-const FOOTER_SECTIONS = [
-  {
-    title: 'Support',
-    links: ['Help Center', 'Safety information', 'Cancellation options', 'Report a concern'],
-  },
-  {
-    title: 'Community',
-    links: ['TravelHub Blog', 'Community Forum', 'Travel Guides'],
-  },
-  {
-    title: 'Hosting',
-    links: ['List your property', 'Host resources', 'Community forum'],
-  },
-  {
-    title: 'About',
-    links: ['Newsroom', 'Learn about new features', 'Careers', 'Investors'],
-  },
-];
+const FOOTER_KEYS = ['support', 'community', 'hosting', 'about'] as const;
 
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
     <Box
       component="footer"
@@ -33,7 +21,6 @@ export default function Footer() {
       }}
     >
       <Box sx={{ maxWidth: 1280, mx: 'auto', px: { xs: 2, md: 4 } }}>
-        {/* Link columns */}
         <Box
           sx={{
             display: 'grid',
@@ -41,8 +28,8 @@ export default function Footer() {
             gap: 4,
           }}
         >
-          {FOOTER_SECTIONS.map((section) => (
-            <Box key={section.title}>
+          {FOOTER_KEYS.map((key) => (
+            <Box key={key}>
               <Typography
                 sx={{
                   fontWeight: 700,
@@ -52,10 +39,10 @@ export default function Footer() {
                   mb: 2,
                 }}
               >
-                {section.title}
+                {t(`footer.${key}.title`)}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {section.links.map((link) => (
+                {(t(`footer.${key}.links`, { returnObjects: true }) as string[]).map((link) => (
                   <Typography
                     key={link}
                     component="a"
@@ -76,7 +63,6 @@ export default function Footer() {
           ))}
         </Box>
 
-        {/* Bottom bar */}
         <Box
           sx={{
             borderTop: '1px solid #E5E7EB',
@@ -89,17 +75,15 @@ export default function Footer() {
             gap: 2,
           }}
         >
-          {/* Left: logo + copyright */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <img src="/icon.svg" alt="TravelHub" width={17} height={17} />
+            <img src="/icon.svg" alt={t('brand.name')} width={17} height={17} />
             <Typography sx={{ fontSize: 14, color: '#64748B', lineHeight: '20px' }}>
-              &copy; 2026 TravelHub, Inc.
+              {t('footer.copyright')}
             </Typography>
           </Box>
 
-          {/* Center: legal links */}
           <Box sx={{ display: 'flex', gap: 3 }}>
-            {['Privacy', 'Terms', 'Sitemap'].map((text) => (
+            {(t('footer.legal', { returnObjects: true }) as string[]).map((text) => (
               <Typography
                 key={text}
                 component="a"
@@ -117,7 +101,6 @@ export default function Footer() {
             ))}
           </Box>
 
-          {/* Right: social icons */}
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <Box component="a" href="#" sx={{ color: '#64748B', display: 'flex', '&:hover': { color: '#0EA5E9' } }}>
               <FacebookIcon sx={{ fontSize: 20 }} />

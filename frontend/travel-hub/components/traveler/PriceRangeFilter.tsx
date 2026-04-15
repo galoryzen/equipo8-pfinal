@@ -7,6 +7,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Slider from '@mui/material/Slider';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 interface PriceRangeFilterProps {
   minPrice?: number;
@@ -15,6 +16,7 @@ interface PriceRangeFilterProps {
 }
 
 export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceRangeFilterProps) {
+  const { t } = useTranslation();
   const [range, setRange] = useState<[number, number]>([minPrice ?? 0, maxPrice ?? 1000]);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +50,7 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
 
   const handleBlur = () => {
     if (range[0] > range[1]) {
-      setError('Min cannot be greater than max');
+      setError(t('priceRange.minGreaterThanMax'));
       return;
     }
     setError(null);
@@ -58,10 +60,10 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
   return (
     <Box>
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-        Price range
+        {t('priceRange.title')}
       </Typography>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-        Nightly prices before fees and taxes
+        {t('priceRange.caption')}
       </Typography>
       <Slider
         value={range}
@@ -86,7 +88,7 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
       />
       <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
         <TextField
-          label="Min"
+          label={t('priceRange.min')}
           type="number"
           size="small"
           value={range[0]}
@@ -101,7 +103,7 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
           sx={{ flex: 1 }}
         />
         <TextField
-          label="Max"
+          label={t('priceRange.max')}
           type="number"
           size="small"
           value={range[1]}

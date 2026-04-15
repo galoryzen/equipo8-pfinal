@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "title": "TravelHub — Encuentra tu próxima estadía",
+    "description": "Accede a ofertas exclusivas en hoteles, casas y más en América Latina."
+  },
+  "brand": {
+    "name": "TravelHub"
+  },
+  "nav": {
+    "explore": "Explorar",
+    "myTrips": "Mis viajes",
+    "logIn": "Iniciar sesión",
+    "logOut": "Cerrar sesión"
+  },
+  "hero": {
+    "title": "Encuentra tu próxima estadía",
+    "subtitle": "Desbloquea ofertas exclusivas en tus hoteles y alojamientos favoritos en América Latina."
+  },
+  "search": {
+    "where": "¿Dónde?",
+    "when": "¿Cuándo?",
+    "who": "¿Quiénes?",
+    "searchDestination": "Buscar destino",
+    "typeTwoChars": "Escribe al menos 2 letras",
+    "noCities": "No se encontraron ciudades",
+    "selectDates": "Seleccionar fechas",
+    "checkIn": "Entrada",
+    "checkOut": "Salida",
+    "guests": "Huéspedes",
+    "guestsMinHelper": "Mínimo 1 huésped",
+    "search": "Buscar",
+    "guestsCount_one": "{{count}} huésped",
+    "guestsCount_other": "{{count}} huéspedes"
+  },
+  "popular": {
+    "title": "Destinos populares",
+    "subtitle": "Lugares en tendencia para viajeros como tú",
+    "seeAll": "Ver todo",
+    "empty": "No hay destinos disponibles en este momento."
+  },
+  "recommended": {
+    "title": "Recomendado para ti",
+    "subtitle": "Propiedades según tu actividad reciente",
+    "empty": "No hay propiedades disponibles en este momento.",
+    "noImage": "Sin imagen",
+    "perNight": "/ noche"
+  },
+  "newsletter": {
+    "title": "Planifica tu escapada soñada hoy",
+    "body": "Únete a miles de viajeros que encuentran las mejores ofertas en América Latina. Suscríbete al boletín para recibir promociones exclusivas.",
+    "emailPlaceholder": "Tu correo electrónico",
+    "subscribe": "Suscribirme"
+  },
+  "footer": {
+    "support": {
+      "title": "Soporte",
+      "links": [
+        "Centro de ayuda",
+        "Información de seguridad",
+        "Opciones de cancelación",
+        "Reportar una preocupación"
+      ]
+    },
+    "community": {
+      "title": "Comunidad",
+      "links": ["Blog de TravelHub", "Foro de la comunidad", "Guías de viaje"]
+    },
+    "hosting": {
+      "title": "Anfitrión",
+      "links": ["Publica tu propiedad", "Recursos para anfitriones", "Foro de la comunidad"]
+    },
+    "about": {
+      "title": "Acerca de",
+      "links": ["Sala de prensa", "Novedades", "Empleo", "Inversionistas"]
+    },
+    "copyright": "© 2026 TravelHub, Inc.",
+    "legal": ["Privacidad", "Términos", "Mapa del sitio"]
+  },
+  "priceRange": {
+    "title": "Rango de precio",
+    "caption": "Precios por noche antes de impuestos y cargos",
+    "min": "Mín.",
+    "max": "Máx.",
+    "minGreaterThanMax": "El mínimo no puede ser mayor que el máximo"
+  },
+  "amenityFilter": {
+    "title": "Servicios",
+    "showMore": "Ver más",
+    "showLess": "Ver menos"
+  },
+  "propertyCard": {
+    "noImage": "Sin imagen",
+    "perNight": "/ noche",
+    "reviews_one": "{{count}} reseña",
+    "reviews_other": "{{count}} reseñas",
+    "reviewsShort": "{{count}}k reseñas"
+  },
+  "searchPage": {
+    "sort": "Ordenar",
+    "price": "Precio",
+    "rating": "Calificación",
+    "allStays": "Todos los alojamientos",
+    "staysIn": "Alojamientos en {{city}}",
+    "placesFound_one": "{{count}} lugar encontrado",
+    "placesFound_other": "{{count}} lugares encontrados",
+    "guestTail_one": "al menos {{count}} huésped",
+    "guestTail_other": "al menos {{count}} huéspedes",
+    "browseTail": "explora destinos populares",
+    "catalogHint": "Los resultados coinciden con tus fechas y el número mínimo de huéspedes en este destino. La capacidad por habitación está en la página de cada propiedad.",
+    "errorGeneric": "Error al buscar alojamientos",
+    "emptyCatalog": "No se encontraron alojamientos para el destino y las fechas seleccionadas.",
+    "emptyFeatured": "No hay estadías destacadas disponibles en este momento.",
+    "emptyFilters": "Ninguna propiedad coincide con los filtros seleccionados."
+  },
+  "searchAmenities": {
+    "wifi": "Wifi",
+    "kitchen": "Cocina",
+    "pool": "Piscina",
+    "air_conditioning": "Aire acondicionado",
+    "breakfast": "Desayuno",
+    "parking": "Parqueadero"
+  }
+}
