@@ -60,6 +60,9 @@
       "title": "Support",
       "links": ["Help Center", "Safety information", "Cancellation options", "Report a concern"]
     },
+    "social": {
+      "facebook": "Facebook"
+    },
     "community": {
       "title": "Community",
       "links": ["TravelHub Blog", "Community Forum", "Travel Guides"]

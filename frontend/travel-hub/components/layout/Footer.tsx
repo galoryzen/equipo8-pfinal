@@ -114,7 +114,7 @@ export default function Footer() {
                 display: 'flex',
                 '&:hover': { color: 'primary.dark' },
               }}
-              aria-label="Facebook"
+              aria-label={t('footer.social.facebook')}
             >
               <FacebookIcon sx={{ fontSize: 20 }} />
             </Box>

@@ -65,6 +65,9 @@
         "Reportar una preocupación"
       ]
     },
+    "social": {
+      "facebook": "Facebook"
+    },
     "community": {
       "title": "Comunidad",
       "links": ["Blog de TravelHub", "Foro de la comunidad", "Guías de viaje"]
