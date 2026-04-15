@@ -2,7 +2,7 @@ export const mockBookings = [
   {
     id: '1',
     propertyName: 'Deluxe Garden Suite',
-    imageUrl: 'img.jpg',
+    imageUrl: 'https://example.com/img.jpg',
     status: 'PENDING_CONFIRMATION',
     guestName: 'Alex Rivera',
     checkin: '2024-05-12',

@@ -1,13 +1,7 @@
-// --- ¡IMPORTANTE! ---
-// Para Vitest, los vi.mock y variables usadas en mocks deben ir antes de cualquier import
-import React from 'react';
-
 import ManagerNotificationsPage from '@/app/manager/notifications/page';
-import '@testing-library/jest-dom';
-// No mock de useState, ahora se controla por props
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { mockBookings } from './mockBookings';
 
@@ -28,12 +22,12 @@ describe('ManagerNotificationsPage', () => {
     const { rerender } = render(
       <ManagerNotificationsPage testBookings={bookingsState} testSetBookings={setBookings} />
     );
-    expect(screen.getByText(/Deluxe Garden Suite/)).toBeInTheDocument();
+    expect(screen.getByText(/Deluxe Garden Suite/)).toBeTruthy();
     // Click en el botón de la card (el primero con ese texto)
     const cardButtons = screen.getAllByRole('button', { name: /Confirmar reserva/ });
     fireEvent.click(cardButtons[0]);
-    expect(screen.getByText(/Puedes agregar notas internas/)).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText(/Notas internas/), {
+    expect(screen.getByText(/notas internas para el personal del hotel/i)).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText(/notas internas/i), {
       target: { value: 'todo ok' },
     });
     // Click en el botón del modal (el último con ese texto)
@@ -42,9 +36,9 @@ describe('ManagerNotificationsPage', () => {
     // Simular actualización de bookings
     rerender(<ManagerNotificationsPage testBookings={[]} testSetBookings={setBookings} />);
     await waitFor(() =>
-      expect(screen.queryByText(/Puedes agregar notas internas/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/notas internas para el personal del hotel/i)).toBeFalsy()
     );
-    expect(screen.getByText(/No hay reservas pendientes/)).toBeInTheDocument();
+    expect(screen.getByText(/No hay reservas pendientes/)).toBeTruthy();
   });
 
   it('muestra alerta de conflicto de inventario', async () => {
@@ -64,7 +58,7 @@ describe('ManagerNotificationsPage', () => {
     const modalButtons = screen.getAllByRole('button', { name: /Confirmar reserva/ });
     fireEvent.click(modalButtons[modalButtons.length - 1]);
     await waitFor(() =>
-      expect(screen.getByText(/No hay disponibilidad suficiente/)).toBeInTheDocument()
+      expect(screen.getByText(/no hay disponibilidad suficiente/i)).toBeTruthy()
     );
   });
 });
