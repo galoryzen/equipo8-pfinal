@@ -1,10 +1,12 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import CircularProgress from '@mui/material/CircularProgress';
+import { usePathname, useRouter } from 'next/navigation';
+
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import { useTranslation } from 'react-i18next';
 
 import { getMe } from '../lib/api/auth';
 
@@ -17,6 +19,7 @@ const MANAGER_ROLES = new Set(['HOTEL', 'AGENCY', 'ADMIN']);
 export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
@@ -55,7 +58,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
           justifyContent: 'center',
         }}
       >
-        <CircularProgress />
+        <CircularProgress aria-label={t('a11y.loading')} />
       </Box>
     );
   }

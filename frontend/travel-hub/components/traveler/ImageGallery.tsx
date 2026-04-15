@@ -2,15 +2,14 @@
 
 import { useState } from 'react';
 
+import type { PropertyImageOut } from '@/app/lib/types/catalog';
+import CloseIcon from '@mui/icons-material/Close';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
-import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
-
-import type { PropertyImageOut } from '@/app/lib/types/catalog';
 
 interface ImageGalleryProps {
   images: PropertyImageOut[];
@@ -26,7 +25,16 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
 
   if (!main) {
     return (
-      <Box sx={{ height: 400, bgcolor: 'grey.200', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          height: 400,
+          bgcolor: 'grey.200',
+          borderRadius: 3,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Typography color="text.secondary">No images available</Typography>
       </Box>
     );
@@ -34,17 +42,42 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
 
   return (
     <>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 1, height: 440, borderRadius: 3, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gridTemplateRows: '1fr 1fr',
+          gap: 1,
+          height: 440,
+          borderRadius: 3,
+          overflow: 'hidden',
+        }}
+      >
         {/* Large main image */}
         <Box
-          sx={{ gridColumn: '1', gridRow: '1 / 3', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}
-          onClick={() => { setSelectedIdx(0); setOpen(true); }}
+          sx={{
+            gridColumn: '1',
+            gridRow: '1 / 3',
+            position: 'relative',
+            cursor: 'pointer',
+            overflow: 'hidden',
+          }}
+          onClick={() => {
+            setSelectedIdx(0);
+            setOpen(true);
+          }}
         >
           <Box
             component="img"
             src={main.url}
             alt={main.caption ?? propertyName}
-            sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.03)' } }}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transition: 'transform 0.3s',
+              '&:hover': { transform: 'scale(1.03)' },
+            }}
           />
         </Box>
 
@@ -55,8 +88,16 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
           return (
             <Box
               key={i}
-              sx={{ position: 'relative', overflow: 'hidden', cursor: 'pointer', bgcolor: 'grey.200' }}
-              onClick={() => { setSelectedIdx(i + 1); setOpen(true); }}
+              sx={{
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                bgcolor: 'grey.200',
+              }}
+              onClick={() => {
+                setSelectedIdx(i + 1);
+                setOpen(true);
+              }}
             >
               {img ? (
                 <>
@@ -64,13 +105,25 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
                     component="img"
                     src={img.url}
                     alt={img.caption ?? `Photo ${i + 2}`}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.03)' } }}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      transition: 'transform 0.3s',
+                      '&:hover': { transform: 'scale(1.03)' },
+                    }}
                   />
                   {isLast && (
                     <Box
                       sx={{
-                        position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.5)',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white',
+                        position: 'absolute',
+                        inset: 0,
+                        bgcolor: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
                       }}
                     >
                       <PhotoLibraryIcon sx={{ fontSize: 28, mb: 0.5 }} />
@@ -90,7 +143,15 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
 
       {/* Lightbox dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="lg" fullWidth>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, pt: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            pt: 1,
+          }}
+        >
           <Typography variant="subtitle1" fontWeight={600}>
             {selectedIdx + 1} / {images.length}
           </Typography>

@@ -1,9 +1,8 @@
+import RegisterPage from '@/app/(auth)/register/traveler/page';
+import * as authApi from '@/app/lib/api/auth';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import RegisterPage from '@/app/(auth)/register/traveler/page';
-import * as authApi from '@/app/lib/api/auth';
 
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
@@ -50,7 +49,10 @@ describe('Traveler Register page', () => {
   it('has the submit button disabled when the form is empty', () => {
     render(<RegisterPage />);
 
-    expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty(
+      'disabled',
+      true
+    );
   });
 
   it('keeps the submit button disabled while any field is missing', async () => {
@@ -61,7 +63,10 @@ describe('Traveler Register page', () => {
     await user.type(screen.getByLabelText(/username/i), 'john_doe');
     // phone and password left empty
 
-    expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty(
+      'disabled',
+      true
+    );
   });
 
   it('enables the submit button once all fields are filled correctly', async () => {
@@ -70,7 +75,10 @@ describe('Traveler Register page', () => {
 
     await fillForm(user);
 
-    expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty(
+      'disabled',
+      false
+    );
   });
 
   it('shows an inline error for an invalid email after blurring', async () => {

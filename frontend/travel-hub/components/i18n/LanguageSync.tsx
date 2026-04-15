@@ -32,7 +32,11 @@ export function LanguageSync() {
         void i18n.changeLanguage(stored);
         return;
       }
-      if (!raw && typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('es')) {
+      if (
+        !raw &&
+        typeof navigator !== 'undefined' &&
+        navigator.language.toLowerCase().startsWith('es')
+      ) {
         void i18n.changeLanguage('es-CO');
       }
     } catch {

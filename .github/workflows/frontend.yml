@@ -50,7 +50,14 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: frontend/travel-hub/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:coverage
+      - name: Prettier
+        run: pnpm format:check
+      - name: ESLint (max 5 warnings; errors fail)
+        run: pnpm lint:precommit
+      - name: i18n required (no literal UI strings + locale key parity)
+        run: pnpm vitest run __tests__/i18n-keys-parity.test.ts
+      - name: Tests, coverage & accessibility (axe)
+        run: pnpm test:coverage
       - run: pnpm build
       - uses: actions/upload-artifact@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'

@@ -1,14 +1,13 @@
 'use client';
 
+import type { PaginatedResponse, ReviewOut } from '@/app/lib/types/catalog';
+import PersonIcon from '@mui/icons-material/Person';
+import StarIcon from '@mui/icons-material/Star';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
-import StarIcon from '@mui/icons-material/Star';
-import PersonIcon from '@mui/icons-material/Person';
-
-import type { PaginatedResponse, ReviewOut } from '@/app/lib/types/catalog';
 
 interface ReviewSectionProps {
   reviews: PaginatedResponse<ReviewOut>;
@@ -17,7 +16,11 @@ interface ReviewSectionProps {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
 export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: ReviewSectionProps) {
@@ -55,11 +58,16 @@ export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: Review
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
               <Box
                 sx={{
-                  width: 40, height: 40, borderRadius: '50%', bgcolor: 'grey.300',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  bgcolor: 'grey.300',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <PersonIcon sx={{ color: 'grey.600' }} />
+                <PersonIcon sx={{ color: 'text.secondary' }} />
               </Box>
               <Box>
                 <Typography variant="body2" fontWeight={600}>

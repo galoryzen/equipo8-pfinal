@@ -1,10 +1,10 @@
+import { renderWithI18n } from '@/__tests__/test-utils';
+import { CatalogNotFoundError, getPropertyDetail } from '@/app/lib/api/catalog';
+import type { PropertyDetailResponse } from '@/app/lib/types/catalog';
 import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PropertyDetailView from '@/components/traveler/PropertyDetailView';
-import { renderWithI18n } from '@/__tests__/test-utils';
-import { CatalogNotFoundError, getPropertyDetail } from '@/app/lib/api/catalog';
-import type { PropertyDetailResponse } from '@/app/lib/types/catalog';
 
 // ── Mock next/link ─────────────────────────────────────────────────────────
 vi.mock('next/link', () => ({
@@ -39,7 +39,9 @@ const mockGetPropertyDetail = vi.mocked(getPropertyDetail);
 
 const PROPERTY_ID = 'aaaa-bbbb-1111';
 
-function makeDetailResponse(overrides: Partial<PropertyDetailResponse['detail']> = {}): PropertyDetailResponse {
+function makeDetailResponse(
+  overrides: Partial<PropertyDetailResponse['detail']> = {}
+): PropertyDetailResponse {
   return {
     detail: {
       id: PROPERTY_ID,
@@ -67,9 +69,7 @@ function makeDetailResponse(overrides: Partial<PropertyDetailResponse['detail']>
         { code: 'pool', name: 'Outdoor swimming pool' },
         { code: 'gym', name: 'Fitness center' },
       ],
-      policies: [
-        { id: 'pol-1', category: 'CHECK_IN', description: 'Check-in from 3pm' },
-      ],
+      policies: [{ id: 'pol-1', category: 'CHECK_IN', description: 'Check-in from 3pm' }],
       room_types: [
         {
           id: 'rt-1',
@@ -80,7 +80,13 @@ function makeDetailResponse(overrides: Partial<PropertyDetailResponse['detail']>
             {
               id: 'rp-1',
               name: 'Standard Rate',
-              cancellation_policy: { id: 'cp-1', name: 'Free cancellation', type: 'FULL', hours_limit: 24, refund_percent: 100 },
+              cancellation_policy: {
+                id: 'cp-1',
+                name: 'Free cancellation',
+                type: 'FULL',
+                hours_limit: 24,
+                refund_percent: 100,
+              },
               min_price: 199,
             },
           ],
@@ -238,7 +244,10 @@ describe('PropertyDetailView', () => {
     renderWithI18n(<PropertyDetailView id="my-special-id" />);
 
     await waitFor(() => {
-      expect(mockGetPropertyDetail).toHaveBeenCalledWith('my-special-id', expect.objectContaining({}));
+      expect(mockGetPropertyDetail).toHaveBeenCalledWith(
+        'my-special-id',
+        expect.objectContaining({})
+      );
     });
   });
 

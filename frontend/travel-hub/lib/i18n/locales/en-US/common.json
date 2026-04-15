@@ -29,6 +29,7 @@
     "guests": "Guests",
     "guestsMinHelper": "Minimum 1 guest",
     "search": "Search",
+    "searchButton": "Search Button",
     "guestsCount_one": "{{count}} guest",
     "guestsCount_other": "{{count}} guests"
   },
@@ -51,15 +52,16 @@
     "emailPlaceholder": "Your email address",
     "subscribe": "Subscribe"
   },
+  "a11y": {
+    "loading": "Loading"
+  },
   "footer": {
     "support": {
       "title": "Support",
-      "links": [
-        "Help Center",
-        "Safety information",
-        "Cancellation options",
-        "Report a concern"
-      ]
+      "links": ["Help Center", "Safety information", "Cancellation options", "Report a concern"]
+    },
+    "social": {
+      "facebook": "Facebook"
     },
     "community": {
       "title": "Community",

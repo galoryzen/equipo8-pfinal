@@ -113,7 +113,8 @@ export async function getPropertyDetail(
   if (options?.checkin) query.set('checkin', options.checkin);
   if (options?.checkout) query.set('checkout', options.checkout);
   if (options?.review_page != null) query.set('review_page', String(options.review_page));
-  if (options?.review_page_size != null) query.set('review_page_size', String(options.review_page_size));
+  if (options?.review_page_size != null)
+    query.set('review_page_size', String(options.review_page_size));
 
   const qs = query.toString();
   const url = `${API_URL}/api/v1/catalog/properties/${propertyId}${qs ? `?${qs}` : ''}`;

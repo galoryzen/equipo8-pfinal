@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import NextLink from 'next/link';
 
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { useTranslation } from 'react-i18next';
+import NextLink from 'next/link';
 
 import { getFeaturedDestinations } from '@/app/lib/api/catalog';
 import type { FeaturedDestination } from '@/app/lib/types/catalog';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 interface PopularDestinationsProps {
   checkin: string;
@@ -18,7 +18,11 @@ interface PopularDestinationsProps {
   guests: number;
 }
 
-export default function PopularDestinations({ checkin, checkout, guests }: PopularDestinationsProps) {
+export default function PopularDestinations({
+  checkin,
+  checkout,
+  guests,
+}: PopularDestinationsProps) {
   const { t } = useTranslation();
   const [destinations, setDestinations] = useState<FeaturedDestination[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,10 +52,13 @@ export default function PopularDestinations({ checkin, checkout, guests }: Popul
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 3 }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'grey.900' }}>
+          <Typography
+            variant="h2"
+            sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'text.primary' }}
+          >
             {t('popular.title')}
           </Typography>
-          <Typography sx={{ fontSize: '1rem', color: 'grey.500', mt: 0.5 }}>
+          <Typography sx={{ fontSize: '1rem', color: 'text.secondary', mt: 0.5 }}>
             {t('popular.subtitle')}
           </Typography>
         </Box>
@@ -61,7 +68,7 @@ export default function PopularDestinations({ checkin, checkout, guests }: Popul
           sx={{
             fontWeight: 500,
             fontSize: '0.875rem',
-            color: '#0EA5E9',
+            color: 'primary.dark',
             textDecoration: 'none',
             '&:hover': { textDecoration: 'underline' },
           }}
@@ -73,17 +80,20 @@ export default function PopularDestinations({ checkin, checkout, guests }: Popul
       {/* Cards grid */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress sx={{ color: '#0EA5E9' }} />
+          <CircularProgress aria-label={t('a11y.loading')} sx={{ color: 'primary.main' }} />
         </Box>
       ) : destinations.length === 0 ? (
-        <Typography sx={{ color: 'grey.500', textAlign: 'center', py: 6 }}>
+        <Typography sx={{ color: 'text.secondary', textAlign: 'center', py: 6 }}>
           {t('popular.empty')}
         </Typography>
       ) : (
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: `repeat(${Math.min(destinations.length, 4)}, 1fr)` },
+            gridTemplateColumns: {
+              xs: 'repeat(2, 1fr)',
+              md: `repeat(${Math.min(destinations.length, 4)}, 1fr)`,
+            },
             gap: 3,
           }}
         >

@@ -1,8 +1,8 @@
+import { renderWithI18n } from '@/__tests__/test-utils';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import AmenityFilter from '../components/traveler/AmenityFilter';
-import { renderWithI18n } from '@/__tests__/test-utils';
 
 const AMENITIES = [
   { code: 'wifi', name: 'Wi-Fi' },
@@ -20,7 +20,9 @@ describe('AmenityFilter', () => {
   });
 
   it('checks checkboxes for selected amenities', () => {
-    renderWithI18n(<AmenityFilter amenities={AMENITIES} selected={['wifi', 'pool']} onChange={vi.fn()} />);
+    renderWithI18n(
+      <AmenityFilter amenities={AMENITIES} selected={['wifi', 'pool']} onChange={vi.fn()} />
+    );
     expect((screen.getByLabelText('Wi-Fi') as HTMLInputElement).checked).toBe(true);
     expect((screen.getByLabelText('Piscina') as HTMLInputElement).checked).toBe(true);
     expect((screen.getByLabelText('Desayuno incluido') as HTMLInputElement).checked).toBe(false);

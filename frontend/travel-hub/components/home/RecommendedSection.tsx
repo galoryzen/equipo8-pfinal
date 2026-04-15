@@ -1,17 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import NextLink from 'next/link';
 
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import StarIcon from '@mui/icons-material/Star';
-import { useTranslation } from 'react-i18next';
+import NextLink from 'next/link';
 
 import { getFeaturedProperties } from '@/app/lib/api/catalog';
 import type { PropertySummary } from '@/app/lib/types/catalog';
+import StarIcon from '@mui/icons-material/Star';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 function PropertyCard({ property }: { property: PropertySummary }) {
   const { t } = useTranslation();
@@ -52,7 +52,9 @@ function PropertyCard({ property }: { property: PropertySummary }) {
             justifyContent: 'center',
           }}
         >
-          <Typography sx={{ color: 'grey.400', fontSize: '0.875rem' }}>{t('recommended.noImage')}</Typography>
+          <Typography sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+            {t('recommended.noImage')}
+          </Typography>
         </Box>
       )}
 
@@ -65,7 +67,7 @@ function PropertyCard({ property }: { property: PropertySummary }) {
               sx={{
                 fontWeight: 700,
                 fontSize: '1.125rem',
-                color: 'grey.900',
+                color: 'text.primary',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -73,7 +75,7 @@ function PropertyCard({ property }: { property: PropertySummary }) {
             >
               {property.name}
             </Typography>
-            <Typography sx={{ fontSize: '0.75rem', color: 'grey.500' }}>
+            <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
               {property.city.name}, {property.city.country}
             </Typography>
           </Box>
@@ -112,7 +114,7 @@ function PropertyCard({ property }: { property: PropertySummary }) {
                   fontSize: '0.75rem',
                   height: 24,
                   bgcolor: '#F8FAFC',
-                  color: '#475569',
+                  color: 'text.secondary',
                   border: 'none',
                   '& .MuiChip-label': { px: 1 },
                 }}
@@ -135,10 +137,12 @@ function PropertyCard({ property }: { property: PropertySummary }) {
               gap: 0.5,
             }}
           >
-            <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', color: '#0EA5E9' }}>
+            <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'primary.main' }}>
               ${property.min_price.toLocaleString()}
             </Typography>
-            <Typography sx={{ fontSize: '0.75rem', color: 'grey.500' }}>{t('recommended.perNight')}</Typography>
+            <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+              {t('recommended.perNight')}
+            </Typography>
           </Box>
         )}
       </Box>
@@ -161,20 +165,23 @@ export default function RecommendedSection() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'grey.900' }}>
+        <Typography
+          variant="h2"
+          sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'text.primary' }}
+        >
           {t('recommended.title')}
         </Typography>
-        <Typography sx={{ fontSize: '1rem', color: 'grey.500', mt: 0.5 }}>
+        <Typography sx={{ fontSize: '1rem', color: 'text.secondary', mt: 0.5 }}>
           {t('recommended.subtitle')}
         </Typography>
       </Box>
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress sx={{ color: '#0EA5E9' }} />
+          <CircularProgress aria-label={t('a11y.loading')} sx={{ color: 'primary.main' }} />
         </Box>
       ) : properties.length === 0 ? (
-        <Typography sx={{ color: 'grey.500', textAlign: 'center', py: 6 }}>
+        <Typography sx={{ color: 'text.secondary', textAlign: 'center', py: 6 }}>
           {t('recommended.empty')}
         </Typography>
       ) : (

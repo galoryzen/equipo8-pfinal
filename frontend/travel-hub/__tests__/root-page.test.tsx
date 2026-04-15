@@ -1,10 +1,9 @@
-import { screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import RootPage from '@/app/page';
 import { renderWithI18n } from '@/__tests__/test-utils';
 import * as authApi from '@/app/lib/api/auth';
 import * as catalogApi from '@/app/lib/api/catalog';
+import RootPage from '@/app/page';
+import { screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),

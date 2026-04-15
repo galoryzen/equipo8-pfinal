@@ -1,11 +1,11 @@
 'use client';
 
+import type { CityOut } from '@/app/lib/types/catalog';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
 import SearchBar from '@/components/search/SearchBar';
-import type { CityOut } from '@/app/lib/types/catalog';
 
 export interface HeroSectionProps {
   checkin: string;
@@ -36,7 +36,7 @@ export default function HeroSection({
             fontWeight: 800,
             fontSize: { xs: '2rem', md: '3rem' },
             lineHeight: 1,
-            color: 'grey.900',
+            color: 'text.primary',
             letterSpacing: '-0.025em',
             mb: 2,
           }}
@@ -48,7 +48,7 @@ export default function HeroSection({
           sx={{
             fontSize: '1.125rem',
             lineHeight: 1.6,
-            color: 'grey.500',
+            color: 'text.secondary',
             maxWidth: 672,
             mx: 'auto',
             mb: 5,

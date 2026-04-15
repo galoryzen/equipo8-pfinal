@@ -1,8 +1,8 @@
+import { renderWithI18n } from '@/__tests__/test-utils';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import PriceRangeFilter from '../components/traveler/PriceRangeFilter';
-import { renderWithI18n } from '@/__tests__/test-utils';
 
 describe('PriceRangeFilter', () => {
   it('renders the title and subtitle', () => {

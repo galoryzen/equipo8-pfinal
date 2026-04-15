@@ -5,6 +5,19 @@
   --color-foreground: #171717;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Sync with lib/theme/tokens.ts */
+  --color-th-brand: #0ea5e9;
+  --color-th-brand-hover: #0284c7;
+  --color-th-brand-on-light: #0369a1;
+  --color-th-text-primary: #111827;
+  --color-th-text-secondary: #475569;
+  --color-th-text-muted: #5c6370;
+  --color-th-surface-page-warm: #f8f6f6;
+  --color-th-surface-page-cool: #f3f4f6;
+  --color-th-surface-subtle: #f8fafc;
+  --color-th-border-default: #e5e7eb;
+  --color-th-border-subtle: #e2e8f0;
 }
 
 html {

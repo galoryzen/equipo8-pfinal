@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { searchCities } from '@/app/lib/api/catalog';
+import type { CityOut } from '@/app/lib/types/catalog';
 import SearchIcon from '@mui/icons-material/Search';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
@@ -12,9 +14,7 @@ import InputBase from '@mui/material/InputBase';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-
-import { searchCities } from '@/app/lib/api/catalog';
-import type { CityOut } from '@/app/lib/types/catalog';
+import { useTranslation } from 'react-i18next';
 
 export interface SearchBarProps {
   initialCityLabel?: string;
@@ -43,6 +43,7 @@ export default function SearchBar({
   onGuestsChange,
   onSearch,
 }: SearchBarProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<CityOut | null>(null);
   const [inputValue, setInputValue] = useState(initialCityLabel);
   const [options, setOptions] = useState<CityOut[]>([]);
@@ -99,7 +100,13 @@ export default function SearchBar({
       <Box sx={{ flex: 1.2, px: 2, minWidth: 0 }}>
         <Typography
           variant="caption"
-          sx={{ fontWeight: 600, color: 'grey.500', textTransform: 'uppercase', fontSize: '0.625rem', letterSpacing: 1 }}
+          sx={{
+            fontWeight: 600,
+            color: 'text.secondary',
+            textTransform: 'uppercase',
+            fontSize: '0.625rem',
+            letterSpacing: 1,
+          }}
         >
           Where
         </Typography>
@@ -116,7 +123,9 @@ export default function SearchBar({
           }}
           filterOptions={(x) => x}
           isOptionEqualToValue={(a, b) => a.id === b.id}
-          noOptionsText={inputValue.trim().length < 2 ? 'Type at least 2 letters' : 'No cities found'}
+          noOptionsText={
+            inputValue.trim().length < 2 ? 'Type at least 2 letters' : 'No cities found'
+          }
           renderInput={(params) => (
             <TextField
               {...params}
@@ -127,7 +136,9 @@ export default function SearchBar({
                 disableUnderline: true,
                 endAdornment: (
                   <>
-                    {loadingCities ? <CircularProgress color="inherit" size={16} /> : null}
+                    {loadingCities ? (
+                      <CircularProgress aria-label={t('a11y.loading')} color="inherit" size={16} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -144,7 +155,13 @@ export default function SearchBar({
       <Box sx={{ flex: 1, px: 2 }}>
         <Typography
           variant="caption"
-          sx={{ fontWeight: 600, color: 'grey.500', textTransform: 'uppercase', fontSize: '0.625rem', letterSpacing: 1 }}
+          sx={{
+            fontWeight: 600,
+            color: 'text.secondary',
+            textTransform: 'uppercase',
+            fontSize: '0.625rem',
+            letterSpacing: 1,
+          }}
         >
           When
         </Typography>
@@ -172,7 +189,13 @@ export default function SearchBar({
       <Box sx={{ flex: 0.8, px: 2 }}>
         <Typography
           variant="caption"
-          sx={{ fontWeight: 600, color: 'grey.500', textTransform: 'uppercase', fontSize: '0.625rem', letterSpacing: 1 }}
+          sx={{
+            fontWeight: 600,
+            color: 'text.secondary',
+            textTransform: 'uppercase',
+            fontSize: '0.625rem',
+            letterSpacing: 1,
+          }}
         >
           Who
         </Typography>
@@ -188,7 +211,7 @@ export default function SearchBar({
 
       <IconButton
         onClick={handleSubmit}
-        aria-label="Search"
+        aria-label={t('search.searchButton')}
         sx={{
           bgcolor: 'primary.main',
           color: 'white',

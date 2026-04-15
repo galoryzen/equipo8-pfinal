@@ -2,20 +2,17 @@
 
 import NextLink from 'next/link';
 
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import SearchIcon from '@mui/icons-material/Search';
 
 export type NotFoundVariant = 'route' | 'property' | 'missingParam';
 
-const COPY: Record<
-  NotFoundVariant,
-  { title: string; description: string }
-> = {
+const COPY: Record<NotFoundVariant, { title: string; description: string }> = {
   route: {
     title: 'Página no encontrada',
     description: 'La ruta que buscas no existe o ha cambiado. Revisa la URL o vuelve al inicio.',
@@ -48,7 +45,12 @@ export default function NotFoundView({ variant = 'route' }: NotFoundViewProps) {
         >
           Error 404
         </Typography>
-        <Typography variant="h4" component="h1" fontWeight={700} sx={{ mt: 1, mb: 2, color: 'text.primary' }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          fontWeight={700}
+          sx={{ mt: 1, mb: 2, color: 'text.primary' }}
+        >
           {title}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4, lineHeight: 1.7 }}>

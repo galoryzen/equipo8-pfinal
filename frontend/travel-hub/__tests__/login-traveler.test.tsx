@@ -1,9 +1,8 @@
+import LoginPage from '@/app/(auth)/login/traveler/page';
+import * as authApi from '@/app/lib/api/auth';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import LoginPage from '@/app/(auth)/login/traveler/page';
-import * as authApi from '@/app/lib/api/auth';
 
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
@@ -116,7 +115,9 @@ describe('Traveler Login page', () => {
     await user.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/the email or password is not valid. please try again./i)).toBeTruthy();
+      expect(
+        screen.getByText(/the email or password is not valid. please try again./i)
+      ).toBeTruthy();
     });
   });
 
