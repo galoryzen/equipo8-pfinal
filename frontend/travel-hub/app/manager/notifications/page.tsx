@@ -14,6 +14,7 @@ type ManagerNotificationsPageProps = {
   testSetBookings?: React.Dispatch<React.SetStateAction<Booking[]>>;
 };
 
+function ManagerNotificationsPage({
   testBookings,
   testSetBookings,
 }: ManagerNotificationsPageProps = {}): JSX.Element {
