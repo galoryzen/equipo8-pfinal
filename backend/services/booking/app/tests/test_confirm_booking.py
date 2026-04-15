@@ -3,7 +3,6 @@ import sys
 import os
 import pytest
 from uuid import uuid4
-from datetime import datetime
 
 # Ajustar sys.path para permitir imports absolutos desde 'app'
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
@@ -48,16 +47,13 @@ async def test_confirm_booking_success():
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         items=[],
-        internal_notes=None,
         confirmed_at=None,
     )
     repo = DummyRepo(booking)
     use_case = ConfirmBookingUseCase(repo)
-    result = await use_case.execute(booking.id, booking.user_id, notes="Nota interna")
     assert isinstance(result, BookingDetailOut)
     assert repo.updated
     assert repo.decremented
-    assert result.internal_notes == "Nota interna"
     assert result.status == BookingStatus.CONFIRMED.value
     assert result.confirmed_at is not None
 
@@ -78,13 +74,11 @@ async def test_confirm_booking_inventory_conflict():
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         items=[],
-        internal_notes=None,
         confirmed_at=None,
     )
     repo = DummyRepo(booking, inventory_ok=False)
     use_case = ConfirmBookingUseCase(repo)
     with pytest.raises(InventoryConflictError):
-        await use_case.execute(booking.id, booking.user_id, notes=None)
 
 @pytest.mark.asyncio
 async def test_confirm_booking_wrong_status():
@@ -103,10 +97,8 @@ async def test_confirm_booking_wrong_status():
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         items=[],
-        internal_notes=None,
         confirmed_at=None,
     )
     repo = DummyRepo(booking)
     use_case = ConfirmBookingUseCase(repo)
     with pytest.raises(ValueError):
-        await use_case.execute(booking.id, booking.user_id, notes=None)

@@ -6,7 +6,6 @@ import { confirmBooking } from '@/services/bookingApi';
 import { useTranslation } from 'react-i18next';
 
 import { BookingRequestCard } from '@/components/manager/BookingRequestCard';
-import { ConfirmBookingModal } from '@/components/manager/ConfirmBookingModal';
 
 type Booking = (typeof mockBookings)[number];
 type ManagerNotificationsPageProps = {
@@ -89,13 +88,6 @@ const ManagerNotificationsPage: React.FC<ManagerNotificationsPageProps> = ({
           />
         ))}
       </div>
-      <ConfirmBookingModal
-        open={modalOpen}
-        onClose={handleModalClose}
-        onConfirm={handleModalConfirm}
-        loading={loading}
-        error={error}
-      />
     </div>
   );
 };
