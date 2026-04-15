@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 
 import { mockBookings } from '@/__tests__/mockBookings';
-import { confirmBooking } from '@/services/bookingApi';
 import { useTranslation } from 'react-i18next';
 
 import { BookingRequestCard } from '@/components/manager/BookingRequestCard';
@@ -24,49 +23,14 @@ const ManagerNotificationsPage: React.FC<ManagerNotificationsPageProps> = ({
   const setBookings = testSetBookings ?? state[1];
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleConfirmClick = (id: string) => {
     setSelectedBookingId(id);
     setModalOpen(true);
-    setError(null);
   };
 
   const handleDecline = (id: string) => {
     setBookings((prev) => prev.filter((b) => b.id !== id));
-  };
-
-  const handleModalClose = () => {
-    setModalOpen(false);
-    setSelectedBookingId(null);
-    setError(null);
-  };
-
-  const handleModalConfirm = async (notes: string) => {
-    if (!selectedBookingId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await confirmBooking(selectedBookingId, notes);
-      setBookings((prev) =>
-        prev.map((b) => (b.id === selectedBookingId ? { ...b, status: 'CONFIRMED' } : b))
-      );
-      handleModalClose();
-    } catch (e) {
-      if (
-        e instanceof Error &&
-        (e.message.includes('conflicto') || e.message.includes('inventario'))
-      ) {
-        setError(t('manager.noAvailability'));
-      } else if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError(t('common.unknownError'));
-      }
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

@@ -2,6 +2,7 @@ import React from 'react';
 
 import Image from 'next/image';
 
+import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
 
 interface BookingRequestCardProps {
@@ -56,19 +57,23 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
             {t('manager.nights')}) • {booking.guests} {t('manager.guests')}
           </div>
           <div className="flex gap-2 mt-2">
-            <button
-              className="px-4 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100"
+            <Button
+              variant="outlined"
+              color="inherit"
               onClick={() => onDecline(booking.id)}
+              sx={{ minWidth: 100 }}
             >
               {t('manager.decline')}
-            </button>
+            </Button>
             {isPending && (
-              <button
-                className="px-4 py-1 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
+              <Button
+                variant="contained"
+                color="success"
                 onClick={() => onConfirm(booking.id)}
+                sx={{ minWidth: 100 }}
               >
                 {t('manager.confirmBooking')}
-              </button>
+              </Button>
             )}
           </div>
         </div>
