@@ -1,6 +1,7 @@
-
 import React from 'react';
+
 import Image from 'next/image';
+
 import { useTranslation } from 'react-i18next';
 
 interface BookingRequestCardProps {
@@ -51,8 +52,8 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
           </div>
           <div className="font-semibold text-lg mb-1">{booking.propertyName}</div>
           <div className="text-sm text-gray-600 mb-1">
-            {booking.guestName} • {booking.checkin} - {booking.checkout} ({booking.nights} {t('manager.nights')}) •{' '}
-            {booking.guests} {t('manager.guests')}
+            {booking.guestName} • {booking.checkin} - {booking.checkout} ({booking.nights}{' '}
+            {t('manager.nights')}) • {booking.guests} {t('manager.guests')}
           </div>
           <div className="flex gap-2 mt-2">
             <button

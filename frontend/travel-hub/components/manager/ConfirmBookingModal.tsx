@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+
 import { useTranslation } from 'react-i18next';
 
 interface ConfirmBookingModalProps {
@@ -26,9 +26,7 @@ export const ConfirmBookingModal: React.FC<ConfirmBookingModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
         <h2 className="text-lg font-bold mb-2">{t('manager.confirmBookingTitle')}</h2>
-        <p className="mb-4 text-gray-600">
-          {t('manager.confirmBookingHint')}
-        </p>
+        <p className="mb-4 text-gray-600">{t('manager.confirmBookingHint')}</p>
         <textarea
           className="w-full border rounded p-2 mb-4 min-h-[80px]"
           placeholder={t('manager.internalNotesPlaceholder')}
