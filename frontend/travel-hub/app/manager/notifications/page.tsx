@@ -96,3 +96,5 @@ type ManagerNotificationsPageProps = {
     </div>
   );
 }
+
+export default ManagerNotificationsPage;
