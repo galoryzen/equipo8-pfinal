@@ -24,6 +24,7 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
@@ -159,6 +160,7 @@ function fieldSx(isValid: boolean) {
 
 export default function TravelerRegisterPage() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [values, setValues] = useState<FormValues>({
     email: '',
@@ -531,7 +533,11 @@ export default function TravelerRegisterPage() {
               >
                 {loading ? (
                   <Box display="flex" alignItems="center" gap={1}>
-                    <CircularProgress size={18} sx={{ color: 'white' }} />
+                    <CircularProgress
+                      aria-label={t('a11y.loading')}
+                      size={18}
+                      sx={{ color: 'white' }}
+                    />
                     <span>Creating account…</span>
                   </Box>
                 ) : (

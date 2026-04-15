@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 
-import { tokens as th } from '@/lib/theme/tokens';
 import FlightIcon from '@mui/icons-material/Flight';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Box from '@mui/material/Box';
@@ -73,7 +72,6 @@ export default function NewsletterSection() {
               fontSize: '1rem',
               textTransform: 'none',
               minWidth: 120,
-              '&:hover': { bgcolor: th.brand.primaryHover },
             }}
           >
             {t('newsletter.subscribe')}

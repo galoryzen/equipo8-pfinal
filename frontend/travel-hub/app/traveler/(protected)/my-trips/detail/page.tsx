@@ -20,8 +20,10 @@ import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 function BookingDetailContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get('bookingId')?.trim() ?? '';
 
@@ -69,7 +71,7 @@ function BookingDetailContent() {
   if (loading) {
     return (
       <Container maxWidth="md" sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
+        <CircularProgress aria-label={t('a11y.loading')} />
       </Container>
     );
   }
@@ -195,11 +197,12 @@ function BookingDetailContent() {
 }
 
 export default function BookingDetailPage() {
+  const { t } = useTranslation();
   return (
     <Suspense
       fallback={
         <Container maxWidth="md" sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress />
+          <CircularProgress aria-label={t('a11y.loading')} />
         </Container>
       }
     >

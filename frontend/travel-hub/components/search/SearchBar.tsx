@@ -221,7 +221,13 @@ export default function SearchBar({
                       disableUnderline: true,
                       endAdornment: (
                         <>
-                          {loadingCities ? <CircularProgress color="inherit" size={14} /> : null}
+                          {loadingCities ? (
+                            <CircularProgress
+                              aria-label={t('a11y.loading')}
+                              color="inherit"
+                              size={14}
+                            />
+                          ) : null}
                           {params.InputProps.endAdornment}
                         </>
                       ),
@@ -385,12 +391,13 @@ export default function SearchBar({
               '&.Mui-disabled': { bgcolor: 'grey.300', color: 'white' },
             }}
           >
-            {t('search.search')}
+            {t('search.searchButton')}
           </Button>
         ) : (
           <IconButton
             onClick={handleSearch}
             disabled={!selected}
+            aria-label={t('search.searchButton')}
             sx={{
               bgcolor: 'primary.main',
               color: 'white',

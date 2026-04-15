@@ -14,6 +14,7 @@ import InputBase from '@mui/material/InputBase';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 export interface SearchBarProps {
   initialCityLabel?: string;
@@ -42,6 +43,7 @@ export default function SearchBar({
   onGuestsChange,
   onSearch,
 }: SearchBarProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<CityOut | null>(null);
   const [inputValue, setInputValue] = useState(initialCityLabel);
   const [options, setOptions] = useState<CityOut[]>([]);
@@ -134,7 +136,9 @@ export default function SearchBar({
                 disableUnderline: true,
                 endAdornment: (
                   <>
-                    {loadingCities ? <CircularProgress color="inherit" size={16} /> : null}
+                    {loadingCities ? (
+                      <CircularProgress aria-label={t('a11y.loading')} color="inherit" size={16} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -207,7 +211,7 @@ export default function SearchBar({
 
       <IconButton
         onClick={handleSubmit}
-        aria-label="Search"
+        aria-label={t('search.searchButton')}
         sx={{
           bgcolor: 'primary.main',
           color: 'white',

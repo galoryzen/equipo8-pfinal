@@ -22,6 +22,7 @@ import MuiLink from '@mui/material/Link';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -77,6 +78,7 @@ function TravelerLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
+  const { t } = useTranslation();
 
   const [values, setValues] = useState<FormValues>({ email: '', password: '' });
   const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});
@@ -312,7 +314,11 @@ function TravelerLoginForm() {
             >
               {loading ? (
                 <Box display="flex" alignItems="center" gap={1}>
-                  <CircularProgress size={18} sx={{ color: 'white' }} />
+                  <CircularProgress
+                    aria-label={t('a11y.loading')}
+                    size={18}
+                    sx={{ color: 'white' }}
+                  />
                   <span>Signing in…</span>
                 </Box>
               ) : (

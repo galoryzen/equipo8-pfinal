@@ -12,6 +12,7 @@ import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 interface PriceCardProps {
   property: PropertyDetail;
@@ -35,6 +36,7 @@ function getDefaultDates() {
 export default function PriceCard({ property, minPrice, onDatesChange }: PriceCardProps) {
   const { today, tomorrow } = getDefaultDates();
   const { authStatus, requireAuth } = useAuthAction();
+  const { t } = useTranslation();
 
   const [checkin, setCheckin] = useState(today);
   const [checkout, setCheckout] = useState(tomorrow);
@@ -128,7 +130,7 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
         disabled={authStatus === 'loading'}
         startIcon={
           authStatus === 'loading' ? (
-            <CircularProgress size={16} sx={{ color: 'white' }} />
+            <CircularProgress aria-label={t('a11y.loading')} size={16} sx={{ color: 'white' }} />
           ) : authStatus === 'unauthenticated' ? (
             <LockOutlinedIcon sx={{ fontSize: 18 }} />
           ) : undefined

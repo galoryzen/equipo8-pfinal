@@ -399,7 +399,7 @@ function SearchPageContent() {
         <Box sx={{ flex: 1, pt: 2 }}>
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
+              <CircularProgress aria-label={t('a11y.loading')} />
             </Box>
           )}
 
@@ -447,11 +447,12 @@ function SearchPageContent() {
 }
 
 export default function SearchPage() {
+  const { t } = useTranslation();
   return (
     <Suspense
       fallback={
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
+          <CircularProgress aria-label={t('a11y.loading')} />
         </Box>
       }
     >

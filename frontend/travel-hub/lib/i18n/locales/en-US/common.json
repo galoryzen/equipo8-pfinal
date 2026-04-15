@@ -29,6 +29,7 @@
     "guests": "Guests",
     "guestsMinHelper": "Minimum 1 guest",
     "search": "Search",
+    "searchButton": "Search Button",
     "guestsCount_one": "{{count}} guest",
     "guestsCount_other": "{{count}} guests"
   },
@@ -50,6 +51,9 @@
     "body": "Join thousands of travelers finding the best deals in Latin America. Sign up for our newsletter to get exclusive offers.",
     "emailPlaceholder": "Your email address",
     "subscribe": "Subscribe"
+  },
+  "a11y": {
+    "loading": "Loading"
   },
   "footer": {
     "support": {

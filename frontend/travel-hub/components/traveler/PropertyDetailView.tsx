@@ -21,6 +21,7 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 import NotFoundView from '@/components/NotFoundView';
 
@@ -47,6 +48,7 @@ function computeMinPrice(detail: PropertyDetail): number | null {
 }
 
 export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
+  const { t } = useTranslation();
   const [detail, setDetail] = useState<PropertyDetail | null>(null);
   const [reviews, setReviews] = useState<PaginatedResponse<ReviewOut> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,7 +107,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
       <Box
         sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
       >
-        <CircularProgress />
+        <CircularProgress aria-label={t('a11y.loading')} />
       </Box>
     );
   }

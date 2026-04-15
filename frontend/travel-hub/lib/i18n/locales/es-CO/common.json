@@ -29,6 +29,7 @@
     "guests": "Huéspedes",
     "guestsMinHelper": "Mínimo 1 huésped",
     "search": "Buscar",
+    "searchButton": "Botón de búsqueda",
     "guestsCount_one": "{{count}} huésped",
     "guestsCount_other": "{{count}} huéspedes"
   },
@@ -50,6 +51,9 @@
     "body": "Únete a miles de viajeros que encuentran las mejores ofertas en América Latina. Suscríbete al boletín para recibir promociones exclusivas.",
     "emailPlaceholder": "Tu correo electrónico",
     "subscribe": "Suscribirme"
+  },
+  "a11y": {
+    "loading": "Cargando"
   },
   "footer": {
     "support": {

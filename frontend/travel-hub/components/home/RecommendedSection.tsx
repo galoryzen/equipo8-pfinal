@@ -178,7 +178,7 @@ export default function RecommendedSection() {
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress sx={{ color: 'primary.main' }} />
+          <CircularProgress aria-label={t('a11y.loading')} sx={{ color: 'primary.main' }} />
         </Box>
       ) : properties.length === 0 ? (
         <Typography sx={{ color: 'text.secondary', textAlign: 'center', py: 6 }}>

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useTranslation } from 'react-i18next';
 
 import NotFoundView from '@/components/NotFoundView';
 import PropertyDetailView from '@/components/traveler/PropertyDetailView';
@@ -22,6 +23,7 @@ function HotelDetailContent() {
 }
 
 export default function TravelerHotelPage() {
+  const { t } = useTranslation();
   return (
     <Suspense
       fallback={
@@ -33,7 +35,7 @@ export default function TravelerHotelPage() {
             minHeight: '60vh',
           }}
         >
-          <CircularProgress />
+          <CircularProgress aria-label={t('a11y.loading')} />
         </Box>
       }
     >

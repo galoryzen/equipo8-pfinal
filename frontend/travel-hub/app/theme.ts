@@ -20,9 +20,15 @@ export const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: th.brand.primary,
+      /**
+       * Use a darker primary as the default “main” so white text on primary-filled
+       * controls (e.g. contained buttons) meets WCAG AA contrast.
+       *
+       * Keep the lighter brand color available via `primary.light` for accents.
+       */
+      main: th.brand.primaryActive,
       dark: th.brand.primaryOnLight,
-      light: '#38BDF8',
+      light: th.brand.primary,
       contrastText: '#ffffff',
     },
     text: {

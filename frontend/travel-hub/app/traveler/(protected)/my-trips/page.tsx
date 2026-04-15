@@ -15,11 +15,13 @@ import Container from '@mui/material/Container';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 import BookingList from '@/components/traveler/BookingList';
 import TripsEmptyState from '@/components/traveler/TripsEmptyState';
 
 export default function MyTripsPage() {
+  const { t } = useTranslation();
   const { bookings, propertyById, loading, error } = useMyTripsCatalog();
   const [tab, setTab] = useState(0);
 
@@ -68,7 +70,7 @@ export default function MyTripsPage() {
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-          <CircularProgress />
+          <CircularProgress aria-label={t('a11y.loading')} />
         </Box>
       ) : !error && bookings.length === 0 ? (
         <TripsEmptyState />
