@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { mockBookings } from '@/__tests__/mockBookings';
 import { confirmBooking } from '@/services/bookingApi';
@@ -13,10 +14,10 @@ type ManagerNotificationsPageProps = {
   testSetBookings?: React.Dispatch<React.SetStateAction<Booking[]>>;
 };
 
-export default function ManagerNotificationsPage({
   testBookings,
   testSetBookings,
 }: ManagerNotificationsPageProps = {}) {
+  const { t } = useTranslation();
   // Hooks siempre deben ir en el mismo orden
   const state = useState<Booking[]>(mockBookings);
   const bookings = testBookings ?? state[0];
@@ -57,13 +58,11 @@ export default function ManagerNotificationsPage({
         e instanceof Error &&
         (e.message.includes('conflicto') || e.message.includes('inventario'))
       ) {
-        setError(
-          'No hay disponibilidad suficiente. Puede ofrecer upgrade, cambiar fechas o rechazar la reserva.'
-        );
+        setError(t('manager.noAvailability'));
       } else if (e instanceof Error) {
         setError(e.message);
       } else {
-        setError('Error desconocido');
+        setError(t('common.unknownError'));
       }
     } finally {
       setLoading(false);
@@ -72,12 +71,12 @@ export default function ManagerNotificationsPage({
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Notificaciones</h1>
+      <h1 className="text-2xl font-bold mb-4">{t('manager.notifications')}</h1>
       <p className="mb-6 text-gray-600">
-        Tienes {bookings.length} reservas pendientes de confirmación hoy.
+        {t('manager.pendingBookingsToday', { count: bookings.length })}
       </p>
       <div className="space-y-6">
-        {bookings.length === 0 && <div className="text-gray-400">No hay reservas pendientes.</div>}
+        {bookings.length === 0 && <div className="text-gray-400">{t('manager.noPendingBookings')}</div>}
         {bookings.map((booking) => (
           <BookingRequestCard
             key={booking.id}
