@@ -16,7 +16,7 @@ type ManagerNotificationsPageProps = {
 
   testBookings,
   testSetBookings,
-}: ManagerNotificationsPageProps = {}) {
+}: ManagerNotificationsPageProps = {}): JSX.Element {
   const { t } = useTranslation();
   // Hooks siempre deben ir en el mismo orden
   const state = useState<Booking[]>(mockBookings);

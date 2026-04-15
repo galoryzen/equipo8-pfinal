@@ -10,6 +10,7 @@ interface ConfirmBookingModalProps {
   error?: string | null;
 }
 
+export const ConfirmBookingModal: React.FC<ConfirmBookingModalProps> = ({
   open,
   onClose,
   onConfirm,
