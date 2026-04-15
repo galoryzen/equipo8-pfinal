@@ -22,6 +22,7 @@ interface BookingRequestCardProps {
   onDecline: (id: string) => void;
 }
 
+export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
   booking,
   onConfirm,
   onDecline,
