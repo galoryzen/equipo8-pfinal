@@ -1,7 +1,6 @@
-import { format, parseISO, startOfDay, isBefore } from 'date-fns';
-
 import type { BookingListItem } from '@/app/lib/types/booking';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
+import { format, isBefore, parseISO, startOfDay } from 'date-fns';
 
 export function formatTripDate(isoDate: string): string {
   try {

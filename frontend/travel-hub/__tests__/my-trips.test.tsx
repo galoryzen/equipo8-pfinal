@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import type { BookingListItem } from '@/app/lib/types/booking';
+import type { PropertyDetail } from '@/app/lib/types/catalog';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import BookingCard from '@/components/traveler/BookingCard';
 import BookingList from '@/components/traveler/BookingList';
 import TripsEmptyState from '@/components/traveler/TripsEmptyState';
-import type { BookingListItem } from '@/app/lib/types/booking';
-import type { PropertyDetail } from '@/app/lib/types/catalog';
 
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => (
@@ -60,7 +60,9 @@ describe('TripsEmptyState', () => {
   it('renders empty message and link to search', () => {
     render(<TripsEmptyState />);
     expect(screen.getByText('No tienes reservas registradas')).toBeDefined();
-    expect(screen.getByRole('link', { name: /buscar hoteles/i }).getAttribute('href')).toBe('/traveler/search');
+    expect(screen.getByRole('link', { name: /buscar hoteles/i }).getAttribute('href')).toBe(
+      '/traveler/search'
+    );
   });
 });
 

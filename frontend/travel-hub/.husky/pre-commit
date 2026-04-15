@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 cd frontend/travel-hub
 pnpm format:check
-pnpm lint
+pnpm lint:precommit

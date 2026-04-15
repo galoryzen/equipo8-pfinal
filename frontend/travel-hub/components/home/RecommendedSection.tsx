@@ -1,17 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import NextLink from 'next/link';
 
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import StarIcon from '@mui/icons-material/Star';
-import { useTranslation } from 'react-i18next';
+import NextLink from 'next/link';
 
 import { getFeaturedProperties } from '@/app/lib/api/catalog';
 import type { PropertySummary } from '@/app/lib/types/catalog';
+import StarIcon from '@mui/icons-material/Star';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 function PropertyCard({ property }: { property: PropertySummary }) {
   const { t } = useTranslation();
@@ -52,7 +52,9 @@ function PropertyCard({ property }: { property: PropertySummary }) {
             justifyContent: 'center',
           }}
         >
-          <Typography sx={{ color: 'grey.400', fontSize: '0.875rem' }}>{t('recommended.noImage')}</Typography>
+          <Typography sx={{ color: 'grey.400', fontSize: '0.875rem' }}>
+            {t('recommended.noImage')}
+          </Typography>
         </Box>
       )}
 
@@ -138,7 +140,9 @@ function PropertyCard({ property }: { property: PropertySummary }) {
             <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', color: '#0EA5E9' }}>
               ${property.min_price.toLocaleString()}
             </Typography>
-            <Typography sx={{ fontSize: '0.75rem', color: 'grey.500' }}>{t('recommended.perNight')}</Typography>
+            <Typography sx={{ fontSize: '0.75rem', color: 'grey.500' }}>
+              {t('recommended.perNight')}
+            </Typography>
           </Box>
         )}
       </Box>

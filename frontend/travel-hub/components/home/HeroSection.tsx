@@ -1,11 +1,11 @@
 'use client';
 
+import type { CityOut } from '@/app/lib/types/catalog';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
 import SearchBar from '@/components/search/SearchBar';
-import type { CityOut } from '@/app/lib/types/catalog';
 
 export interface HeroSectionProps {
   checkin: string;

@@ -25,7 +25,12 @@ export default function TripsEmptyState() {
       <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 420, mx: 'auto' }}>
         Cuando reserves un alojamiento, aparecerá aquí con el estado y las fechas de tu viaje.
       </Typography>
-      <Button component={NextLink} href="/traveler/search" variant="contained" sx={{ textTransform: 'none' }}>
+      <Button
+        component={NextLink}
+        href="/traveler/search"
+        variant="contained"
+        sx={{ textTransform: 'none' }}
+      >
         Buscar hoteles
       </Button>
     </Box>

@@ -5,6 +5,12 @@ import { Suspense, useEffect, useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+import { getBookingDetail } from '@/app/lib/api/booking';
+import { formatBookingRef, formatTripDate } from '@/app/lib/myTrips/formatting';
+import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
+import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
+import type { BookingDetail } from '@/app/lib/types/booking';
+import type { PropertyDetail } from '@/app/lib/types/catalog';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -14,13 +20,6 @@ import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-
-import { getBookingDetail } from '@/app/lib/api/booking';
-import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
-import { formatBookingRef, formatTripDate } from '@/app/lib/myTrips/formatting';
-import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
-import type { BookingDetail } from '@/app/lib/types/booking';
-import type { PropertyDetail } from '@/app/lib/types/catalog';
 
 function BookingDetailContent() {
   const searchParams = useSearchParams();
@@ -81,7 +80,12 @@ function BookingDetailContent() {
         <Alert severity="error" sx={{ mb: 2 }}>
           {error ?? 'Booking not found'}
         </Alert>
-        <Button component={NextLink} href="/traveler/my-trips" variant="outlined" sx={{ textTransform: 'none' }}>
+        <Button
+          component={NextLink}
+          href="/traveler/my-trips"
+          variant="outlined"
+          sx={{ textTransform: 'none' }}
+        >
           Back to My Trips
         </Button>
       </Container>
@@ -94,11 +98,24 @@ function BookingDetailContent() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
-      <Button component={NextLink} href="/traveler/my-trips" sx={{ textTransform: 'none', mb: 2 }} variant="text">
+      <Button
+        component={NextLink}
+        href="/traveler/my-trips"
+        sx={{ textTransform: 'none', mb: 2 }}
+        variant="text"
+      >
         ← My Trips
       </Button>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 2,
+          mb: 2,
+        }}
+      >
         <Typography variant="h4" component="h1" sx={{ fontWeight: 800 }}>
           Reservation details
         </Typography>
@@ -146,7 +163,10 @@ function BookingDetailContent() {
           const prop = propertyById[item.property_id];
           const roomName = prop?.room_types?.find((r) => r.id === item.room_type_id)?.name;
           return (
-            <Box key={item.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+            <Box
+              key={item.id}
+              sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+            >
               <Typography fontWeight={600}>{prop?.name ?? 'Property'}</Typography>
               {roomName && (
                 <Typography variant="body2" color="text.secondary">
@@ -154,7 +174,8 @@ function BookingDetailContent() {
                 </Typography>
               )}
               <Typography variant="body2" sx={{ mt: 1 }}>
-                Unit {item.unit_price} {detail.currency_code} · Subtotal {item.subtotal} {detail.currency_code}
+                Unit {item.unit_price} {detail.currency_code} · Subtotal {item.subtotal}{' '}
+                {detail.currency_code}
               </Typography>
             </Box>
           );
@@ -164,7 +185,9 @@ function BookingDetailContent() {
       {detail.policy_type_applied && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
           Cancellation policy applied: {detail.policy_type_applied}
-          {detail.policy_hours_limit_applied != null ? ` · ${detail.policy_hours_limit_applied}h limit` : ''}
+          {detail.policy_hours_limit_applied != null
+            ? ` · ${detail.policy_hours_limit_applied}h limit`
+            : ''}
         </Typography>
       )}
     </Container>

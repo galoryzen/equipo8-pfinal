@@ -1,10 +1,11 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import CircularProgress from '@mui/material/CircularProgress';
+import { usePathname, useRouter } from 'next/navigation';
+
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { getMe } from '../lib/api/auth';
 

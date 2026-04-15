@@ -1,10 +1,9 @@
+import { renderWithI18n } from '@/__tests__/test-utils';
+import { getFeaturedProperties, searchCities, searchProperties } from '@/app/lib/api/catalog';
+import SearchPage from '@/app/traveler/search/page';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import SearchPage from '@/app/traveler/search/page';
-import { renderWithI18n } from '@/__tests__/test-utils';
-import { getFeaturedProperties, searchCities, searchProperties } from '@/app/lib/api/catalog';
 
 // Mock useSearchParams to return an empty URLSearchParams by default
 const mockSearchParams = new URLSearchParams();
@@ -99,7 +98,7 @@ describe('SearchPage', () => {
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const searchButtons = screen.getAllByRole('button');
-    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
     expect(searchBtn).toBeTruthy();
     expect(searchBtn).toHaveProperty('disabled', true);
     fireEvent.click(searchBtn!);
@@ -118,7 +117,7 @@ describe('SearchPage', () => {
     await waitFor(() => screen.getByText('Hotel Test'));
 
     const searchButtons = screen.getAllByRole('button');
-    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
     expect(searchBtn).toHaveProperty('disabled', true);
 
     const input = screen.getByPlaceholderText(/search destination/i);
@@ -131,7 +130,7 @@ describe('SearchPage', () => {
     await waitFor(() => {
       const btn = screen
         .getAllByRole('button')
-        .find(b => b.querySelector('[data-testid="SearchIcon"]'));
+        .find((b) => b.querySelector('[data-testid="SearchIcon"]'));
       expect(btn).toBeTruthy();
       expect(btn).toHaveProperty('disabled', false);
     });
@@ -162,7 +161,7 @@ describe('SearchPage', () => {
 
     // Click the search icon button
     const searchButtons = screen.getAllByRole('button');
-    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
     expect(searchBtn).toBeTruthy();
     await user.click(searchBtn!);
 
@@ -197,7 +196,7 @@ describe('SearchPage', () => {
     await user.click(option);
 
     const searchButtons = screen.getAllByRole('button');
-    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
     await user.click(searchBtn!);
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalled());
@@ -234,7 +233,7 @@ describe('SearchPage', () => {
     await user.click(await screen.findByRole('option', { name: /^Q/ }));
 
     const searchButtons = screen.getAllByRole('button');
-    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
     await user.click(searchBtn!);
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalled());
@@ -339,12 +338,14 @@ describe('SearchPage', () => {
     await user.click(option);
 
     const searchButtons = screen.getAllByRole('button');
-    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
     await user.click(searchBtn!);
 
     await waitFor(() => {
       expect(
-        screen.getByText('No hay hospedajes disponibles para las fechas y número de huéspedes seleccionados.')
+        screen.getByText(
+          'No hay hospedajes disponibles para las fechas y número de huéspedes seleccionados.'
+        )
       ).toBeTruthy();
     });
   });
@@ -359,9 +360,7 @@ describe('SearchPage', () => {
   });
 
   it('shows readable error when API returns validation detail array', async () => {
-    mockFeatured.mockRejectedValue(
-      new Error('Field required')
-    );
+    mockFeatured.mockRejectedValue(new Error('Field required'));
     renderWithI18n(<SearchPage />);
 
     await waitFor(() => {
@@ -383,9 +382,7 @@ describe('SearchPage', () => {
 
   it('re-fetches with sort_by when a sort chip is clicked in destination search', async () => {
     const user = userEvent.setup();
-    mockSearchCities.mockResolvedValue([
-      { id: 'cid', name: 'Q', department: null, country: 'Z' },
-    ]);
+    mockSearchCities.mockResolvedValue([{ id: 'cid', name: 'Q', department: null, country: 'Z' }]);
 
     renderWithI18n(<SearchPage />);
     await waitFor(() => screen.getByText('Hotel Test'));
@@ -397,7 +394,7 @@ describe('SearchPage', () => {
     await user.click(await screen.findByRole('option', { name: /^Q/ }));
 
     const searchButtons = screen.getAllByRole('button');
-    const searchBtn = searchButtons.find(b => b.querySelector('[data-testid="SearchIcon"]'));
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
     await user.click(searchBtn!);
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalled());

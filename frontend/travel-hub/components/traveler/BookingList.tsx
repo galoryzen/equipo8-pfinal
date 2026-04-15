@@ -1,11 +1,11 @@
 'use client';
 
-import Stack from '@mui/material/Stack';
-
-import BookingCard from '@/components/traveler/BookingCard';
 import type { PropertyByIdMap } from '@/app/hooks/useMyTripsCatalog';
 import { primaryPropertyId } from '@/app/lib/myTrips/formatting';
 import type { BookingListItem } from '@/app/lib/types/booking';
+import Stack from '@mui/material/Stack';
+
+import BookingCard from '@/components/traveler/BookingCard';
 
 interface BookingListProps {
   bookings: BookingListItem[];

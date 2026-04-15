@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { getPropertyDetail, isCatalogNotFoundError } from '@/app/lib/api/catalog';
+import type { PaginatedResponse, PropertyDetail, ReviewOut } from '@/app/lib/types/catalog';
+import CancelIcon from '@mui/icons-material/Cancel';
+import FreeBreakfastIcon from '@mui/icons-material/FreeBreakfast';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import PoolIcon from '@mui/icons-material/Pool';
+import ShareIcon from '@mui/icons-material/Share';
+import StarIcon from '@mui/icons-material/Star';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Button from '@mui/material/Button';
@@ -12,17 +21,9 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import ShareIcon from '@mui/icons-material/Share';
-import StarIcon from '@mui/icons-material/Star';
-import CancelIcon from '@mui/icons-material/Cancel';
-import FreeBreakfastIcon from '@mui/icons-material/FreeBreakfast';
-import PoolIcon from '@mui/icons-material/Pool';
 
-import { getPropertyDetail, isCatalogNotFoundError } from '@/app/lib/api/catalog';
 import NotFoundView from '@/components/NotFoundView';
-import type { PaginatedResponse, PropertyDetail, ReviewOut } from '@/app/lib/types/catalog';
+
 import AmenityList from './AmenityList';
 import ImageGallery from './ImageGallery';
 import PriceCard from './PriceCard';
@@ -101,7 +102,9 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
 
   if (loading && !detail) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -143,9 +146,24 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
       </Breadcrumbs>
 
       {/* Header row */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          mb: 2,
+          flexWrap: 'wrap',
+          gap: 1,
+        }}
+      >
         <Box>
-          <Typography variant="h4" component="h1" fontWeight={700} gutterBottom sx={{ lineHeight: 1.2 }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            fontWeight={700}
+            gutterBottom
+            sx={{ lineHeight: 1.2 }}
+          >
             {detail.name}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
@@ -169,7 +187,12 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
                 Rating not available
               </Typography>
             )}
-            <Typography variant="body2" color="text.secondary" component="span" sx={{ userSelect: 'none' }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              component="span"
+              sx={{ userSelect: 'none' }}
+            >
               |
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -199,13 +222,28 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
       {(detail.default_cancellation_policy || detail.amenities.length > 0) && (
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
           {detail.default_cancellation_policy?.type === 'FULL' && (
-            <Chip icon={<CancelIcon />} label="Free cancellation" size="small" sx={{ bgcolor: '#f0fdf4', color: '#166534', '& .MuiChip-icon': { color: '#16a34a' } }} />
+            <Chip
+              icon={<CancelIcon />}
+              label="Free cancellation"
+              size="small"
+              sx={{ bgcolor: '#f0fdf4', color: '#166534', '& .MuiChip-icon': { color: '#16a34a' } }}
+            />
           )}
           {detail.amenities.some((a) => a.code.toLowerCase().includes('pool')) && (
-            <Chip icon={<PoolIcon />} label="Pool included" size="small" sx={{ bgcolor: '#eff6ff', color: '#1e40af' }} />
+            <Chip
+              icon={<PoolIcon />}
+              label="Pool included"
+              size="small"
+              sx={{ bgcolor: '#eff6ff', color: '#1e40af' }}
+            />
           )}
           {detail.amenities.some((a) => a.code.toLowerCase().includes('breakfast')) && (
-            <Chip icon={<FreeBreakfastIcon />} label="Breakfast included" size="small" sx={{ bgcolor: '#fefce8', color: '#854d0e' }} />
+            <Chip
+              icon={<FreeBreakfastIcon />}
+              label="Breakfast included"
+              size="small"
+              sx={{ bgcolor: '#fefce8', color: '#854d0e' }}
+            />
           )}
         </Box>
       )}

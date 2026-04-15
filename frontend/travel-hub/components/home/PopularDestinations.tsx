@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import NextLink from 'next/link';
 
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { useTranslation } from 'react-i18next';
+import NextLink from 'next/link';
 
 import { getFeaturedDestinations } from '@/app/lib/api/catalog';
 import type { FeaturedDestination } from '@/app/lib/types/catalog';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 interface PopularDestinationsProps {
   checkin: string;
@@ -18,7 +18,11 @@ interface PopularDestinationsProps {
   guests: number;
 }
 
-export default function PopularDestinations({ checkin, checkout, guests }: PopularDestinationsProps) {
+export default function PopularDestinations({
+  checkin,
+  checkout,
+  guests,
+}: PopularDestinationsProps) {
   const { t } = useTranslation();
   const [destinations, setDestinations] = useState<FeaturedDestination[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +87,10 @@ export default function PopularDestinations({ checkin, checkout, guests }: Popul
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: `repeat(${Math.min(destinations.length, 4)}, 1fr)` },
+            gridTemplateColumns: {
+              xs: 'repeat(2, 1fr)',
+              md: `repeat(${Math.min(destinations.length, 4)}, 1fr)`,
+            },
             gap: 3,
           }}
         >

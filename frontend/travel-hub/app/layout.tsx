@@ -3,13 +3,13 @@ import type { Metadata } from 'next';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 
-import './globals.css';
-import { roboto, theme } from './theme';
-
 import { DocumentLang } from '@/components/i18n/DocumentLang';
 import { I18nProvider } from '@/components/i18n/I18nProvider';
 import { LanguageSync } from '@/components/i18n/LanguageSync';
 import { TranslatedMeta } from '@/components/i18n/TranslatedMeta';
+
+import './globals.css';
+import { roboto, theme } from './theme';
 
 export const metadata: Metadata = {
   title: 'TravelHub — Find Your Next Stay',

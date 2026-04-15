@@ -2,6 +2,20 @@
 
 import NextLink from 'next/link';
 
+import {
+  estimateGuestLabel,
+  formatBookingRef,
+  formatTripDate,
+  getPrimaryRoomLabel,
+  primaryPropertyId,
+} from '@/app/lib/myTrips/formatting';
+import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
+import type { BookingListItem } from '@/app/lib/types/booking';
+import type { PropertyDetail } from '@/app/lib/types/catalog';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
+import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
+import StarIcon from '@mui/icons-material/Star';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -10,21 +24,6 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
-import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
-import StarIcon from '@mui/icons-material/Star';
-
-import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
-import {
-  estimateGuestLabel,
-  formatBookingRef,
-  formatTripDate,
-  getPrimaryRoomLabel,
-  primaryPropertyId,
-} from '@/app/lib/myTrips/formatting';
-import type { BookingListItem } from '@/app/lib/types/booking';
-import type { PropertyDetail } from '@/app/lib/types/catalog';
 
 interface BookingCardProps {
   booking: BookingListItem;
@@ -71,7 +70,12 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
         }}
       >
         {imageUrl ? (
-          <CardMedia component="img" image={imageUrl} alt={hotelName} sx={{ height: '100%', minHeight: 200, objectFit: 'cover' }} />
+          <CardMedia
+            component="img"
+            image={imageUrl}
+            alt={hotelName}
+            sx={{ height: '100%', minHeight: 200, objectFit: 'cover' }}
+          />
         ) : (
           <Box
             sx={{
@@ -103,24 +107,49 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
       </Box>
 
       <Box sx={{ flex: 1, p: 2.5, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 1,
+            mb: 1,
+          }}
+        >
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.25 }}>
               {hotelName}
             </Typography>
-            <Stack direction="row" spacing={0.5} alignItems="center" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Stack
+              direction="row"
+              spacing={0.5}
+              alignItems="center"
+              color="text.secondary"
+              sx={{ mt: 0.5 }}
+            >
               <LocationOnOutlinedIcon sx={{ fontSize: 18 }} />
               <Typography variant="body2" noWrap>
                 {cityLine}
               </Typography>
             </Stack>
           </Box>
-          <Chip label={statusLabel} color={statusColor} size="small" sx={{ fontWeight: 600, flexShrink: 0 }} />
+          <Chip
+            label={statusLabel}
+            color={statusColor}
+            size="small"
+            sx={{ fontWeight: 600, flexShrink: 0 }}
+          />
         </Box>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2, mb: 2 }}>
           <Box>
-            <Stack direction="row" spacing={0.75} alignItems="center" color="text.secondary" sx={{ mb: 0.5 }}>
+            <Stack
+              direction="row"
+              spacing={0.75}
+              alignItems="center"
+              color="text.secondary"
+              sx={{ mb: 0.5 }}
+            >
               <CalendarTodayOutlinedIcon sx={{ fontSize: 18 }} />
               <Typography variant="caption" fontWeight={600}>
                 Check-in
@@ -131,7 +160,13 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
             </Typography>
           </Box>
           <Box>
-            <Stack direction="row" spacing={0.75} alignItems="center" color="text.secondary" sx={{ mb: 0.5 }}>
+            <Stack
+              direction="row"
+              spacing={0.75}
+              alignItems="center"
+              color="text.secondary"
+              sx={{ mb: 0.5 }}
+            >
               <EventOutlinedIcon sx={{ fontSize: 18 }} />
               <Typography variant="caption" fontWeight={600}>
                 Check-out

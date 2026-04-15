@@ -2,6 +2,17 @@
 
 import { useState } from 'react';
 
+import type { AmenitySummary } from '@/app/lib/types/catalog';
+import AcUnitIcon from '@mui/icons-material/AcUnit';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import LocalParkingIcon from '@mui/icons-material/LocalParking';
+import PoolIcon from '@mui/icons-material/Pool';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import RoomServiceIcon from '@mui/icons-material/RoomService';
+import SpaIcon from '@mui/icons-material/Spa';
+import WifiIcon from '@mui/icons-material/Wifi';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -11,18 +22,6 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
-import WifiIcon from '@mui/icons-material/Wifi';
-import PoolIcon from '@mui/icons-material/Pool';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
-import AcUnitIcon from '@mui/icons-material/AcUnit';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import SpaIcon from '@mui/icons-material/Spa';
-import LocalParkingIcon from '@mui/icons-material/LocalParking';
-import RoomServiceIcon from '@mui/icons-material/RoomService';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-
-import type { AmenitySummary } from '@/app/lib/types/catalog';
 
 interface AmenityListProps {
   amenities: AmenitySummary[];
@@ -33,12 +32,15 @@ function getAmenityIcon(code: string) {
   const lower = code.toLowerCase();
   if (lower.includes('wifi') || lower.includes('internet')) return <WifiIcon fontSize="small" />;
   if (lower.includes('pool') || lower.includes('piscina')) return <PoolIcon fontSize="small" />;
-  if (lower.includes('gym') || lower.includes('fitness')) return <FitnessCenterIcon fontSize="small" />;
+  if (lower.includes('gym') || lower.includes('fitness'))
+    return <FitnessCenterIcon fontSize="small" />;
   if (lower.includes('ac') || lower.includes('air')) return <AcUnitIcon fontSize="small" />;
-  if (lower.includes('restaurant') || lower.includes('breakfast')) return <RestaurantIcon fontSize="small" />;
+  if (lower.includes('restaurant') || lower.includes('breakfast'))
+    return <RestaurantIcon fontSize="small" />;
   if (lower.includes('spa')) return <SpaIcon fontSize="small" />;
   if (lower.includes('parking')) return <LocalParkingIcon fontSize="small" />;
-  if (lower.includes('room_service') || lower.includes('service')) return <RoomServiceIcon fontSize="small" />;
+  if (lower.includes('room_service') || lower.includes('service'))
+    return <RoomServiceIcon fontSize="small" />;
   return <CheckCircleOutlineIcon fontSize="small" />;
 }
 
@@ -73,7 +75,9 @@ export default function AmenityList({ amenities, previewCount = 6 }: AmenityList
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
           All amenities
           <IconButton onClick={() => setOpen(false)} size="small">
             <CloseIcon />

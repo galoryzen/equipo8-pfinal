@@ -1,18 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+
 import { useRouter } from 'next/navigation';
 
+import type { CityOut } from '@/app/lib/types/catalog';
 import Box from '@mui/material/Box';
 
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
 import HeroSection from '@/components/home/HeroSection';
+import NewsletterSection from '@/components/home/NewsletterSection';
 import PopularDestinations from '@/components/home/PopularDestinations';
 import RecommendedSection from '@/components/home/RecommendedSection';
-import NewsletterSection from '@/components/home/NewsletterSection';
-
-import type { CityOut } from '@/app/lib/types/catalog';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
 
 function defaultCheckin(): string {
   const d = new Date();

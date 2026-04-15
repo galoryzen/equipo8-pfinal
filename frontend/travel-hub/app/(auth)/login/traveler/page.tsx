@@ -2,6 +2,10 @@
 
 import { Suspense, useState } from 'react';
 
+import NextLink from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+import { loginUser } from '@/app/lib/api/auth';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
@@ -17,10 +21,6 @@ import MuiLink from '@mui/material/Link';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import NextLink from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-
-import { loginUser } from '@/app/lib/api/auth';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -133,8 +133,7 @@ function TravelerLoginForm() {
             bgcolor: 'white',
             border: '1px solid #f3f4f6',
             borderRadius: '16px',
-            boxShadow:
-              '0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)',
+            boxShadow: '0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)',
             width: '100%',
           }}
         >

@@ -2,9 +2,10 @@
 
 import { Suspense } from 'react';
 
+import { useSearchParams } from 'next/navigation';
+
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import { useSearchParams } from 'next/navigation';
 
 import NotFoundView from '@/components/NotFoundView';
 import PropertyDetailView from '@/components/traveler/PropertyDetailView';
@@ -24,7 +25,14 @@ export default function TravelerHotelPage() {
   return (
     <Suspense
       fallback={
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '60vh',
+          }}
+        >
           <CircularProgress />
         </Box>
       }

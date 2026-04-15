@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 
 import NextLink from 'next/link';
 
+import { useMyTripsCatalog } from '@/app/hooks/useMyTripsCatalog';
+import { splitUpcomingPast } from '@/app/lib/myTrips/formatting';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -16,8 +18,6 @@ import Typography from '@mui/material/Typography';
 
 import BookingList from '@/components/traveler/BookingList';
 import TripsEmptyState from '@/components/traveler/TripsEmptyState';
-import { useMyTripsCatalog } from '@/app/hooks/useMyTripsCatalog';
-import { splitUpcomingPast } from '@/app/lib/myTrips/formatting';
 
 export default function MyTripsPage() {
   const { bookings, propertyById, loading, error } = useMyTripsCatalog();
@@ -39,14 +39,23 @@ export default function MyTripsPage() {
         }}
       >
         <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}
+          >
             My Trips
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 0.5 }}>
             Manage your upcoming and past reservations.
           </Typography>
         </Box>
-        <Button component={NextLink} href="/traveler/search" variant="contained" sx={{ textTransform: 'none' }}>
+        <Button
+          component={NextLink}
+          href="/traveler/search"
+          variant="contained"
+          sx={{ textTransform: 'none' }}
+        >
           Find a hotel
         </Button>
       </Box>
@@ -80,7 +89,12 @@ export default function MyTripsPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   Upcoming
                   {upcoming.length > 0 && (
-                    <Chip label={upcoming.length} size="small" color="primary" sx={{ height: 22 }} />
+                    <Chip
+                      label={upcoming.length}
+                      size="small"
+                      color="primary"
+                      sx={{ height: 22 }}
+                    />
                   )}
                 </Box>
               }

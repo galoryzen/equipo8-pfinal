@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint .",
+    "lint:precommit": "eslint . --max-warnings 5",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:a11y": "vitest run __tests__/a11y-home.test.tsx",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "cd ../.. && git config core.hooksPath frontend/travel-hub/.husky"
@@ -24,9 +26,9 @@
     "date-fns": "^4.1.0",
     "i18next": "^25.0.0",
     "next": "16.2.0",
-    "react-i18next": "^15.0.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-i18next": "^15.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -34,6 +36,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/jest-axe": "^3.5.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -41,7 +44,9 @@
     "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "husky": "^9.1.7",
+    "jest-axe": "^10.0.0",
     "jsdom": "^29.0.0",
     "prettier": "^3.8.1",
     "tailwindcss": "^4",

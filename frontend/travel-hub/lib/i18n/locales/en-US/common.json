@@ -54,12 +54,7 @@
   "footer": {
     "support": {
       "title": "Support",
-      "links": [
-        "Help Center",
-        "Safety information",
-        "Cancellation options",
-        "Report a concern"
-      ]
+      "links": ["Help Center", "Safety information", "Cancellation options", "Report a concern"]
     },
     "community": {
       "title": "Community",

@@ -11,7 +11,7 @@ function getRoleFromToken(token: string): string | null {
 
 const ROUTES = [
   { prefix: '/traveler', role: 'traveler', login: '/login/traveler', home: '/traveler/search' },
-  { prefix: '/manager',  role: 'manager',  login: '/login/manager',  home: '/manager'         },
+  { prefix: '/manager', role: 'manager', login: '/login/manager', home: '/manager' },
 ] as const;
 
 function redirect(to: string, request: NextRequest) {

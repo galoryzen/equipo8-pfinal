@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 
+import FlightIcon from '@mui/icons-material/Flight';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import FlightIcon from '@mui/icons-material/Flight';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { useTranslation } from 'react-i18next';
 
 export default function NewsletterSection() {
@@ -29,14 +29,25 @@ export default function NewsletterSection() {
     >
       {/* Left content */}
       <Box sx={{ flex: 1 }}>
-        <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '1.875rem', color: 'grey.900', mb: 2 }}>
+        <Typography
+          variant="h2"
+          sx={{ fontWeight: 700, fontSize: '1.875rem', color: 'grey.900', mb: 2 }}
+        >
           {t('newsletter.title')}
         </Typography>
         <Typography sx={{ fontSize: '1rem', color: 'grey.500', mb: 2 }}>
           {t('newsletter.body')}
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1.5, pt: 1, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'stretch' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1.5,
+            pt: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: 'stretch',
+          }}
+        >
           <TextField
             placeholder={t('newsletter.emailPlaceholder')}
             value={email}
@@ -90,7 +101,9 @@ export default function NewsletterSection() {
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <FlightIcon sx={{ fontSize: '5rem', color: '#0EA5E9', opacity: 0.5, transform: 'rotate(-45deg)' }} />
+            <FlightIcon
+              sx={{ fontSize: '5rem', color: '#0EA5E9', opacity: 0.5, transform: 'rotate(-45deg)' }}
+            />
             <LocalOfferIcon sx={{ fontSize: '1.5rem', color: '#0EA5E9' }} />
           </Box>
         </Box>

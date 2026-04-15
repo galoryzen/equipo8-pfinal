@@ -1,8 +1,10 @@
 'use client';
 
+import Image from 'next/image';
+
+import FacebookIcon from '@mui/icons-material/Facebook';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import FacebookIcon from '@mui/icons-material/Facebook';
 import { useTranslation } from 'react-i18next';
 
 const FOOTER_KEYS = ['support', 'community', 'hosting', 'about'] as const;
@@ -76,7 +78,7 @@ export default function Footer() {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <img src="/icon.svg" alt={t('brand.name')} width={17} height={17} />
+            <Image src="/icon.svg" alt={t('brand.name')} width={17} height={17} />
             <Typography sx={{ fontSize: 14, color: '#64748B', lineHeight: '20px' }}>
               {t('footer.copyright')}
             </Typography>
@@ -102,7 +104,12 @@ export default function Footer() {
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Box component="a" href="#" sx={{ color: '#64748B', display: 'flex', '&:hover': { color: '#0EA5E9' } }}>
+            <Box
+              component="a"
+              href="#"
+              sx={{ color: '#64748B', display: 'flex', '&:hover': { color: '#0EA5E9' } }}
+              aria-label="Facebook"
+            >
               <FacebookIcon sx={{ fontSize: 20 }} />
             </Box>
             <Typography

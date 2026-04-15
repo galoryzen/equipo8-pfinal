@@ -113,9 +113,8 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
           slotProps={{
             input: {
               startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              endAdornment: range[1] >= 2000 ? (
-                <InputAdornment position="end">+</InputAdornment>
-              ) : null,
+              endAdornment:
+                range[1] >= 2000 ? <InputAdornment position="end">+</InputAdornment> : null,
             },
           }}
           sx={{ flex: 1 }}

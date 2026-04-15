@@ -1,27 +1,32 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
 
+import { useSearchParams } from 'next/navigation';
+
+import { getFeaturedProperties, searchProperties } from '@/app/lib/api/catalog';
+import type {
+  AmenitySummary,
+  CityOut,
+  PaginatedResponse,
+  PropertySummary,
+} from '@/app/lib/types/catalog';
+import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
 import Grid from '@mui/material/Grid';
+import LinearProgress from '@mui/material/LinearProgress';
 import Pagination from '@mui/material/Pagination';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
+import SearchBar from '@/components/search/SearchBar';
 import AmenityFilter from '@/components/traveler/AmenityFilter';
 import PriceRangeFilter from '@/components/traveler/PriceRangeFilter';
 import PropertyCard from '@/components/traveler/PropertyCard';
-import SearchBar from '@/components/search/SearchBar';
-
-import { getFeaturedProperties, searchProperties } from '@/app/lib/api/catalog';
-import type { AmenitySummary, CityOut, PaginatedResponse, PropertySummary } from '@/app/lib/types/catalog';
-import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
 
 function defaultCheckin(): string {
   const d = new Date();
@@ -48,7 +53,7 @@ function SearchPageContent() {
         { key: 'price_asc', label: t('searchPage.price') },
         { key: 'rating', label: t('searchPage.rating') },
       ] as const,
-    [t],
+    [t]
   );
 
   const amenityOptions: AmenitySummary[] = useMemo(
@@ -60,7 +65,7 @@ function SearchPageContent() {
       { code: 'breakfast', name: t('searchAmenities.breakfast') },
       { code: 'parking', name: t('searchAmenities.parking') },
     ],
-    [t],
+    [t]
   );
 
   const errorToMessage = useCallback(
@@ -68,7 +73,7 @@ function SearchPageContent() {
       if (err instanceof Error) return err.message;
       return t('searchPage.errorGeneric');
     },
-    [t],
+    [t]
   );
 
   // Parse initial city from URL params
@@ -117,39 +122,46 @@ function SearchPageContent() {
     }
   }, [errorToMessage]);
 
-  const loadSearch = useCallback(async (
-    searchCityId: string,
-    searchCheckin: string,
-    searchCheckout: string,
-    searchGuests: number,
-  ) => {
-    setCatalogMode(true);
-    setLoading(true);
-    setError(null);
-    try {
-      const sortParam =
-        sortBy === 'rating' ? 'rating' : sortBy === 'price_asc' ? 'price_asc' : sortBy || undefined;
-      const result = await searchProperties({
-        checkin: searchCheckin,
-        checkout: searchCheckout,
-        guests: searchGuests,
-        city_id: searchCityId,
-        min_price: minPrice,
-        max_price: maxPrice,
-        amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
-        sort_by: sortParam,
-        page,
-        page_size: PAGE_SIZE,
-      });
-      setData(result);
-      setFeaturedRaw([]);
-    } catch (err) {
-      setError(errorToMessage(err));
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [minPrice, maxPrice, selectedAmenities, sortBy, page, errorToMessage]);
+  const loadSearch = useCallback(
+    async (
+      searchCityId: string,
+      searchCheckin: string,
+      searchCheckout: string,
+      searchGuests: number
+    ) => {
+      setCatalogMode(true);
+      setLoading(true);
+      setError(null);
+      try {
+        const sortParam =
+          sortBy === 'rating'
+            ? 'rating'
+            : sortBy === 'price_asc'
+              ? 'price_asc'
+              : sortBy || undefined;
+        const result = await searchProperties({
+          checkin: searchCheckin,
+          checkout: searchCheckout,
+          guests: searchGuests,
+          city_id: searchCityId,
+          min_price: minPrice,
+          max_price: maxPrice,
+          amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
+          sort_by: sortParam,
+          page,
+          page_size: PAGE_SIZE,
+        });
+        setData(result);
+        setFeaturedRaw([]);
+      } catch (err) {
+        setError(errorToMessage(err));
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [minPrice, maxPrice, selectedAmenities, sortBy, page, errorToMessage]
+  );
 
   // Auto-search from URL params on first load
   useEffect(() => {
@@ -287,7 +299,9 @@ function SearchPageContent() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      <Box sx={{ bgcolor: 'white', borderBottom: '1px solid', borderColor: 'grey.200', py: 2, px: 3 }}>
+      <Box
+        sx={{ bgcolor: 'white', borderBottom: '1px solid', borderColor: 'grey.200', py: 2, px: 3 }}
+      >
         <Box sx={{ maxWidth: 900, mx: 'auto' }}>
           <SearchBar
             checkin={checkin}
@@ -326,10 +340,16 @@ function SearchPageContent() {
             <>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
                 {t('searchPage.placesFound', { count: gridData.total })} · {formatDateRange()} ·{' '}
-                {catalogMode ? t('searchPage.guestTail', { count: guests }) : t('searchPage.browseTail')}
+                {catalogMode
+                  ? t('searchPage.guestTail', { count: guests })
+                  : t('searchPage.browseTail')}
               </Typography>
               {catalogMode && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 0.5 }}
+                >
                   {t('searchPage.catalogHint')}
                 </Typography>
               )}
@@ -369,7 +389,11 @@ function SearchPageContent() {
         >
           <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} onApply={handlePriceApply} />
           <Divider sx={{ my: 3 }} />
-          <AmenityFilter amenities={amenityOptions} selected={selectedAmenities} onChange={handleAmenityChange} />
+          <AmenityFilter
+            amenities={amenityOptions}
+            selected={selectedAmenities}
+            onChange={handleAmenityChange}
+          />
         </Box>
 
         <Box sx={{ flex: 1, pt: 2 }}>
@@ -424,7 +448,13 @@ function SearchPageContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+    <Suspense
+      fallback={
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      }
+    >
       <SearchPageContent />
     </Suspense>
   );

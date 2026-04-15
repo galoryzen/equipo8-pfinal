@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { getMyBookings } from '@/app/lib/api/booking';
-import { fetchPropertyDetailsMap, type PropertyByIdMap } from '@/app/lib/myTrips/loadPropertyDetails';
+import {
+  type PropertyByIdMap,
+  fetchPropertyDetailsMap,
+} from '@/app/lib/myTrips/loadPropertyDetails';
 import type { BookingListItem } from '@/app/lib/types/booking';
 
 export type { PropertyByIdMap };

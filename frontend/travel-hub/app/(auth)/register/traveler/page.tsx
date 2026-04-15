@@ -2,6 +2,11 @@
 
 import { useState } from 'react';
 
+import Image from 'next/image';
+import NextLink from 'next/link';
+import { useRouter } from 'next/navigation';
+
+import { registerUser } from '@/app/lib/api/auth';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LockIcon from '@mui/icons-material/Lock';
@@ -18,10 +23,6 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import NextLink from 'next/link';
-import { useRouter } from 'next/navigation';
-
-import { registerUser } from '@/app/lib/api/auth';
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
@@ -274,22 +275,23 @@ export default function TravelerRegisterPage() {
             bgcolor: 'white',
             border: '1px solid #e2e8f0',
             borderRadius: '12px',
-            boxShadow:
-              '0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)',
+            boxShadow: '0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)',
             width: '100%',
             overflow: 'hidden',
           }}
         >
           {/* Hero image with gradient fade */}
           <Box height={128} position="relative" overflow="hidden">
-            <img
+            <Image
               alt=""
               aria-hidden
               src={HERO_IMAGE}
+              fill
+              sizes="100vw"
               style={{
                 position: 'absolute',
                 width: '100%',
-                height: '348%',
+                height: '100%',
                 top: '-124%',
                 left: 0,
                 objectFit: 'cover',
@@ -319,13 +321,27 @@ export default function TravelerRegisterPage() {
               </Typography>
             </Box>
 
-            <Box component="form" onSubmit={handleSubmit} noValidate display="flex" flexDirection="column" gap={2.5}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              noValidate
+              display="flex"
+              flexDirection="column"
+              gap={2.5}
+            >
               {/* Email */}
               <Box>
                 <Typography
                   component="label"
                   htmlFor="email"
-                  sx={{ fontWeight: 600, fontSize: '14px', color: '#0f172a', lineHeight: '20px', display: 'block', mb: '6px' }}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    color: '#0f172a',
+                    lineHeight: '20px',
+                    display: 'block',
+                    mb: '6px',
+                  }}
                 >
                   Email address
                 </Typography>
@@ -358,7 +374,14 @@ export default function TravelerRegisterPage() {
                 <Typography
                   component="label"
                   htmlFor="username"
-                  sx={{ fontWeight: 600, fontSize: '14px', color: '#0f172a', lineHeight: '20px', display: 'block', mb: '6px' }}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    color: '#0f172a',
+                    lineHeight: '20px',
+                    display: 'block',
+                    mb: '6px',
+                  }}
                 >
                   Username
                 </Typography>
@@ -382,7 +405,14 @@ export default function TravelerRegisterPage() {
                 <Typography
                   component="label"
                   htmlFor="phone"
-                  sx={{ fontWeight: 600, fontSize: '14px', color: '#0f172a', lineHeight: '20px', display: 'block', mb: '6px' }}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    color: '#0f172a',
+                    lineHeight: '20px',
+                    display: 'block',
+                    mb: '6px',
+                  }}
                 >
                   Cellphone number
                 </Typography>
@@ -445,7 +475,14 @@ export default function TravelerRegisterPage() {
                 <Typography
                   component="label"
                   htmlFor="password"
-                  sx={{ fontWeight: 600, fontSize: '14px', color: '#0f172a', lineHeight: '20px', display: 'block', mb: '6px' }}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    color: '#0f172a',
+                    lineHeight: '20px',
+                    display: 'block',
+                    mb: '6px',
+                  }}
                 >
                   Password
                 </Typography>
@@ -546,7 +583,12 @@ export default function TravelerRegisterPage() {
               component={NextLink}
               href="#"
               underline="hover"
-              sx={{ fontWeight: 500, color: '#64748b', fontSize: '14px', '&:hover': { color: '#0ea5e9' } }}
+              sx={{
+                fontWeight: 500,
+                color: '#64748b',
+                fontSize: '14px',
+                '&:hover': { color: '#0ea5e9' },
+              }}
             >
               {label}
             </MuiLink>

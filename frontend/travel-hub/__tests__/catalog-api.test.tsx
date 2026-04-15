@@ -1,12 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
-
 import { formatApiErrorBody, searchProperties } from '@/app/lib/api/catalog';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('formatApiErrorBody', () => {
   it('formats FastAPI validation array detail', () => {
     const msg = formatApiErrorBody(
       {
-        detail: [{ type: 'missing', loc: ['query', 'city_id'], msg: 'Field required', input: null }],
+        detail: [
+          { type: 'missing', loc: ['query', 'city_id'], msg: 'Field required', input: null },
+        ],
       },
       422
     );
@@ -54,8 +55,7 @@ describe('searchProperties', () => {
   it('includes city_id in the request URL for filtered search', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () =>
-        Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
+      json: () => Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
     });
 
     await searchProperties({
@@ -73,8 +73,7 @@ describe('searchProperties', () => {
   it('omits price params when not provided', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () =>
-        Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
+      json: () => Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
     });
 
     await searchProperties({
@@ -92,8 +91,7 @@ describe('searchProperties', () => {
   it('sends only min_price when max is not set', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () =>
-        Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
+      json: () => Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
     });
 
     await searchProperties({
@@ -113,8 +111,7 @@ describe('searchProperties', () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 422,
-      json: () =>
-        Promise.resolve({ detail: 'min_price must be less than or equal to max_price' }),
+      json: () => Promise.resolve({ detail: 'min_price must be less than or equal to max_price' }),
     });
 
     await expect(
@@ -135,7 +132,9 @@ describe('searchProperties', () => {
       status: 422,
       json: () =>
         Promise.resolve({
-          detail: [{ type: 'missing', loc: ['query', 'city_id'], msg: 'Field required', input: null }],
+          detail: [
+            { type: 'missing', loc: ['query', 'city_id'], msg: 'Field required', input: null },
+          ],
         }),
     });
 

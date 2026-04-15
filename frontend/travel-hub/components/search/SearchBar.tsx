@@ -2,6 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { searchCities } from '@/app/lib/api/catalog';
+import type { CityOut } from '@/app/lib/types/catalog';
+import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
+import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -10,19 +18,10 @@ import IconButton from '@mui/material/IconButton';
 import Popover from '@mui/material/Popover';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Autocomplete from '@mui/material/Autocomplete';
-import SearchIcon from '@mui/icons-material/Search';
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
-import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
-import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useTranslation } from 'react-i18next';
-
-import { searchCities } from '@/app/lib/api/catalog';
-import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
-import type { CityOut } from '@/app/lib/types/catalog';
 
 export interface SearchBarProps {
   checkin: string;
@@ -177,7 +176,17 @@ export default function SearchBar({
         }}
       >
         {/* WHERE */}
-        <Box sx={{ flex: 1.2, display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5, minWidth: 0 }}>
+        <Box
+          sx={{
+            flex: 1.2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 2,
+            py: 1.5,
+            minWidth: 0,
+          }}
+        >
           <LocationOnOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={labelSx}>{t('search.where')}</Typography>
@@ -194,7 +203,9 @@ export default function SearchBar({
               }}
               filterOptions={(x) => x}
               isOptionEqualToValue={(a, b) => a.id === b.id}
-              noOptionsText={inputValue.trim().length < 2 ? t('search.typeTwoChars') : t('search.noCities')}
+              noOptionsText={
+                inputValue.trim().length < 2 ? t('search.typeTwoChars') : t('search.noCities')
+              }
               fullWidth
               renderInput={(params) => (
                 <TextField
@@ -231,7 +242,15 @@ export default function SearchBar({
         <Box
           ref={dateRef}
           onClick={() => setDateAnchor(dateRef.current)}
-          sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5, cursor: 'pointer' }}
+          sx={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 2,
+            py: 1.5,
+            cursor: 'pointer',
+          }}
         >
           <CalendarTodayOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
           <Box>
@@ -246,21 +265,40 @@ export default function SearchBar({
           onClose={() => setDateAnchor(null)}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          slotProps={{ paper: { sx: { borderRadius: 3, p: 3, mt: 1, display: 'flex', flexDirection: 'column', gap: 2 } } }}
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3,
+                p: 3,
+                mt: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              },
+            },
+          }}
         >
-          <Typography sx={{ fontWeight: 600, color: 'grey.700' }}>{t('search.selectDates')}</Typography>
+          <Typography sx={{ fontWeight: 600, color: 'grey.700' }}>
+            {t('search.selectDates')}
+          </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <DatePicker
               label={t('search.checkIn')}
               value={toDate(checkin)}
-              onChange={(d) => { const iso = toIso(d); if (iso) onCheckinChange(iso); }}
+              onChange={(d) => {
+                const iso = toIso(d);
+                if (iso) onCheckinChange(iso);
+              }}
               disablePast
               slotProps={{ textField: { size: 'small' } }}
             />
             <DatePicker
               label={t('search.checkOut')}
               value={toDate(checkout)}
-              onChange={(d) => { const iso = toIso(d); if (iso) onCheckoutChange(iso); }}
+              onChange={(d) => {
+                const iso = toIso(d);
+                if (iso) onCheckoutChange(iso);
+              }}
               minDate={toDate(checkin)}
               slotProps={{ textField: { size: 'small' } }}
             />
@@ -276,7 +314,15 @@ export default function SearchBar({
             setGuestInput(String(guests));
             setGuestAnchor(guestRef.current);
           }}
-          sx={{ flex: 0.7, display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5, cursor: 'pointer' }}
+          sx={{
+            flex: 0.7,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 2,
+            py: 1.5,
+            cursor: 'pointer',
+          }}
         >
           <GroupOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
           <Box>
@@ -293,7 +339,9 @@ export default function SearchBar({
           transformOrigin={{ vertical: 'top', horizontal: 'center' }}
           slotProps={{ paper: { sx: { borderRadius: 3, p: 3, mt: 1 } } }}
         >
-          <Typography sx={{ fontWeight: 600, color: 'grey.700', mb: 1.5 }}>{t('search.guests')}</Typography>
+          <Typography sx={{ fontWeight: 600, color: 'grey.700', mb: 1.5 }}>
+            {t('search.guests')}
+          </Typography>
           <TextField
             type="text"
             inputMode="numeric"
