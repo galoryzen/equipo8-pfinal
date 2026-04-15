@@ -14,10 +14,10 @@ type ManagerNotificationsPageProps = {
   testSetBookings?: React.Dispatch<React.SetStateAction<Booking[]>>;
 };
 
-function ManagerNotificationsPage({
+const ManagerNotificationsPage: React.FC<ManagerNotificationsPageProps> = ({
   testBookings,
   testSetBookings,
-}: ManagerNotificationsPageProps = {}): JSX.Element {
+} = {}) => {
   const { t } = useTranslation();
   // Hooks siempre deben ir en el mismo orden
   const state = useState<Booking[]>(mockBookings);
@@ -98,6 +98,6 @@ function ManagerNotificationsPage({
       />
     </div>
   );
-}
+};
 
 export default ManagerNotificationsPage;
