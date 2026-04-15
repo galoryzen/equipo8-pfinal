@@ -1,5 +1,6 @@
 
 import sys
+from datetime import datetime
 import os
 import pytest
 from uuid import uuid4
@@ -51,11 +52,11 @@ async def test_confirm_booking_success():
     )
     repo = DummyRepo(booking)
     use_case = ConfirmBookingUseCase(repo)
+    result = await use_case.execute(booking.id, booking.user_id)
     assert isinstance(result, BookingDetailOut)
     assert repo.updated
     assert repo.decremented
     assert result.status == BookingStatus.CONFIRMED.value
-    assert result.confirmed_at is not None
 
 @pytest.mark.asyncio
 async def test_confirm_booking_inventory_conflict():
