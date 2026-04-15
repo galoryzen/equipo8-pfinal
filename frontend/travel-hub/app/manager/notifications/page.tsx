@@ -1,9 +1,9 @@
 'use client';
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { mockBookings } from '@/__tests__/mockBookings';
 import { confirmBooking } from '@/services/bookingApi';
+import { useTranslation } from 'react-i18next';
 
 import { BookingRequestCard } from '@/components/manager/BookingRequestCard';
 import { ConfirmBookingModal } from '@/components/manager/ConfirmBookingModal';
@@ -77,7 +77,9 @@ function ManagerNotificationsPage({
         {t('manager.pendingBookingsToday', { count: bookings.length })}
       </p>
       <div className="space-y-6">
-        {bookings.length === 0 && <div className="text-gray-400">{t('manager.noPendingBookings')}</div>}
+        {bookings.length === 0 && (
+          <div className="text-gray-400">{t('manager.noPendingBookings')}</div>
+        )}
         {bookings.map((booking) => (
           <BookingRequestCard
             key={booking.id}
