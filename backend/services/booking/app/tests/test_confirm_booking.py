@@ -79,6 +79,7 @@ async def test_confirm_booking_inventory_conflict():
     repo = DummyRepo(booking, inventory_ok=False)
     use_case = ConfirmBookingUseCase(repo)
     with pytest.raises(InventoryConflictError):
+        await use_case.execute(booking.id, booking.user_id)
 
 @pytest.mark.asyncio
 async def test_confirm_booking_wrong_status():
@@ -102,3 +103,4 @@ async def test_confirm_booking_wrong_status():
     repo = DummyRepo(booking)
     use_case = ConfirmBookingUseCase(repo)
     with pytest.raises(ValueError):
+        await use_case.execute(booking.id, booking.user_id)

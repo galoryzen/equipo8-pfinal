@@ -28,7 +28,6 @@ class ConfirmBookingUseCase:
         # 3. Confirmar reserva
         booking.status = BookingStatus.CONFIRMED
         booking.updated_at = datetime.utcnow()
-        if notes:
         await self._repo.update(booking)
         await self._repo.decrement_inventory(booking)
         # TODO: Enviar email de confirmación
