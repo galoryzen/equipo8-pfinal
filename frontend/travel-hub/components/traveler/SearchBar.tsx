@@ -100,7 +100,7 @@ export default function SearchBar({
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: 'grey.500',
+            color: 'text.secondary',
             textTransform: 'uppercase',
             fontSize: '0.625rem',
             letterSpacing: 1,
@@ -153,7 +153,7 @@ export default function SearchBar({
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: 'grey.500',
+            color: 'text.secondary',
             textTransform: 'uppercase',
             fontSize: '0.625rem',
             letterSpacing: 1,
@@ -187,7 +187,7 @@ export default function SearchBar({
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: 'grey.500',
+            color: 'text.secondary',
             textTransform: 'uppercase',
             fontSize: '0.625rem',
             letterSpacing: 1,

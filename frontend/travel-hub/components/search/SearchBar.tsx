@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { searchCities } from '@/app/lib/api/catalog';
 import type { CityOut } from '@/app/lib/types/catalog';
 import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
+import { tokens as th } from '@/lib/theme/tokens';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
@@ -70,7 +71,7 @@ const labelSx = {
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
-  color: '#0EA5E9',
+  color: 'primary.dark',
   lineHeight: 1,
   mb: 0.5,
 } as const;
@@ -187,7 +188,9 @@ export default function SearchBar({
             minWidth: 0,
           }}
         >
-          <LocationOnOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
+          <LocationOnOutlinedIcon
+            sx={{ color: 'primary.main', fontSize: '1.5rem', flexShrink: 0 }}
+          />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={labelSx}>{t('search.where')}</Typography>
             <Autocomplete
@@ -252,7 +255,9 @@ export default function SearchBar({
             cursor: 'pointer',
           }}
         >
-          <CalendarTodayOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
+          <CalendarTodayOutlinedIcon
+            sx={{ color: 'primary.main', fontSize: '1.5rem', flexShrink: 0 }}
+          />
           <Box>
             <Typography sx={labelSx}>{t('search.when')}</Typography>
             <Typography sx={valueSx}>{formatDateRange(checkin, checkout, dateLocale)}</Typography>
@@ -278,7 +283,7 @@ export default function SearchBar({
             },
           }}
         >
-          <Typography sx={{ fontWeight: 600, color: 'grey.700' }}>
+          <Typography sx={{ fontWeight: 600, color: 'text.primary' }}>
             {t('search.selectDates')}
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -324,7 +329,7 @@ export default function SearchBar({
             cursor: 'pointer',
           }}
         >
-          <GroupOutlinedIcon sx={{ color: '#0EA5E9', fontSize: '1.5rem', flexShrink: 0 }} />
+          <GroupOutlinedIcon sx={{ color: 'primary.main', fontSize: '1.5rem', flexShrink: 0 }} />
           <Box>
             <Typography sx={labelSx}>{t('search.who')}</Typography>
             <Typography sx={valueSx}>{t('search.guestsCount', { count: guests })}</Typography>
@@ -339,7 +344,7 @@ export default function SearchBar({
           transformOrigin={{ vertical: 'top', horizontal: 'center' }}
           slotProps={{ paper: { sx: { borderRadius: 3, p: 3, mt: 1 } } }}
         >
-          <Typography sx={{ fontWeight: 600, color: 'grey.700', mb: 1.5 }}>
+          <Typography sx={{ fontWeight: 600, color: 'text.primary', mb: 1.5 }}>
             {t('search.guests')}
           </Typography>
           <TextField
@@ -367,7 +372,7 @@ export default function SearchBar({
             disabled={!selected}
             startIcon={<SearchIcon />}
             sx={{
-              bgcolor: '#0EA5E9',
+              bgcolor: 'primary.main',
               borderRadius: '999px',
               px: 4,
               py: 1.5,
@@ -376,7 +381,7 @@ export default function SearchBar({
               fontSize: '1rem',
               textTransform: 'none',
               boxShadow: 1,
-              '&:hover': { bgcolor: '#0284C7' },
+              '&:hover': { bgcolor: th.brand.primaryHover },
               '&.Mui-disabled': { bgcolor: 'grey.300', color: 'white' },
             }}
           >
@@ -387,12 +392,12 @@ export default function SearchBar({
             onClick={handleSearch}
             disabled={!selected}
             sx={{
-              bgcolor: '#0EA5E9',
+              bgcolor: 'primary.main',
               color: 'white',
               mr: 0.5,
               width: 48,
               height: 48,
-              '&:hover': { bgcolor: '#0284C7' },
+              '&:hover': { bgcolor: th.brand.primaryHover },
               '&.Mui-disabled': { bgcolor: 'grey.300', color: 'white' },
             }}
           >

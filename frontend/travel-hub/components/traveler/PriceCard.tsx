@@ -209,7 +209,7 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 16,
-            color: 'grey.600',
+            color: 'text.secondary',
           }}
         >
           🏨

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import type { CityOut } from '@/app/lib/types/catalog';
+import { tokens as th } from '@/lib/theme/tokens';
 import Box from '@mui/material/Box';
 
 import HeroSection from '@/components/home/HeroSection';
@@ -72,7 +73,7 @@ export default function HomePage() {
         component="main"
         sx={{
           flex: 1,
-          bgcolor: '#F8FAFC',
+          bgcolor: th.surface.subtle,
           py: 6,
           px: { xs: 2, md: 4 },
         }}

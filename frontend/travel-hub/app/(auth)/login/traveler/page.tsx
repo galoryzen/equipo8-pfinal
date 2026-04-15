@@ -6,6 +6,7 @@ import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { loginUser } from '@/app/lib/api/auth';
+import { tokens as th } from '@/lib/theme/tokens';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
@@ -54,19 +55,19 @@ function inputSx(hasError: boolean) {
     '& .MuiOutlinedInput-root': {
       borderRadius: '12px',
       height: '48px',
-      bgcolor: '#f9fafb',
-      '& fieldset': { borderColor: hasError ? '#f87171' : '#e5e7eb' },
-      '&:hover fieldset': { borderColor: hasError ? '#f87171' : '#d1d5db' },
+      bgcolor: th.surface.muted,
+      '& fieldset': { borderColor: hasError ? th.state.error : th.border.default },
+      '&:hover fieldset': { borderColor: hasError ? th.state.error : th.border.inputHover },
       '&.Mui-focused fieldset': {
-        borderColor: hasError ? '#f87171' : '#0ea5e9',
+        borderColor: hasError ? th.state.error : th.brand.primary,
         borderWidth: 2,
       },
-      '&.Mui-error fieldset': { borderColor: '#f87171' },
+      '&.Mui-error fieldset': { borderColor: th.state.error },
     },
     '& .MuiInputBase-input': {
       fontSize: '14px',
-      color: '#1f2937',
-      '&::placeholder': { color: '#9ca3af', opacity: 1 },
+      color: th.ink.charcoal,
+      '&::placeholder': { color: th.text.muted, opacity: 1 },
     },
     '& .MuiFormHelperText-root': { mx: 0, mt: '4px', fontSize: '12px' },
   };
@@ -125,13 +126,13 @@ function TravelerLoginForm() {
   }
 
   return (
-    <div className="bg-[#f3f4f6] flex flex-col items-center justify-center px-4 py-[100px] min-h-screen">
+    <div className="bg-th-surface-page-cool flex flex-col items-center justify-center px-4 py-[100px] min-h-screen">
       <Box maxWidth={448} width="100%" display="flex" flexDirection="column" gap={3}>
         {/* Card */}
         <Box
           sx={{
             bgcolor: 'white',
-            border: '1px solid #f3f4f6',
+            border: `1px solid ${th.surface.pageCool}`,
             borderRadius: '16px',
             boxShadow: '0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)',
             width: '100%',
@@ -151,7 +152,7 @@ function TravelerLoginForm() {
                 mb: 2,
               }}
             >
-              <LockOutlinedIcon sx={{ color: '#0ea5e9', fontSize: 22 }} />
+              <LockOutlinedIcon sx={{ color: 'primary.main', fontSize: 22 }} />
             </Box>
 
             <Typography
@@ -159,7 +160,7 @@ function TravelerLoginForm() {
               sx={{
                 fontWeight: 700,
                 fontSize: '24px',
-                color: '#1f2937',
+                color: 'text.primary',
                 lineHeight: '32px',
                 textAlign: 'center',
               }}
@@ -168,7 +169,7 @@ function TravelerLoginForm() {
             </Typography>
             <Typography
               sx={{
-                color: '#6b7280',
+                color: 'text.secondary',
                 fontSize: '14px',
                 lineHeight: '20px',
                 textAlign: 'center',
@@ -199,7 +200,7 @@ function TravelerLoginForm() {
                 sx={{
                   fontWeight: 500,
                   fontSize: '12px',
-                  color: '#6b7280',
+                  color: 'text.secondary',
                   display: 'block',
                   mb: '4px',
                 }}
@@ -221,7 +222,7 @@ function TravelerLoginForm() {
                   input: {
                     startAdornment: (
                       <InputAdornment position="start">
-                        <MailOutlineIcon sx={{ color: '#9ca3af', fontSize: 16 }} />
+                        <MailOutlineIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
                       </InputAdornment>
                     ),
                   },
@@ -238,7 +239,7 @@ function TravelerLoginForm() {
                 sx={{
                   fontWeight: 500,
                   fontSize: '12px',
-                  color: '#6b7280',
+                  color: 'text.secondary',
                   display: 'block',
                   mb: '4px',
                 }}
@@ -260,7 +261,7 @@ function TravelerLoginForm() {
                   input: {
                     startAdornment: (
                       <InputAdornment position="start">
-                        <LockOutlinedIcon sx={{ color: '#9ca3af', fontSize: 15 }} />
+                        <LockOutlinedIcon sx={{ color: 'text.secondary', fontSize: 15 }} />
                       </InputAdornment>
                     ),
                     endAdornment: (
@@ -271,7 +272,7 @@ function TravelerLoginForm() {
                           edge="end"
                           size="small"
                           tabIndex={-1}
-                          sx={{ color: '#9ca3af', mr: '-4px' }}
+                          sx={{ color: 'text.secondary', mr: '-4px' }}
                         >
                           {showPassword ? (
                             <VisibilityIcon sx={{ fontSize: 17 }} />
@@ -297,16 +298,16 @@ function TravelerLoginForm() {
               sx={{
                 height: 52,
                 borderRadius: '12px',
-                bgcolor: '#0ea5e9',
+                bgcolor: 'primary.main',
                 fontWeight: 600,
                 fontSize: '16px',
                 textTransform: 'none',
                 letterSpacing: 0,
                 boxShadow:
                   '0px 10px 15px -3px rgba(14,165,233,0.3), 0px 4px 6px -4px rgba(14,165,233,0.3)',
-                '&:hover': { bgcolor: '#0284c7', boxShadow: 'none' },
-                '&:active': { bgcolor: '#0369a1' },
-                '&.Mui-disabled': { bgcolor: '#0ea5e9', color: 'white', opacity: 0.6 },
+                '&:hover': { bgcolor: th.brand.primaryHover, boxShadow: 'none' },
+                '&:active': { bgcolor: th.brand.primaryActive },
+                '&.Mui-disabled': { bgcolor: 'primary.main', color: 'white', opacity: 0.6 },
               }}
             >
               {loading ? (
@@ -325,10 +326,10 @@ function TravelerLoginForm() {
                 component={NextLink}
                 href="/register/traveler"
                 underline="none"
-                sx={{ color: '#6b7280', fontSize: '14px' }}
+                sx={{ color: 'text.secondary', fontSize: '14px' }}
               >
                 Don&apos;t have an account?{' '}
-                <Box component="span" sx={{ fontWeight: 700, color: '#0ea5e9' }}>
+                <Box component="span" sx={{ fontWeight: 700, color: 'primary.dark' }}>
                   Create Account
                 </Box>
               </MuiLink>
@@ -344,7 +345,7 @@ function TravelerLoginForm() {
               </Box>
               <Typography
                 sx={{
-                  color: '#6b7280',
+                  color: 'text.secondary',
                   fontSize: '12px',
                   textAlign: 'center',
                   lineHeight: '19.5px',
@@ -356,7 +357,7 @@ function TravelerLoginForm() {
                   href="#"
                   underline="always"
                   sx={{
-                    color: '#1f2937',
+                    color: 'text.primary',
                     fontSize: '12px',
                     textDecorationColor: 'rgba(14,165,233,0.3)',
                   }}
@@ -369,7 +370,7 @@ function TravelerLoginForm() {
                   href="#"
                   underline="always"
                   sx={{
-                    color: '#1f2937',
+                    color: 'text.primary',
                     fontSize: '12px',
                     textDecorationColor: 'rgba(14,165,233,0.3)',
                   }}

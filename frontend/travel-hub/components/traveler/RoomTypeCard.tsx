@@ -54,7 +54,7 @@ export default function RoomTypeCard({ room, checkin, checkout }: RoomTypeCardPr
           justifyContent: 'center',
         }}
       >
-        <BedIcon sx={{ fontSize: 48, color: 'grey.400' }} />
+        <BedIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
       </Box>
 
       {/* Content */}

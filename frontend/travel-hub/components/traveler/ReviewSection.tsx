@@ -67,7 +67,7 @@ export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: Review
                   justifyContent: 'center',
                 }}
               >
-                <PersonIcon sx={{ color: 'grey.600' }} />
+                <PersonIcon sx={{ color: 'text.secondary' }} />
               </Box>
               <Box>
                 <Typography variant="body2" fontWeight={600}>

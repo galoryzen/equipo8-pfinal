@@ -83,7 +83,7 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
             borderColor: 'primary.main',
           },
           '& .MuiSlider-track': { height: 4 },
-          '& .MuiSlider-rail': { height: 4, bgcolor: '#e2e8f0' },
+          '& .MuiSlider-rail': { height: 4, bgcolor: 'grey.200' },
         }}
       />
       <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>

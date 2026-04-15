@@ -106,7 +106,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
                 />
                 <Typography
                   variant="caption"
-                  sx={{ display: 'block', color: 'grey.500', mt: 0.25 }}
+                  sx={{ display: 'block', color: 'text.secondary', mt: 0.25 }}
                 >
                   {formatReviewCount(property.review_count, t)}
                 </Typography>
@@ -116,7 +116,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
           {/* Location */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-            <LocationOnIcon sx={{ fontSize: 14, color: 'grey.400' }} />
+            <LocationOnIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
               {property.city.name}, {property.city.country}
             </Typography>

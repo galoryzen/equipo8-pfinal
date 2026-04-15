@@ -16,8 +16,9 @@ export default function Footer() {
     <Box
       component="footer"
       sx={{
-        bgcolor: '#FFFFFF',
-        borderTop: '1px solid #E5E7EB',
+        bgcolor: 'background.paper',
+        borderTop: '1px solid',
+        borderColor: 'divider',
         pt: 8,
         pb: 4,
       }}
@@ -36,7 +37,7 @@ export default function Footer() {
                 sx={{
                   fontWeight: 700,
                   fontSize: 16,
-                  color: '#111827',
+                  color: 'text.primary',
                   lineHeight: '24px',
                   mb: 2,
                 }}
@@ -51,10 +52,10 @@ export default function Footer() {
                     href="#"
                     sx={{
                       fontSize: 14,
-                      color: '#64748B',
+                      color: 'text.secondary',
                       lineHeight: '20px',
                       textDecoration: 'none',
-                      '&:hover': { color: '#0EA5E9' },
+                      '&:hover': { color: 'primary.dark' },
                     }}
                   >
                     {link}
@@ -67,7 +68,8 @@ export default function Footer() {
 
         <Box
           sx={{
-            borderTop: '1px solid #E5E7EB',
+            borderTop: '1px solid',
+            borderColor: 'divider',
             mt: 6,
             pt: 4,
             display: 'flex',
@@ -79,7 +81,7 @@ export default function Footer() {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Image src="/icon.svg" alt={t('brand.name')} width={17} height={17} />
-            <Typography sx={{ fontSize: 14, color: '#64748B', lineHeight: '20px' }}>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary', lineHeight: '20px' }}>
               {t('footer.copyright')}
             </Typography>
           </Box>
@@ -92,10 +94,10 @@ export default function Footer() {
                 href="#"
                 sx={{
                   fontSize: 14,
-                  color: '#64748B',
+                  color: 'text.secondary',
                   lineHeight: '20px',
                   textDecoration: 'none',
-                  '&:hover': { color: '#0EA5E9' },
+                  '&:hover': { color: 'primary.dark' },
                 }}
               >
                 {text}
@@ -107,7 +109,11 @@ export default function Footer() {
             <Box
               component="a"
               href="#"
-              sx={{ color: '#64748B', display: 'flex', '&:hover': { color: '#0EA5E9' } }}
+              sx={{
+                color: 'text.secondary',
+                display: 'flex',
+                '&:hover': { color: 'primary.dark' },
+              }}
               aria-label="Facebook"
             >
               <FacebookIcon sx={{ fontSize: 20 }} />
@@ -118,10 +124,10 @@ export default function Footer() {
               sx={{
                 fontWeight: 700,
                 fontSize: 14,
-                color: '#64748B',
+                color: 'text.secondary',
                 textDecoration: 'none',
                 lineHeight: '20px',
-                '&:hover': { color: '#0EA5E9' },
+                '&:hover': { color: 'primary.dark' },
               }}
             >
               IG
@@ -132,10 +138,10 @@ export default function Footer() {
               sx={{
                 fontWeight: 700,
                 fontSize: 14,
-                color: '#64748B',
+                color: 'text.secondary',
                 textDecoration: 'none',
                 lineHeight: '20px',
-                '&:hover': { color: '#0EA5E9' },
+                '&:hover': { color: 'primary.dark' },
               }}
             >
               X

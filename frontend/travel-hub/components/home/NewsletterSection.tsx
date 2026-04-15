@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { tokens as th } from '@/lib/theme/tokens';
 import FlightIcon from '@mui/icons-material/Flight';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Box from '@mui/material/Box';
@@ -31,11 +32,11 @@ export default function NewsletterSection() {
       <Box sx={{ flex: 1 }}>
         <Typography
           variant="h2"
-          sx={{ fontWeight: 700, fontSize: '1.875rem', color: 'grey.900', mb: 2 }}
+          sx={{ fontWeight: 700, fontSize: '1.875rem', color: 'text.primary', mb: 2 }}
         >
           {t('newsletter.title')}
         </Typography>
-        <Typography sx={{ fontSize: '1rem', color: 'grey.500', mb: 2 }}>
+        <Typography sx={{ fontSize: '1rem', color: 'text.secondary', mb: 2 }}>
           {t('newsletter.body')}
         </Typography>
 
@@ -64,15 +65,15 @@ export default function NewsletterSection() {
           />
           <Button
             variant="contained"
+            color="primary"
             sx={{
-              bgcolor: '#0EA5E9',
               borderRadius: 2,
               px: 3,
               fontWeight: 500,
               fontSize: '1rem',
               textTransform: 'none',
               minWidth: 120,
-              '&:hover': { bgcolor: '#0284C7' },
+              '&:hover': { bgcolor: th.brand.primaryHover },
             }}
           >
             {t('newsletter.subscribe')}
@@ -102,9 +103,14 @@ export default function NewsletterSection() {
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
             <FlightIcon
-              sx={{ fontSize: '5rem', color: '#0EA5E9', opacity: 0.5, transform: 'rotate(-45deg)' }}
+              sx={{
+                fontSize: '5rem',
+                color: 'primary.main',
+                opacity: 0.5,
+                transform: 'rotate(-45deg)',
+              }}
             />
-            <LocalOfferIcon sx={{ fontSize: '1.5rem', color: '#0EA5E9' }} />
+            <LocalOfferIcon sx={{ fontSize: '1.5rem', color: 'primary.main' }} />
           </Box>
         </Box>
       </Box>

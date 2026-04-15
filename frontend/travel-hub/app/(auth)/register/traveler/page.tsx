@@ -7,6 +7,7 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { registerUser } from '@/app/lib/api/auth';
+import { tokens as th } from '@/lib/theme/tokens';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LockIcon from '@mui/icons-material/Lock';
@@ -38,15 +39,15 @@ function LogoIcon() {
       aria-hidden
     >
       {/* Globe */}
-      <circle cx="25" cy="24" r="18" stroke="#0ea5e9" strokeWidth="2.5" />
-      <ellipse cx="25" cy="24" rx="9" ry="18" stroke="#0ea5e9" strokeWidth="2" />
-      <line x1="7" y1="24" x2="43" y2="24" stroke="#0ea5e9" strokeWidth="2" />
-      <line x1="10" y1="14" x2="40" y2="14" stroke="#0ea5e9" strokeWidth="1.5" />
-      <line x1="10" y1="34" x2="40" y2="34" stroke="#0ea5e9" strokeWidth="1.5" />
+      <circle cx="25" cy="24" r="18" stroke={th.brand.primary} strokeWidth="2.5" />
+      <ellipse cx="25" cy="24" rx="9" ry="18" stroke={th.brand.primary} strokeWidth="2" />
+      <line x1="7" y1="24" x2="43" y2="24" stroke={th.brand.primary} strokeWidth="2" />
+      <line x1="10" y1="14" x2="40" y2="14" stroke={th.brand.primary} strokeWidth="1.5" />
+      <line x1="10" y1="34" x2="40" y2="34" stroke={th.brand.primary} strokeWidth="1.5" />
       {/* Plane */}
       <path
         d="M32 10 L38 7 L36 13 L28 17 L30 22 L33 21 L32 24 L27 23 L22 30 L19 29 L23 21 L14 18 L14 15 L22 16 Z"
-        fill="#0ea5e9"
+        fill={th.brand.primary}
         opacity="0.85"
       />
     </svg>
@@ -135,10 +136,10 @@ function fieldSx(isValid: boolean) {
       borderRadius: '12px',
       height: '48px',
       bgcolor: 'white',
-      '& fieldset': { borderColor: isValid ? '#10b981' : '#e2e8f0' },
-      '&:hover fieldset': { borderColor: isValid ? '#10b981' : '#cbd5e1' },
+      '& fieldset': { borderColor: isValid ? '#10b981' : th.border.subtle },
+      '&:hover fieldset': { borderColor: isValid ? '#10b981' : th.border.subtleHover },
       '&.Mui-focused fieldset': {
-        borderColor: isValid ? '#10b981' : '#0ea5e9',
+        borderColor: isValid ? '#10b981' : th.brand.primary,
         borderWidth: 2,
       },
       '&.Mui-error fieldset': { borderColor: '#f87171' },
@@ -150,7 +151,7 @@ function fieldSx(isValid: boolean) {
       color: '#0f172a',
       py: '14.5px',
       px: '17px',
-      '&::placeholder': { color: '#6b7280', opacity: 1 },
+      '&::placeholder': { color: th.text.muted, opacity: 1 },
     },
     '& .MuiFormHelperText-root': { mx: 0, mt: '4px', fontSize: '12px' },
   };
@@ -230,7 +231,7 @@ export default function TravelerRegisterPage() {
   const formIsInvalid = Object.keys(errors).length > 0;
 
   return (
-    <div className="bg-[#f8f6f6] flex flex-col items-center justify-center px-4 py-10 min-h-screen relative overflow-hidden">
+    <div className="bg-th-surface-page-warm flex flex-col items-center justify-center px-4 py-10 min-h-screen relative overflow-hidden">
       {/* Background decoration blobs */}
       <div className="absolute inset-0 opacity-10 overflow-hidden pointer-events-none" aria-hidden>
         <div className="absolute bg-[rgba(14,165,233,0.2)] blur-[32px] h-[410px] right-[-128px] rounded-full top-[-102px] w-[512px]" />
@@ -264,7 +265,9 @@ export default function TravelerRegisterPage() {
           >
             TravelHub
           </Typography>
-          <Typography sx={{ color: '#64748b', fontSize: '16px', lineHeight: '24px', mt: 0.5 }}>
+          <Typography
+            sx={{ color: 'text.secondary', fontSize: '16px', lineHeight: '24px', mt: 0.5 }}
+          >
             Start your next adventure with us
           </Typography>
         </Box>
@@ -273,7 +276,7 @@ export default function TravelerRegisterPage() {
         <Box
           sx={{
             bgcolor: 'white',
-            border: '1px solid #e2e8f0',
+            border: `1px solid ${th.border.subtle}`,
             borderRadius: '12px',
             boxShadow: '0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)',
             width: '100%',
@@ -316,7 +319,7 @@ export default function TravelerRegisterPage() {
               >
                 Create Account
               </Typography>
-              <Typography sx={{ color: '#64748b', fontSize: '16px', lineHeight: '24px' }}>
+              <Typography sx={{ color: 'text.secondary', fontSize: '16px', lineHeight: '24px' }}>
                 Join our community of explorers
               </Typography>
             </Box>
@@ -430,10 +433,12 @@ export default function TravelerRegisterPage() {
                         fontSize: '15px',
                         fontWeight: 500,
                         color: '#0f172a',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' },
-                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cbd5e1' },
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: th.border.subtle },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: th.border.subtleHover,
+                        },
                         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#0ea5e9',
+                          borderColor: th.brand.primary,
                           borderWidth: 2,
                         },
                         '& .MuiSelect-select': { pl: '12px' },
@@ -511,7 +516,7 @@ export default function TravelerRegisterPage() {
                 sx={{
                   height: 56,
                   borderRadius: '12px',
-                  bgcolor: '#0ea5e9',
+                  bgcolor: 'primary.main',
                   fontWeight: 700,
                   fontSize: '16px',
                   textTransform: 'none',
@@ -519,9 +524,9 @@ export default function TravelerRegisterPage() {
                   boxShadow:
                     '0px 10px 15px -3px rgba(14,165,233,0.2), 0px 4px 6px -4px rgba(14,165,233,0.2)',
                   mt: '4px',
-                  '&:hover': { bgcolor: '#0284c7', boxShadow: 'none' },
-                  '&:active': { bgcolor: '#0369a1' },
-                  '&.Mui-disabled': { bgcolor: '#0ea5e9', color: 'white', opacity: 0.6 },
+                  '&:hover': { bgcolor: th.brand.primaryHover, boxShadow: 'none' },
+                  '&:active': { bgcolor: th.brand.primaryActive },
+                  '&.Mui-disabled': { bgcolor: 'primary.main', color: 'white', opacity: 0.6 },
                 }}
               >
                 {loading ? (
@@ -542,10 +547,10 @@ export default function TravelerRegisterPage() {
                   component={NextLink}
                   href="/login/traveler"
                   underline="none"
-                  sx={{ color: '#64748b', fontSize: '14px' }}
+                  sx={{ color: 'text.secondary', fontSize: '14px' }}
                 >
                   Already have an account?{' '}
-                  <Box component="span" sx={{ fontWeight: 700, color: '#0ea5e9' }}>
+                  <Box component="span" sx={{ fontWeight: 700, color: 'primary.dark' }}>
                     Back to Login
                   </Box>
                 </MuiLink>
@@ -556,13 +561,13 @@ export default function TravelerRegisterPage() {
                 justifyContent="center"
                 gap={1}
                 pt={3}
-                sx={{ borderTop: '1px solid #f1f5f9' }}
+                sx={{ borderTop: '1px solid', borderColor: 'grey.100' }}
               >
-                <LockIcon sx={{ color: '#94a3b8', fontSize: 14 }} />
+                <LockIcon sx={{ color: 'text.secondary', fontSize: 14 }} />
                 <Typography
                   sx={{
                     fontWeight: 700,
-                    color: '#94a3b8',
+                    color: 'text.secondary',
                     fontSize: '11px',
                     letterSpacing: '1.1px',
                     textTransform: 'uppercase',
@@ -585,9 +590,9 @@ export default function TravelerRegisterPage() {
               underline="hover"
               sx={{
                 fontWeight: 500,
-                color: '#64748b',
+                color: 'text.secondary',
                 fontSize: '14px',
-                '&:hover': { color: '#0ea5e9' },
+                '&:hover': { color: 'primary.dark' },
               }}
             >
               {label}
