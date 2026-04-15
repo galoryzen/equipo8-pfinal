@@ -21,13 +21,8 @@ const ManagerNotificationsPage: React.FC<ManagerNotificationsPageProps> = ({
   const state = useState<Booking[]>(mockBookings);
   const bookings = testBookings ?? state[0];
   const setBookings = testSetBookings ?? state[1];
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
-  const handleConfirmClick = (id: string) => {
-    setSelectedBookingId(id);
-    setModalOpen(true);
-  };
+  const handleConfirmClick = (id: string) => {};
 
   const handleDecline = (id: string) => {
     setBookings((prev) => prev.filter((b) => b.id !== id));
