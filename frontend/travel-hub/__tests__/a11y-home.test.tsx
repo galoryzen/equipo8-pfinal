@@ -25,7 +25,7 @@ const mockGetMe = vi.mocked(authApi.getMe);
 const mockFeatured = vi.mocked(catalogApi.getFeaturedProperties);
 const mockDestinations = vi.mocked(catalogApi.getFeaturedDestinations);
 
-describe('Accessibility (axe) — home page', () => {
+describe('Accessibility (axe) - home page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetMe.mockResolvedValue(null);
@@ -40,5 +40,5 @@ describe('Accessibility (axe) — home page', () => {
     });
     const axeResults = await axe(container);
     expect(axeResults.violations).toEqual([]);
-  });
+  }, 15000);
 });

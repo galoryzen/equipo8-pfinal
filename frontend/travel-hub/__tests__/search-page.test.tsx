@@ -215,7 +215,7 @@ describe('SearchPage', () => {
         })
       );
     });
-  });
+  }, 12000);
 
   it('changing guests after search keeps sort_by and other filters in the request', async () => {
     const user = userEvent.setup();

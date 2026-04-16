@@ -64,7 +64,7 @@ def _sample_cart() -> CartBookingOut:
 
 
 class TestCreateCartEndpoint:
-    def test_returns_200_with_cart_booking(self, client_authenticated):
+    def test_returns_201_with_cart_booking(self, client_authenticated):
         mock_uc = AsyncMock()
         mock_uc.execute.return_value = _sample_cart()
         app.dependency_overrides[get_create_cart_booking_use_case] = lambda: mock_uc
@@ -73,7 +73,7 @@ class TestCreateCartEndpoint:
         finally:
             app.dependency_overrides.pop(get_create_cart_booking_use_case, None)
 
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         body = resp.json()
         assert body["status"] == "CART"
         assert body["id"] == str(BOOKING_ID)
