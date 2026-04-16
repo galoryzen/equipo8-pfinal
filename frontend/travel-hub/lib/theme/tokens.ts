@@ -40,6 +40,14 @@ export const tokens = {
   state: {
     error: '#F87171',
     success: '#16A34A',
+    /**
+     * Warning palette tuned for WCAG AA contrast on light surfaces:
+     * - Use `warningFg` for text/icons on white and warm off-whites.
+     * - Use `warningBg` behind `warningFg` text for chips/badges.
+     */
+    warningFg: '#9A3412',
+    warningBg: '#FFF7ED',
+    warningBorder: '#FDBA74',
   },
 } as const;
 

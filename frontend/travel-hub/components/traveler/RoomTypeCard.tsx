@@ -3,6 +3,7 @@
 import NextLink from 'next/link';
 
 import type { RoomTypeOut } from '@/app/lib/types/catalog';
+import { tokens as th } from '@/lib/theme/tokens';
 import BedIcon from '@mui/icons-material/Bed';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckIcon from '@mui/icons-material/Check';
@@ -39,7 +40,7 @@ function cancellationLabel(type: string, t: (key: string) => string): string {
 
 function borderColor(isHeld: boolean, hasOwnCart: boolean, isSelected: boolean): string {
   if (isHeld) return 'error.main';
-  if (hasOwnCart) return 'warning.main';
+  if (hasOwnCart) return th.state.warningBorder;
   if (isSelected) return 'primary.main';
   return 'divider';
 }
@@ -132,9 +133,14 @@ export default function RoomTypeCard({
             {hasOwnCart && !isHeld && (
               <Chip
                 label={t('roomCard.bookingInProgress')}
-                color="warning"
                 size="small"
-                sx={{ fontWeight: 600 }}
+                sx={{
+                  fontWeight: 700,
+                  bgcolor: th.state.warningBg,
+                  color: th.state.warningFg,
+                  border: '1px solid',
+                  borderColor: th.state.warningBorder,
+                }}
               />
             )}
           </Box>
@@ -204,10 +210,18 @@ export default function RoomTypeCard({
               component={NextLink}
               href={`/traveler/payment?${resumeParams}`}
               variant="outlined"
-              color="warning"
               size="small"
               disableElevation
-              sx={{ borderRadius: 2, textTransform: 'none', px: 2, fontWeight: 600 }}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                px: 2,
+                fontWeight: 700,
+                borderColor: th.state.warningBorder,
+                color: th.state.warningFg,
+                bgcolor: 'transparent',
+                '&:hover': { bgcolor: th.state.warningBg, borderColor: th.state.warningBorder },
+              }}
             >
               {t('roomCard.resumeBooking')}
             </Button>
