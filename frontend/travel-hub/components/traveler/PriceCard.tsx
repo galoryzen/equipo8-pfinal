@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useAuthAction } from '@/app/lib/hooks/useAuthAction';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -14,9 +15,12 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import type { SelectedRoomInfo } from '@/components/traveler/PropertyDetailView';
+
 interface PriceCardProps {
   property: PropertyDetail;
   minPrice: number | null;
+  selectedRoom: SelectedRoomInfo | null;
   onDatesChange?: (checkin: string, checkout: string) => void;
 }
 
@@ -33,7 +37,12 @@ function getDefaultDates() {
   return { today: todayStr, tomorrow: tomorrowStr };
 }
 
-export default function PriceCard({ property, minPrice, onDatesChange }: PriceCardProps) {
+export default function PriceCard({
+  property,
+  minPrice,
+  selectedRoom,
+  onDatesChange,
+}: PriceCardProps) {
   const { today, tomorrow } = getDefaultDates();
   const { authStatus, requireAuth } = useAuthAction();
   const { t } = useTranslation();
@@ -43,11 +52,13 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
   const [guests, setGuests] = useState(2);
 
   const nights = nightsBetween(checkin, checkout);
-  const pricePerNight = minPrice ?? 0;
+  const pricePerNight = selectedRoom?.unitPrice ?? minPrice ?? 0;
   const roomTotal = pricePerNight * Math.max(nights, 1);
   const cleaningFee = Math.round(pricePerNight * 0.1);
   const serviceFee = Math.round(pricePerNight * 0.05);
   const total = roomTotal + cleaningFee + serviceFee;
+
+  const canReserve = Boolean(selectedRoom);
 
   function handleCheckinChange(val: string) {
     setCheckin(val);
@@ -68,11 +79,11 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
   return (
     <Paper variant="outlined" sx={{ borderRadius: 3, p: 3, position: 'sticky', top: 24 }}>
       {/* Price header */}
-      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: 2 }}>
-        {minPrice != null ? (
+      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: selectedRoom ? 0.5 : 2 }}>
+        {pricePerNight > 0 ? (
           <>
             <Typography variant="h5" fontWeight={700}>
-              ${minPrice.toLocaleString()}
+              ${pricePerNight.toLocaleString()}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               / night
@@ -84,6 +95,16 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
           </Typography>
         )}
       </Box>
+      {selectedRoom && (
+        <Typography
+          variant="caption"
+          color="primary.main"
+          fontWeight={600}
+          sx={{ display: 'block', mb: 2 }}
+        >
+          {selectedRoom.roomName}
+        </Typography>
+      )}
 
       {/* Date pickers */}
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1.5 }}>
@@ -121,13 +142,13 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
         sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
       />
 
-      {/* Reserve button — navigates to booking if logged in, to login otherwise */}
+      {/* Reserve button */}
       <Button
         variant="contained"
         fullWidth
         size="large"
         disableElevation
-        disabled={authStatus === 'loading'}
+        disabled={authStatus === 'loading' || !canReserve}
         startIcon={
           authStatus === 'loading' ? (
             <CircularProgress aria-label={t('a11y.loading')} size={16} sx={{ color: 'white' }} />
@@ -135,15 +156,32 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
             <LockOutlinedIcon sx={{ fontSize: 18 }} />
           ) : undefined
         }
-        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, mb: 1.5 }}
-        onClick={() =>
-          requireAuth(
-            `/traveler/booking?property_id=${property.id}&checkin=${checkin}&checkout=${checkout}&guests=${guests}`
-          )
-        }
+        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, mb: 1 }}
+        onClick={() => {
+          if (!selectedRoom) return;
+          const params = new URLSearchParams({
+            property_id: property.id,
+            room_type_id: selectedRoom.roomTypeId,
+            rate_plan_id: selectedRoom.ratePlanId,
+            checkin,
+            checkout,
+            guests: String(guests),
+            unit_price: String(selectedRoom.unitPrice),
+            currency: 'USD',
+            property_name: property.name,
+            room_name: selectedRoom.roomName,
+          });
+          requireAuth(`/traveler/booking?${params.toString()}`);
+        }}
       >
         {authStatus === 'unauthenticated' ? 'Sign in to Reserve' : 'Reserve'}
       </Button>
+
+      {!selectedRoom && (
+        <Alert severity="info" sx={{ mb: 1, py: 0.5 }}>
+          Select a room below to continue
+        </Alert>
+      )}
 
       <Typography
         variant="caption"
@@ -154,13 +192,13 @@ export default function PriceCard({ property, minPrice, onDatesChange }: PriceCa
       </Typography>
 
       {/* Price breakdown */}
-      {minPrice != null && nights > 0 && (
+      {pricePerNight > 0 && nights > 0 && (
         <>
           <Divider sx={{ mb: 1.5 }} />
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                ${minPrice.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}
+                ${pricePerNight.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}
               </Typography>
               <Typography variant="body2">${roomTotal.toLocaleString()}</Typography>
             </Box>
