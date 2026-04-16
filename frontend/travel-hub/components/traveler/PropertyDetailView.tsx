@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { getHeldRooms, getMyBookings } from '@/app/lib/api/booking';
 import { getPropertyDetail, isCatalogNotFoundError } from '@/app/lib/api/catalog';
+import { useAuthAction } from '@/app/lib/hooks/useAuthAction';
 import type { PaginatedResponse, PropertyDetail, ReviewOut } from '@/app/lib/types/catalog';
 import CancelIcon from '@mui/icons-material/Cancel';
 import FreeBreakfastIcon from '@mui/icons-material/FreeBreakfast';
@@ -47,15 +49,37 @@ function computeMinPrice(detail: PropertyDetail): number | null {
   return prices.length ? Math.min(...prices) : null;
 }
 
+export interface SelectedRoomInfo {
+  roomTypeId: string;
+  ratePlanId: string;
+  unitPrice: number;
+  roomName: string;
+}
+
+function getDefaultDates() {
+  const now = new Date();
+  return {
+    today: now.toISOString().split('T')[0],
+    tomorrow: new Date(now.getTime() + 86400000).toISOString().split('T')[0],
+  };
+}
+
 export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
   const { t } = useTranslation();
+  const { today, tomorrow } = getDefaultDates();
+  const { authStatus } = useAuthAction();
   const [detail, setDetail] = useState<PropertyDetail | null>(null);
   const [reviews, setReviews] = useState<PaginatedResponse<ReviewOut> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [checkin, setCheckin] = useState<string | undefined>(undefined);
-  const [checkout, setCheckout] = useState<string | undefined>(undefined);
+  const [checkin, setCheckin] = useState<string>(today);
+  const [checkout, setCheckout] = useState<string>(tomorrow);
   const [reviewPage, setReviewPage] = useState(1);
+  const [selectedRoom, setSelectedRoom] = useState<SelectedRoomInfo | null>(null);
+  // room_type_id → true for rooms held by ANY user (including current user)
+  const [heldRoomTypeIds, setHeldRoomTypeIds] = useState<Set<string>>(new Set());
+  // room_type_id → booking_id for the CURRENT user's own CART bookings
+  const [activeCartByRoomTypeId, setActiveCartByRoomTypeId] = useState<Record<string, string>>({});
 
   const fetchDetail = useCallback(
     async (ci?: string, co?: string, rPage = 1) => {
@@ -89,10 +113,35 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
     fetchDetail();
   }, [fetchDetail]);
 
+  // Fetch rooms held by ANY user for the current property + dates (public endpoint)
+  useEffect(() => {
+    if (!checkin || !checkout) return;
+    getHeldRooms(id, checkin, checkout)
+      .then((data) => setHeldRoomTypeIds(new Set(data.held_room_type_ids)))
+      .catch(() => setHeldRoomTypeIds(new Set()));
+  }, [id, checkin, checkout]);
+
+  // Fetch the current user's own CART bookings to allow resuming their hold
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return;
+    getMyBookings()
+      .then((bookings) => {
+        const map: Record<string, string> = {};
+        for (const b of bookings) {
+          if (b.status === 'CART') {
+            for (const item of b.items) map[item.room_type_id] = b.id;
+          }
+        }
+        setActiveCartByRoomTypeId(map);
+      })
+      .catch(() => setActiveCartByRoomTypeId({}));
+  }, [authStatus]);
+
   function handleDatesChange(ci: string, co: string) {
     setCheckin(ci);
     setCheckout(co);
     setReviewPage(1);
+    setSelectedRoom(null);
     fetchDetail(ci, co, 1);
   }
 
@@ -284,11 +333,22 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {detail.room_types.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" fontWeight={700} gutterBottom>
-                Available Rooms
+                {t('propertyDetail.availableRooms')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {detail.room_types.map((room) => (
-                  <RoomTypeCard key={room.id} room={room} checkin={checkin} checkout={checkout} />
+                  <RoomTypeCard
+                    key={room.id}
+                    room={room}
+                    checkin={checkin}
+                    checkout={checkout}
+                    selectedRatePlanId={
+                      selectedRoom?.roomTypeId === room.id ? selectedRoom.ratePlanId : null
+                    }
+                    onRoomSelect={setSelectedRoom}
+                    isHeld={heldRoomTypeIds.has(room.id) && !activeCartByRoomTypeId[room.id]}
+                    activeCartBookingId={activeCartByRoomTypeId[room.id] ?? null}
+                  />
                 ))}
               </Box>
             </Box>
@@ -338,7 +398,12 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
 
         {/* Right column — sticky price card */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <PriceCard property={detail} minPrice={minPrice} onDatesChange={handleDatesChange} />
+          <PriceCard
+            property={detail}
+            minPrice={minPrice}
+            selectedRoom={selectedRoom}
+            onDatesChange={handleDatesChange}
+          />
         </Grid>
       </Grid>
     </Container>

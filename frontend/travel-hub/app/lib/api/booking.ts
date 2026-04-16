@@ -1,4 +1,10 @@
-import type { BookingDetail, BookingListItem } from '@/app/lib/types/booking';
+import type {
+  BookingDetail,
+  BookingListItem,
+  CartBooking,
+  CreateCartBookingPayload,
+  HeldRooms,
+} from '@/app/lib/types/booking';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
@@ -26,6 +32,36 @@ export async function getMyBookings(): Promise<BookingListItem[]> {
 export async function getBookingDetail(bookingId: string): Promise<BookingDetail> {
   const res = await fetch(`${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}`, {
     credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json();
+}
+
+/**
+ * Returns room_type_ids that are currently on hold (CART) for the given property and dates.
+ * Public endpoint — no authentication required.
+ */
+export async function getHeldRooms(
+  propertyId: string,
+  checkin: string,
+  checkout: string
+): Promise<HeldRooms> {
+  const params = new URLSearchParams({ property_id: propertyId, checkin, checkout });
+  const res = await fetch(`${API_URL}/api/v1/booking/rooms/held?${params.toString()}`);
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json();
+}
+
+export async function createCartBooking(payload: CreateCartBookingPayload): Promise<CartBooking> {
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     throw new Error(await readErrorMessage(res));

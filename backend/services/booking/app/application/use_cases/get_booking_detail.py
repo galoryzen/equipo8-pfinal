@@ -1,8 +1,9 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingItem, CancellationPolicyType
+from app.domain.models import Booking, BookingItem, BookingStatus, CancellationPolicyType
 from app.schemas.booking import BookingDetailOut, BookingItemDetailOut
 
 
@@ -12,9 +13,7 @@ def _status_str(booking: Booking) -> str:
 
 
 def _policy_type_str(p: CancellationPolicyType | str) -> str:
-    if hasattr(p, "value"):
-        return p.value
-    return str(p)
+    return str(p.value) if hasattr(p, "value") else str(p)
 
 
 class GetBookingDetailUseCase:
@@ -25,6 +24,17 @@ class GetBookingDetailUseCase:
         booking = await self._repo.get_by_id_for_user(booking_id, user_id)
         if booking is None:
             raise BookingNotFoundError()
+
+        now_naive = datetime.now(UTC).replace(tzinfo=None)
+        if (
+            booking.status == BookingStatus.CART
+            and booking.hold_expires_at is not None
+            and booking.hold_expires_at < now_naive
+        ):
+            booking.status = BookingStatus.EXPIRED
+            booking.updated_at = now_naive
+            await self._repo.save(booking)
+
         return _to_detail(booking)
 
 

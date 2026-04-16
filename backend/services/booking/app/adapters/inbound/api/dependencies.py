@@ -9,7 +9,9 @@ from app.adapters.outbound.db.session import async_session
 from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.application.exceptions import InvalidTokenError
 from app.application.ports.outbound.token_port import TokenPort
+from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
+from app.application.use_cases.get_held_rooms import GetHeldRoomsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
 
 
@@ -47,6 +49,20 @@ def get_current_user_id(
         return UUID(str(sub))
     except ValueError as e:
         raise InvalidTokenError("Invalid subject in token") from e
+
+
+def get_held_rooms_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetHeldRoomsUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return GetHeldRoomsUseCase(repo)
+
+
+def get_create_cart_booking_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> CreateCartBookingUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return CreateCartBookingUseCase(repo)
 
 
 def get_list_my_bookings_use_case(
