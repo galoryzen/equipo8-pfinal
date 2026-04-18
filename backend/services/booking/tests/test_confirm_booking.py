@@ -51,7 +51,6 @@ def _make_booking(status: BookingStatus = BookingStatus.PENDING_CONFIRMATION) ->
         policy_refund_percent_applied=None,
         created_at=now,
         updated_at=now,
-        confirmed_at=None,
     )
 
 
