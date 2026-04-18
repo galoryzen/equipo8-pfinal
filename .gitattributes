@@ -1,0 +1,26 @@
+# Normalize text files to LF in repo and working tree (matches Prettier default).
+# Prevents Windows Git (core.autocrlf) from showing "modified" with no visible diff.
+* text=auto
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mts text eol=lf
+*.cts text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.sh text eol=lf
+*.svg text eol=lf
+*.py text eol=lf
+*.sql text eol=lf
+*.tf text eol=lf
+*.tfvars text eol=lf
+*.hcl text eol=lf

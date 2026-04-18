@@ -1,0 +1,54 @@
+'use client';
+import React, { useState } from 'react';
+
+import { mockBookings } from '@/__tests__/mockBookings';
+import { useTranslation } from 'react-i18next';
+
+import { BookingRequestCard } from '@/components/manager/BookingRequestCard';
+
+type Booking = (typeof mockBookings)[number];
+type ManagerNotificationsPageProps = {
+  testBookings?: Booking[];
+  testSetBookings?: React.Dispatch<React.SetStateAction<Booking[]>>;
+};
+
+const ManagerNotificationsPage: React.FC<ManagerNotificationsPageProps> = ({
+  testBookings,
+  testSetBookings,
+} = {}) => {
+  const { t } = useTranslation();
+  // Hooks siempre deben ir en el mismo orden
+  const state = useState<Booking[]>(mockBookings);
+  const bookings = testBookings ?? state[0];
+  const setBookings = testSetBookings ?? state[1];
+
+  const handleConfirmClick = (id: string) => {};
+
+  const handleDecline = (id: string) => {
+    setBookings((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">{t('manager.notifications')}</h1>
+      <p className="mb-6 text-gray-600">
+        {t('manager.pendingBookingsToday', { count: bookings.length })}
+      </p>
+      <div className="space-y-6">
+        {bookings.length === 0 && (
+          <div className="text-gray-400">{t('manager.noPendingBookings')}</div>
+        )}
+        {bookings.map((booking) => (
+          <BookingRequestCard
+            key={booking.id}
+            booking={booking}
+            onConfirm={handleConfirmClick}
+            onDecline={handleDecline}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ManagerNotificationsPage;

@@ -199,5 +199,25 @@
     "securityBadge": "Tu pago está protegido por TravelHub Secure. Usamos cifrado de 256 bits.",
     "payButton": "Pagar ${{amount}}",
     "terms": "Al hacer clic en Pagar, aceptas los Términos y Condiciones de TravelHub."
+  },
+  "manager": {
+    "pendingConfirmation": "Pendiente de confirmación",
+    "confirmBooking": "Confirmar reserva",
+    "confirmBookingTitle": "Confirmar reserva",
+    "confirmBookingHint": "Puedes agregar notas internas para el personal del hotel (opcional).",
+    "internalNotesPlaceholder": "Notas internas...",
+    "decline": "Rechazar",
+    "nights": "noches",
+    "guests": "huésped(es)",
+    "totalStayValue": "Valor total de la estadía",
+    "confirming": "Confirmando...",
+    "notifications": "Notificaciones",
+    "pendingBookingsToday": "Tienes {{count}} reservas pendientes de confirmación hoy.",
+    "noPendingBookings": "No hay reservas pendientes.",
+    "noAvailability": "No hay disponibilidad suficiente. Puede ofrecer upgrade, cambiar fechas o rechazar la reserva."
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "unknownError": "Error desconocido"
   }
 }

@@ -33,6 +33,7 @@ class Base(DeclarativeBase):
 BOOKING_SCHEMA = "booking"
 
 
+
 class Booking(Base):
     __tablename__ = "booking"
     __table_args__: ClassVar[dict] = {"schema": BOOKING_SCHEMA}

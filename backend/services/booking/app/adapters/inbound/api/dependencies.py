@@ -9,6 +9,7 @@ from app.adapters.outbound.db.session import async_session
 from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.application.exceptions import InvalidTokenError
 from app.application.ports.outbound.token_port import TokenPort
+from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.get_held_rooms import GetHeldRoomsUseCase
@@ -77,3 +78,10 @@ def get_booking_detail_use_case(
 ) -> GetBookingDetailUseCase:
     repo = SqlAlchemyBookingRepository(session)
     return GetBookingDetailUseCase(repo)
+
+
+def get_confirm_booking_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> ConfirmBookingUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return ConfirmBookingUseCase(repo)

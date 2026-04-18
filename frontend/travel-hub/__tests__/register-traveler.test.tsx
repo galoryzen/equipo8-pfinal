@@ -1,6 +1,8 @@
+import { renderWithI18n } from '@/__tests__/test-utils';
 import RegisterPage from '@/app/(auth)/register/traveler/page';
 import * as authApi from '@/app/lib/api/auth';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockPush = vi.fn();
@@ -16,13 +18,15 @@ vi.mock('@/app/lib/api/auth', () => ({
 
 const mockRegister = vi.mocked(authApi.registerUser);
 
-/** Fills every required field with valid values using fireEvent (fast). */
+/** Sets every required field with valid values (change events - fast; avoids userEvent.type timeouts). */
 function fillForm() {
   fireEvent.change(screen.getByLabelText(/email address/i), {
     target: { value: 'new@example.com' },
   });
   fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'john_doe' } });
-  fireEvent.change(screen.getByLabelText(/cellphone/i), { target: { value: '5551234567' } });
+  fireEvent.change(screen.getByLabelText(/cellphone number/i), {
+    target: { value: '5551234567' },
+  });
   fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'mypassword' } });
 }
 
@@ -32,23 +36,23 @@ describe('Traveler Register page', () => {
   });
 
   it('renders all form fields and the submit button', () => {
-    render(<RegisterPage />);
+    renderWithI18n(<RegisterPage />);
 
     expect(screen.getByLabelText(/email address/i)).toBeTruthy();
     expect(screen.getByLabelText(/username/i)).toBeTruthy();
-    expect(screen.getByLabelText(/cellphone/i)).toBeTruthy();
-    expect(screen.getByLabelText(/password/i)).toBeTruthy();
+    expect(screen.getByLabelText(/cellphone number/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^password$/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /create account/i })).toBeTruthy();
   });
 
   it('shows the "Back to Login" link', () => {
-    render(<RegisterPage />);
+    renderWithI18n(<RegisterPage />);
 
-    expect(screen.getByText(/back to login/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /back to login/i })).toBeTruthy();
   });
 
   it('has the submit button disabled when the form is empty', () => {
-    render(<RegisterPage />);
+    renderWithI18n(<RegisterPage />);
 
     expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty(
       'disabled',
@@ -56,13 +60,12 @@ describe('Traveler Register page', () => {
     );
   });
 
-  it('keeps the submit button disabled while any field is missing', () => {
-    render(<RegisterPage />);
+  it('keeps the submit button disabled while any field is missing', async () => {
+    const user = userEvent.setup({ delay: null });
+    renderWithI18n(<RegisterPage />);
 
-    fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: 'new@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'john_doe' } });
+    await user.type(screen.getByLabelText(/email address/i), 'new@example.com');
+    await user.type(screen.getByLabelText(/username/i), 'john_doe');
     // phone and password left empty
 
     expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty(
@@ -71,15 +74,10 @@ describe('Traveler Register page', () => {
     );
   });
 
-  it('enables the submit button once all fields are filled correctly', () => {
-    render(<RegisterPage />);
+  it('enables the submit button once all fields are filled correctly', async () => {
+    renderWithI18n(<RegisterPage />);
 
-    fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: 'new@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'john_doe' } });
-    fireEvent.change(screen.getByLabelText(/cellphone/i), { target: { value: '5551234567' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'mypassword' } });
+    fillForm();
 
     expect(screen.getByRole('button', { name: /create account/i })).toHaveProperty(
       'disabled',
@@ -87,43 +85,45 @@ describe('Traveler Register page', () => {
     );
   });
 
-  it('shows an inline error for an invalid email after blurring', () => {
-    render(<RegisterPage />);
+  it('shows an inline error for an invalid email after blurring', async () => {
+    const user = userEvent.setup({ delay: null });
+    renderWithI18n(<RegisterPage />);
 
-    fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: 'not-an-email' },
-    });
-    fireEvent.blur(screen.getByLabelText(/email address/i));
+    await user.type(screen.getByLabelText(/email address/i), 'not-an-email');
+    await user.tab();
 
     expect(screen.getByText(/valid email/i)).toBeTruthy();
   });
 
-  it('shows a required error for each field when touched and left empty', () => {
-    render(<RegisterPage />);
+  it('shows a required error for each field when touched and left empty', async () => {
+    const user = userEvent.setup({ delay: null });
+    renderWithI18n(<RegisterPage />);
 
-    fireEvent.focus(screen.getByLabelText(/email address/i));
-    fireEvent.blur(screen.getByLabelText(/email address/i));
+    await user.click(screen.getByLabelText(/email address/i));
+    await user.tab();
     expect(screen.getByText(/email is required/i)).toBeTruthy();
 
-    fireEvent.focus(screen.getByLabelText(/username/i));
-    fireEvent.blur(screen.getByLabelText(/username/i));
+    await user.click(screen.getByLabelText(/username/i));
+    await user.tab();
     expect(screen.getByText(/username is required/i)).toBeTruthy();
 
-    fireEvent.focus(screen.getByLabelText(/cellphone/i));
-    fireEvent.blur(screen.getByLabelText(/cellphone/i));
+    await user.click(screen.getByLabelText(/cellphone number/i));
+    await user.tab();
     expect(screen.getByText(/phone number is required/i)).toBeTruthy();
 
-    fireEvent.focus(screen.getByLabelText(/^password$/i));
-    fireEvent.blur(screen.getByLabelText(/^password$/i));
+    await user.click(screen.getByLabelText(/^password$/i));
+    await user.tab();
     expect(screen.getByText(/password is required/i)).toBeTruthy();
   });
 
   it('shows a success toast and redirects on successful registration', async () => {
     mockRegister.mockResolvedValue({ id: '1', email: 'new@example.com', role: 'traveler' });
 
-    render(<RegisterPage />);
+    const user = userEvent.setup({ delay: null });
+    renderWithI18n(<RegisterPage />);
+
     fillForm();
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/account created/i)).toBeTruthy();
@@ -133,9 +133,11 @@ describe('Traveler Register page', () => {
   it('shows an error toast when the API rejects the request', async () => {
     mockRegister.mockRejectedValue(new Error('Email already registered'));
 
-    render(<RegisterPage />);
+    const user = userEvent.setup({ delay: null });
+    renderWithI18n(<RegisterPage />);
+
     fillForm();
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/email already registered/i)).toBeTruthy();
@@ -145,9 +147,11 @@ describe('Traveler Register page', () => {
   it('shows a loading indicator while the request is in flight', async () => {
     mockRegister.mockImplementation(() => new Promise(() => {})); // never resolves
 
-    render(<RegisterPage />);
+    const user = userEvent.setup({ delay: null });
+    renderWithI18n(<RegisterPage />);
+
     fillForm();
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/creating account/i)).toBeTruthy();
@@ -155,7 +159,7 @@ describe('Traveler Register page', () => {
   });
 
   it('rejects an email exceeding 255 characters', () => {
-    render(<RegisterPage />);
+    renderWithI18n(<RegisterPage />);
 
     const emailInput = screen.getByLabelText(/email address/i);
     fireEvent.change(emailInput, { target: { value: 'a'.repeat(250) + '@x.com' } });
@@ -165,7 +169,7 @@ describe('Traveler Register page', () => {
   });
 
   it('rejects a username exceeding 255 characters', () => {
-    render(<RegisterPage />);
+    renderWithI18n(<RegisterPage />);
 
     fireEvent.change(screen.getByLabelText(/email address/i), {
       target: { value: 'valid@example.com' },
@@ -178,13 +182,13 @@ describe('Traveler Register page', () => {
   });
 
   it('rejects a phone number exceeding 255 characters', () => {
-    render(<RegisterPage />);
+    renderWithI18n(<RegisterPage />);
 
     fireEvent.change(screen.getByLabelText(/email address/i), {
       target: { value: 'valid@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'john_doe' } });
-    const phoneInput = screen.getByLabelText(/cellphone/i);
+    const phoneInput = screen.getByLabelText(/cellphone number/i);
     fireEvent.change(phoneInput, { target: { value: '5'.repeat(256) } });
     fireEvent.blur(phoneInput);
 
@@ -192,13 +196,15 @@ describe('Traveler Register page', () => {
   });
 
   it('rejects a password exceeding 255 characters', () => {
-    render(<RegisterPage />);
+    renderWithI18n(<RegisterPage />);
 
     fireEvent.change(screen.getByLabelText(/email address/i), {
       target: { value: 'valid@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'john_doe' } });
-    fireEvent.change(screen.getByLabelText(/cellphone/i), { target: { value: '5551234567' } });
+    fireEvent.change(screen.getByLabelText(/cellphone number/i), {
+      target: { value: '5551234567' },
+    });
     const passwordInput = screen.getByLabelText(/^password$/i);
     fireEvent.change(passwordInput, { target: { value: 'p'.repeat(256) } });
     fireEvent.blur(passwordInput);
@@ -209,14 +215,16 @@ describe('Traveler Register page', () => {
   it('closes the snackbar when the Alert close button is clicked', async () => {
     mockRegister.mockRejectedValue(new Error('Email already registered'));
 
-    render(<RegisterPage />);
+    const user = userEvent.setup({ delay: null });
+    renderWithI18n(<RegisterPage />);
+
     fillForm();
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/email already registered/i)).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    await user.click(screen.getByRole('button', { name: /close/i }));
   });
 });
