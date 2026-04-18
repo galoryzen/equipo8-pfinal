@@ -82,4 +82,3 @@ describe('createCartBooking', () => {
     await expect(createCartBooking(PAYLOAD)).rejects.toThrow('Error 500');
   });
 });
-
