@@ -61,4 +61,3 @@ class Booking(Base):
     policy_refund_percent_applied: Mapped[int | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
-    confirmed_at: Mapped[datetime | None] = mapped_column(nullable=True)
