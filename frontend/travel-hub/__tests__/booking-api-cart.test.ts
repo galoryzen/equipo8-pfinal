@@ -10,22 +10,20 @@ const CART: CartBooking = {
   hold_expires_at: '2026-06-01T12:15:00',
   total_amount: '300.00',
   currency_code: 'USD',
-  items: [],
+  property_id: 'p1',
+  room_type_id: 'r1',
+  rate_plan_id: 'rp1',
+  unit_price: '100.00',
 };
 
 const PAYLOAD: CreateCartBookingPayload = {
   checkin: '2026-06-01',
   checkout: '2026-06-04',
   currency_code: 'USD',
-  items: [
-    {
-      property_id: 'p1',
-      room_type_id: 'r1',
-      rate_plan_id: 'rp1',
-      quantity: 1,
-      unit_price: '100.00',
-    },
-  ],
+  property_id: 'p1',
+  room_type_id: 'r1',
+  rate_plan_id: 'rp1',
+  unit_price: '100.00',
 };
 
 describe('createCartBooking', () => {

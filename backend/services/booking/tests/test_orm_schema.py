@@ -9,12 +9,11 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
-from app.domain.models import BOOKING_SCHEMA, Booking, BookingItem
+from app.domain.models import BOOKING_SCHEMA, Booking
 
 
 def test_booking_tables_declare_postgres_schema():
     assert Booking.__table__.schema == BOOKING_SCHEMA
-    assert BookingItem.__table__.schema == BOOKING_SCHEMA
 
 
 def test_select_booking_emits_schema_qualified_table():
@@ -30,6 +29,10 @@ def test_select_booking_emits_schema_qualified_table():
     assert f"{BOOKING_SCHEMA}.booking" in compiled
 
 
-def test_booking_item_foreign_key_targets_booking_table():
-    fk = next(iter(BookingItem.__table__.foreign_keys))
-    assert fk.column.table.fullname == f"{BOOKING_SCHEMA}.booking"
+def test_booking_has_flat_room_columns():
+    """1 booking = 1 room type. Columns live directly on booking (no booking_item)."""
+    cols = {c.name for c in Booking.__table__.columns}
+    assert "property_id" in cols
+    assert "room_type_id" in cols
+    assert "rate_plan_id" in cols
+    assert "unit_price" in cols

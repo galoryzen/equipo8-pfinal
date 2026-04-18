@@ -9,8 +9,8 @@ import pytest
 
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_held_rooms import GetHeldRoomsUseCase
-from app.domain.models import Booking, BookingItem, BookingStatus, CancellationPolicyType
-from app.schemas.booking import CreateCartBookingIn, CreateCartBookingItemIn
+from app.domain.models import Booking, BookingStatus, CancellationPolicyType
+from app.schemas.booking import CreateCartBookingIn
 
 PROPERTY_ID = UUID("30000000-0000-0000-0000-000000000001")
 ROOM_TYPE_ID = UUID("60000000-0000-0000-0000-000000000001")
@@ -23,7 +23,7 @@ CHECKOUT = date(2026, 6, 4)  # 3 nights
 
 def _cart_booking() -> Booking:
     now = datetime(2026, 4, 1, 12, 0, 0)
-    b = Booking(
+    return Booking(
         id=BOOKING_ID,
         user_id=USER_ID,
         status=BookingStatus.CART,
@@ -32,25 +32,16 @@ def _cart_booking() -> Booking:
         hold_expires_at=datetime(2026, 4, 1, 12, 15, 0),
         total_amount=Decimal("300.00"),
         currency_code="USD",
+        property_id=PROPERTY_ID,
+        room_type_id=ROOM_TYPE_ID,
+        rate_plan_id=RATE_PLAN_ID,
+        unit_price=Decimal("100.00"),
         policy_type_applied=CancellationPolicyType.FULL,
         policy_hours_limit_applied=None,
         policy_refund_percent_applied=None,
         created_at=now,
         updated_at=now,
     )
-    b.items = [
-        BookingItem(
-            id=UUID("91000000-0000-0000-0000-000000000001"),
-            booking_id=BOOKING_ID,
-            property_id=PROPERTY_ID,
-            room_type_id=ROOM_TYPE_ID,
-            rate_plan_id=RATE_PLAN_ID,
-            quantity=1,
-            unit_price=Decimal("100.00"),
-            subtotal=Decimal("300.00"),
-        )
-    ]
-    return b
 
 
 def _payload() -> CreateCartBookingIn:
@@ -58,14 +49,10 @@ def _payload() -> CreateCartBookingIn:
         checkin=CHECKIN,
         checkout=CHECKOUT,
         currency_code="USD",
-        items=[
-            CreateCartBookingItemIn(
-                property_id=PROPERTY_ID,
-                room_type_id=ROOM_TYPE_ID,
-                rate_plan_id=RATE_PLAN_ID,
-                unit_price=Decimal("100.00"),
-            )
-        ],
+        property_id=PROPERTY_ID,
+        room_type_id=ROOM_TYPE_ID,
+        rate_plan_id=RATE_PLAN_ID,
+        unit_price=Decimal("100.00"),
     )
 
 
@@ -83,6 +70,9 @@ class TestCreateCartBookingUseCase:
         repo.create.assert_awaited_once()
         assert out.status == "CART"
         assert out.id == BOOKING_ID
+        assert out.property_id == PROPERTY_ID
+        assert out.room_type_id == ROOM_TYPE_ID
+        assert out.rate_plan_id == RATE_PLAN_ID
 
     async def test_returns_existing_cart_idempotently(self):
         existing = _cart_booking()
@@ -106,7 +96,7 @@ class TestCreateCartBookingUseCase:
 
         assert out.hold_expires_at is not None
 
-    async def test_subtotal_calculated_from_unit_price_and_nights(self):
+    async def test_total_calculated_from_unit_price_and_nights(self):
         captured: list[Booking] = []
 
         async def fake_create(b: Booking) -> Booking:
@@ -121,7 +111,8 @@ class TestCreateCartBookingUseCase:
         await uc.execute(user_id=USER_ID, payload=_payload())
 
         nights = (CHECKOUT - CHECKIN).days  # 3
-        assert captured[0].items[0].subtotal == Decimal("100.00") * 1 * nights
+        assert captured[0].total_amount == Decimal("100.00") * nights
+        assert captured[0].unit_price == Decimal("100.00")
 
 
 @pytest.mark.asyncio

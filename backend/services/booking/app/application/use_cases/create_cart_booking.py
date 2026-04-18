@@ -3,8 +3,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingItem, BookingStatus, CancellationPolicyType
-from app.schemas.booking import BookingItemDetailOut, CartBookingOut, CreateCartBookingIn
+from app.domain.models import Booking, BookingStatus, CancellationPolicyType
+from app.schemas.booking import CartBookingOut, CreateCartBookingIn
 
 _HOLD_MINUTES = 15
 _DEFAULT_POLICY = CancellationPolicyType.FULL
@@ -15,12 +15,10 @@ class CreateCartBookingUseCase:
         self._repo = repo
 
     async def execute(self, user_id: UUID, payload: CreateCartBookingIn) -> CartBookingOut:
-        first_item = payload.items[0]
-
         existing = await self._repo.find_active_cart(
             user_id=user_id,
-            room_type_id=first_item.room_type_id,
-            rate_plan_id=first_item.rate_plan_id,
+            room_type_id=payload.room_type_id,
+            rate_plan_id=payload.rate_plan_id,
             checkin=payload.checkin,
             checkout=payload.checkout,
         )
@@ -30,28 +28,10 @@ class CreateCartBookingUseCase:
         nights = (payload.checkout - payload.checkin).days
         now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC — columns are TIMESTAMP WITHOUT TIME ZONE
 
-        booking_id = uuid.uuid4()
-        items: list[BookingItem] = []
-        total = 0
-
-        for item_in in payload.items:
-            subtotal = item_in.unit_price * item_in.quantity * nights
-            total += subtotal
-            items.append(
-                BookingItem(
-                    id=uuid.uuid4(),
-                    booking_id=booking_id,
-                    property_id=item_in.property_id,
-                    room_type_id=item_in.room_type_id,
-                    rate_plan_id=item_in.rate_plan_id,
-                    quantity=item_in.quantity,
-                    unit_price=item_in.unit_price,
-                    subtotal=subtotal,
-                )
-            )
+        total = payload.unit_price * nights
 
         booking = Booking(
-            id=booking_id,
+            id=uuid.uuid4(),
             user_id=user_id,
             status=BookingStatus.CART,
             checkin=payload.checkin,
@@ -59,12 +39,15 @@ class CreateCartBookingUseCase:
             hold_expires_at=now + timedelta(minutes=_HOLD_MINUTES),
             total_amount=total,
             currency_code=payload.currency_code,
+            property_id=payload.property_id,
+            room_type_id=payload.room_type_id,
+            rate_plan_id=payload.rate_plan_id,
+            unit_price=payload.unit_price,
             policy_type_applied=_DEFAULT_POLICY,
             policy_hours_limit_applied=None,
             policy_refund_percent_applied=None,
             created_at=now,
             updated_at=now,
-            items=items,
         )
 
         saved = await self._repo.create(booking)
@@ -80,16 +63,8 @@ def _to_cart_out(booking: Booking) -> CartBookingOut:
         hold_expires_at=booking.hold_expires_at,
         total_amount=booking.total_amount,
         currency_code=booking.currency_code,
-        items=[
-            BookingItemDetailOut(
-                id=i.id,
-                property_id=i.property_id,
-                room_type_id=i.room_type_id,
-                rate_plan_id=i.rate_plan_id,
-                quantity=i.quantity,
-                unit_price=i.unit_price,
-                subtotal=i.subtotal,
-            )
-            for i in booking.items
-        ],
+        property_id=booking.property_id,
+        room_type_id=booking.room_type_id,
+        rate_plan_id=booking.rate_plan_id,
+        unit_price=booking.unit_price,
     )

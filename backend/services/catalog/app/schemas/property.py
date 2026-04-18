@@ -38,6 +38,7 @@ class PropertySummary(BaseModel):
     review_count: int
     image: ImageSummary | None = None
     min_price: Decimal | None = None
+    original_min_price: Decimal | None = None
     amenities: list[AmenitySummary] = []
 
 
@@ -65,18 +66,37 @@ class CancellationPolicyOut(BaseModel):
     refund_percent: int | None = None
 
 
+class PromotionOut(BaseModel):
+    id: UUID
+    name: str
+    discount_type: str  # "PERCENT" | "FIXED"
+    discount_value: Decimal
+
+
 class RatePlanOut(BaseModel):
     id: UUID
     name: str
     cancellation_policy: CancellationPolicyOut | None = None
     min_price: Decimal | None = None
+    original_min_price: Decimal | None = None
+    currency_code: str | None = None
+    promotion: PromotionOut | None = None
+
+
+class RoomTypeImageOut(BaseModel):
+    id: UUID
+    url: str
+    caption: str | None = None
+    display_order: int
 
 
 class RoomTypeOut(BaseModel):
     id: UUID
     name: str
+    description: str | None = None
     capacity: int
     amenities: list[AmenitySummary] = []
+    images: list[RoomTypeImageOut] = []
     rate_plans: list[RatePlanOut] = []
     min_price: Decimal | None = None
 

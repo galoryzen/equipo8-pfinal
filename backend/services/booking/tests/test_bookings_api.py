@@ -1,6 +1,6 @@
 """API wiring tests for traveler bookings (list + detail)."""
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
 from uuid import UUID
@@ -11,14 +11,12 @@ from app.adapters.inbound.api.dependencies import (
 )
 from app.application.exceptions import BookingNotFoundError
 from app.main import app
-from app.schemas.booking import (
-    BookingDetailOut,
-    BookingItemDetailOut,
-    BookingItemSummaryOut,
-    BookingListItemOut,
-)
+from app.schemas.booking import BookingDetailOut, BookingListItemOut
 
 BOOKING_ID = UUID("90000000-0000-0000-0000-000000000001")
+PROPERTY_ID = UUID("30000000-0000-0000-0000-000000000001")
+ROOM_TYPE_ID = UUID("60000000-0000-0000-0000-000000000001")
+RATE_PLAN_ID = UUID("70000000-0000-0000-0000-000000000001")
 
 
 def _sample_list_row():
@@ -29,14 +27,9 @@ def _sample_list_row():
         checkout=date(2026, 5, 13),
         total_amount=Decimal("360.00"),
         currency_code="USD",
-        created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=timezone.utc),
-        items=[
-            BookingItemSummaryOut(
-                property_id=UUID("30000000-0000-0000-0000-000000000001"),
-                room_type_id=UUID("60000000-0000-0000-0000-000000000001"),
-                quantity=1,
-            )
-        ],
+        property_id=PROPERTY_ID,
+        room_type_id=ROOM_TYPE_ID,
+        created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
     )
 
 
@@ -49,22 +42,15 @@ def _sample_detail():
         hold_expires_at=None,
         total_amount=Decimal("360.00"),
         currency_code="USD",
+        property_id=PROPERTY_ID,
+        room_type_id=ROOM_TYPE_ID,
+        rate_plan_id=RATE_PLAN_ID,
+        unit_price=Decimal("120.00"),
         policy_type_applied="FULL",
         policy_hours_limit_applied=48,
         policy_refund_percent_applied=100,
-        created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=timezone.utc),
-        updated_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=timezone.utc),
-        items=[
-            BookingItemDetailOut(
-                id=UUID("91000000-0000-0000-0000-000000000001"),
-                property_id=UUID("30000000-0000-0000-0000-000000000001"),
-                room_type_id=UUID("60000000-0000-0000-0000-000000000001"),
-                rate_plan_id=UUID("70000000-0000-0000-0000-000000000001"),
-                quantity=1,
-                unit_price=Decimal("120.00"),
-                subtotal=Decimal("360.00"),
-            )
-        ],
+        created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
     )
 
 
@@ -83,7 +69,7 @@ class TestBookingsEndpoints:
         assert len(data) == 2
         mock_uc.execute.assert_awaited_once()
 
-    def test_list_each_booking_includes_status(self, client_authenticated):
+    def test_list_each_booking_includes_flat_room_fields(self, client_authenticated):
         mock_uc = AsyncMock()
         mock_uc.execute.return_value = [_sample_list_row()]
         app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
@@ -93,7 +79,11 @@ class TestBookingsEndpoints:
             app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
 
         assert resp.status_code == 200
-        assert resp.json()[0]["status"] == "CONFIRMED"
+        first = resp.json()[0]
+        assert first["status"] == "CONFIRMED"
+        assert first["property_id"] == str(PROPERTY_ID)
+        assert first["room_type_id"] == str(ROOM_TYPE_ID)
+        assert "items" not in first
 
     def test_list_empty_when_user_has_no_bookings(self, client_authenticated):
         mock_uc = AsyncMock()
@@ -107,7 +97,7 @@ class TestBookingsEndpoints:
         assert resp.status_code == 200
         assert resp.json() == []
 
-    def test_detail_returns_booking_with_items(self, client_authenticated):
+    def test_detail_returns_booking_with_flat_fields(self, client_authenticated):
         mock_uc = AsyncMock()
         mock_uc.execute.return_value = _sample_detail()
         app.dependency_overrides[get_booking_detail_use_case] = lambda: mock_uc
@@ -120,8 +110,12 @@ class TestBookingsEndpoints:
         body = resp.json()
         assert body["id"] == str(BOOKING_ID)
         assert body["status"] == "CONFIRMED"
-        assert len(body["items"]) == 1
-        assert body["items"][0]["subtotal"] == "360.00"
+        assert body["property_id"] == str(PROPERTY_ID)
+        assert body["room_type_id"] == str(ROOM_TYPE_ID)
+        assert body["rate_plan_id"] == str(RATE_PLAN_ID)
+        assert body["unit_price"] == "120.00"
+        assert body["total_amount"] == "360.00"
+        assert "items" not in body
 
     def test_detail_other_user_returns_404(self, client_authenticated):
         mock_uc = AsyncMock()

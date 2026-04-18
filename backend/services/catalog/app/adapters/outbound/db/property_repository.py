@@ -2,7 +2,8 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import desc, func as sa_func, nulls_last, select
+from sqlalchemy import case, desc, nulls_last, select
+from sqlalchemy import func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -11,7 +12,9 @@ from app.application.ports.outbound.property_repository import (
 )
 from app.domain.models import (
     Amenity,
+    DiscountType,
     InventoryCalendar,
+    Promotion,
     Property,
     PropertyImage,
     PropertyStatus,
@@ -71,15 +74,39 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         return list(result.scalars().all())
 
     async def search_featured(self, limit: int = 10) -> list[dict]:
-        """Active properties by popularity with today's min price."""
-        # Min price for today per property
+        """Active properties by popularity with today's min price (promotions applied)."""
+        # Effective price per (rate_calendar row, promo) — applies the best promotion for today.
+        effective_today = case(
+            (
+                Promotion.discount_type == DiscountType.PERCENT,
+                RateCalendar.price_amount
+                * (Decimal("1") - Promotion.discount_value / Decimal("100")),
+            ),
+            (
+                Promotion.discount_type == DiscountType.FIXED,
+                sa_func.greatest(
+                    RateCalendar.price_amount - Promotion.discount_value,
+                    Decimal("0"),
+                ),
+            ),
+            else_=RateCalendar.price_amount,
+        )
+
         today_price_sq = (
             select(
                 RoomType.property_id.label("property_id"),
-                sa_func.min(RateCalendar.price_amount).label("min_price"),
+                sa_func.min(effective_today).label("min_price"),
+                sa_func.min(RateCalendar.price_amount).label("original_min_price"),
             )
             .join(RatePlan, RatePlan.room_type_id == RoomType.id)
             .join(RateCalendar, RateCalendar.rate_plan_id == RatePlan.id)
+            .outerjoin(
+                Promotion,
+                (Promotion.rate_plan_id == RatePlan.id)
+                & (Promotion.is_active == True)  # noqa: E712
+                & (Promotion.start_date <= RateCalendar.day)
+                & (Promotion.end_date >= RateCalendar.day),
+            )
             .where(
                 RoomType.status == RoomTypeStatus.ACTIVE,
                 RatePlan.is_active == True,  # noqa: E712
@@ -90,7 +117,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         )
 
         q = (
-            select(Property, today_price_sq.c.min_price)
+            select(Property, today_price_sq.c.min_price, today_price_sq.c.original_min_price)
             .outerjoin(today_price_sq, today_price_sq.c.property_id == Property.id)
             .where(Property.status == PropertyStatus.ACTIVE)
             .options(joinedload(Property.city))
@@ -131,9 +158,14 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         stats_map = await self._review_stats_map(property_ids)
 
         items = []
-        for prop, price in rows:
+        for prop, price, original_price in rows:
             img = first_images.get(prop.id)
             avg_q, rc = stats_map.get(prop.id, (None, 0))
+            discounted = round(float(price)) if price is not None else None
+            original = round(float(original_price)) if original_price is not None else None
+            original_to_report = (
+                original if original is not None and discounted is not None and original > discounted else None
+            )
             items.append(
                 {
                     "id": prop.id,
@@ -148,7 +180,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                     "rating_avg": self._rating_for_list_payload(avg_q),
                     "review_count": rc,
                     "image": {"url": img.url, "caption": img.caption} if img else None,
-                    "min_price": int(price) if price else None,
+                    "min_price": discounted,
+                    "original_min_price": original_to_report,
                     "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
                 }
             )
@@ -184,35 +217,55 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             .having(sa_func.count(sa_func.distinct(InventoryCalendar.day)) == nights)
         ).subquery("inv_subq")
 
-        rt_avail = (
-            select(
-                RoomType.property_id.label("property_id"),
-                RoomType.capacity.label("capacity"),
-                inv_subq.c.min_units.label("min_units"),
-            )
-            .join(inv_subq, inv_subq.c.room_type_id == RoomType.id)
-            .where(RoomType.status == RoomTypeStatus.ACTIVE)
-        ).subquery("rt_avail")
-
+        # 1 booking = 1 room_type: the property qualifies only if at least ONE active
+        # room_type fits all guests in a single room AND has inventory for the stay.
         prop_capacity = (
-            select(
-                rt_avail.c.property_id.label("property_id"),
-                sa_func.sum(rt_avail.c.capacity * rt_avail.c.min_units).label("guest_slots"),
+            select(RoomType.property_id.label("property_id"))
+            .join(inv_subq, inv_subq.c.room_type_id == RoomType.id)
+            .where(
+                RoomType.status == RoomTypeStatus.ACTIVE,
+                RoomType.capacity >= guests,
             )
-            .group_by(rt_avail.c.property_id)
-            .having(sa_func.sum(rt_avail.c.capacity * rt_avail.c.min_units) >= guests)
+            .group_by(RoomType.property_id)
         ).subquery("prop_capacity")
+
+        # Effective price per (rate_calendar row, promo) — applies the best promotion
+        # per day if one overlaps; falls back to the base price when none applies.
+        effective_price = case(
+            (
+                Promotion.discount_type == DiscountType.PERCENT,
+                RateCalendar.price_amount
+                * (Decimal("1") - Promotion.discount_value / Decimal("100")),
+            ),
+            (
+                Promotion.discount_type == DiscountType.FIXED,
+                sa_func.greatest(
+                    RateCalendar.price_amount - Promotion.discount_value,
+                    Decimal("0"),
+                ),
+            ),
+            else_=RateCalendar.price_amount,
+        )
 
         min_price_sq = (
             select(
                 RoomType.property_id.label("property_id"),
-                sa_func.min(RateCalendar.price_amount).label("min_price"),
+                sa_func.min(effective_price).label("min_price"),
+                sa_func.min(RateCalendar.price_amount).label("original_min_price"),
             )
             .join(RatePlan, RatePlan.room_type_id == RoomType.id)
             .join(RateCalendar, RateCalendar.rate_plan_id == RatePlan.id)
             .join(inv_subq, inv_subq.c.room_type_id == RoomType.id)
+            .outerjoin(
+                Promotion,
+                (Promotion.rate_plan_id == RatePlan.id)
+                & (Promotion.is_active == True)  # noqa: E712
+                & (Promotion.start_date <= RateCalendar.day)
+                & (Promotion.end_date >= RateCalendar.day),
+            )
             .where(
                 RoomType.status == RoomTypeStatus.ACTIVE,
+                RoomType.capacity >= guests,
                 RatePlan.is_active == True,  # noqa: E712
                 RateCalendar.day >= checkin,
                 RateCalendar.day < checkout,
@@ -229,7 +282,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         ).subquery("review_avg_sq")
 
         base_q = (
-            select(Property, min_price_sq.c.min_price)
+            select(Property, min_price_sq.c.min_price, min_price_sq.c.original_min_price)
             .join(min_price_sq, min_price_sq.c.property_id == Property.id)
             .join(prop_capacity, prop_capacity.c.property_id == Property.id)
             .outerjoin(review_avg_sq, review_avg_sq.c.property_id == Property.id)
@@ -306,9 +359,15 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         stats_map = await self._review_stats_map(property_ids)
 
         items = []
-        for prop, price in rows:
+        for prop, price, original_price in rows:
             img = first_images.get(prop.id)
             avg_q, rc = stats_map.get(prop.id, (None, 0))
+            discounted = round(float(price)) if price is not None else None
+            original = round(float(original_price)) if original_price is not None else None
+            # Only expose original_min_price when it differs from the discounted one.
+            original_to_report = (
+                original if original is not None and discounted is not None and original > discounted else None
+            )
             items.append(
                 {
                     "id": prop.id,
@@ -323,7 +382,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                     "rating_avg": self._rating_for_list_payload(avg_q),
                     "review_count": rc,
                     "image": {"url": img.url, "caption": img.caption} if img else None,
-                    "min_price": int(price) if price else None,
+                    "min_price": discounted,
+                    "original_min_price": original_to_report,
                     "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
                 }
             )
@@ -340,12 +400,16 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                 selectinload(Property.amenities),
                 selectinload(Property.policies),
                 selectinload(Property.room_types).selectinload(RoomType.amenities),
+                selectinload(Property.room_types).selectinload(RoomType.images),
                 selectinload(Property.room_types)
                 .selectinload(RoomType.rate_plans)
                 .joinedload(RatePlan.cancellation_policy),
                 selectinload(Property.room_types)
                 .selectinload(RoomType.rate_plans)
                 .selectinload(RatePlan.rate_calendar),
+                selectinload(Property.room_types)
+                .selectinload(RoomType.rate_plans)
+                .selectinload(RatePlan.promotions),
             )
             .where(
                 Property.id == property_id,

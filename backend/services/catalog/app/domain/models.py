@@ -45,6 +45,11 @@ class PolicyCategory(str, enum.Enum):
     GENERAL = "GENERAL"
 
 
+class DiscountType(str, enum.Enum):
+    PERCENT = "PERCENT"
+    FIXED = "FIXED"
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -190,6 +195,7 @@ class RoomType(Base):
     property_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("property.id"), nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[RoomTypeStatus] = mapped_column(
         SAEnum(RoomTypeStatus, name="room_type_status",
@@ -204,6 +210,8 @@ class RoomType(Base):
     amenities: Mapped[list["Amenity"]] = relationship(
         secondary=room_type_amenity_table, lazy="selectin")
     rate_plans: Mapped[list["RatePlan"]] = relationship(
+        back_populates="room_type")
+    images: Mapped[list["RoomTypeImage"]] = relationship(
         back_populates="room_type")
 
 
@@ -227,6 +235,8 @@ class RatePlan(Base):
         lazy="joined")
     rate_calendar: Mapped[list["RateCalendar"]
                           ] = relationship(back_populates="rate_plan")
+    promotions: Mapped[list["Promotion"]] = relationship(
+        back_populates="rate_plan")
 
 
 class RateCalendar(Base):
@@ -246,6 +256,21 @@ class RateCalendar(Base):
         back_populates="rate_calendar")
 
 
+class RoomTypeImage(Base):
+    __tablename__ = "room_type_image"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    room_type_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("room_type.id"), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    caption: Mapped[str | None] = mapped_column(String)
+    display_order: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    room_type: Mapped["RoomType"] = relationship(back_populates="images")
+
+
 class InventoryCalendar(Base):
     __tablename__ = "inventory_calendar"
 
@@ -256,6 +281,30 @@ class InventoryCalendar(Base):
     available_units: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class Promotion(Base):
+    __tablename__ = "promotion"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    rate_plan_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rate_plan.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    discount_type: Mapped[DiscountType] = mapped_column(
+        SAEnum(DiscountType, name="discount_type",
+               create_type=False, schema="public"),
+        nullable=False,
+    )
+    discount_value: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    rate_plan: Mapped["RatePlan"] = relationship(back_populates="promotions")
 
 
 class Review(Base):

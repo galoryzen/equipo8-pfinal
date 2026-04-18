@@ -12,7 +12,7 @@ from app.adapters.inbound.api.dependencies import (
     get_held_rooms_use_case,
 )
 from app.main import app
-from app.schemas.booking import BookingItemDetailOut, CartBookingOut, HeldRoomsOut
+from app.schemas.booking import CartBookingOut, HeldRoomsOut
 
 BOOKING_ID = UUID("90000000-0000-0000-0000-000000000001")
 ROOM_TYPE_ID = UUID("60000000-0000-0000-0000-000000000001")
@@ -23,14 +23,10 @@ _VALID_PAYLOAD = {
     "checkin": "2026-06-01",
     "checkout": "2026-06-04",
     "currency_code": "USD",
-    "items": [
-        {
-            "property_id": str(PROPERTY_ID),
-            "room_type_id": str(ROOM_TYPE_ID),
-            "rate_plan_id": str(RATE_PLAN_ID),
-            "unit_price": "100.00",
-        }
-    ],
+    "property_id": str(PROPERTY_ID),
+    "room_type_id": str(ROOM_TYPE_ID),
+    "rate_plan_id": str(RATE_PLAN_ID),
+    "unit_price": "100.00",
 }
 
 _HELD_PARAMS = {
@@ -49,17 +45,10 @@ def _sample_cart() -> CartBookingOut:
         hold_expires_at=datetime(2026, 6, 1, 12, 15, 0),
         total_amount=Decimal("300.00"),
         currency_code="USD",
-        items=[
-            BookingItemDetailOut(
-                id=UUID("91000000-0000-0000-0000-000000000001"),
-                property_id=PROPERTY_ID,
-                room_type_id=ROOM_TYPE_ID,
-                rate_plan_id=RATE_PLAN_ID,
-                quantity=1,
-                unit_price=Decimal("100.00"),
-                subtotal=Decimal("300.00"),
-            )
-        ],
+        property_id=PROPERTY_ID,
+        room_type_id=ROOM_TYPE_ID,
+        rate_plan_id=RATE_PLAN_ID,
+        unit_price=Decimal("100.00"),
     )
 
 
@@ -77,7 +66,13 @@ class TestCreateCartEndpoint:
         body = resp.json()
         assert body["status"] == "CART"
         assert body["id"] == str(BOOKING_ID)
+        assert body["property_id"] == str(PROPERTY_ID)
+        assert body["room_type_id"] == str(ROOM_TYPE_ID)
+        assert body["rate_plan_id"] == str(RATE_PLAN_ID)
+        assert body["unit_price"] == "100.00"
         assert "hold_expires_at" in body
+        # 1 booking = 1 room_type — no items array.
+        assert "items" not in body
         mock_uc.execute.assert_awaited_once()
 
     def test_unauthenticated_request_is_rejected(self):
@@ -88,17 +83,11 @@ class TestCreateCartEndpoint:
         resp = client_authenticated.post("/api/v1/booking/bookings", json={})
         assert resp.status_code == 422
 
-    def test_items_appear_in_response(self, client_authenticated):
-        mock_uc = AsyncMock()
-        mock_uc.execute.return_value = _sample_cart()
-        app.dependency_overrides[get_create_cart_booking_use_case] = lambda: mock_uc
-        try:
-            resp = client_authenticated.post("/api/v1/booking/bookings", json=_VALID_PAYLOAD)
-        finally:
-            app.dependency_overrides.pop(get_create_cart_booking_use_case, None)
-
-        assert len(resp.json()["items"]) == 1
-        assert resp.json()["items"][0]["subtotal"] == "300.00"
+    def test_payload_missing_required_fields_returns_422(self, client_authenticated):
+        bad = dict(_VALID_PAYLOAD)
+        del bad["room_type_id"]
+        resp = client_authenticated.post("/api/v1/booking/bookings", json=bad)
+        assert resp.status_code == 422
 
 
 class TestGetHeldRoomsEndpoint:

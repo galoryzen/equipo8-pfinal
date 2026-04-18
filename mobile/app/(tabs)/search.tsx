@@ -205,7 +205,17 @@ export default function SearchScreen() {
             <Card
               key={property.id}
               elevated
-              onPress={() => router.push(`/property/${property.id}`)}
+              onPress={() =>
+                router.push({
+                  pathname: '/property/[id]',
+                  params: {
+                    id: property.id,
+                    checkin,
+                    checkout,
+                    guests: String(guests),
+                  },
+                })
+              }
               accessibilityLabel={`${property.name}, ${property.city.name}. ${property.rating_avg} stars, ${property.review_count} reviews. $${property.min_price ?? '—'} per night. ${property.amenities.map((a) => a.name).join(', ')}`}
               accessibilityHint="View property details"
               style={styles.resultCard}
@@ -243,10 +253,18 @@ export default function SearchScreen() {
                     </Text>
                   </View>
                   {property.min_price != null && (
-                    <Text style={styles.priceText}>
-                      ${property.min_price}
-                      <Text style={styles.perNight}>{t('home.perNight')}</Text>
-                    </Text>
+                    <View style={styles.priceBlock}>
+                      {property.original_min_price != null &&
+                        property.original_min_price > property.min_price && (
+                          <Text style={styles.originalPrice}>
+                            ${property.original_min_price}
+                          </Text>
+                        )}
+                      <Text style={styles.priceText}>
+                        ${property.min_price}
+                        <Text style={styles.perNight}>{t('home.perNight')}</Text>
+                      </Text>
+                    </View>
                   )}
                 </View>
               </View>
@@ -487,6 +505,15 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium,
     fontSize: typography.fontSize.sm,
     color: colors.text.primary,
+  },
+  priceBlock: {
+    alignItems: 'flex-end',
+  },
+  originalPrice: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    textDecorationLine: 'line-through',
   },
   priceText: {
     fontFamily: typography.fontFamily.bold,

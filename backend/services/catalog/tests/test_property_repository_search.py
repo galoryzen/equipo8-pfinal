@@ -33,8 +33,12 @@ async def test_search_returns_empty_when_count_is_zero():
 
 
 @pytest.mark.asyncio
-async def test_search_sql_requires_aggregated_capacity_at_least_guests():
-    """Guest filter: HAVING sum(capacity * min_units) >= requested guests (prop_capacity subquery)."""
+async def test_search_sql_requires_single_room_capacity_at_least_guests():
+    """1 booking = 1 room_type → search filters by capacity >= guests, not SUM.
+
+    The generated SQL must check `room_type.capacity >= <guests>` directly, not a
+    sum of capacities across room types.
+    """
     session = AsyncMock()
     count_result = MagicMock()
     count_result.scalar_one.return_value = 0
@@ -59,5 +63,6 @@ async def test_search_sql_requires_aggregated_capacity_at_least_guests():
         )
     )
     lower = sql.lower()
-    assert "having" in lower
-    assert str(guests_threshold) in sql
+    assert f"capacity >= {guests_threshold}" in lower
+    # And no SUM-based capacity aggregation
+    assert "sum(" not in lower or "capacity" not in lower.split("sum(", 1)[1].split(")", 1)[0]

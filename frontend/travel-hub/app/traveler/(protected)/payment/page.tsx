@@ -204,15 +204,10 @@ function PaymentPageContent() {
           checkin,
           checkout,
           currency_code: currency,
-          items: [
-            {
-              property_id: propertyId,
-              room_type_id: roomTypeId,
-              rate_plan_id: ratePlanId,
-              quantity: 1,
-              unit_price: unitPrice,
-            },
-          ],
+          property_id: propertyId,
+          room_type_id: roomTypeId,
+          rate_plan_id: ratePlanId,
+          unit_price: unitPrice,
         });
         if (!mountedRef.current) return;
         localStorage.setItem(key, newBooking.id);
