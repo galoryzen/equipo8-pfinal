@@ -36,6 +36,7 @@ export interface PropertySummary {
   review_count: number;
   image?: ImageSummary;
   min_price?: number;
+  original_min_price?: number;
   amenities: AmenitySummary[];
 }
 
@@ -97,18 +98,37 @@ export interface CancellationPolicyOut {
   refund_percent?: number;
 }
 
+export interface PromotionOut {
+  id: string;
+  name: string;
+  discount_type: 'PERCENT' | 'FIXED';
+  discount_value: number;
+}
+
 export interface RatePlanOut {
   id: string;
   name: string;
   cancellation_policy?: CancellationPolicyOut;
   min_price?: number;
+  original_min_price?: number;
+  currency_code?: string;
+  promotion?: PromotionOut;
+}
+
+export interface RoomTypeImageOut {
+  id: string;
+  url: string;
+  caption?: string;
+  display_order: number;
 }
 
 export interface RoomTypeOut {
   id: string;
   name: string;
+  description?: string;
   capacity: number;
   amenities: AmenitySummary[];
+  images: RoomTypeImageOut[];
   rate_plans: RatePlanOut[];
   min_price?: number;
 }

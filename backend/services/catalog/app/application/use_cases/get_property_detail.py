@@ -6,20 +6,34 @@ from uuid import UUID
 from app.application.exceptions import PropertyNotFoundError
 from app.application.ports.outbound.cache_port import CachePort
 from app.application.ports.outbound.property_repository import PropertyRepository
-from app.domain.models import Property, RatePlan, RoomType
+from app.domain.models import DiscountType, Promotion, Property, RatePlan, RoomType
 from app.schemas.common import PaginatedResponse
 from app.schemas.property import (
     AmenitySummary,
     CancellationPolicyOut,
     CitySummary,
+    PromotionOut,
     PropertyDetail,
     PropertyDetailResponse,
     PropertyImageOut,
     PropertyPolicyOut,
     RatePlanOut,
     ReviewOut,
+    RoomTypeImageOut,
     RoomTypeOut,
 )
+
+_CENT = Decimal("0.01")
+
+
+def _apply_promo(price: Decimal, promo: Promotion) -> Decimal:
+    if promo.discount_type == DiscountType.PERCENT:
+        discounted = price * (Decimal(100) - promo.discount_value) / Decimal(100)
+    else:
+        discounted = price - promo.discount_value
+    if discounted < Decimal("0"):
+        discounted = Decimal("0")
+    return discounted.quantize(_CENT)
 
 
 class GetPropertyDetailUseCase:
@@ -144,8 +158,18 @@ class GetPropertyDetailUseCase:
         return RoomTypeOut(
             id=rt.id,
             name=rt.name,
+            description=rt.description,
             capacity=rt.capacity,
             amenities=[AmenitySummary(code=a.code, name=a.name) for a in rt.amenities],
+            images=[
+                RoomTypeImageOut(
+                    id=img.id,
+                    url=img.url,
+                    caption=img.caption,
+                    display_order=img.display_order,
+                )
+                for img in sorted(rt.images, key=lambda i: i.display_order)
+            ],
             rate_plans=rate_plans,
             min_price=min_price,
         )
@@ -157,14 +181,45 @@ class GetPropertyDetailUseCase:
         checkout: date | None,
     ) -> RatePlanOut:
         min_price: Decimal | None = None
+        original_min_price: Decimal | None = None
+        currency_code: str | None = None
+        winning_promo: Promotion | None = None
+
         if rp.rate_calendar:
             calendar = rp.rate_calendar
             if checkin and checkout:
-                calendar = [
-                    rc for rc in calendar if checkin <= rc.day < checkout
-                ]
+                calendar = [rc for rc in calendar if checkin <= rc.day < checkout]
+
             if calendar:
-                min_price = min(rc.price_amount for rc in calendar)
+                active_promos = [p for p in (rp.promotions or []) if p.is_active]
+                currency_code = calendar[0].currency_code
+                any_promo_applied = False
+
+                for rc in calendar:
+                    day_base = rc.price_amount
+                    day_best_price = day_base
+                    day_best_promo: Promotion | None = None
+
+                    for promo in active_promos:
+                        if promo.start_date <= rc.day <= promo.end_date:
+                            candidate = _apply_promo(day_base, promo)
+                            if candidate < day_best_price:
+                                day_best_price = candidate
+                                day_best_promo = promo
+
+                    if day_best_promo is not None:
+                        any_promo_applied = True
+
+                    if min_price is None or day_best_price < min_price:
+                        min_price = day_best_price
+                        winning_promo = day_best_promo
+
+                    if original_min_price is None or day_base < original_min_price:
+                        original_min_price = day_base
+
+                if not any_promo_applied or min_price == original_min_price:
+                    original_min_price = None
+                    winning_promo = None
 
         return RatePlanOut(
             id=rp.id,
@@ -175,6 +230,18 @@ class GetPropertyDetailUseCase:
                 else None
             ),
             min_price=min_price,
+            original_min_price=original_min_price,
+            currency_code=currency_code,
+            promotion=(
+                PromotionOut(
+                    id=winning_promo.id,
+                    name=winning_promo.name,
+                    discount_type=winning_promo.discount_type.value,
+                    discount_value=winning_promo.discount_value,
+                )
+                if winning_promo is not None
+                else None
+            ),
         )
 
     @staticmethod

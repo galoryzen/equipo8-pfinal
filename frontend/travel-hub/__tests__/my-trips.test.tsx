@@ -20,14 +20,9 @@ const sampleBooking: BookingListItem = {
   checkout: '2026-06-05',
   total_amount: '400.00',
   currency_code: 'USD',
+  property_id: '30000000-0000-0000-0000-000000000001',
+  room_type_id: '60000000-0000-0000-0000-000000000001',
   created_at: '2026-01-01T12:00:00',
-  items: [
-    {
-      property_id: '30000000-0000-0000-0000-000000000001',
-      room_type_id: '60000000-0000-0000-0000-000000000001',
-      quantity: 1,
-    },
-  ],
 };
 
 const sampleProperty: PropertyDetail = {

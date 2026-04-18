@@ -67,9 +67,14 @@ export async function searchProperties(
 
 export async function getPropertyDetail(
   id: string,
+  opts: { checkin?: string; checkout?: string } = {},
 ): Promise<PropertyDetailResponse> {
+  const params: Record<string, string> = {};
+  if (opts.checkin) params.checkin = opts.checkin;
+  if (opts.checkout) params.checkout = opts.checkout;
   const { data } = await api.get<PropertyDetailResponse>(
     `/v1/catalog/properties/${id}`,
+    { params },
   );
   return data;
 }

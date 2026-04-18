@@ -144,5 +144,11 @@ resource "aws_ecs_service" "services" {
     registry_arn = aws_service_discovery_service.services[each.key].arn
   }
 
+  # task_definition is updated out-of-band by the deploy-backend.yml workflow.
+  # desired_count may be changed by autoscaling in the future.
+  lifecycle {
+    ignore_changes = [task_definition, desired_count]
+  }
+
   depends_on = [aws_lb_listener.https]
 }

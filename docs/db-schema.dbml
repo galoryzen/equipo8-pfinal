@@ -101,6 +101,11 @@ Enum room_type_status {
   INACTIVE
 }
 
+Enum discount_type {
+  PERCENT
+  FIXED
+}
+
 Table catalog.city {
   id uuid [pk]
   dane_code varchar [unique]
@@ -194,6 +199,7 @@ Table catalog.room_type {
   id uuid [pk]
   property_id uuid [not null]
   name varchar [not null]
+  description text
   capacity int [not null]
   status room_type_status [not null, default: 'ACTIVE']
   created_at timestamp [not null]
@@ -201,6 +207,19 @@ Table catalog.room_type {
 
   indexes {
     (property_id, capacity, status)
+  }
+}
+
+Table catalog.room_type_image {
+  id uuid [pk]
+  room_type_id uuid [not null]
+  url text [not null]
+  caption varchar
+  display_order int [not null, default: 0]
+  created_at timestamp [not null]
+
+  indexes {
+    (room_type_id, display_order)
   }
 }
 
@@ -245,6 +264,23 @@ Table catalog.inventory_calendar {
   }
 }
 
+Table catalog.promotion {
+  id uuid [pk]
+  rate_plan_id uuid [not null]
+  name varchar [not null]
+  discount_type discount_type [not null]
+  discount_value decimal(12,2) [not null]
+  start_date date [not null]
+  end_date date [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (rate_plan_id, is_active, start_date, end_date)
+  }
+}
+
 Table catalog.amenity {
   id uuid [pk]
   code varchar [not null, unique]
@@ -283,8 +319,10 @@ Ref: catalog.rate_plan.room_type_id > catalog.room_type.id
 Ref: catalog.rate_plan.cancellation_policy_id > catalog.cancellation_policy.id
 Ref: catalog.rate_calendar.rate_plan_id > catalog.rate_plan.id
 Ref: catalog.inventory_calendar.room_type_id > catalog.room_type.id
+Ref: catalog.promotion.rate_plan_id > catalog.rate_plan.id
 Ref: catalog.room_type_amenity.room_type_id > catalog.room_type.id
 Ref: catalog.room_type_amenity.amenity_id > catalog.amenity.id
+Ref: catalog.room_type_image.room_type_id > catalog.room_type.id
 Ref: catalog.review.user_id > users.users.id
 Ref: catalog.review.property_id > catalog.property.id
 
@@ -311,22 +349,19 @@ Table booking.booking {
   hold_expires_at timestamp
   total_amount decimal(12,2) [not null]
   currency_code char(3) [not null]
+  property_id uuid [not null]  // → catalog.property.id
+  room_type_id uuid [not null] // → catalog.room_type.id
+  rate_plan_id uuid [not null] // → catalog.rate_plan.id
+  unit_price decimal(12,2) [not null]
   policy_type_applied cancellation_policy_type [not null]
   policy_hours_limit_applied int
   policy_refund_percent_applied int
   created_at timestamp [not null]
   updated_at timestamp [not null]
-}
 
-Table booking.booking_item {
-  id uuid [pk]
-  booking_id uuid [not null]
-  property_id uuid [not null]  // → catalog.property.id
-  room_type_id uuid [not null] // → catalog.room_type.id
-  rate_plan_id uuid [not null] // → catalog.rate_plan.id
-  quantity int [not null, default: 1]
-  unit_price decimal(12,2) [not null]
-  subtotal decimal(12,2) [not null]
+  indexes {
+    (property_id, room_type_id, status)
+  }
 }
 
 Table booking.booking_status_history {
@@ -341,10 +376,9 @@ Table booking.booking_status_history {
 
 // Relaciones booking
 Ref: booking.booking.user_id > users.users.id
-Ref: booking.booking_item.booking_id > booking.booking.id
-Ref: booking.booking_item.property_id > catalog.property.id
-Ref: booking.booking_item.room_type_id > catalog.room_type.id
-Ref: booking.booking_item.rate_plan_id > catalog.rate_plan.id
+Ref: booking.booking.property_id > catalog.property.id
+Ref: booking.booking.room_type_id > catalog.room_type.id
+Ref: booking.booking.rate_plan_id > catalog.rate_plan.id
 Ref: booking.booking_status_history.booking_id > booking.booking.id
 Ref: booking.booking_status_history.changed_by > users.users.id
 

@@ -221,13 +221,39 @@ describe('catalog-service', () => {
   });
 
   describe('getPropertyDetail', () => {
-    it('calls the correct endpoint with property id', async () => {
+    it('calls the correct endpoint with property id and no date params by default', async () => {
       mockedApi.get.mockResolvedValue({ data: { detail: {}, reviews: {} } });
 
       await getPropertyDetail('prop-123');
 
       expect(mockedApi.get).toHaveBeenCalledWith(
         '/v1/catalog/properties/prop-123',
+        { params: {} },
+      );
+    });
+
+    it('forwards checkin and checkout as query params', async () => {
+      mockedApi.get.mockResolvedValue({ data: { detail: {}, reviews: {} } });
+
+      await getPropertyDetail('prop-123', {
+        checkin: '2026-06-01',
+        checkout: '2026-06-03',
+      });
+
+      expect(mockedApi.get).toHaveBeenCalledWith(
+        '/v1/catalog/properties/prop-123',
+        { params: { checkin: '2026-06-01', checkout: '2026-06-03' } },
+      );
+    });
+
+    it('omits undefined date params', async () => {
+      mockedApi.get.mockResolvedValue({ data: { detail: {}, reviews: {} } });
+
+      await getPropertyDetail('prop-123', { checkin: '2026-06-01' });
+
+      expect(mockedApi.get).toHaveBeenCalledWith(
+        '/v1/catalog/properties/prop-123',
+        { params: { checkin: '2026-06-01' } },
       );
     });
 

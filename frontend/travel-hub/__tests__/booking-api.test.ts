@@ -33,8 +33,9 @@ describe('booking API', () => {
           checkout: '2026-06-05',
           total_amount: '100',
           currency_code: 'USD',
+          property_id: 'p1',
+          room_type_id: 'r1',
           created_at: '2026-01-01',
-          items: [{ property_id: 'p1', room_type_id: 'r1', quantity: 1 }],
         },
       ];
       vi.mocked(global.fetch).mockResolvedValue({
@@ -81,12 +82,15 @@ describe('booking API', () => {
         hold_expires_at: null,
         total_amount: '100',
         currency_code: 'USD',
+        property_id: 'p1',
+        room_type_id: 'r1',
+        rate_plan_id: 'rp1',
+        unit_price: '100',
         policy_type_applied: 'STANDARD',
         policy_hours_limit_applied: 24,
         policy_refund_percent_applied: 100,
         created_at: '2026-01-01',
         updated_at: '2026-01-02',
-        items: [],
       };
       vi.mocked(global.fetch).mockResolvedValue({
         ok: true,
@@ -111,12 +115,15 @@ describe('booking API', () => {
             hold_expires_at: null,
             total_amount: '0',
             currency_code: 'USD',
+            property_id: 'p1',
+            room_type_id: 'r1',
+            rate_plan_id: 'rp1',
+            unit_price: '0',
             policy_type_applied: 'NONE',
             policy_hours_limit_applied: null,
             policy_refund_percent_applied: null,
             created_at: '2026-01-01',
             updated_at: '2026-01-01',
-            items: [],
           } satisfies BookingDetail),
       } as Response);
 

@@ -56,6 +56,14 @@ export default function RootLayout() {
             headerTransparent: true,
           }}
         />
+        <Stack.Screen
+          name="property/[id]/rooms"
+          options={{ headerShown: true }}
+        />
+        <Stack.Screen
+          name="property/[id]/rooms/[roomId]"
+          options={{ headerShown: true }}
+        />
       </Stack>
     </AuthProvider>
   );

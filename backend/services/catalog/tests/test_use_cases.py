@@ -18,7 +18,12 @@ from app.application.use_cases.get_property_detail import GetPropertyDetailUseCa
 from app.application.use_cases.list_amenities import ListAmenitiesUseCase
 from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
-from app.domain.models import CancellationPolicyType, PolicyCategory, PropertyStatus
+from app.domain.models import (
+    CancellationPolicyType,
+    DiscountType,
+    PolicyCategory,
+    PropertyStatus,
+)
 from app.schemas.city import CityOut, FeaturedDestinationOut
 from app.schemas.common import PaginatedResponse
 from app.schemas.property import PropertySummary
@@ -170,6 +175,7 @@ def _make_fake_property(prop_id=None):
     rate_calendar = MagicMock()
     rate_calendar.day = date(2026, 6, 1)
     rate_calendar.price_amount = Decimal("199.00")
+    rate_calendar.currency_code = "USD"
 
     rate_plan = MagicMock()
     rate_plan.id = uuid4()
@@ -177,17 +183,26 @@ def _make_fake_property(prop_id=None):
     rate_plan.is_active = True
     rate_plan.cancellation_policy = cp
     rate_plan.rate_calendar = [rate_calendar]
+    rate_plan.promotions = []
 
     amenity = MagicMock()
     amenity.code = "wifi"
     amenity.name = "Wi-Fi gratuito"
 
+    room_image = MagicMock()
+    room_image.id = uuid4()
+    room_image.url = "https://example.com/room.jpg"
+    room_image.caption = "Cama King"
+    room_image.display_order = 0
+
     room_type = MagicMock()
     room_type.id = uuid4()
     room_type.name = "Deluxe King"
+    room_type.description = "Habitación amplia con cama King."
     room_type.capacity = 2
     room_type.amenities = [amenity]
     room_type.rate_plans = [rate_plan]
+    room_type.images = [room_image]
 
     image = MagicMock()
     image.id = uuid4()
@@ -303,12 +318,15 @@ class TestGetPropertyDetail:
         rc_in_range = MagicMock()
         rc_in_range.day = date(2026, 6, 1)
         rc_in_range.price_amount = Decimal("150.00")
+        rc_in_range.currency_code = "USD"
 
         rc_out_of_range = MagicMock()
         rc_out_of_range.day = date(2026, 7, 1)
         rc_out_of_range.price_amount = Decimal("50.00")
+        rc_out_of_range.currency_code = "USD"
 
         prop.room_types[0].rate_plans[0].rate_calendar = [rc_in_range, rc_out_of_range]
+        prop.room_types[0].rate_plans[0].promotions = []
 
         mock_property_repo.get_by_id.return_value = prop
         mock_property_repo.get_review_stats.return_value = (None, 0)
@@ -418,6 +436,261 @@ class TestGetPropertyDetail:
         assert len(d["images"]) == 1
         assert d["rating_avg"] == "4.00"
         assert d["review_count"] == 2
+
+    async def test_room_types_expose_description_and_images(
+        self, mock_property_repo, mock_cache
+    ):
+        """New fields description + images flow through the DTO for each room type."""
+        fake_prop = _make_fake_property()
+        mock_property_repo.get_by_id.return_value = fake_prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID)
+
+        room = result["detail"]["room_types"][0]
+        assert room["description"] == "Habitación amplia con cama King."
+        assert len(room["images"]) == 1
+        assert room["images"][0]["url"] == "https://example.com/room.jpg"
+        assert room["images"][0]["display_order"] == 0
+
+
+# ── Promotion application ───────────────────────────────
+
+
+def _make_rc(day: date, price: Decimal, currency: str = "USD") -> MagicMock:
+    rc = MagicMock()
+    rc.day = day
+    rc.price_amount = price
+    rc.currency_code = currency
+    return rc
+
+
+def _make_promo(
+    discount_type: DiscountType,
+    value: Decimal,
+    start: date,
+    end: date,
+    is_active: bool = True,
+    name: str = "Promo",
+) -> MagicMock:
+    p = MagicMock()
+    p.id = uuid4()
+    p.name = name
+    p.discount_type = discount_type
+    p.discount_value = value
+    p.start_date = start
+    p.end_date = end
+    p.is_active = is_active
+    return p
+
+
+class TestPromotionApplication:
+    """Cover the per-day greedy promotion logic in GetPropertyDetailUseCase."""
+
+    async def test_no_promotion_returns_base_min_and_null_original(
+        self, mock_property_repo, mock_cache
+    ):
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [
+            _make_rc(date(2026, 6, 1), Decimal("120.00")),
+            _make_rc(date(2026, 6, 2), Decimal("100.00")),
+        ]
+        rp.promotions = []
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 3),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] == "100.00"
+        assert plan["original_min_price"] is None
+        assert plan["promotion"] is None
+        assert plan["currency_code"] == "USD"
+
+    async def test_percent_promotion_discounts_and_exposes_original(
+        self, mock_property_repo, mock_cache
+    ):
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [
+            _make_rc(date(2026, 6, 1), Decimal("100.00")),
+            _make_rc(date(2026, 6, 2), Decimal("100.00")),
+        ]
+        rp.promotions = [
+            _make_promo(DiscountType.PERCENT, Decimal("15"), date(2026, 6, 1), date(2026, 6, 30))
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 3),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] == "85.00"
+        assert plan["original_min_price"] == "100.00"
+        assert plan["promotion"]["discount_type"] == "PERCENT"
+        assert plan["promotion"]["discount_value"] == "15"
+        # RoomType.min_price should reflect the discounted price too
+        assert result["detail"]["room_types"][0]["min_price"] == "85.00"
+
+    async def test_fixed_promotion_subtracts_amount(self, mock_property_repo, mock_cache):
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("210.00"))]
+        rp.promotions = [
+            _make_promo(DiscountType.FIXED, Decimal("40"), date(2026, 6, 1), date(2026, 6, 30))
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 2),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] == "170.00"
+        assert plan["original_min_price"] == "210.00"
+        assert plan["promotion"]["discount_type"] == "FIXED"
+
+    async def test_inactive_promotion_is_ignored(self, mock_property_repo, mock_cache):
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("100.00"))]
+        rp.promotions = [
+            _make_promo(
+                DiscountType.PERCENT,
+                Decimal("15"),
+                date(2026, 6, 1),
+                date(2026, 6, 30),
+                is_active=False,
+            )
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 2),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] == "100.00"
+        assert plan["original_min_price"] is None
+        assert plan["promotion"] is None
+
+    async def test_promotion_outside_date_range_is_ignored(
+        self, mock_property_repo, mock_cache
+    ):
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("100.00"))]
+        rp.promotions = [
+            _make_promo(
+                DiscountType.PERCENT,
+                Decimal("15"),
+                date(2026, 7, 1),
+                date(2026, 7, 31),
+            )
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 2),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] == "100.00"
+        assert plan["original_min_price"] is None
+        assert plan["promotion"] is None
+
+    async def test_greedy_picks_cheaper_promo_per_day(
+        self, mock_property_repo, mock_cache
+    ):
+        """Given two concurrent promos, each day picks the one that yields the lowest price."""
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("100.00"))]
+        # 10% off → 90.00 ; $20 off → 80.00 → fixed wins
+        rp.promotions = [
+            _make_promo(
+                DiscountType.PERCENT, Decimal("10"), date(2026, 6, 1), date(2026, 6, 30),
+                name="10 off",
+            ),
+            _make_promo(
+                DiscountType.FIXED, Decimal("20"), date(2026, 6, 1), date(2026, 6, 30),
+                name="20 fixed",
+            ),
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 2),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] == "80.00"
+        assert plan["original_min_price"] == "100.00"
+        assert plan["promotion"]["name"] == "20 fixed"
+
+    async def test_fixed_promo_does_not_go_below_zero(self, mock_property_repo, mock_cache):
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("30.00"))]
+        rp.promotions = [
+            _make_promo(DiscountType.FIXED, Decimal("50"), date(2026, 6, 1), date(2026, 6, 30))
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 2),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] == "0.00"
+        assert plan["original_min_price"] == "30.00"
 
 
 # ── SearchPropertiesUseCase ─────────────────────────────

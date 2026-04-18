@@ -129,7 +129,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
         const map: Record<string, string> = {};
         for (const b of bookings) {
           if (b.status === 'CART') {
-            for (const item of b.items) map[item.room_type_id] = b.id;
+            map[b.room_type_id] = b.id;
           }
         }
         setActiveCartByRoomTypeId(map);

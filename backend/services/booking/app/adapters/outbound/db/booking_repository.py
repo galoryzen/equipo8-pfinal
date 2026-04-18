@@ -3,10 +3,9 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingItem, BookingStatus
+from app.domain.models import Booking, BookingStatus
 
 
 class SqlAlchemyBookingRepository(BookingRepository):
@@ -17,25 +16,23 @@ class SqlAlchemyBookingRepository(BookingRepository):
         stmt = (
             select(Booking)
             .where(Booking.user_id == user_id)
-            .options(selectinload(Booking.items))
             .order_by(Booking.checkin.desc())
         )
         result = await self._session.execute(stmt)
-        return list(result.scalars().unique().all())
+        return list(result.scalars().all())
 
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = (
             select(Booking)
             .where(Booking.id == booking_id, Booking.user_id == user_id)
-            .options(selectinload(Booking.items))
         )
         result = await self._session.execute(stmt)
-        return result.scalars().unique().one_or_none()
+        return result.scalars().one_or_none()
 
     async def create(self, booking: Booking) -> Booking:
         self._session.add(booking)
         await self._session.commit()
-        await self._session.refresh(booking, attribute_names=["items"])
+        await self._session.refresh(booking)
         return booking
 
     async def save(self, booking: Booking) -> None:
@@ -53,21 +50,19 @@ class SqlAlchemyBookingRepository(BookingRepository):
         now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC — column is TIMESTAMP WITHOUT TIME ZONE
         stmt = (
             select(Booking)
-            .join(Booking.items)
             .where(
                 Booking.user_id == user_id,
                 Booking.status == BookingStatus.CART,
                 Booking.hold_expires_at > now,
                 Booking.checkin == checkin,
                 Booking.checkout == checkout,
-                BookingItem.room_type_id == room_type_id,
-                BookingItem.rate_plan_id == rate_plan_id,
+                Booking.room_type_id == room_type_id,
+                Booking.rate_plan_id == rate_plan_id,
             )
-            .options(selectinload(Booking.items))
             .limit(1)
         )
         result = await self._session.execute(stmt)
-        return result.scalars().unique().one_or_none()
+        return result.scalars().one_or_none()
 
     async def find_held_room_type_ids(
         self,
@@ -77,10 +72,9 @@ class SqlAlchemyBookingRepository(BookingRepository):
     ) -> list[UUID]:
         now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC — column is TIMESTAMP WITHOUT TIME ZONE
         stmt = (
-            select(BookingItem.room_type_id)
-            .join(BookingItem.booking)
+            select(Booking.room_type_id)
             .where(
-                BookingItem.property_id == property_id,
+                Booking.property_id == property_id,
                 Booking.status == BookingStatus.CART,
                 Booking.hold_expires_at > now,
                 Booking.checkin < checkout,   # standard interval overlap: starts before requested end

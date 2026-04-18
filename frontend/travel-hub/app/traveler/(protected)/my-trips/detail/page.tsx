@@ -48,8 +48,7 @@ function BookingDetailContent() {
         const d = await getBookingDetail(bookingId);
         if (cancelled) return;
         setDetail(d);
-        const ids = [...new Set(d.items.map((i) => i.property_id))];
-        const map = await fetchPropertyDetailsMap(ids);
+        const map = await fetchPropertyDetailsMap([d.property_id]);
         if (cancelled) return;
         setPropertyById(map);
       } catch (e) {
@@ -95,8 +94,8 @@ function BookingDetailContent() {
   }
 
   const status = statusChipProps(detail.status);
-  const firstPropId = detail.items[0]?.property_id;
-  const hotel = firstPropId ? propertyById[firstPropId] : null;
+  const hotel = propertyById[detail.property_id] ?? null;
+  const roomName = hotel?.room_types?.find((r) => r.id === detail.room_type_id)?.name;
 
   return (
     <Container maxWidth="md" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
@@ -158,31 +157,20 @@ function BookingDetailContent() {
       <Divider sx={{ my: 2 }} />
 
       <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-        Items
+        Room
       </Typography>
-      <Stack spacing={2}>
-        {detail.items.map((item) => {
-          const prop = propertyById[item.property_id];
-          const roomName = prop?.room_types?.find((r) => r.id === item.room_type_id)?.name;
-          return (
-            <Box
-              key={item.id}
-              sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-            >
-              <Typography fontWeight={600}>{prop?.name ?? 'Property'}</Typography>
-              {roomName && (
-                <Typography variant="body2" color="text.secondary">
-                  {roomName} × {item.quantity}
-                </Typography>
-              )}
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Unit {item.unit_price} {detail.currency_code} · Subtotal {item.subtotal}{' '}
-                {detail.currency_code}
-              </Typography>
-            </Box>
-          );
-        })}
-      </Stack>
+      <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+        <Typography fontWeight={600}>{hotel?.name ?? 'Property'}</Typography>
+        {roomName && (
+          <Typography variant="body2" color="text.secondary">
+            {roomName}
+          </Typography>
+        )}
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          {detail.unit_price} {detail.currency_code} / night · Total {detail.total_amount}{' '}
+          {detail.currency_code}
+        </Typography>
+      </Box>
 
       {detail.policy_type_applied && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>

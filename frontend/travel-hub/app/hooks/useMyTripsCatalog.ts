@@ -22,9 +22,7 @@ export interface UseMyTripsCatalogState {
 function uniquePropertyIds(bookings: BookingListItem[]): string[] {
   const set = new Set<string>();
   for (const b of bookings) {
-    for (const item of b.items) {
-      set.add(item.property_id);
-    }
+    if (b.property_id) set.add(b.property_id);
   }
   return [...set];
 }
