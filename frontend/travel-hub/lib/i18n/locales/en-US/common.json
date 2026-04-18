@@ -127,12 +127,10 @@
     "availableRooms": "Available Rooms"
   },
   "roomCard": {
-    "unavailable": "Unavailable",
     "bookingInProgress": "Booking in progress",
     "perNight": "/ night",
     "guest_one": "{{count}} guest",
     "guest_other": "{{count}} guests",
-    "heldAlert": "This room is on hold by another guest. Please check back in a few minutes or choose a different room.",
     "ownHoldText": "You have an active hold on this room.",
     "resumeBooking": "Resume booking",
     "selectDatesTooltip": "Select check-in and check-out dates first",

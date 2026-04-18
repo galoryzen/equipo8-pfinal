@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
 from app.domain.models import Booking
@@ -34,10 +34,16 @@ class BookingRepository(ABC):
         """Return an active CART booking for the same user/room/dates, or None."""
 
     @abstractmethod
-    async def find_held_room_type_ids(
-        self,
-        property_id: UUID,
-        checkin: date,
-        checkout: date,
-    ) -> list[UUID]:
-        """Return room_type_ids that have an active (non-expired) CART hold overlapping the dates."""
+    async def find_any_active_cart_for_user(self, user_id: UUID) -> Booking | None:
+        """Return any active (non-expired) CART booking for the user, or None.
+
+        Used to enforce the one-cart-at-a-time rule regardless of room/dates.
+        """
+
+    @abstractmethod
+    async def find_expired_carts(self, now: datetime) -> list[Booking]:
+        """Return CART bookings whose hold_expires_at has elapsed."""
+
+    @abstractmethod
+    async def find_unreleased_terminal_bookings(self) -> list[Booking]:
+        """Return CANCELLED/EXPIRED bookings whose inventory hold has not yet been released."""

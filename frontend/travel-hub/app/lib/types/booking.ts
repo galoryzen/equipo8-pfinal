@@ -52,7 +52,3 @@ export interface BookingDetail {
   created_at: string;
   updated_at: string;
 }
-
-export interface HeldRooms {
-  held_room_type_ids: string[];
-}

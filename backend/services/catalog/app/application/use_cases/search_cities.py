@@ -8,7 +8,4 @@ class SearchCitiesUseCase:
 
     async def execute(self, q: str) -> list[CityOut]:
         cities = await self._repo.search(q)
-        return [
-            CityOut(id=c.id, name=c.name, department=c.department, country=c.country)
-            for c in cities
-        ]
+        return [CityOut(id=c.id, name=c.name, department=c.department, country=c.country) for c in cities]

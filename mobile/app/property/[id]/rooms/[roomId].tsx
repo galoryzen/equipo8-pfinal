@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,28 @@ import {
   StyleSheet,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { Button, PriceBreakdownPanel, type SelectedRoomInfo } from '@src/shared/ui';
+import {
+  Button,
+  CartHeaderButton,
+  ConflictModal,
+  PriceBreakdownPanel,
+  type SelectedRoomInfo,
+} from '@src/shared/ui';
 import { useProperty } from '@src/features/catalog/use-property';
 import { calculateNights } from '@src/features/catalog/rate-breakdown';
+import {
+  ActiveCartConflictError,
+  InventoryUnavailableError,
+  useCart,
+} from '@src/features/booking/cart-context';
+import { useAuth } from '@src/services/auth-context';
+import type { CartExtras, CreateCartBookingPayload } from '@src/types/booking';
 
 const GALLERY_WIDTH = Dimensions.get('window').width;
 const GALLERY_HEIGHT = 280;
@@ -84,10 +98,111 @@ export default function RoomDetailScreen() {
     };
   }, [room, ratePlanId, unitPrice, originalUnitPrice, currency, promotionType, promotionValue]);
 
+  const router = useRouter();
+  const cart = useCart();
+  const { isLoggedIn } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [conflictVisible, setConflictVisible] = useState(false);
+
+  const continuePayload = useMemo<CreateCartBookingPayload | null>(() => {
+    if (!room || !ratePlanId || !checkin || !checkout || !property) return null;
+    const price = Number(unitPrice);
+    if (!Number.isFinite(price)) return null;
+    return {
+      checkin,
+      checkout,
+      currency_code: currency ?? 'USD',
+      property_id: property.id,
+      room_type_id: room.id,
+      rate_plan_id: ratePlanId,
+      unit_price: String(price),
+    };
+  }, [property, room, ratePlanId, checkin, checkout, currency, unitPrice]);
+
+  const continueExtras = useMemo<CartExtras | null>(() => {
+    if (!room || !property) return null;
+    const firstImage = [...room.images].sort((a, b) => a.display_order - b.display_order)[0];
+    return {
+      property_name: property.name,
+      room_name: room.name,
+      image_url: firstImage?.url,
+    };
+  }, [property, room]);
+
+  const submitCreate = async (): Promise<void> => {
+    if (!continuePayload || !continueExtras) return;
+    setSubmitting(true);
+    try {
+      await cart.createCart(continuePayload, continueExtras);
+      router.push('/booking/checkout');
+    } catch (err) {
+      if (err instanceof ActiveCartConflictError) {
+        // Cart-context ya rescató el booking existente; abrimos el modal de
+        // conflicto para que el user decida reemplazar o continuar el actual.
+        setConflictVisible(true);
+      } else if (err instanceof InventoryUnavailableError) {
+        Alert.alert(t('booking.cart.unavailable'));
+      } else {
+        Alert.alert(t('common.error'));
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleContinue = () => {
+    if (!isLoggedIn) {
+      router.push('/login');
+      return;
+    }
+    if (!continuePayload || !continueExtras) return;
+    // Resume path: user re-entered the exact same selection — just navigate back
+    // to the existing cart without opening the conflict modal.
+    const existing = cart.cart;
+    if (
+      existing &&
+      existing.property_id === continuePayload.property_id &&
+      existing.room_type_id === continuePayload.room_type_id &&
+      existing.rate_plan_id === continuePayload.rate_plan_id &&
+      existing.checkin === continuePayload.checkin &&
+      existing.checkout === continuePayload.checkout
+    ) {
+      router.push('/booking/checkout');
+      return;
+    }
+    if (cart.hasActiveCart) {
+      setConflictVisible(true);
+      return;
+    }
+    void submitCreate();
+  };
+
+  const handleReplace = async () => {
+    if (!continuePayload || !continueExtras) return;
+    setSubmitting(true);
+    try {
+      await cart.replaceCart(continuePayload, continueExtras);
+      setConflictVisible(false);
+      router.push('/booking/checkout');
+    } catch (err) {
+      if (err instanceof ActiveCartConflictError) {
+        setConflictVisible(true);
+      } else if (err instanceof InventoryUnavailableError) {
+        Alert.alert(t('booking.cart.unavailable'));
+      } else {
+        Alert.alert(t('common.error'));
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <>
-        <Stack.Screen options={{ title: t('rooms.detailTitle') }} />
+        <Stack.Screen
+          options={{ title: t('rooms.detailTitle'), headerRight: () => <CartHeaderButton /> }}
+        />
         <View style={styles.centerState}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -98,7 +213,9 @@ export default function RoomDetailScreen() {
   if (error || !room) {
     return (
       <>
-        <Stack.Screen options={{ title: t('rooms.detailTitle') }} />
+        <Stack.Screen
+          options={{ title: t('rooms.detailTitle'), headerRight: () => <CartHeaderButton /> }}
+        />
         <View style={styles.centerState}>
           <Ionicons name="cloud-offline-outline" size={48} color={colors.text.muted} />
           <Text style={styles.errorText}>{error ?? t('common.error')}</Text>
@@ -114,7 +231,9 @@ export default function RoomDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t('rooms.detailTitle') }} />
+      <Stack.Screen
+          options={{ title: t('rooms.detailTitle'), headerRight: () => <CartHeaderButton /> }}
+        />
       <View style={styles.screen}>
         <ScrollView
           style={styles.container}
@@ -187,11 +306,22 @@ export default function RoomDetailScreen() {
         <View style={styles.footer}>
           <Button
             title={t('rooms.continueToBooking')}
-            disabled
-            // TODO SCRUM-123: conectar a flujo de carrito / revisión.
-            onPress={undefined}
+            disabled={!continuePayload || !continueExtras || submitting}
+            loading={submitting}
+            onPress={handleContinue}
           />
         </View>
+
+        <ConflictModal
+          visible={conflictVisible}
+          currentProperty={cart.cart?.property_name ?? ''}
+          currentRoom={cart.cart?.room_name ?? ''}
+          currentCheckin={cart.cart?.checkin ?? ''}
+          currentCheckout={cart.cart?.checkout ?? ''}
+          onReplace={handleReplace}
+          onCancel={() => setConflictVisible(false)}
+          loading={submitting}
+        />
       </View>
     </>
   );

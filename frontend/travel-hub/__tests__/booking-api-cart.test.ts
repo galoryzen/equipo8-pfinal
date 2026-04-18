@@ -1,5 +1,5 @@
-import { createCartBooking, getHeldRooms } from '@/app/lib/api/booking';
-import type { CartBooking, CreateCartBookingPayload, HeldRooms } from '@/app/lib/types/booking';
+import { createCartBooking } from '@/app/lib/api/booking';
+import type { CartBooking, CreateCartBookingPayload } from '@/app/lib/types/booking';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const CART: CartBooking = {
@@ -80,73 +80,5 @@ describe('createCartBooking', () => {
     } as Response);
 
     await expect(createCartBooking(PAYLOAD)).rejects.toThrow('Error 500');
-  });
-});
-
-describe('getHeldRooms', () => {
-  beforeEach(() => {
-    global.fetch = vi.fn();
-  });
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('fetches without credentials (public endpoint)', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ held_room_type_ids: [] } satisfies HeldRooms),
-    } as Response);
-
-    await getHeldRooms('p1', '2026-06-01', '2026-06-04');
-
-    const options = vi.mocked(global.fetch).mock.calls[0]?.[1] as RequestInit | undefined;
-    expect(options?.credentials).toBeUndefined();
-  });
-
-  it('builds correct query string from arguments', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ held_room_type_ids: [] } satisfies HeldRooms),
-    } as Response);
-
-    await getHeldRooms('prop-abc', '2026-06-01', '2026-06-04');
-
-    const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
-    expect(url).toContain('property_id=prop-abc');
-    expect(url).toContain('checkin=2026-06-01');
-    expect(url).toContain('checkout=2026-06-04');
-  });
-
-  it('returns held_room_type_ids on success', async () => {
-    const held: HeldRooms = { held_room_type_ids: ['r1', 'r2'] };
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(held),
-    } as Response);
-
-    const result = await getHeldRooms('p1', '2026-06-01', '2026-06-04');
-
-    expect(result.held_room_type_ids).toEqual(['r1', 'r2']);
-  });
-
-  it('returns empty list when no rooms are held', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ held_room_type_ids: [] } satisfies HeldRooms),
-    } as Response);
-
-    const result = await getHeldRooms('p1', '2026-06-01', '2026-06-04');
-
-    expect(result.held_room_type_ids).toEqual([]);
-  });
-
-  it('throws on HTTP error', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: () => Promise.resolve({ message: 'Internal error' }),
-    } as Response);
-
-    await expect(getHeldRooms('p1', '2026-06-01', '2026-06-04')).rejects.toThrow('Internal error');
   });
 });

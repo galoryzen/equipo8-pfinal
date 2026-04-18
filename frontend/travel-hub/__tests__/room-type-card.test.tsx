@@ -38,7 +38,6 @@ const DEFAULT_PROPS = {
   checkout: '2026-06-04',
   selectedRatePlanId: null,
   onRoomSelect: vi.fn(),
-  isHeld: false,
   activeCartBookingId: null,
 };
 
@@ -82,25 +81,6 @@ describe('RoomTypeCard', () => {
     it('shows cancellation policy label', () => {
       render(<RoomTypeCard {...DEFAULT_PROPS} />);
       expect(screen.getByText('roomCard.cancellation.free')).toBeTruthy();
-    });
-  });
-
-  describe('held by another user', () => {
-    const heldProps = { ...DEFAULT_PROPS, isHeld: true };
-
-    it('shows Unavailable chip', () => {
-      render(<RoomTypeCard {...heldProps} />);
-      expect(screen.getByText('roomCard.unavailable')).toBeTruthy();
-    });
-
-    it('shows held alert message', () => {
-      render(<RoomTypeCard {...heldProps} />);
-      expect(screen.getByText('roomCard.heldAlert')).toBeTruthy();
-    });
-
-    it('does not show Select Room button', () => {
-      render(<RoomTypeCard {...heldProps} />);
-      expect(screen.queryByText('roomCard.selectRoom')).toBeNull();
     });
   });
 

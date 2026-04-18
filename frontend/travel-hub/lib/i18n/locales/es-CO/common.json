@@ -132,12 +132,10 @@
     "availableRooms": "Habitaciones disponibles"
   },
   "roomCard": {
-    "unavailable": "No disponible",
     "bookingInProgress": "Reserva en curso",
     "perNight": "/ noche",
     "guest_one": "{{count}} huésped",
     "guest_other": "{{count}} huéspedes",
-    "heldAlert": "Esta habitación está reservada por otro huésped. Vuelve en unos minutos o elige una habitación diferente.",
     "ownHoldText": "Tienes una reserva activa en esta habitación.",
     "resumeBooking": "Continuar reserva",
     "selectDatesTooltip": "Selecciona primero las fechas de entrada y salida",

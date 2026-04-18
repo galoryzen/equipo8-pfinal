@@ -5,11 +5,9 @@ import NextLink from 'next/link';
 import type { RoomTypeOut } from '@/app/lib/types/catalog';
 import { tokens as th } from '@/lib/theme/tokens';
 import BedIcon from '@mui/icons-material/Bed';
-import BlockIcon from '@mui/icons-material/Block';
 import CheckIcon from '@mui/icons-material/Check';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import GroupIcon from '@mui/icons-material/Group';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -26,8 +24,6 @@ interface RoomTypeCardProps {
   checkout?: string;
   selectedRatePlanId: string | null;
   onRoomSelect: (info: SelectedRoomInfo) => void;
-  /** Room is held by another user — disable all booking actions */
-  isHeld: boolean;
   /** The current user's own active CART booking_id for this room, if any */
   activeCartBookingId: string | null;
 }
@@ -38,8 +34,7 @@ function cancellationLabel(type: string, t: (key: string) => string): string {
   return t('roomCard.cancellation.nonRefundable');
 }
 
-function borderColor(isHeld: boolean, hasOwnCart: boolean, isSelected: boolean): string {
-  if (isHeld) return 'error.main';
+function borderColor(hasOwnCart: boolean, isSelected: boolean): string {
   if (hasOwnCart) return th.state.warningBorder;
   if (isSelected) return 'primary.main';
   return 'divider';
@@ -51,7 +46,6 @@ export default function RoomTypeCard({
   checkout,
   selectedRatePlanId,
   onRoomSelect,
-  isHeld,
   activeCartBookingId,
 }: RoomTypeCardProps) {
   const { t } = useTranslation();
@@ -78,14 +72,13 @@ export default function RoomTypeCard({
     <Box
       sx={{
         border: '1px solid',
-        borderColor: borderColor(isHeld, hasOwnCart, Boolean(selectedRatePlanId)),
+        borderColor: borderColor(hasOwnCart, Boolean(selectedRatePlanId)),
         borderRadius: 3,
         overflow: 'hidden',
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
         gap: 0,
         transition: 'border-color 0.2s',
-        opacity: isHeld ? 0.75 : 1,
       }}
     >
       {/* Room image placeholder */}
@@ -93,18 +86,14 @@ export default function RoomTypeCard({
         sx={{
           width: { xs: '100%', sm: 200 },
           minHeight: 160,
-          bgcolor: isHeld ? 'grey.300' : 'grey.200',
+          bgcolor: 'grey.200',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        {isHeld ? (
-          <BlockIcon sx={{ fontSize: 48, color: 'error.light' }} />
-        ) : (
-          <BedIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
-        )}
+        <BedIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
       </Box>
 
       {/* Content */}
@@ -122,15 +111,7 @@ export default function RoomTypeCard({
             <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1rem' }}>
               {room.name}
             </Typography>
-            {isHeld && (
-              <Chip
-                label={t('roomCard.unavailable')}
-                color="error"
-                size="small"
-                sx={{ fontWeight: 600 }}
-              />
-            )}
-            {hasOwnCart && !isHeld && (
+            {hasOwnCart && (
               <Chip
                 label={t('roomCard.bookingInProgress')}
                 size="small"
@@ -146,12 +127,7 @@ export default function RoomTypeCard({
           </Box>
           {displayPrice != null && (
             <Box sx={{ textAlign: 'right' }}>
-              <Typography
-                variant="h6"
-                color={isHeld ? 'text.disabled' : 'primary.main'}
-                fontWeight={700}
-                component="span"
-              >
+              <Typography variant="h6" color="primary.main" fontWeight={700} component="span">
                 ${Number(displayPrice).toLocaleString()}
               </Typography>
               <Typography variant="caption" color="text.secondary" component="span">
@@ -185,15 +161,8 @@ export default function RoomTypeCard({
 
         <Divider sx={{ my: 0.5 }} />
 
-        {/* ── State: held by another user ── */}
-        {isHeld && (
-          <Alert severity="error" sx={{ py: 0.5 }}>
-            {t('roomCard.heldAlert')}
-          </Alert>
-        )}
-
         {/* ── State: current user's own active hold ── */}
-        {hasOwnCart && !isHeld && (
+        {hasOwnCart && (
           <Box
             sx={{
               display: 'flex',
@@ -229,8 +198,7 @@ export default function RoomTypeCard({
         )}
 
         {/* ── State: normal — rate plan rows ── */}
-        {!isHeld &&
-          !hasOwnCart &&
+        {!hasOwnCart &&
           activePlans.slice(0, 2).map((plan) => {
             const isSelected = selectedRatePlanId === plan.id;
             return (

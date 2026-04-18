@@ -4,10 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, typography } from '@src/theme';
 import { useAuth } from '@src/services/auth-context';
+import { useCart } from '@src/features/booking/cart-context';
 
 export default function TabLayout() {
   const { t } = useTranslation();
   const { isLoggedIn } = useAuth();
+  const { hasActiveCart } = useCart();
 
   return (
     <Tabs
@@ -51,6 +53,8 @@ export default function TabLayout() {
           title: t('tabs.trips'),
           headerTitle: t('trips.title'),
           href: isLoggedIn ? '/trips' : null,
+          tabBarBadge: hasActiveCart ? 1 : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.primary, color: colors.onPrimary },
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="briefcase-outline" size={size} color={color} />
           ),

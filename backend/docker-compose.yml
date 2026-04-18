@@ -131,6 +131,9 @@ services:
       BOOKING_DEBUG: "true"
       BOOKING_JWT_SECRET: "change-me-in-production"
       BOOKING_JWT_ALGORITHM: "HS256"
+      BOOKING_CATALOG_SERVICE_URL: "http://thub-catalog:8000"
+      BOOKING_WORKER_ENABLED: "true"
+      BOOKING_WORKER_EXPIRE_INTERVAL_SECONDS: "60"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:

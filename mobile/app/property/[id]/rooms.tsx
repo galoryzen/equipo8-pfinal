@@ -12,7 +12,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing } from '@src/theme';
-import { Button, RoomTypeCard, type SelectedRoomInfo } from '@src/shared/ui';
+import {
+  Button,
+  CartHeaderButton,
+  RoomTypeCard,
+  type SelectedRoomInfo,
+} from '@src/shared/ui';
 import { useProperty } from '@src/features/catalog/use-property';
 
 function formatShortDate(iso: string): string {
@@ -94,6 +99,7 @@ export default function SelectRoomScreen() {
           )}
         </View>
       </View>
+      <CartHeaderButton />
     </View>
   );
 

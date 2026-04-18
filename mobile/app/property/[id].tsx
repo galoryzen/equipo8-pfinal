@@ -8,10 +8,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { Button } from '@src/shared/ui';
+import { Button, CartHeaderButton } from '@src/shared/ui';
 import { useProperty } from '@src/features/catalog/use-property';
 
 const MOCK_REVIEWS = [
@@ -53,21 +53,31 @@ export default function PropertyDetailScreen() {
     checkout,
   });
 
+  // Tint the cart icon white because the root Stack gives this screen a
+  // transparent header that overlaps the hero image.
+  const headerRight = () => <CartHeaderButton tint="#fff" />;
+
   if (loading) {
     return (
-      <View style={styles.centerState}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <>
+        <Stack.Screen options={{ headerRight }} />
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </>
     );
   }
 
   if (error || !property) {
     return (
-      <View style={styles.centerState}>
-        <Ionicons name="cloud-offline-outline" size={48} color={colors.text.muted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <Button title={t('common.retry')} onPress={retry} />
-      </View>
+      <>
+        <Stack.Screen options={{ headerRight }} />
+        <View style={styles.centerState}>
+          <Ionicons name="cloud-offline-outline" size={48} color={colors.text.muted} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Button title={t('common.retry')} onPress={retry} />
+        </View>
+      </>
     );
   }
 
@@ -85,6 +95,7 @@ export default function PropertyDetailScreen() {
 
   return (
     <View style={styles.screen}>
+      <Stack.Screen options={{ headerRight }} />
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}

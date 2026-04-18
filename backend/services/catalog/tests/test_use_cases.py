@@ -374,11 +374,13 @@ class TestGetPropertyDetail:
         mock_cache.set.assert_called_once()
         mock_property_repo.get_review_stats.assert_called_once_with(CANCUN_PROPERTY_ID)
         call_args = mock_cache.set.call_args
-        assert call_args.kwargs.get("ttl_seconds", call_args.args[2] if len(call_args.args) > 2 else None) == GetPropertyDetailUseCase.CACHE_TTL or True
+        assert (
+            call_args.kwargs.get("ttl_seconds", call_args.args[2] if len(call_args.args) > 2 else None)
+            == GetPropertyDetailUseCase.CACHE_TTL
+            or True
+        )
 
-    async def test_detail_rating_comes_from_review_stats_not_denormalized_columns(
-        self, mock_property_repo, mock_cache
-    ):
+    async def test_detail_rating_comes_from_review_stats_not_denormalized_columns(self, mock_property_repo, mock_cache):
         """Detail rating_avg / review_count reflect get_review_stats, not Property columns."""
         fake_prop = _make_fake_property()
         fake_prop.rating_avg = Decimal("4.60")
@@ -437,9 +439,7 @@ class TestGetPropertyDetail:
         assert d["rating_avg"] == "4.00"
         assert d["review_count"] == 2
 
-    async def test_room_types_expose_description_and_images(
-        self, mock_property_repo, mock_cache
-    ):
+    async def test_room_types_expose_description_and_images(self, mock_property_repo, mock_cache):
         """New fields description + images flow through the DTO for each room type."""
         fake_prop = _make_fake_property()
         mock_property_repo.get_by_id.return_value = fake_prop
@@ -489,9 +489,7 @@ def _make_promo(
 class TestPromotionApplication:
     """Cover the per-day greedy promotion logic in GetPropertyDetailUseCase."""
 
-    async def test_no_promotion_returns_base_min_and_null_original(
-        self, mock_property_repo, mock_cache
-    ):
+    async def test_no_promotion_returns_base_min_and_null_original(self, mock_property_repo, mock_cache):
         prop = _make_fake_property()
         rp = prop.room_types[0].rate_plans[0]
         rp.rate_calendar = [
@@ -517,18 +515,14 @@ class TestPromotionApplication:
         assert plan["promotion"] is None
         assert plan["currency_code"] == "USD"
 
-    async def test_percent_promotion_discounts_and_exposes_original(
-        self, mock_property_repo, mock_cache
-    ):
+    async def test_percent_promotion_discounts_and_exposes_original(self, mock_property_repo, mock_cache):
         prop = _make_fake_property()
         rp = prop.room_types[0].rate_plans[0]
         rp.rate_calendar = [
             _make_rc(date(2026, 6, 1), Decimal("100.00")),
             _make_rc(date(2026, 6, 2), Decimal("100.00")),
         ]
-        rp.promotions = [
-            _make_promo(DiscountType.PERCENT, Decimal("15"), date(2026, 6, 1), date(2026, 6, 30))
-        ]
+        rp.promotions = [_make_promo(DiscountType.PERCENT, Decimal("15"), date(2026, 6, 1), date(2026, 6, 30))]
 
         mock_property_repo.get_by_id.return_value = prop
         mock_property_repo.get_review_stats.return_value = (None, 0)
@@ -553,9 +547,7 @@ class TestPromotionApplication:
         prop = _make_fake_property()
         rp = prop.room_types[0].rate_plans[0]
         rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("210.00"))]
-        rp.promotions = [
-            _make_promo(DiscountType.FIXED, Decimal("40"), date(2026, 6, 1), date(2026, 6, 30))
-        ]
+        rp.promotions = [_make_promo(DiscountType.FIXED, Decimal("40"), date(2026, 6, 1), date(2026, 6, 30))]
 
         mock_property_repo.get_by_id.return_value = prop
         mock_property_repo.get_review_stats.return_value = (None, 0)
@@ -603,9 +595,7 @@ class TestPromotionApplication:
         assert plan["original_min_price"] is None
         assert plan["promotion"] is None
 
-    async def test_promotion_outside_date_range_is_ignored(
-        self, mock_property_repo, mock_cache
-    ):
+    async def test_promotion_outside_date_range_is_ignored(self, mock_property_repo, mock_cache):
         prop = _make_fake_property()
         rp = prop.room_types[0].rate_plans[0]
         rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("100.00"))]
@@ -634,9 +624,7 @@ class TestPromotionApplication:
         assert plan["original_min_price"] is None
         assert plan["promotion"] is None
 
-    async def test_greedy_picks_cheaper_promo_per_day(
-        self, mock_property_repo, mock_cache
-    ):
+    async def test_greedy_picks_cheaper_promo_per_day(self, mock_property_repo, mock_cache):
         """Given two concurrent promos, each day picks the one that yields the lowest price."""
         prop = _make_fake_property()
         rp = prop.room_types[0].rate_plans[0]
@@ -644,11 +632,17 @@ class TestPromotionApplication:
         # 10% off → 90.00 ; $20 off → 80.00 → fixed wins
         rp.promotions = [
             _make_promo(
-                DiscountType.PERCENT, Decimal("10"), date(2026, 6, 1), date(2026, 6, 30),
+                DiscountType.PERCENT,
+                Decimal("10"),
+                date(2026, 6, 1),
+                date(2026, 6, 30),
                 name="10 off",
             ),
             _make_promo(
-                DiscountType.FIXED, Decimal("20"), date(2026, 6, 1), date(2026, 6, 30),
+                DiscountType.FIXED,
+                Decimal("20"),
+                date(2026, 6, 1),
+                date(2026, 6, 30),
                 name="20 fixed",
             ),
         ]
@@ -673,9 +667,7 @@ class TestPromotionApplication:
         prop = _make_fake_property()
         rp = prop.room_types[0].rate_plans[0]
         rp.rate_calendar = [_make_rc(date(2026, 6, 1), Decimal("30.00"))]
-        rp.promotions = [
-            _make_promo(DiscountType.FIXED, Decimal("50"), date(2026, 6, 1), date(2026, 6, 30))
-        ]
+        rp.promotions = [_make_promo(DiscountType.FIXED, Decimal("50"), date(2026, 6, 1), date(2026, 6, 30))]
 
         mock_property_repo.get_by_id.return_value = prop
         mock_property_repo.get_review_stats.return_value = (None, 0)
@@ -1051,7 +1043,10 @@ class TestSearchProperties:
         )
 
         _, kwargs = mock_cache.set.call_args
-        assert kwargs.get("ttl_seconds", mock_cache.set.call_args[0][2] if len(mock_cache.set.call_args[0]) > 2 else None) == 120
+        assert (
+            kwargs.get("ttl_seconds", mock_cache.set.call_args[0][2] if len(mock_cache.set.call_args[0]) > 2 else None)
+            == 120
+        )
 
 
 # ── ListAmenitiesUseCase ──────────────────────────────

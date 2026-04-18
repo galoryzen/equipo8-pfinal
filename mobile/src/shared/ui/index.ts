@@ -8,3 +8,6 @@ export { PriceRangePicker } from './PriceRangePicker';
 export { RoomTypeCard } from './RoomTypeCard';
 export type { SelectedRoomInfo } from './RoomTypeCard';
 export { PriceBreakdownPanel } from './PriceBreakdownPanel';
+export { ConflictModal } from './ConflictModal';
+export type { ConflictModalProps } from './ConflictModal';
+export { CartHeaderButton } from './CartHeaderButton';

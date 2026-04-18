@@ -1,4 +1,4 @@
-"""Unit tests for CreateCartBookingUseCase and GetHeldRoomsUseCase."""
+"""Unit tests for CreateCartBookingUseCase."""
 
 from datetime import date, datetime
 from decimal import Decimal
@@ -7,8 +7,13 @@ from uuid import UUID
 
 import pytest
 
+from app.application.exceptions import (
+    CatalogUnavailableError,
+    ConflictingActiveCartError,
+    InventoryUnavailableError,
+)
+from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
-from app.application.use_cases.get_held_rooms import GetHeldRoomsUseCase
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType
 from app.schemas.booking import CreateCartBookingIn
 
@@ -39,6 +44,7 @@ def _cart_booking() -> Booking:
         policy_type_applied=CancellationPolicyType.FULL,
         policy_hours_limit_applied=None,
         policy_refund_percent_applied=None,
+        inventory_released=False,
         created_at=now,
         updated_at=now,
     )
@@ -56,45 +62,62 @@ def _payload() -> CreateCartBookingIn:
     )
 
 
+def _catalog_mock() -> AsyncMock:
+    return AsyncMock(spec=CatalogInventoryPort)
+
+
 @pytest.mark.asyncio
 class TestCreateCartBookingUseCase:
     async def test_creates_new_cart_when_none_exists(self):
         repo = AsyncMock()
         repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
         repo.create.return_value = _cart_booking()
+        catalog = _catalog_mock()
 
-        uc = CreateCartBookingUseCase(repo)
+        uc = CreateCartBookingUseCase(repo, catalog)
         out = await uc.execute(user_id=USER_ID, payload=_payload())
 
         repo.find_active_cart.assert_awaited_once()
+        catalog.create_hold.assert_awaited_once_with(
+            room_type_id=ROOM_TYPE_ID,
+            checkin=CHECKIN,
+            checkout=CHECKOUT,
+        )
         repo.create.assert_awaited_once()
         assert out.status == "CART"
         assert out.id == BOOKING_ID
-        assert out.property_id == PROPERTY_ID
-        assert out.room_type_id == ROOM_TYPE_ID
-        assert out.rate_plan_id == RATE_PLAN_ID
 
-    async def test_returns_existing_cart_idempotently(self):
+    async def test_returns_existing_cart_idempotently_without_calling_catalog(self):
         existing = _cart_booking()
         repo = AsyncMock()
         repo.find_active_cart.return_value = existing
+        catalog = _catalog_mock()
 
-        uc = CreateCartBookingUseCase(repo)
+        uc = CreateCartBookingUseCase(repo, catalog)
         out = await uc.execute(user_id=USER_ID, payload=_payload())
 
+        catalog.create_hold.assert_not_awaited()
         repo.create.assert_not_awaited()
         assert out.id == existing.id
-        assert out.status == "CART"
 
-    async def test_hold_expires_at_is_set(self):
+    async def test_new_booking_starts_inventory_released_false(self):
+        captured: list[Booking] = []
+
+        async def fake_create(b: Booking) -> Booking:
+            captured.append(b)
+            return b
+
         repo = AsyncMock()
         repo.find_active_cart.return_value = None
-        repo.create.return_value = _cart_booking()
+        repo.find_any_active_cart_for_user.return_value = None
+        repo.create.side_effect = fake_create
+        catalog = _catalog_mock()
 
-        uc = CreateCartBookingUseCase(repo)
-        out = await uc.execute(user_id=USER_ID, payload=_payload())
+        uc = CreateCartBookingUseCase(repo, catalog)
+        await uc.execute(user_id=USER_ID, payload=_payload())
 
-        assert out.hold_expires_at is not None
+        assert captured[0].inventory_released is False
 
     async def test_total_calculated_from_unit_price_and_nights(self):
         captured: list[Booking] = []
@@ -105,45 +128,93 @@ class TestCreateCartBookingUseCase:
 
         repo = AsyncMock()
         repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
         repo.create.side_effect = fake_create
+        catalog = _catalog_mock()
 
-        uc = CreateCartBookingUseCase(repo)
+        uc = CreateCartBookingUseCase(repo, catalog)
         await uc.execute(user_id=USER_ID, payload=_payload())
 
         nights = (CHECKOUT - CHECKIN).days  # 3
         assert captured[0].total_amount == Decimal("100.00") * nights
         assert captured[0].unit_price == Decimal("100.00")
 
-
-@pytest.mark.asyncio
-class TestGetHeldRoomsUseCase:
-    async def test_returns_held_room_ids(self):
+    async def test_rejects_when_user_has_other_active_cart(self):
+        """User can only have one active cart at a time, regardless of the room/dates."""
+        other = _cart_booking()
         repo = AsyncMock()
-        repo.find_held_room_type_ids.return_value = [ROOM_TYPE_ID]
+        # No exact match (different combination) but user HAS another active cart.
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = other
+        catalog = _catalog_mock()
 
-        uc = GetHeldRoomsUseCase(repo)
-        out = await uc.execute(property_id=PROPERTY_ID, checkin=CHECKIN, checkout=CHECKOUT)
+        uc = CreateCartBookingUseCase(repo, catalog)
 
-        assert ROOM_TYPE_ID in out.held_room_type_ids
+        with pytest.raises(ConflictingActiveCartError) as exc_info:
+            await uc.execute(user_id=USER_ID, payload=_payload())
 
-    async def test_returns_empty_when_no_holds(self):
+        assert exc_info.value.existing_booking_id == other.id
+        catalog.create_hold.assert_not_awaited()
+        repo.create.assert_not_awaited()
+
+    async def test_inventory_unavailable_propagates_and_skips_persistence(self):
         repo = AsyncMock()
-        repo.find_held_room_type_ids.return_value = []
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        catalog = _catalog_mock()
+        catalog.create_hold.side_effect = InventoryUnavailableError()
 
-        uc = GetHeldRoomsUseCase(repo)
-        out = await uc.execute(property_id=PROPERTY_ID, checkin=CHECKIN, checkout=CHECKOUT)
+        uc = CreateCartBookingUseCase(repo, catalog)
 
-        assert out.held_room_type_ids == []
+        with pytest.raises(InventoryUnavailableError):
+            await uc.execute(user_id=USER_ID, payload=_payload())
 
-    async def test_passes_correct_args_to_repo(self):
+        repo.create.assert_not_awaited()
+
+    async def test_catalog_unavailable_propagates_and_skips_persistence(self):
         repo = AsyncMock()
-        repo.find_held_room_type_ids.return_value = []
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        catalog = _catalog_mock()
+        catalog.create_hold.side_effect = CatalogUnavailableError("network")
 
-        uc = GetHeldRoomsUseCase(repo)
-        await uc.execute(property_id=PROPERTY_ID, checkin=CHECKIN, checkout=CHECKOUT)
+        uc = CreateCartBookingUseCase(repo, catalog)
 
-        repo.find_held_room_type_ids.assert_awaited_once_with(
-            property_id=PROPERTY_ID,
+        with pytest.raises(CatalogUnavailableError):
+            await uc.execute(user_id=USER_ID, payload=_payload())
+
+        repo.create.assert_not_awaited()
+
+    async def test_persistence_failure_triggers_best_effort_release(self):
+        repo = AsyncMock()
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        repo.create.side_effect = RuntimeError("db down")
+        catalog = _catalog_mock()
+
+        uc = CreateCartBookingUseCase(repo, catalog)
+        with pytest.raises(RuntimeError):
+            await uc.execute(user_id=USER_ID, payload=_payload())
+
+        catalog.create_hold.assert_awaited_once()
+        catalog.release_hold.assert_awaited_once_with(
+            room_type_id=ROOM_TYPE_ID,
             checkin=CHECKIN,
             checkout=CHECKOUT,
         )
+
+    async def test_persistence_and_rollback_failure_still_propagates_original(self, caplog):
+        repo = AsyncMock()
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        repo.create.side_effect = RuntimeError("db down")
+        catalog = _catalog_mock()
+        catalog.release_hold.side_effect = CatalogUnavailableError("also down")
+
+        uc = CreateCartBookingUseCase(repo, catalog)
+
+        with pytest.raises(RuntimeError):
+            await uc.execute(user_id=USER_ID, payload=_payload())
+
+        # The loud log for orphan inventory is emitted; caller still sees the db error.
+        assert any("Orphan inventory hold" in r.message for r in caplog.records)

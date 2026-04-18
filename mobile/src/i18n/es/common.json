@@ -98,7 +98,40 @@
     "past": "Pasados",
     "noTrips": "Sin viajes aún",
     "noTripsHint": "¡Empieza a explorar y reserva tu primer viaje!",
-    "explore": "Explorar hospedajes"
+    "explore": "Explorar hospedajes",
+    "inProgress": {
+      "title": "En curso",
+      "continueCta": "Continuar reserva",
+      "countdown": "Expira en {{label}}"
+    }
+  },
+  "booking": {
+    "checkout": {
+      "title": "Confirma tu estancia",
+      "guestDetails": "Datos del huésped",
+      "paymentMethod": "Método de pago",
+      "continueToPayment": "Continuar al pago",
+      "comingSoon": "Próximamente"
+    },
+    "cart": {
+      "unavailable": "La habitación ya no está disponible para las fechas seleccionadas",
+      "countdown": {
+        "label": "La reserva expira en {{label}}"
+      },
+      "expired": {
+        "title": "Tu reserva expiró",
+        "body": "La retención de 15 minutos finalizó. Empieza una nueva búsqueda o revisa tus viajes.",
+        "newSearch": "Nueva búsqueda",
+        "myTrips": "Mis viajes"
+      },
+      "conflict": {
+        "title": "Ya tienes una reserva en curso",
+        "body": "{{property}} · {{room}} para {{checkin}} → {{checkout}}. ¿Reemplazarla por esta?",
+        "bodyGeneric": "Tienes una reserva activa para {{checkin}} → {{checkout}}. ¿Reemplazarla por esta?",
+        "replace": "Reemplazar",
+        "cancel": "Mantener actual"
+      }
+    }
   },
   "profile": {
     "title": "Perfil",

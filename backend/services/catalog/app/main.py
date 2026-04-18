@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.adapters.inbound.api.dependencies import close_cache, init_cache
 from app.adapters.inbound.api.error_handlers import register_error_handlers
 from app.adapters.inbound.api.health import router as health_router
+from app.adapters.inbound.api.inventory import router as inventory_router
 from app.adapters.inbound.api.properties import router as properties_router
 from app.adapters.outbound.db.session import engine
 
@@ -31,3 +32,4 @@ register_error_handlers(app)
 
 app.include_router(health_router, prefix="/api/v1/catalog")
 app.include_router(properties_router, prefix="/api/v1/catalog")
+app.include_router(inventory_router, prefix="/api/v1/catalog")
