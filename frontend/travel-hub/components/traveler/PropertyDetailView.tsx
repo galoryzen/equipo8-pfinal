@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { getHeldRooms, getMyBookings } from '@/app/lib/api/booking';
+import { getMyBookings } from '@/app/lib/api/booking';
 import { getPropertyDetail, isCatalogNotFoundError } from '@/app/lib/api/catalog';
 import { useAuthAction } from '@/app/lib/hooks/useAuthAction';
 import type { PaginatedResponse, PropertyDetail, ReviewOut } from '@/app/lib/types/catalog';
@@ -76,8 +76,6 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
   const [checkout, setCheckout] = useState<string>(tomorrow);
   const [reviewPage, setReviewPage] = useState(1);
   const [selectedRoom, setSelectedRoom] = useState<SelectedRoomInfo | null>(null);
-  // room_type_id → true for rooms held by ANY user (including current user)
-  const [heldRoomTypeIds, setHeldRoomTypeIds] = useState<Set<string>>(new Set());
   // room_type_id → booking_id for the CURRENT user's own CART bookings
   const [activeCartByRoomTypeId, setActiveCartByRoomTypeId] = useState<Record<string, string>>({});
 
@@ -112,14 +110,6 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
-
-  // Fetch rooms held by ANY user for the current property + dates (public endpoint)
-  useEffect(() => {
-    if (!checkin || !checkout) return;
-    getHeldRooms(id, checkin, checkout)
-      .then((data) => setHeldRoomTypeIds(new Set(data.held_room_type_ids)))
-      .catch(() => setHeldRoomTypeIds(new Set()));
-  }, [id, checkin, checkout]);
 
   // Fetch the current user's own CART bookings to allow resuming their hold
   useEffect(() => {
@@ -346,7 +336,6 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
                       selectedRoom?.roomTypeId === room.id ? selectedRoom.ratePlanId : null
                     }
                     onRoomSelect={setSelectedRoom}
-                    isHeld={heldRoomTypeIds.has(room.id) && !activeCartByRoomTypeId[room.id]}
                     activeCartBookingId={activeCartByRoomTypeId[room.id] ?? null}
                   />
                 ))}

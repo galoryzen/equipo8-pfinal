@@ -68,9 +68,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         return float(avg_q) if avg_q is not None else None
 
     async def list_amenities(self) -> list[Amenity]:
-        result = await self._session.execute(
-            select(Amenity).order_by(Amenity.name)
-        )
+        result = await self._session.execute(select(Amenity).order_by(Amenity.name))
         return list(result.scalars().all())
 
     async def search_featured(self, limit: int = 10) -> list[dict]:
@@ -79,8 +77,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         effective_today = case(
             (
                 Promotion.discount_type == DiscountType.PERCENT,
-                RateCalendar.price_amount
-                * (Decimal("1") - Promotion.discount_value / Decimal("100")),
+                RateCalendar.price_amount * (Decimal("1") - Promotion.discount_value / Decimal("100")),
             ),
             (
                 Promotion.discount_type == DiscountType.FIXED,
@@ -234,8 +231,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         effective_price = case(
             (
                 Promotion.discount_type == DiscountType.PERCENT,
-                RateCalendar.price_amount
-                * (Decimal("1") - Promotion.discount_value / Decimal("100")),
+                RateCalendar.price_amount * (Decimal("1") - Promotion.discount_value / Decimal("100")),
             ),
             (
                 Promotion.discount_type == DiscountType.FIXED,
@@ -277,8 +273,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             select(
                 Review.property_id.label("property_id"),
                 sa_func.avg(Review.rating).label("review_avg_rating"),
-            )
-            .group_by(Review.property_id)
+            ).group_by(Review.property_id)
         ).subquery("review_avg_sq")
 
         base_q = (
@@ -407,9 +402,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                 selectinload(Property.room_types)
                 .selectinload(RoomType.rate_plans)
                 .selectinload(RatePlan.rate_calendar),
-                selectinload(Property.room_types)
-                .selectinload(RoomType.rate_plans)
-                .selectinload(RatePlan.promotions),
+                selectinload(Property.room_types).selectinload(RoomType.rate_plans).selectinload(RatePlan.promotions),
             )
             .where(
                 Property.id == property_id,
@@ -420,21 +413,15 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         return result.unique().scalar_one_or_none()
 
     async def get_review_stats(self, property_id: UUID) -> tuple[Decimal | None, int]:
-        stmt = (
-            select(
-                sa_func.avg(Review.rating),
-                sa_func.count(Review.id),
-            ).where(Review.property_id == property_id)
-        )
+        stmt = select(
+            sa_func.avg(Review.rating),
+            sa_func.count(Review.id),
+        ).where(Review.property_id == property_id)
         row = (await self._session.execute(stmt)).one()
         return _quantize_avg_from_raw(row[0], row[1])
 
     async def get_reviews(self, property_id: UUID, page: int = 1, page_size: int = 10) -> tuple[list[Review], int]:
-        count_stmt = (
-            select(sa_func.count())
-            .select_from(Review)
-            .where(Review.property_id == property_id)
-        )
+        count_stmt = select(sa_func.count()).select_from(Review).where(Review.property_id == property_id)
         total = (await self._session.execute(count_stmt)).scalar() or 0
 
         stmt = (

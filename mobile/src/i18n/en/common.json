@@ -98,7 +98,40 @@
     "past": "Past",
     "noTrips": "No trips yet",
     "noTripsHint": "Start exploring and book your first trip!",
-    "explore": "Explore stays"
+    "explore": "Explore stays",
+    "inProgress": {
+      "title": "In progress",
+      "continueCta": "Continue booking",
+      "countdown": "Expires in {{label}}"
+    }
+  },
+  "booking": {
+    "checkout": {
+      "title": "Confirm your stay",
+      "guestDetails": "Guest details",
+      "paymentMethod": "Payment method",
+      "continueToPayment": "Continue to payment",
+      "comingSoon": "Coming soon"
+    },
+    "cart": {
+      "unavailable": "Room no longer available for the selected dates",
+      "countdown": {
+        "label": "Hold expires in {{label}}"
+      },
+      "expired": {
+        "title": "Your reservation expired",
+        "body": "The 15-minute hold has ended. Start a new search or check your trips.",
+        "newSearch": "New search",
+        "myTrips": "My trips"
+      },
+      "conflict": {
+        "title": "You already have a reservation in progress",
+        "body": "{{property}} · {{room}} for {{checkin}} → {{checkout}}. Replace it with this one?",
+        "bodyGeneric": "You have an active reservation for {{checkin}} → {{checkout}}. Replace it with this one?",
+        "replace": "Replace",
+        "cancel": "Keep current"
+      }
+    }
   },
   "profile": {
     "title": "Profile",

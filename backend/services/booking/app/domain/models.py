@@ -4,8 +4,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import ClassVar
 
+from sqlalchemy import Boolean, Numeric, String
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -58,5 +58,6 @@ class Booking(Base):
     )
     policy_hours_limit_applied: Mapped[int | None] = mapped_column(nullable=True)
     policy_refund_percent_applied: Mapped[int | None] = mapped_column(nullable=True)
+    inventory_released: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)

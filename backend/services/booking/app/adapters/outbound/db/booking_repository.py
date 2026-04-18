@@ -13,19 +13,12 @@ class SqlAlchemyBookingRepository(BookingRepository):
         self._session = session
 
     async def list_by_user_id(self, user_id: UUID) -> list[Booking]:
-        stmt = (
-            select(Booking)
-            .where(Booking.user_id == user_id)
-            .order_by(Booking.checkin.desc())
-        )
+        stmt = select(Booking).where(Booking.user_id == user_id).order_by(Booking.checkin.desc())
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
-        stmt = (
-            select(Booking)
-            .where(Booking.id == booking_id, Booking.user_id == user_id)
-        )
+        stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
@@ -64,23 +57,33 @@ class SqlAlchemyBookingRepository(BookingRepository):
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
-    async def find_held_room_type_ids(
-        self,
-        property_id: UUID,
-        checkin: date,
-        checkout: date,
-    ) -> list[UUID]:
-        now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC — column is TIMESTAMP WITHOUT TIME ZONE
+    async def find_any_active_cart_for_user(self, user_id: UUID) -> Booking | None:
+        now = datetime.now(UTC).replace(tzinfo=None)
         stmt = (
-            select(Booking.room_type_id)
+            select(Booking)
             .where(
-                Booking.property_id == property_id,
+                Booking.user_id == user_id,
                 Booking.status == BookingStatus.CART,
                 Booking.hold_expires_at > now,
-                Booking.checkin < checkout,   # standard interval overlap: starts before requested end
-                Booking.checkout > checkin,   # standard interval overlap: ends after requested start
             )
-            .distinct()
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().one_or_none()
+
+    async def find_expired_carts(self, now: datetime) -> list[Booking]:
+        stmt = select(Booking).where(
+            Booking.status == BookingStatus.CART,
+            Booking.hold_expires_at.is_not(None),
+            Booking.hold_expires_at < now,
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def find_unreleased_terminal_bookings(self) -> list[Booking]:
+        stmt = select(Booking).where(
+            Booking.status.in_((BookingStatus.CANCELLED, BookingStatus.EXPIRED)),
+            Booking.inventory_released.is_(False),
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())

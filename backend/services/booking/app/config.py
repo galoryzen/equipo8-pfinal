@@ -10,8 +10,15 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
 
-    model_config = {"env_prefix": "BOOKING_",
-                    "env_file": ".env", "extra": "ignore"}
+    # Catalog coordination for inventory holds (SCRUM-123 backend foundation)
+    CATALOG_SERVICE_URL: str = "http://thub-catalog:8000"
+    CATALOG_HTTP_TIMEOUT_SECONDS: float = 3.0
+
+    # Background worker — expires CART and reconciles unreleased inventory holds
+    WORKER_ENABLED: bool = True
+    WORKER_EXPIRE_INTERVAL_SECONDS: int = 60
+
+    model_config = {"env_prefix": "BOOKING_", "env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

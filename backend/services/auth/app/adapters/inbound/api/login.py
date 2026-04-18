@@ -38,7 +38,14 @@ async def login(
     result = await use_case.execute(request.email, request.password)
 
     _set_token_cookie(response, result["token"])
-    return {"id": result["id"], "email": result["email"], "role": result["role"]}
+    # Token is also returned in the body so non-browser clients (mobile RN + axios)
+    # that can't read HttpOnly cookies can still authenticate. Web keeps using the cookie.
+    return {
+        "id": result["id"],
+        "email": result["email"],
+        "role": result["role"],
+        "token": result["token"],
+    }
 
 
 @router.post("/register", status_code=201)
@@ -58,7 +65,12 @@ async def register(
     )
 
     _set_token_cookie(response, result["token"])
-    return {"id": result["id"], "email": result["email"], "role": result["role"]}
+    return {
+        "id": result["id"],
+        "email": result["email"],
+        "role": result["role"],
+        "token": result["token"],
+    }
 
 
 @router.get("/me")

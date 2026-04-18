@@ -18,7 +18,8 @@ class TestLogin:
         data = resp.json()
         assert data["email"] == sample_user.email
         assert data["role"] == "TRAVELER"
-        assert "access_token" in resp.cookies
+        assert data["token"] == "mock-jwt-token"  # mobile clients read it from the body
+        assert "access_token" in resp.cookies  # web keeps using the cookie
 
     def test_login_invalid_credentials_returns_401(self, client):
         from app.application.exceptions import InvalidCredentialsError
@@ -70,6 +71,7 @@ class TestRegister:
         data = resp.json()
         assert data["email"] == sample_user.email
         assert data["role"] == "TRAVELER"
+        assert data["token"] == "mock-jwt-token"
         assert "access_token" in resp.cookies
 
     def test_register_duplicate_email_returns_409(self, client):

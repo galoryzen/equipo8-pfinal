@@ -222,7 +222,7 @@ CREATE TABLE catalog.inventory_calendar (
     id              UUID PRIMARY KEY,
     room_type_id    UUID NOT NULL REFERENCES catalog.room_type(id),
     day             DATE NOT NULL,
-    available_units INT NOT NULL,
+    available_units INT NOT NULL CHECK (available_units >= 0),
     created_at      TIMESTAMP NOT NULL DEFAULT now(),
     updated_at      TIMESTAMP NOT NULL DEFAULT now(),
     UNIQUE (room_type_id, day)
@@ -274,10 +274,18 @@ CREATE TABLE booking.booking (
     policy_type_applied         cancellation_policy_type NOT NULL,
     policy_hours_limit_applied  INT,
     policy_refund_percent_applied INT,
+    -- True once Catalog has been told to release the hold (on CANCELLED/EXPIRED).
+    -- New CARTs start as FALSE because Catalog is already holding inventory;
+    -- legacy rows (pre-integration) default to TRUE (nothing to release).
+    inventory_released          BOOLEAN NOT NULL DEFAULT TRUE,
     created_at                  TIMESTAMP NOT NULL DEFAULT now(),
     updated_at                  TIMESTAMP NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_booking_room_status ON booking.booking (property_id, room_type_id, status);
+-- Partial index used by the reconcile job; tiny hot set compared to full booking table.
+CREATE INDEX idx_booking_pending_release
+    ON booking.booking (status, hold_expires_at)
+    WHERE inventory_released = FALSE;
 
 CREATE TABLE booking.booking_status_history (
     id          UUID PRIMARY KEY,

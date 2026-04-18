@@ -57,26 +57,20 @@ async def search_properties(
     city_id: UUID = Query(..., description="City to filter properties."),
     min_price: Decimal | None = Query(None, ge=0),
     max_price: Decimal | None = Query(None, ge=0),
-    amenities: str | None = Query(
-        None, description="Comma-separated amenity codes"),
-    sort_by: str = Query(
-        "popularity", pattern="^(popularity|rating|price_asc|price_desc)$"),
+    amenities: str | None = Query(None, description="Comma-separated amenity codes"),
+    sort_by: str = Query("popularity", pattern="^(popularity|rating|price_asc|price_desc)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_db_session),
     cache: CachePort = Depends(get_cache),
 ):
     if checkout <= checkin:
-        raise HTTPException(
-            status_code=422, detail="checkout must be after checkin")
+        raise HTTPException(status_code=422, detail="checkout must be after checkin")
 
     if min_price is not None and max_price is not None and min_price > max_price:
-        raise HTTPException(
-            status_code=422,
-            detail="min_price must be less than or equal to max_price")
+        raise HTTPException(status_code=422, detail="min_price must be less than or equal to max_price")
 
-    amenity_codes = [c.strip() for c in amenities.split(",")
-                     if c.strip()] if amenities else None
+    amenity_codes = [c.strip() for c in amenities.split(",") if c.strip()] if amenities else None
 
     use_case = get_search_use_case(session, cache)
     return await use_case.execute(
@@ -104,8 +98,7 @@ async def get_property_detail(
     cache: CachePort = Depends(get_cache),
 ) -> dict:
     if checkin and checkout and checkout <= checkin:
-        raise HTTPException(
-            status_code=422, detail="checkout must be after checkin")
+        raise HTTPException(status_code=422, detail="checkout must be after checkin")
 
     use_case = get_detail_use_case(session, cache)
     return await use_case.execute(

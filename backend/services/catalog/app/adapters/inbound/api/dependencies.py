@@ -4,13 +4,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.cache.redis_cache import RedisCache
 from app.adapters.outbound.db.city_repository import SqlAlchemyCityRepository
+from app.adapters.outbound.db.inventory_repository import SqlAlchemyInventoryRepository
 from app.adapters.outbound.db.property_repository import SqlAlchemyPropertyRepository
 from app.adapters.outbound.db.session import async_session
 from app.application.ports.outbound.cache_port import CachePort
+from app.application.use_cases.create_inventory_hold import CreateInventoryHoldUseCase
 from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
 from app.application.use_cases.list_amenities import ListAmenitiesUseCase
+from app.application.use_cases.release_inventory_hold import ReleaseInventoryHoldUseCase
 from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
 
@@ -75,3 +78,17 @@ def get_detail_use_case(session: AsyncSession, cache: CachePort) -> GetPropertyD
 def get_list_amenities_use_case(session: AsyncSession) -> ListAmenitiesUseCase:
     repo = get_property_repository(session)
     return ListAmenitiesUseCase(repo)
+
+
+def get_inventory_repository(session: AsyncSession) -> SqlAlchemyInventoryRepository:
+    return SqlAlchemyInventoryRepository(session)
+
+
+def get_create_hold_use_case(session: AsyncSession) -> CreateInventoryHoldUseCase:
+    repo = get_inventory_repository(session)
+    return CreateInventoryHoldUseCase(repo)
+
+
+def get_release_hold_use_case(session: AsyncSession) -> ReleaseInventoryHoldUseCase:
+    repo = get_inventory_repository(session)
+    return ReleaseInventoryHoldUseCase(repo)

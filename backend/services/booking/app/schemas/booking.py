@@ -64,7 +64,3 @@ class CartBookingOut(BaseModel):
     room_type_id: UUID
     rate_plan_id: UUID
     unit_price: Decimal
-
-
-class HeldRoomsOut(BaseModel):
-    held_room_type_ids: list[UUID]

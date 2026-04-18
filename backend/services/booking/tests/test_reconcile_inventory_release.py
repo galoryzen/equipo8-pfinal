@@ -1,0 +1,97 @@
+"""Unit tests for ReconcileInventoryReleaseUseCase."""
+
+from datetime import date, datetime
+from decimal import Decimal
+from unittest.mock import AsyncMock
+from uuid import UUID
+
+import pytest
+
+from app.application.exceptions import CatalogUnavailableError
+from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
+from app.application.use_cases.reconcile_inventory_release import (
+    ReconcileInventoryReleaseUseCase,
+)
+from app.domain.models import Booking, BookingStatus, CancellationPolicyType
+
+
+def _terminal(booking_id: UUID, status: BookingStatus) -> Booking:
+    now = datetime(2026, 4, 1, 12, 0, 0)
+    return Booking(
+        id=booking_id,
+        user_id=UUID("a0000000-0000-0000-0000-000000000001"),
+        status=status,
+        checkin=date(2026, 6, 1),
+        checkout=date(2026, 6, 4),
+        hold_expires_at=datetime(2026, 4, 1, 11, 45, 0),
+        total_amount=Decimal("300.00"),
+        currency_code="USD",
+        property_id=UUID("30000000-0000-0000-0000-000000000001"),
+        room_type_id=UUID("60000000-0000-0000-0000-000000000001"),
+        rate_plan_id=UUID("70000000-0000-0000-0000-000000000001"),
+        unit_price=Decimal("100.00"),
+        policy_type_applied=CancellationPolicyType.FULL,
+        policy_hours_limit_applied=None,
+        policy_refund_percent_applied=None,
+        inventory_released=False,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@pytest.mark.asyncio
+class TestReconcileInventoryReleaseUseCase:
+    async def test_noop_when_nothing_pending(self):
+        repo = AsyncMock()
+        repo.find_unreleased_terminal_bookings.return_value = []
+        catalog = AsyncMock(spec=CatalogInventoryPort)
+
+        uc = ReconcileInventoryReleaseUseCase(repo, catalog)
+        released = await uc.execute()
+
+        assert released == 0
+        catalog.release_hold.assert_not_awaited()
+        repo.save.assert_not_awaited()
+
+    async def test_releases_and_flips_flag(self):
+        b = _terminal(UUID("90000000-0000-0000-0000-000000000001"), BookingStatus.CANCELLED)
+        repo = AsyncMock()
+        repo.find_unreleased_terminal_bookings.return_value = [b]
+        catalog = AsyncMock(spec=CatalogInventoryPort)
+
+        uc = ReconcileInventoryReleaseUseCase(repo, catalog)
+        released = await uc.execute()
+
+        assert released == 1
+        assert b.inventory_released is True
+        catalog.release_hold.assert_awaited_once()
+        repo.save.assert_awaited_once()
+
+    async def test_leaves_flag_unchanged_when_catalog_still_down(self):
+        b = _terminal(UUID("90000000-0000-0000-0000-000000000001"), BookingStatus.EXPIRED)
+        repo = AsyncMock()
+        repo.find_unreleased_terminal_bookings.return_value = [b]
+        catalog = AsyncMock(spec=CatalogInventoryPort)
+        catalog.release_hold.side_effect = CatalogUnavailableError("still down")
+
+        uc = ReconcileInventoryReleaseUseCase(repo, catalog)
+        released = await uc.execute()
+
+        assert released == 0
+        assert b.inventory_released is False
+        repo.save.assert_not_awaited()
+
+    async def test_processes_mixed_outcomes(self):
+        ok = _terminal(UUID("90000000-0000-0000-0000-000000000001"), BookingStatus.EXPIRED)
+        fail = _terminal(UUID("90000000-0000-0000-0000-000000000002"), BookingStatus.CANCELLED)
+        repo = AsyncMock()
+        repo.find_unreleased_terminal_bookings.return_value = [ok, fail]
+        catalog = AsyncMock(spec=CatalogInventoryPort)
+        catalog.release_hold.side_effect = [None, CatalogUnavailableError("flaky")]
+
+        uc = ReconcileInventoryReleaseUseCase(repo, catalog)
+        released = await uc.execute()
+
+        assert released == 1
+        assert ok.inventory_released is True
+        assert fail.inventory_released is False

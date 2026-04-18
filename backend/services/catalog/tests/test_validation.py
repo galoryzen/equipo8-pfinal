@@ -70,17 +70,13 @@ class TestSearchPropertiesValidation:
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_omit_city_id_returns_422(self, mock_factory, client):
-        resp = client.get(
-            "/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2"
-        )
+        resp = client.get("/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2")
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_checkout_before_checkin_returns_422(self, mock_factory, client):
         cid = uuid4()
-        resp = client.get(
-            f"/api/v1/catalog/properties?checkin=2026-04-05&checkout=2026-04-01&guests=2&city_id={cid}"
-        )
+        resp = client.get(f"/api/v1/catalog/properties?checkin=2026-04-05&checkout=2026-04-01&guests=2&city_id={cid}")
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
@@ -126,17 +122,13 @@ class TestSearchPropertiesValidation:
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_guests_below_1_returns_422(self, mock_factory, client):
         cid = uuid4()
-        resp = client.get(
-            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=0&city_id={cid}"
-        )
+        resp = client.get(f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=0&city_id={cid}")
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_guests_negative_returns_422(self, mock_factory, client):
         cid = uuid4()
-        resp = client.get(
-            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=-3&city_id={cid}"
-        )
+        resp = client.get(f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=-3&city_id={cid}")
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
@@ -186,9 +178,7 @@ class TestPropertyDetailValidation:
     @patch("app.adapters.inbound.api.properties.get_detail_use_case")
     def test_checkout_before_checkin_returns_422(self, mock_factory, client):
         pid = uuid4()
-        resp = client.get(
-            f"/api/v1/catalog/properties/{pid}?checkin=2026-04-05&checkout=2026-04-01"
-        )
+        resp = client.get(f"/api/v1/catalog/properties/{pid}?checkin=2026-04-05&checkout=2026-04-01")
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_detail_use_case")
@@ -246,9 +236,7 @@ class TestPropertyDetailValidation:
         mock_uc.execute.return_value = _make_detail_response(pid)
         mock_factory.return_value = mock_uc
 
-        resp = client.get(
-            f"/api/v1/catalog/properties/{pid}?checkin=2026-06-01&checkout=2026-06-05"
-        )
+        resp = client.get(f"/api/v1/catalog/properties/{pid}?checkin=2026-06-01&checkout=2026-06-05")
 
         assert resp.status_code == 200
         call_kwargs = mock_uc.execute.call_args.kwargs

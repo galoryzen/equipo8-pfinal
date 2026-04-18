@@ -51,11 +51,7 @@ class GetPropertyDetailUseCase:
         review_page: int = 1,
         review_page_size: int = 10,
     ) -> dict:
-        cache_key = (
-            f"property_detail:{property_id}"
-            f":ci={checkin}:co={checkout}"
-            f":rp={review_page}:rs={review_page_size}"
-        )
+        cache_key = f"property_detail:{property_id}:ci={checkin}:co={checkout}:rp={review_page}:rs={review_page_size}"
 
         cached = await self._cache.get(cache_key)
         if cached:
@@ -67,9 +63,7 @@ class GetPropertyDetailUseCase:
 
         rating_avg, review_count = await self._repo.get_review_stats(property_id)
 
-        reviews_list, review_total = await self._repo.get_reviews(
-            property_id, review_page, review_page_size
-        )
+        reviews_list, review_total = await self._repo.get_reviews(property_id, review_page, review_page_size)
 
         detail = self._build_detail(prop, checkin, checkout, rating_avg, review_count)
         reviews_page = PaginatedResponse[ReviewOut].build(
@@ -127,9 +121,7 @@ class GetPropertyDetailUseCase:
                 )
                 for img in sorted(prop.images, key=lambda i: i.display_order)
             ],
-            amenities=[
-                AmenitySummary(code=a.code, name=a.name) for a in prop.amenities
-            ],
+            amenities=[AmenitySummary(code=a.code, name=a.name) for a in prop.amenities],
             policies=[
                 PropertyPolicyOut(
                     id=p.id,
@@ -138,9 +130,7 @@ class GetPropertyDetailUseCase:
                 )
                 for p in prop.policies
             ],
-            room_types=[
-                self._map_room_type(rt, checkin, checkout) for rt in prop.room_types
-            ],
+            room_types=[self._map_room_type(rt, checkin, checkout) for rt in prop.room_types],
         )
 
     def _map_room_type(
@@ -225,9 +215,7 @@ class GetPropertyDetailUseCase:
             id=rp.id,
             name=rp.name,
             cancellation_policy=(
-                self._map_cancellation_policy(rp.cancellation_policy)
-                if rp.cancellation_policy
-                else None
+                self._map_cancellation_policy(rp.cancellation_policy) if rp.cancellation_policy else None
             ),
             min_price=min_price,
             original_min_price=original_min_price,

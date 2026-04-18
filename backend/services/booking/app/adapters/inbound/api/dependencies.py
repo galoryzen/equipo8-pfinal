@@ -1,18 +1,39 @@
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
+import httpx
 from fastapi import Cookie, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.db.booking_repository import SqlAlchemyBookingRepository
 from app.adapters.outbound.db.session import async_session
+from app.adapters.outbound.http.catalog_client import HttpCatalogClient
 from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.application.exceptions import InvalidTokenError
+from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
 from app.application.ports.outbound.token_port import TokenPort
+from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
-from app.application.use_cases.get_held_rooms import GetHeldRoomsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
+from app.config import settings
+
+# ── Shared HTTP client for Catalog (kept open for the process lifetime,
+# set by lifespan in main.py). Falls back to a lazy on-demand client so
+# tests and scripts work without touching lifespan explicitly. ─────────
+_catalog_http_client: httpx.AsyncClient | None = None
+
+
+def set_catalog_http_client(client: httpx.AsyncClient | None) -> None:
+    global _catalog_http_client
+    _catalog_http_client = client
+
+
+def _get_catalog_http_client() -> httpx.AsyncClient:
+    global _catalog_http_client
+    if _catalog_http_client is None:
+        _catalog_http_client = httpx.AsyncClient(timeout=settings.CATALOG_HTTP_TIMEOUT_SECONDS)
+    return _catalog_http_client
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -22,6 +43,10 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 def get_token_adapter() -> TokenPort:
     return JwtTokenAdapter()
+
+
+def get_catalog_client() -> CatalogInventoryPort:
+    return HttpCatalogClient(_get_catalog_http_client(), base_url=settings.CATALOG_SERVICE_URL)
 
 
 def get_current_user_id(
@@ -51,18 +76,20 @@ def get_current_user_id(
         raise InvalidTokenError("Invalid subject in token") from e
 
 
-def get_held_rooms_use_case(
-    session: AsyncSession = Depends(get_db_session),
-) -> GetHeldRoomsUseCase:
-    repo = SqlAlchemyBookingRepository(session)
-    return GetHeldRoomsUseCase(repo)
-
-
 def get_create_cart_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
+    catalog: CatalogInventoryPort = Depends(get_catalog_client),
 ) -> CreateCartBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return CreateCartBookingUseCase(repo)
+    return CreateCartBookingUseCase(repo, catalog)
+
+
+def get_cancel_cart_booking_use_case(
+    session: AsyncSession = Depends(get_db_session),
+    catalog: CatalogInventoryPort = Depends(get_catalog_client),
+) -> CancelCartBookingUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return CancelCartBookingUseCase(repo, catalog)
 
 
 def get_list_my_bookings_use_case(
