@@ -19,14 +19,9 @@ function booking(overrides: Partial<BookingListItem> = {}): BookingListItem {
     checkout: '2026-06-05',
     total_amount: '100',
     currency_code: 'USD',
+    property_id: '30000000-0000-0000-0000-000000000001',
+    room_type_id: '60000000-0000-0000-0000-000000000001',
     created_at: '2026-01-01',
-    items: [
-      {
-        property_id: '30000000-0000-0000-0000-000000000001',
-        room_type_id: '60000000-0000-0000-0000-000000000001',
-        quantity: 1,
-      },
-    ],
     ...overrides,
   };
 }
@@ -76,21 +71,8 @@ describe('estimateGuestLabel', () => {
     expect(estimateGuestLabel(b, undefined)).toBeNull();
   });
 
-  it('sums capacity * quantity across items', () => {
-    const b = booking({
-      items: [
-        {
-          property_id: '30000000-0000-0000-0000-000000000001',
-          room_type_id: 'r1',
-          quantity: 2,
-        },
-        {
-          property_id: '30000000-0000-0000-0000-000000000001',
-          room_type_id: 'r2',
-          quantity: 1,
-        },
-      ],
-    });
+  it('returns capacity of the selected room type', () => {
+    const b = booking({ room_type_id: 'r1' });
     const prop = propertyWithRooms([
       {
         id: 'r1',
@@ -100,28 +82,12 @@ describe('estimateGuestLabel', () => {
         rate_plans: [],
         min_price: null,
       },
-      {
-        id: 'r2',
-        name: 'Single',
-        capacity: 1,
-        amenities: [],
-        rate_plans: [],
-        min_price: null,
-      },
     ]);
-    expect(estimateGuestLabel(b, prop)).toBe('5 Guests');
+    expect(estimateGuestLabel(b, prop)).toBe('2 Guests');
   });
 
-  it('uses singular Guest when total is 1', () => {
-    const b = booking({
-      items: [
-        {
-          property_id: '30000000-0000-0000-0000-000000000001',
-          room_type_id: 'r1',
-          quantity: 1,
-        },
-      ],
-    });
+  it('uses singular Guest when capacity is 1', () => {
+    const b = booking({ room_type_id: 'r1' });
     const prop = propertyWithRooms([
       {
         id: 'r1',
@@ -135,16 +101,8 @@ describe('estimateGuestLabel', () => {
     expect(estimateGuestLabel(b, prop)).toBe('1 Guest');
   });
 
-  it('returns null when no matching room types yield positive total', () => {
-    const b = booking({
-      items: [
-        {
-          property_id: '30000000-0000-0000-0000-000000000001',
-          room_type_id: 'unknown-room',
-          quantity: 1,
-        },
-      ],
-    });
+  it('returns null when no matching room type is found', () => {
+    const b = booking({ room_type_id: 'unknown-room' });
     const prop = propertyWithRooms([
       {
         id: 'r1',
@@ -160,12 +118,8 @@ describe('estimateGuestLabel', () => {
 });
 
 describe('primaryPropertyId', () => {
-  it('returns first item property_id', () => {
+  it('returns booking property_id', () => {
     expect(primaryPropertyId(booking())).toBe('30000000-0000-0000-0000-000000000001');
-  });
-
-  it('returns null when items empty', () => {
-    expect(primaryPropertyId(booking({ items: [] }))).toBeNull();
   });
 });
 
@@ -185,8 +139,10 @@ describe('getPrimaryRoomLabel', () => {
     expect(getPrimaryRoomLabel(b, prop)).toBe('Deluxe');
   });
 
-  it('returns null without first item or match', () => {
-    expect(getPrimaryRoomLabel(booking({ items: [] }), propertyWithRooms([]))).toBeNull();
+  it('returns null when no matching room type is found', () => {
+    expect(
+      getPrimaryRoomLabel(booking({ room_type_id: 'none' }), propertyWithRooms([]))
+    ).toBeNull();
   });
 });
 

@@ -5,3 +5,6 @@ export { Chip } from './Chip';
 export { DateRangePicker } from './DateRangePicker';
 export { GuestPicker } from './GuestPicker';
 export { PriceRangePicker } from './PriceRangePicker';
+export { RoomTypeCard } from './RoomTypeCard';
+export type { SelectedRoomInfo } from './RoomTypeCard';
+export { PriceBreakdownPanel } from './PriceBreakdownPanel';

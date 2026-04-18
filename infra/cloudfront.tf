@@ -23,6 +23,16 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
   signing_protocol                  = "sigv4"
 }
 
+# CloudFront Function: rewrite directory-style URIs to /index.html so
+# Next.js static export (trailingSlash: true) resolves correctly through OAC.
+resource "aws_cloudfront_function" "rewrite_uri" {
+  name    = "${var.project_name}-rewrite-uri"
+  runtime = "cloudfront-js-2.0"
+  comment = "Appends index.html for trailing-slash and extensionless paths"
+  publish = true
+  code    = file("${path.module}/cloudfront_rewrite.js")
+}
+
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -46,6 +56,11 @@ resource "aws_cloudfront_distribution" "frontend" {
 
     cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
     origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.rewrite_uri.arn
+    }
   }
 
   # SPA fallback: 403/404 del S3 → devolver index.html para client-side routing

@@ -1,8 +1,8 @@
 from uuid import UUID
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingItem
-from app.schemas.booking import BookingItemSummaryOut, BookingListItemOut
+from app.domain.models import Booking
+from app.schemas.booking import BookingListItemOut
 
 
 def _status_str(booking: Booking) -> str:
@@ -20,7 +20,6 @@ class ListMyBookingsUseCase:
 
 
 def _to_list_item(booking: Booking) -> BookingListItemOut:
-    items = [_to_item_summary(i) for i in booking.items]
     return BookingListItemOut(
         id=booking.id,
         status=_status_str(booking),
@@ -28,14 +27,7 @@ def _to_list_item(booking: Booking) -> BookingListItemOut:
         checkout=booking.checkout,
         total_amount=booking.total_amount,
         currency_code=booking.currency_code,
+        property_id=booking.property_id,
+        room_type_id=booking.room_type_id,
         created_at=booking.created_at,
-        items=items,
-    )
-
-
-def _to_item_summary(item: BookingItem) -> BookingItemSummaryOut:
-    return BookingItemSummaryOut(
-        property_id=item.property_id,
-        room_type_id=item.room_type_id,
-        quantity=item.quantity,
     )

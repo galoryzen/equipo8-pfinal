@@ -62,6 +62,36 @@
     "showMore": "Show more",
     "showLess": "Show less"
   },
+  "rooms": {
+    "selectTitle": "Select your room",
+    "pricesIncludeTaxes": "Prices include taxes and fees",
+    "detailTitle": "Room detail",
+    "perNight": "/night",
+    "guestsCount_one": "{{count}} guest",
+    "guestsCount_other": "{{count}} guests",
+    "selectDatesHint": "Select dates to see prices",
+    "noAvailability": "No rooms available for these dates",
+    "selectRoom": "Select Room",
+    "description": "Description",
+    "amenities": "Amenities",
+    "photos": "Photos",
+    "priceBreakdown": "Price breakdown",
+    "promoBadgePercent": "-{{value}}%",
+    "promoBadgeFixed": "-{{amount}}",
+    "breakdown": {
+      "perNightLine_one": "{{price}} × {{count}} night",
+      "perNightLine_other": "{{price}} × {{count}} nights",
+      "perNightShort": "/night",
+      "discount": "Discount",
+      "subtotal": "Subtotal",
+      "taxes": "Taxes",
+      "serviceFee": "Service fee",
+      "total": "Total",
+      "youSaved": "You saved {{amount}}",
+      "originalStrike": "was {{price}}"
+    },
+    "continueToBooking": "Continue to booking"
+  },
   "trips": {
     "title": "My Trips",
     "upcoming": "Upcoming",

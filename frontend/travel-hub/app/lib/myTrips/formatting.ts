@@ -21,27 +21,22 @@ export function estimateGuestLabel(
   booking: BookingListItem,
   property: PropertyDetail | null | undefined
 ): string | null {
-  if (!property?.room_types?.length) return null;
-  let total = 0;
-  for (const item of booking.items) {
-    const rt = property.room_types.find((r) => r.id === item.room_type_id);
-    if (rt) total += rt.capacity * item.quantity;
-  }
+  const rt = property?.room_types?.find((r) => r.id === booking.room_type_id);
+  if (!rt) return null;
+  const total = rt.capacity;
   if (total <= 0) return null;
   return `${total} Guest${total === 1 ? '' : 's'}`;
 }
 
 export function primaryPropertyId(booking: BookingListItem): string | null {
-  return booking.items[0]?.property_id ?? null;
+  return booking.property_id ?? null;
 }
 
 export function getPrimaryRoomLabel(
   booking: BookingListItem,
   property: PropertyDetail | null | undefined
 ): string | null {
-  const first = booking.items[0];
-  if (!first) return null;
-  const rt = property?.room_types?.find((r) => r.id === first.room_type_id);
+  const rt = property?.room_types?.find((r) => r.id === booking.room_type_id);
   return rt?.name ?? null;
 }
 

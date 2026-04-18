@@ -44,9 +44,55 @@ describe('useProperty', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(mockedService.getPropertyDetail).toHaveBeenCalledWith('prop-1');
+    expect(mockedService.getPropertyDetail).toHaveBeenCalledWith('prop-1', {
+      checkin: undefined,
+      checkout: undefined,
+    });
     expect(result.current.property).toEqual(MOCK_DETAIL_RESPONSE.detail);
     expect(result.current.error).toBeNull();
+  });
+
+  it('forwards checkin and checkout to the service', async () => {
+    mockedService.getPropertyDetail.mockResolvedValue(MOCK_DETAIL_RESPONSE as any);
+
+    renderHook(() =>
+      useProperty('prop-1', { checkin: '2026-06-01', checkout: '2026-06-03' }),
+    );
+
+    await waitFor(() =>
+      expect(mockedService.getPropertyDetail).toHaveBeenCalledWith('prop-1', {
+        checkin: '2026-06-01',
+        checkout: '2026-06-03',
+      }),
+    );
+  });
+
+  it('re-fetches when dates change', async () => {
+    mockedService.getPropertyDetail.mockResolvedValue(MOCK_DETAIL_RESPONSE as any);
+
+    const { rerender } = renderHook(
+      ({ ci, co }: { ci?: string; co?: string }) =>
+        useProperty('prop-1', { checkin: ci, checkout: co }),
+      { initialProps: { ci: '2026-06-01', co: '2026-06-03' } },
+    );
+
+    await waitFor(() =>
+      expect(mockedService.getPropertyDetail).toHaveBeenLastCalledWith('prop-1', {
+        checkin: '2026-06-01',
+        checkout: '2026-06-03',
+      }),
+    );
+
+    rerender({ ci: '2026-07-10', co: '2026-07-12' });
+
+    await waitFor(() =>
+      expect(mockedService.getPropertyDetail).toHaveBeenLastCalledWith('prop-1', {
+        checkin: '2026-07-10',
+        checkout: '2026-07-12',
+      }),
+    );
+
+    expect(mockedService.getPropertyDetail).toHaveBeenCalledTimes(2);
   });
 
   it('sets error when fetch fails', async () => {

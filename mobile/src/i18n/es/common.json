@@ -62,6 +62,36 @@
     "showMore": "Ver más",
     "showLess": "Ver menos"
   },
+  "rooms": {
+    "selectTitle": "Selecciona tu habitación",
+    "pricesIncludeTaxes": "Los precios incluyen impuestos y cargos",
+    "detailTitle": "Detalle de la habitación",
+    "perNight": "/noche",
+    "guestsCount_one": "{{count}} huésped",
+    "guestsCount_other": "{{count}} huéspedes",
+    "selectDatesHint": "Selecciona fechas para ver precios",
+    "noAvailability": "No hay habitaciones disponibles en estas fechas",
+    "selectRoom": "Seleccionar habitación",
+    "description": "Descripción",
+    "amenities": "Amenidades",
+    "photos": "Fotos",
+    "priceBreakdown": "Desglose del precio",
+    "promoBadgePercent": "-{{value}}%",
+    "promoBadgeFixed": "-{{amount}}",
+    "breakdown": {
+      "perNightLine_one": "{{price}} × {{count}} noche",
+      "perNightLine_other": "{{price}} × {{count}} noches",
+      "perNightShort": "/noche",
+      "discount": "Descuento",
+      "subtotal": "Subtotal",
+      "taxes": "Impuestos",
+      "serviceFee": "Cargo por servicio",
+      "total": "Total",
+      "youSaved": "Ahorraste {{amount}}",
+      "originalStrike": "antes {{price}}"
+    },
+    "continueToBooking": "Continuar a la reserva"
+  },
   "trips": {
     "title": "Mis Viajes",
     "upcoming": "Próximos",

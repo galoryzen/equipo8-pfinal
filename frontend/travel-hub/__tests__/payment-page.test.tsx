@@ -60,7 +60,10 @@ const CART: CartBooking = {
   hold_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
   total_amount: '335.00',
   currency_code: 'USD',
-  items: [],
+  property_id: 'p1',
+  room_type_id: 'r1',
+  rate_plan_id: 'rp1',
+  unit_price: '100.00',
 };
 
 describe('TravelerPaymentPage', () => {

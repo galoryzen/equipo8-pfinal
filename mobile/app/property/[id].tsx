@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@src/theme';
+import { colors, typography, spacing, radius, shadows } from '@src/theme';
 import { Button } from '@src/shared/ui';
 import { useProperty } from '@src/features/catalog/use-property';
 
@@ -39,10 +39,19 @@ const MOCK_REVIEWS = [
 ];
 
 export default function PropertyDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, checkin, checkout, guests } = useLocalSearchParams<{
+    id: string;
+    checkin?: string;
+    checkout?: string;
+    guests?: string;
+  }>();
   const { t } = useTranslation();
+  const router = useRouter();
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const { property, loading, error, retry } = useProperty(id!);
+  const { property, loading, error, retry } = useProperty(id!, {
+    checkin,
+    checkout,
+  });
 
   if (loading) {
     return (
@@ -62,99 +71,122 @@ export default function PropertyDetailScreen() {
     );
   }
 
+  const handleViewAvailability = () => {
+    router.push({
+      pathname: '/property/[id]/rooms',
+      params: {
+        id: id!,
+        ...(checkin ? { checkin } : {}),
+        ...(checkout ? { checkout } : {}),
+        ...(guests ? { guests } : {}),
+      },
+    });
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Image Placeholder */}
-      <View style={styles.imagePlaceholder}>
-        <Ionicons name="image-outline" size={60} color={colors.border.default} />
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={styles.headerInfo}>
-            <Text style={styles.propertyName}>{property.name}</Text>
-            <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={16} color={colors.text.secondary} />
-              <Text style={styles.locationText}>
-                {property.city.name}, {property.city.country}
-              </Text>
-            </View>
-          </View>
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Image Placeholder */}
+        <View style={styles.imagePlaceholder}>
+          <Ionicons name="image-outline" size={60} color={colors.border.default} />
         </View>
 
-        {/* Description — connected to backend */}
-        {property.description && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('property.description')}</Text>
-            <Text
-              style={styles.descriptionText}
-              numberOfLines={showFullDescription ? undefined : 3}
-            >
-              {property.description}
-            </Text>
-            <Pressable onPress={() => setShowFullDescription(!showFullDescription)}>
-              <Text style={styles.showMoreText}>
-                {showFullDescription ? t('property.showLess') : t('property.showMore')}
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
-        {/* Amenities — connected to backend */}
-        {property.amenities.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('property.amenities')}</Text>
-            <View style={styles.amenitiesGrid}>
-              {property.amenities.map((amenity) => (
-                <View key={amenity.code} style={styles.amenityItem}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
-                  <Text style={styles.amenityText}>{amenity.name}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Reviews (mock por ahora) */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('property.reviews')}</Text>
-          {MOCK_REVIEWS.map((review) => (
-            <View key={review.id} style={styles.reviewCard}>
-              <View style={styles.reviewHeader}>
-                <Text style={styles.reviewUser}>{review.user_name}</Text>
-                <View style={styles.reviewRating}>
-                  {Array.from({ length: review.rating }).map((_, i) => (
-                    <Ionicons key={i} name="star" size={12} color="#F59E0B" />
-                  ))}
-                </View>
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.headerRow}>
+            <View style={styles.headerInfo}>
+              <Text style={styles.propertyName}>{property.name}</Text>
+              <View style={styles.locationRow}>
+                <Ionicons name="location-outline" size={16} color={colors.text.secondary} />
+                <Text style={styles.locationText}>
+                  {property.city.name}, {property.city.country}
+                </Text>
               </View>
-              {review.comment && (
-                <Text style={styles.reviewComment}>{review.comment}</Text>
-              )}
-              <Text style={styles.reviewDate}>{review.created_at}</Text>
             </View>
-          ))}
-        </View>
+          </View>
 
-        {/* CTA */}
+          {/* Description — connected to backend */}
+          {property.description && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('property.description')}</Text>
+              <Text
+                style={styles.descriptionText}
+                numberOfLines={showFullDescription ? undefined : 3}
+              >
+                {property.description}
+              </Text>
+              <Pressable onPress={() => setShowFullDescription(!showFullDescription)}>
+                <Text style={styles.showMoreText}>
+                  {showFullDescription ? t('property.showLess') : t('property.showMore')}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Amenities — connected to backend */}
+          {property.amenities.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('property.amenities')}</Text>
+              <View style={styles.amenitiesGrid}>
+                {property.amenities.map((amenity) => (
+                  <View key={amenity.code} style={styles.amenityItem}>
+                    <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+                    <Text style={styles.amenityText}>{amenity.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Reviews (mock por ahora) */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('property.reviews')}</Text>
+            {MOCK_REVIEWS.map((review) => (
+              <View key={review.id} style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <Text style={styles.reviewUser}>{review.user_name}</Text>
+                  <View style={styles.reviewRating}>
+                    {Array.from({ length: review.rating }).map((_, i) => (
+                      <Ionicons key={i} name="star" size={12} color="#F59E0B" />
+                    ))}
+                  </View>
+                </View>
+                {review.comment && (
+                  <Text style={styles.reviewComment}>{review.comment}</Text>
+                )}
+                <Text style={styles.reviewDate}>{review.created_at}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
         <Button
           title={t('property.viewAvailability')}
-          onPress={() => {
-            // TODO: navigate to room selection
-          }}
-          style={styles.ctaButton}
+          onPress={handleViewAvailability}
         />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.surface.white,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.surface.white,
+  },
+  scrollContent: {
+    paddingBottom: 96,
   },
   centerState: {
     flex: 1,
@@ -178,7 +210,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.base,
-    paddingBottom: spacing.xl * 2,
+    paddingBottom: spacing.xl,
   },
   headerRow: {
     flexDirection: 'row',
@@ -204,26 +236,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.surface.soft,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.sm,
-  },
-  ratingText: {
-    fontFamily: typography.fontFamily.bold,
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-  },
-  reviewCount: {
-    fontFamily: typography.fontFamily.regular,
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginTop: spacing.sm,
   },
   section: {
     marginTop: spacing.lg,
@@ -295,7 +307,17 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     marginTop: spacing.sm,
   },
-  ctaButton: {
-    marginTop: spacing.lg,
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.surface.white,
+    borderTopWidth: 1,
+    borderColor: colors.border.default,
+    ...shadows.card,
   },
 });

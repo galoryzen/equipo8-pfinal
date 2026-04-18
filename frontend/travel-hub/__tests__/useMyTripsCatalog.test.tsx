@@ -26,8 +26,9 @@ function makeBooking(
     checkout: '2026-06-05',
     total_amount: '100',
     currency_code: 'USD',
+    property_id: propertyId,
+    room_type_id: roomTypeId,
     created_at: '2026-01-01',
-    items: [{ property_id: propertyId, room_type_id: roomTypeId, quantity: 1 }],
   };
 }
 

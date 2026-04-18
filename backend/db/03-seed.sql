@@ -250,25 +250,25 @@ INSERT INTO catalog.property_policy (id, property_id, category, description) VAL
 
 -- ── catalog.room_type ───────────────────────────────────
 -- 2 room types per property (Standard + Suite/Deluxe)
-INSERT INTO catalog.room_type (id, property_id, name, capacity) VALUES
+INSERT INTO catalog.room_type (id, property_id, name, description, capacity) VALUES
   -- Cancún
-  ('60000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'Estándar Vista al Mar',  2),
-  ('60000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'Suite Premium',          4),
+  ('60000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'Estándar Vista al Mar',  'Habitación luminosa con ventanal panorámico hacia el Caribe, cama King, escritorio de trabajo y baño con ducha lluvia.', 2),
+  ('60000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'Suite Premium',          'Suite amplia con sala independiente, jacuzzi privado y terraza frente al mar. Incluye desayuno buffet para dos.', 4),
   -- CDMX
-  ('60000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000002', 'Estándar',               2),
-  ('60000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000002', 'Deluxe Reforma',         3),
+  ('60000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000002', 'Estándar',               'Habitación moderna en el corazón de Reforma con dos camas individuales y vista a la ciudad.', 2),
+  ('60000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000002', 'Deluxe Reforma',         'Habitación deluxe con cama King, zona de estar, área de trabajo y baño de mármol con amenities premium.', 3),
   -- Bogotá
-  ('60000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-000000000003', 'Estándar',               2),
-  ('60000000-0000-0000-0000-000000000006', '30000000-0000-0000-0000-000000000003', 'Suite Ejecutiva',        3),
+  ('60000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-000000000003', 'Estándar',               'Habitación acogedora con cama Queen, climatización individual y escritorio ideal para viajeros de negocios.', 2),
+  ('60000000-0000-0000-0000-000000000006', '30000000-0000-0000-0000-000000000003', 'Suite Ejecutiva',        'Suite con sala de estar, dormitorio separado, cafetera espresso y acceso al Executive Lounge.', 3),
   -- Buenos Aires
-  ('60000000-0000-0000-0000-000000000007', '30000000-0000-0000-0000-000000000004', 'Estándar Palermo',       2),
-  ('60000000-0000-0000-0000-000000000008', '30000000-0000-0000-0000-000000000004', 'Loft Premium',           4),
+  ('60000000-0000-0000-0000-000000000007', '30000000-0000-0000-0000-000000000004', 'Estándar Palermo',       'Habitación con estilo porteño, cama doble, pisos de madera y vista a las calles de Palermo.', 2),
+  ('60000000-0000-0000-0000-000000000008', '30000000-0000-0000-0000-000000000004', 'Loft Premium',           'Loft en dos niveles con sala lounge, cocineta, cama King en mezzanina y gran ventanal de piso a techo.', 4),
   -- Madrid
-  ('60000000-0000-0000-0000-000000000009', '30000000-0000-0000-0000-000000000005', 'Clásica Gran Vía',       2),
-  ('60000000-0000-0000-0000-00000000000a', '30000000-0000-0000-0000-000000000005', 'Suite Imperial',         4),
+  ('60000000-0000-0000-0000-000000000009', '30000000-0000-0000-0000-000000000005', 'Clásica Gran Vía',       'Habitación clásica con decoración castellana, cama Queen y balcón con vista a la Gran Vía.', 2),
+  ('60000000-0000-0000-0000-00000000000a', '30000000-0000-0000-0000-000000000005', 'Suite Imperial',         'Suite espaciosa con salón, comedor privado, cama King y baño con bañera de hidromasaje.', 4),
   -- Barcelona
-  ('60000000-0000-0000-0000-00000000000b', '30000000-0000-0000-0000-000000000006', 'Estándar Gótico',        2),
-  ('60000000-0000-0000-0000-00000000000c', '30000000-0000-0000-0000-000000000006', 'Suite Medieval',         6);
+  ('60000000-0000-0000-0000-00000000000b', '30000000-0000-0000-0000-000000000006', 'Estándar Gótico',        'Habitación con estética medieval en el Barrio Gótico, cama doble, paredes de piedra y vigas de madera originales.', 2),
+  ('60000000-0000-0000-0000-00000000000c', '30000000-0000-0000-0000-000000000006', 'Suite Medieval',         'Suite temática con sala privada, chimenea ornamental, cama con dosel y amplio baño con bañera independiente.', 6);
 
 -- ── catalog.room_type_amenity ───────────────────────────
 -- Suites get more amenities than standard rooms
@@ -480,15 +480,12 @@ INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, commen
 -- =============================================
 
 -- Booking 1: CONFIRMED (Carlos in Cancún, 3 nights)
-INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
   ('90000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'CONFIRMED',
    CURRENT_DATE + INTERVAL '10 days', CURRENT_DATE + INTERVAL '13 days',
-   360.00, 'USD', 'FULL', 48, 100);
-
-INSERT INTO booking.booking_item (id, booking_id, property_id, room_type_id, rate_plan_id, quantity, unit_price, subtotal) VALUES
-  ('91000000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000001',
-   '30000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001',
-   1, 120.00, 360.00);
+   360.00, 'USD',
+   '30000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 120.00,
+   'FULL', 48, 100);
 
 INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
   ('92000000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000001', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000001'),
@@ -497,16 +494,13 @@ INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_stat
   ('92000000-0000-0000-0000-000000000004', '90000000-0000-0000-0000-000000000001', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000001');
 
 -- Booking 2: PENDING_CONFIRMATION (María in Madrid, 2 nights)
-INSERT INTO booking.booking (id, user_id, status, checkin, checkout, hold_expires_at, total_amount, currency_code, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, hold_expires_at, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
   ('90000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', 'PENDING_CONFIRMATION',
    CURRENT_DATE + INTERVAL '15 days', CURRENT_DATE + INTERVAL '17 days',
    now() + INTERVAL '15 minutes',
-   280.00, 'USD', 'FULL', 48, 100);
-
-INSERT INTO booking.booking_item (id, booking_id, property_id, room_type_id, rate_plan_id, quantity, unit_price, subtotal) VALUES
-  ('91000000-0000-0000-0000-000000000002', '90000000-0000-0000-0000-000000000002',
-   '30000000-0000-0000-0000-000000000005', '60000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000009',
-   1, 140.00, 280.00);
+   280.00, 'USD',
+   '30000000-0000-0000-0000-000000000005', '60000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000009', 140.00,
+   'FULL', 48, 100);
 
 INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
   ('92000000-0000-0000-0000-000000000005', '90000000-0000-0000-0000-000000000002', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000002'),
@@ -514,15 +508,12 @@ INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_stat
   ('92000000-0000-0000-0000-000000000007', '90000000-0000-0000-0000-000000000002', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL);
 
 -- Booking 3: CANCELLED (Lucía in Buenos Aires, 4 nights)
-INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
   ('90000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', 'CANCELLED',
    CURRENT_DATE + INTERVAL '5 days', CURRENT_DATE + INTERVAL '9 days',
-   340.00, 'USD', 'PARTIAL', 24, 50);
-
-INSERT INTO booking.booking_item (id, booking_id, property_id, room_type_id, rate_plan_id, quantity, unit_price, subtotal) VALUES
-  ('91000000-0000-0000-0000-000000000003', '90000000-0000-0000-0000-000000000003',
-   '30000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000007', '70000000-0000-0000-0000-000000000007',
-   1, 85.00, 340.00);
+   340.00, 'USD',
+   '30000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000007', '70000000-0000-0000-0000-000000000007', 85.00,
+   'PARTIAL', 24, 50);
 
 INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, reason, changed_by) VALUES
   ('92000000-0000-0000-0000-000000000008', '90000000-0000-0000-0000-000000000003', NULL,                     'CART',                   NULL, 'a0000000-0000-0000-0000-000000000003'),
@@ -574,5 +565,159 @@ INSERT INTO notifications.notification (id, booking_id, user_id, channel, type, 
 INSERT INTO notifications.device_token (id, user_id, platform, token) VALUES
   ('b2000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'android', 'ExponentPushToken[carlos-android-test-token-001]'),
   ('b2000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', 'ios',     'ExponentPushToken[maria-ios-test-token-001]');
+
+-- =============================================
+-- Additional property: Luna Maya Cancún
+-- Same city as Sol Caribe Cancún, operated by hotel Luna
+-- =============================================
+
+INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address, status, rating_avg, review_count, popularity_score, default_cancellation_policy_id) VALUES
+  ('30000000-0000-0000-0000-000000000007',
+   'e0000000-0000-0000-0000-000000000002',
+   'Luna Maya Cancún',
+   'Hotel boutique a pocos pasos de la Zona Hotelera de Cancún. Rodeado de cenotes y vida nocturna, con spa maya y gastronomía local.',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Av. Tulum 210, Centro, 77500 Cancún',
+   'ACTIVE', 4.40, 72, 680.00,
+   '10000000-0000-0000-0000-000000000002');
+
+INSERT INTO catalog.property_image (id, property_id, url, caption, display_order) VALUES
+  ('40000000-0000-0000-0000-000000000013', '30000000-0000-0000-0000-000000000007', 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=500&fit=crop', 'Fachada boutique',   0),
+  ('40000000-0000-0000-0000-000000000014', '30000000-0000-0000-0000-000000000007', 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=500&fit=crop', 'Spa maya',           1),
+  ('40000000-0000-0000-0000-000000000015', '30000000-0000-0000-0000-000000000007', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=500&fit=crop', 'Piscina tropical',   2);
+
+-- wifi, pool, breakfast, spa, bar, ac, pet_friendly
+INSERT INTO catalog.property_amenity (property_id, amenity_id) VALUES
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000002'),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000003'),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000005'),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000008'),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-00000000000a');
+
+INSERT INTO catalog.property_policy (id, property_id, category, description) VALUES
+  ('50000000-0000-0000-0000-000000000012', '30000000-0000-0000-0000-000000000007', 'CHECK_IN',  'Check-in a partir de las 15:00 h'),
+  ('50000000-0000-0000-0000-000000000013', '30000000-0000-0000-0000-000000000007', 'CHECK_OUT', 'Check-out antes de las 12:00 h'),
+  ('50000000-0000-0000-0000-000000000014', '30000000-0000-0000-0000-000000000007', 'PETS',      'Mascotas pequeñas bienvenidas sin cargo');
+
+INSERT INTO catalog.room_type (id, property_id, name, description, capacity) VALUES
+  ('60000000-0000-0000-0000-00000000000d', '30000000-0000-0000-0000-000000000007', 'Estándar Tropical', 'Habitación con motivos mayas, cama Queen, ventilador de techo y balcón con vista al jardín tropical.', 2),
+  ('60000000-0000-0000-0000-00000000000e', '30000000-0000-0000-0000-000000000007', 'Suite Maya',        'Suite con sala de estar, terraza privada con hamaca, cama King y amenidades de spa maya.', 4);
+
+-- Standard: wifi, ac | Suite: wifi, ac, spa, breakfast
+INSERT INTO catalog.room_type_amenity (room_type_id, amenity_id) VALUES
+  ('60000000-0000-0000-0000-00000000000d', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-00000000000d', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-00000000000e', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-00000000000e', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-00000000000e', '20000000-0000-0000-0000-000000000005'),
+  ('60000000-0000-0000-0000-00000000000e', '20000000-0000-0000-0000-000000000003');
+
+INSERT INTO catalog.rate_plan (id, room_type_id, name, is_active, cancellation_policy_id) VALUES
+  ('70000000-0000-0000-0000-00000000000d', '60000000-0000-0000-0000-00000000000d', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000002'),
+  ('70000000-0000-0000-0000-00000000000e', '60000000-0000-0000-0000-00000000000e', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000002');
+
+-- Luna Maya Standard $95/night, Suite $210/night
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-00000000000d', d::date, 'USD', 95.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-00000000000e', d::date, 'USD', 210.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+-- Standard: 6 units, Suite: 3 units
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-00000000000d', d::date, 6
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-00000000000e', d::date, 3
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+-- =============================================
+-- catalog.room_type_image — 3 fotos por tipo de habitación
+-- =============================================
+INSERT INTO catalog.room_type_image (id, room_type_id, url, caption, display_order) VALUES
+  -- Cancún · Estándar Vista al Mar
+  ('d0000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop', 'Vista principal', 0),
+  ('d0000000-0000-0000-0000-000000000002', '60000000-0000-0000-0000-000000000001', 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&h=600&fit=crop', 'Cama King frente al mar', 1),
+  ('d0000000-0000-0000-0000-000000000003', '60000000-0000-0000-0000-000000000001', 'https://images.unsplash.com/photo-1551776245-ca5c7f8f34f2?w=800&h=600&fit=crop', 'Baño con ducha lluvia', 2),
+  -- Cancún · Suite Premium
+  ('d0000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000002', 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop', 'Sala de la suite', 0),
+  ('d0000000-0000-0000-0000-000000000005', '60000000-0000-0000-0000-000000000002', 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop', 'Terraza privada', 1),
+  ('d0000000-0000-0000-0000-000000000006', '60000000-0000-0000-0000-000000000002', 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&h=600&fit=crop', 'Jacuzzi con vista', 2),
+  -- CDMX · Estándar
+  ('d0000000-0000-0000-0000-000000000007', '60000000-0000-0000-0000-000000000003', 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop', 'Camas individuales', 0),
+  ('d0000000-0000-0000-0000-000000000008', '60000000-0000-0000-0000-000000000003', 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&h=600&fit=crop', 'Vista de la ciudad', 1),
+  ('d0000000-0000-0000-0000-000000000009', '60000000-0000-0000-0000-000000000003', 'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&h=600&fit=crop', 'Área de escritorio', 2),
+  -- CDMX · Deluxe Reforma
+  ('d0000000-0000-0000-0000-00000000000a', '60000000-0000-0000-0000-000000000004', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=600&fit=crop', 'Cama King con zona de estar', 0),
+  ('d0000000-0000-0000-0000-00000000000b', '60000000-0000-0000-0000-000000000004', 'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&h=600&fit=crop', 'Baño de mármol', 1),
+  ('d0000000-0000-0000-0000-00000000000c', '60000000-0000-0000-0000-000000000004', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop', 'Ambiente principal', 2),
+  -- Bogotá · Estándar
+  ('d0000000-0000-0000-0000-00000000000d', '60000000-0000-0000-0000-000000000005', 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop', 'Cama Queen', 0),
+  ('d0000000-0000-0000-0000-00000000000e', '60000000-0000-0000-0000-000000000005', 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', 'Zona de trabajo', 1),
+  ('d0000000-0000-0000-0000-00000000000f', '60000000-0000-0000-0000-000000000005', 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop', 'Baño privado', 2),
+  -- Bogotá · Suite Ejecutiva
+  ('d0000000-0000-0000-0000-000000000010', '60000000-0000-0000-0000-000000000006', 'https://images.unsplash.com/photo-1587985064135-0366536eab42?w=800&h=600&fit=crop', 'Sala ejecutiva', 0),
+  ('d0000000-0000-0000-0000-000000000011', '60000000-0000-0000-0000-000000000006', 'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800&h=600&fit=crop', 'Dormitorio separado', 1),
+  ('d0000000-0000-0000-0000-000000000012', '60000000-0000-0000-0000-000000000006', 'https://images.unsplash.com/photo-1601565415267-72ce0e2f7d12?w=800&h=600&fit=crop', 'Cafetera espresso', 2),
+  -- Buenos Aires · Estándar Palermo
+  ('d0000000-0000-0000-0000-000000000013', '60000000-0000-0000-0000-000000000007', 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&h=600&fit=crop', 'Cama doble', 0),
+  ('d0000000-0000-0000-0000-000000000014', '60000000-0000-0000-0000-000000000007', 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?w=800&h=600&fit=crop', 'Piso de madera', 1),
+  ('d0000000-0000-0000-0000-000000000015', '60000000-0000-0000-0000-000000000007', 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&h=600&fit=crop', 'Vista a Palermo', 2),
+  -- Buenos Aires · Loft Premium
+  ('d0000000-0000-0000-0000-000000000016', '60000000-0000-0000-0000-000000000008', 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop', 'Sala lounge del loft', 0),
+  ('d0000000-0000-0000-0000-000000000017', '60000000-0000-0000-0000-000000000008', 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=800&h=600&fit=crop', 'Cocineta', 1),
+  ('d0000000-0000-0000-0000-000000000018', '60000000-0000-0000-0000-000000000008', 'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&h=600&fit=crop', 'Cama en mezzanina', 2),
+  -- Madrid · Clásica Gran Vía
+  ('d0000000-0000-0000-0000-000000000019', '60000000-0000-0000-0000-000000000009', 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=800&h=600&fit=crop', 'Decoración castellana', 0),
+  ('d0000000-0000-0000-0000-00000000001a', '60000000-0000-0000-0000-000000000009', 'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop', 'Balcón a Gran Vía', 1),
+  ('d0000000-0000-0000-0000-00000000001b', '60000000-0000-0000-0000-000000000009', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop', 'Cama Queen', 2),
+  -- Madrid · Suite Imperial
+  ('d0000000-0000-0000-0000-00000000001c', '60000000-0000-0000-0000-00000000000a', 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&h=600&fit=crop', 'Salón privado', 0),
+  ('d0000000-0000-0000-0000-00000000001d', '60000000-0000-0000-0000-00000000000a', 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop', 'Comedor', 1),
+  ('d0000000-0000-0000-0000-00000000001e', '60000000-0000-0000-0000-00000000000a', 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&h=600&fit=crop', 'Baño con hidromasaje', 2),
+  -- Barcelona · Estándar Gótico
+  ('d0000000-0000-0000-0000-00000000001f', '60000000-0000-0000-0000-00000000000b', 'https://images.unsplash.com/photo-1565031491910-e57fac031c41?w=800&h=600&fit=crop', 'Paredes de piedra', 0),
+  ('d0000000-0000-0000-0000-000000000020', '60000000-0000-0000-0000-00000000000b', 'https://images.unsplash.com/photo-1605346576608-92f1346b67f2?w=800&h=600&fit=crop', 'Vigas de madera', 1),
+  ('d0000000-0000-0000-0000-000000000021', '60000000-0000-0000-0000-00000000000b', 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop', 'Cama doble', 2),
+  -- Barcelona · Suite Medieval
+  ('d0000000-0000-0000-0000-000000000022', '60000000-0000-0000-0000-00000000000c', 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop', 'Sala con chimenea', 0),
+  ('d0000000-0000-0000-0000-000000000023', '60000000-0000-0000-0000-00000000000c', 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&h=600&fit=crop', 'Cama con dosel', 1),
+  ('d0000000-0000-0000-0000-000000000024', '60000000-0000-0000-0000-00000000000c', 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&h=600&fit=crop', 'Bañera independiente', 2),
+  -- Luna Maya · Estándar Tropical
+  ('d0000000-0000-0000-0000-000000000025', '60000000-0000-0000-0000-00000000000d', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=600&fit=crop', 'Habitación tropical', 0),
+  ('d0000000-0000-0000-0000-000000000026', '60000000-0000-0000-0000-00000000000d', 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop', 'Balcón al jardín', 1),
+  ('d0000000-0000-0000-0000-000000000027', '60000000-0000-0000-0000-00000000000d', 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&h=600&fit=crop', 'Cama Queen', 2),
+  -- Luna Maya · Suite Maya
+  ('d0000000-0000-0000-0000-000000000028', '60000000-0000-0000-0000-00000000000e', 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop', 'Suite con sala', 0),
+  ('d0000000-0000-0000-0000-000000000029', '60000000-0000-0000-0000-00000000000e', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=600&fit=crop', 'Terraza con hamaca', 1),
+  ('d0000000-0000-0000-0000-00000000002a', '60000000-0000-0000-0000-00000000000e', 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&h=600&fit=crop', 'Amenidades de spa maya', 2);
+
+-- =============================================
+-- Promociones de demo (Luna Maya Cancún)
+-- =============================================
+-- Standard Tropical → 15% off
+-- Suite Maya        → $40 USD off
+INSERT INTO catalog.promotion (id, rate_plan_id, name, discount_type, discount_value, start_date, end_date, is_active) VALUES
+  ('c0000000-0000-0000-0000-000000000001',
+   '70000000-0000-0000-0000-00000000000d',
+   'Oferta Tropical 15%',
+   'PERCENT',
+   15.00,
+   CURRENT_DATE,
+   CURRENT_DATE + INTERVAL '29 days',
+   true),
+  ('c0000000-0000-0000-0000-000000000002',
+   '70000000-0000-0000-0000-00000000000e',
+   'Ahorra $40 en Suite Maya',
+   'FIXED',
+   40.00,
+   CURRENT_DATE,
+   CURRENT_DATE + INTERVAL '29 days',
+   true);
 
 COMMIT;

@@ -42,4 +42,10 @@ resource "aws_elasticache_serverless_cache" "main" {
 
   security_group_ids = [aws_security_group.redis.id]
   subnet_ids         = aws_subnet.private[*].id
+
+  # AWS CloudShell auto-attaches its own SG when you connect from the console.
+  # Don't fight it — just ignore drift on this field.
+  lifecycle {
+    ignore_changes = [security_group_ids]
+  }
 }

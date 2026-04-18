@@ -28,6 +28,7 @@ CREATE TYPE cancellation_policy_type AS ENUM ('FULL','PARTIAL','NON_REFUNDABLE')
 CREATE TYPE property_status AS ENUM ('ACTIVE','INACTIVE');
 CREATE TYPE room_type_status AS ENUM ('ACTIVE','INACTIVE');
 CREATE TYPE policy_category AS ENUM ('CHECK_IN','CHECK_OUT','PETS','SMOKING','CHILDREN','GENERAL');
+CREATE TYPE discount_type AS ENUM ('PERCENT','FIXED');
 
 -- booking
 CREATE TYPE booking_status AS ENUM ('CART','PENDING_PAYMENT','PENDING_CONFIRMATION','CONFIRMED','REJECTED','CANCELLED','EXPIRED');
@@ -171,6 +172,7 @@ CREATE TABLE catalog.room_type (
     id          UUID PRIMARY KEY,
     property_id UUID NOT NULL REFERENCES catalog.property(id),
     name        VARCHAR NOT NULL,
+    description TEXT,
     capacity    INT NOT NULL,
     status      room_type_status NOT NULL DEFAULT 'ACTIVE',
     created_at  TIMESTAMP NOT NULL DEFAULT now(),
@@ -183,6 +185,16 @@ CREATE TABLE catalog.room_type_amenity (
     amenity_id   UUID NOT NULL REFERENCES catalog.amenity(id),
     PRIMARY KEY (room_type_id, amenity_id)
 );
+
+CREATE TABLE catalog.room_type_image (
+    id              UUID PRIMARY KEY,
+    room_type_id    UUID NOT NULL REFERENCES catalog.room_type(id),
+    url             TEXT NOT NULL,
+    caption         VARCHAR,
+    display_order   INT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_room_type_image_order ON catalog.room_type_image (room_type_id, display_order);
 
 CREATE TABLE catalog.rate_plan (
     id                      UUID PRIMARY KEY,
@@ -216,6 +228,22 @@ CREATE TABLE catalog.inventory_calendar (
     UNIQUE (room_type_id, day)
 );
 
+CREATE TABLE catalog.promotion (
+    id              UUID PRIMARY KEY,
+    rate_plan_id    UUID NOT NULL REFERENCES catalog.rate_plan(id),
+    name            VARCHAR NOT NULL,
+    discount_type   discount_type NOT NULL,
+    discount_value  DECIMAL(12,2) NOT NULL CHECK (discount_value > 0),
+    start_date      DATE NOT NULL,
+    end_date        DATE NOT NULL,
+    is_active       BOOLEAN NOT NULL DEFAULT true,
+    created_at      TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT now(),
+    CHECK (end_date >= start_date)
+);
+CREATE INDEX idx_promotion_plan_active
+    ON catalog.promotion (rate_plan_id, is_active, start_date, end_date);
+
 CREATE TABLE catalog.review (
     id          UUID PRIMARY KEY,
     booking_id  UUID NOT NULL UNIQUE,
@@ -239,23 +267,17 @@ CREATE TABLE booking.booking (
     hold_expires_at             TIMESTAMP,
     total_amount                DECIMAL(12,2) NOT NULL,
     currency_code               CHAR(3) NOT NULL,
+    property_id                 UUID NOT NULL,
+    room_type_id                UUID NOT NULL,
+    rate_plan_id                UUID NOT NULL,
+    unit_price                  DECIMAL(12,2) NOT NULL,
     policy_type_applied         cancellation_policy_type NOT NULL,
     policy_hours_limit_applied  INT,
     policy_refund_percent_applied INT,
     created_at                  TIMESTAMP NOT NULL DEFAULT now(),
     updated_at                  TIMESTAMP NOT NULL DEFAULT now()
 );
-
-CREATE TABLE booking.booking_item (
-    id              UUID PRIMARY KEY,
-    booking_id      UUID NOT NULL REFERENCES booking.booking(id),
-    property_id     UUID NOT NULL,
-    room_type_id    UUID NOT NULL,
-    rate_plan_id    UUID NOT NULL,
-    quantity        INT NOT NULL DEFAULT 1,
-    unit_price      DECIMAL(12,2) NOT NULL,
-    subtotal        DECIMAL(12,2) NOT NULL
-);
+CREATE INDEX idx_booking_room_status ON booking.booking (property_id, room_type_id, status);
 
 CREATE TABLE booking.booking_status_history (
     id          UUID PRIMARY KEY,
