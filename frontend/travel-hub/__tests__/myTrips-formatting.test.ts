@@ -140,7 +140,9 @@ describe('getPrimaryRoomLabel', () => {
   });
 
   it('returns null when no matching room type is found', () => {
-    expect(getPrimaryRoomLabel(booking({ room_type_id: 'none' }), propertyWithRooms([]))).toBeNull();
+    expect(
+      getPrimaryRoomLabel(booking({ room_type_id: 'none' }), propertyWithRooms([]))
+    ).toBeNull();
   });
 });
 
