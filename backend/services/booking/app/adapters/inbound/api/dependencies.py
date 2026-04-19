@@ -13,6 +13,7 @@ from app.application.exceptions import InvalidTokenError
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
 from app.application.ports.outbound.token_port import TokenPort
 from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
+from app.application.use_cases.confirm_booking_after_payment import ConfirmBookingAfterPaymentUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
@@ -104,3 +105,10 @@ def get_booking_detail_use_case(
 ) -> GetBookingDetailUseCase:
     repo = SqlAlchemyBookingRepository(session)
     return GetBookingDetailUseCase(repo)
+
+
+def get_confirm_booking_after_payment_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> ConfirmBookingAfterPaymentUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return ConfirmBookingAfterPaymentUseCase(repo)

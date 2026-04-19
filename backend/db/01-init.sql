@@ -35,6 +35,7 @@ CREATE TYPE booking_status AS ENUM ('CART','PENDING_PAYMENT','PENDING_CONFIRMATI
 
 -- payments
 CREATE TYPE payment_status AS ENUM ('PENDING','AUTHORIZED','CAPTURED','FAILED','CANCELLED');
+CREATE TYPE payment_intent_status AS ENUM ('PENDING','SUCCEEDED','FAILED');
 
 -- notifications
 CREATE TYPE notification_channel AS ENUM ('EMAIL','PUSH');
@@ -315,6 +316,40 @@ CREATE TABLE payments.payment (
     created_at          TIMESTAMP NOT NULL DEFAULT now(),
     updated_at          TIMESTAMP NOT NULL DEFAULT now()
 );
+
+CREATE TABLE payments.payment_intent (
+    id                      UUID PRIMARY KEY,
+    booking_id              UUID NOT NULL REFERENCES booking.booking(id),
+    user_id                 UUID NOT NULL REFERENCES users.users(id),
+    amount                  DECIMAL(12,2) NOT NULL,
+    currency_code           CHAR(3) NOT NULL,
+    status                  payment_intent_status NOT NULL DEFAULT 'PENDING',
+    mock_payment_token      VARCHAR NOT NULL,
+    start_idempotency_key   VARCHAR UNIQUE,
+    webhook_signing_secret  VARCHAR NOT NULL,
+    payment_id              UUID REFERENCES payments.payment(id),
+    created_at              TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at              TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_payment_intent_booking ON payments.payment_intent (booking_id);
+CREATE INDEX idx_payment_intent_user ON payments.payment_intent (user_id);
+
+CREATE TABLE payments.payment_attempt (
+    id                  UUID PRIMARY KEY,
+    payment_intent_id   UUID NOT NULL REFERENCES payments.payment_intent(id) ON DELETE CASCADE,
+    outcome             VARCHAR NOT NULL,
+    detail              VARCHAR,
+    created_at          TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE payments.webhook_event (
+    idempotency_key     VARCHAR PRIMARY KEY,
+    payment_intent_id   UUID NOT NULL REFERENCES payments.payment_intent(id),
+    received_at         TIMESTAMP NOT NULL DEFAULT now()
+);
+
+ALTER TABLE booking.booking
+    ADD COLUMN confirmation_payment_intent_id UUID REFERENCES payments.payment_intent(id);
 
 CREATE TABLE payments.refund (
     id          UUID PRIMARY KEY,

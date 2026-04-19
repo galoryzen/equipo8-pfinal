@@ -59,5 +59,8 @@ class Booking(Base):
     policy_hours_limit_applied: Mapped[int | None] = mapped_column(nullable=True)
     policy_refund_percent_applied: Mapped[int | None] = mapped_column(nullable=True)
     inventory_released: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    confirmation_payment_intent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, default=None
+    )
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)

@@ -123,6 +123,7 @@ services:
       - "8003:8000"
     volumes:
       - ./services/booking/app:/app/app
+      - ./services/booking/tests:/app/tests
       - ./libs/shared:/app/shared
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
@@ -135,6 +136,7 @@ services:
       BOOKING_CATALOG_SERVICE_URL: "http://thub-catalog:8000"
       BOOKING_WORKER_ENABLED: "true"
       BOOKING_WORKER_EXPIRE_INTERVAL_SECONDS: "60"
+      BOOKING_INTERNAL_PAYMENT_CALLBACK_KEY: "dev-payment-callback-secret"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
@@ -151,6 +153,7 @@ services:
       - "8004:8000"
     volumes:
       - ./services/payment/app:/app/app
+      - ./services/payment/tests:/app/tests
       - ./libs/shared:/app/shared
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
@@ -158,8 +161,10 @@ services:
       PAYMENT_DB_SCHEMA: "payments"
       PAYMENT_REDIS_URL: "redis://thub-redis:6379/0"
       PAYMENT_DEBUG: "true"
-      JWT_SECRET: "change-me-in-production"
-      JWT_ALGORITHM: "HS256"
+      PAYMENT_JWT_SECRET: "change-me-in-production"
+      PAYMENT_JWT_ALGORITHM: "HS256"
+      PAYMENT_BOOKING_SERVICE_URL: "http://thub-booking:8000"
+      PAYMENT_BOOKING_CALLBACK_SECRET: "dev-payment-callback-secret"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:

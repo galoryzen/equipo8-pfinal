@@ -15,6 +15,10 @@ class BookingRepository(ABC):
         """Return booking if it exists and belongs to user_id."""
 
     @abstractmethod
+    async def get_by_id(self, booking_id: UUID) -> Booking | None:
+        """Return booking by id (internal/service use — no ownership filter)."""
+
+    @abstractmethod
     async def create(self, booking: Booking) -> Booking:
         """Persist a new booking and return the refreshed instance."""
 

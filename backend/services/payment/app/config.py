@@ -8,8 +8,14 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     DEBUG: bool = False
 
-    model_config = {"env_prefix": "PAYMENT_",
-                    "env_file": ".env", "extra": "ignore"}
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+
+    BOOKING_SERVICE_URL: str = "http://localhost:8003"
+    BOOKING_CALLBACK_SECRET: str = ""
+    HTTP_CLIENT_TIMEOUT_SECONDS: float = 10.0
+
+    model_config = {"env_prefix": "PAYMENT_", "env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

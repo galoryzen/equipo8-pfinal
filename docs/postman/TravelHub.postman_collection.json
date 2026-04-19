@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-travelhub-2026",
     "name": "TravelHub — API local (gateway)",
-    "description": "Colección para probar microservicios detrás del gateway nginx (puerto 8080).\n\n**Uso:** importar en Postman. Variable `baseUrl` = `http://localhost:8080` por defecto.\n\n**Auth:** Ejecuta primero *Login* o *Register*; Postman guardará la cookie `access_token` para *Get me* en la misma sesión (mismo dominio/puerto). Los endpoints de **Booking** aceptan `Authorization: Bearer` (variable `accessToken`): copia el valor de la cookie `access_token` tras el login (Postman → Cookies) o pégalo manualmente.\n\n**Catalog:** *Search properties* requiere checkin, checkout y guests.\n\n**Booking:** listado y detalle de reservas del viajero autenticado (`property_id` enlaza con catálogo para nombre/imagen, etc.).\n\n**Payment / notification:** solo health en esta colección.",
+    "description": "Colección para probar microservicios detrás del gateway nginx (puerto 8080).\n\n**Uso:** importar en Postman. Variable `baseUrl` = `http://localhost:8080` por defecto.\n\n**Auth:** Ejecuta primero *Login* o *Register*; Postman guardará la cookie `access_token` para *Get me* en la misma sesión (mismo dominio/puerto). Los endpoints de **Booking** y **Payment** aceptan `Authorization: Bearer` (variable `accessToken`): copia el valor de la cookie `access_token` tras el login (Postman → Cookies) o pégalo manualmente.\n\n**Catalog:** *Search properties* requiere checkin, checkout y guests.\n\n**Booking:** listado y detalle de reservas del viajero autenticado (`property_id` enlaza con catálogo para nombre/imagen, etc.).\n\n**Payment (mock PSP):** para *Create payment intent* usa login **María** (`maria@example.com` / `travelhub`) y `bookingIdPayable` por defecto (`90000000-0000-0000-0000-000000000002`, `PENDING_CONFIRMATION`). Tras crear intención, copia respuesta a variables `paymentIntentId`, `webhookSecret` y el token a `mockPaymentToken` para *Confirm* y *Webhook mock*.\n\n**Notification:** solo health en esta colección.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -28,6 +28,31 @@
     {
       "key": "partnerAdminSecret",
       "value": "dev-partner-admin-secret",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdPayable",
+      "value": "90000000-0000-0000-0000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "paymentIntentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "mockPaymentToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "webhookSecret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "webhookIdempotencyKey",
+      "value": "",
       "type": "string"
     }
   ],
@@ -345,6 +370,48 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/api/v1/payment/health/db"
+          }
+        },
+        {
+          "name": "Create payment intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"booking_id\": \"{{bookingIdPayable}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payment/payment-intents"
+          }
+        },
+        {
+          "name": "Confirm payment intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_token\": \"{{mockPaymentToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payment/payment-intents/{{paymentIntentId}}/confirm"
+          }
+        },
+        {
+          "name": "Mock webhook (succeeded)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_intent_id\": \"{{paymentIntentId}}\",\n  \"status\": \"succeeded\",\n  \"idempotency_key\": \"{{webhookIdempotencyKey}}\",\n  \"webhook_signing_secret\": \"{{webhookSecret}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payment/webhooks/mock"
           }
         }
       ]
