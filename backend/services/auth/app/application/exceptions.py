@@ -12,3 +12,10 @@ class EmailAlreadyExistsError(Exception):
 class InvalidTokenError(Exception):
     def __init__(self) -> None:
         super().__init__("Invalid or expired token")
+
+
+class InvalidPartnerOrganizationError(Exception):
+    """Hotel/agency missing, not ACTIVE, or not consistent with organization_type."""
+
+    def __init__(self) -> None:
+        super().__init__("Organization is missing, inactive, or does not match the requested partner role")

@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
+    # Shared secret for POST /admin/partner-users (empty = endpoint disabled with 503)
+    PARTNER_ADMIN_SECRET: str = ""
 
     model_config = {"env_prefix": "AUTH_",
                     "env_file": ".env", "extra": "ignore"}

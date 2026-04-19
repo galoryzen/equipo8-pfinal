@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from app.application.exceptions import (
     EmailAlreadyExistsError,
     InvalidCredentialsError,
+    InvalidPartnerOrganizationError,
 )
 
 
@@ -114,6 +115,65 @@ class TestRegisterValidation:
             )
 
         assert resp.json()["trace_id"] == "trace-xyz-789"
+
+
+_PARTNER_BODY = {
+    "first_name": "A",
+    "last_name": "B",
+    "phone": "+521551112233",
+    "email": "new.partner@example.com",
+    "country_code": "MX",
+    "password": "travelhub",
+    "organization_type": "HOTEL",
+    "organization_id": "e0000000-0000-0000-0000-000000000001",
+}
+
+
+class TestAdminPartnerValidation:
+    def test_wrong_admin_key_returns_401(self, client, monkeypatch):
+        from app.config import settings
+
+        monkeypatch.setattr(settings, "PARTNER_ADMIN_SECRET", "expected-secret")
+        with patch("app.adapters.inbound.api.admin_partner.get_admin_register_partner_use_case") as mock_get:
+            mock_uc = MagicMock()
+            mock_uc.execute = AsyncMock()
+            mock_get.return_value = mock_uc
+            resp = client.post(
+                "/api/v1/auth/admin/partner-users",
+                json=_PARTNER_BODY,
+                headers={"X-Partner-Admin-Key": "wrong"},
+            )
+
+        assert resp.status_code == 401
+        mock_uc.execute.assert_not_called()
+
+    def test_disabled_without_secret_returns_503(self, client, monkeypatch):
+        from app.config import settings
+
+        monkeypatch.setattr(settings, "PARTNER_ADMIN_SECRET", "")
+        resp = client.post(
+            "/api/v1/auth/admin/partner-users",
+            json=_PARTNER_BODY,
+            headers={"X-Partner-Admin-Key": "any"},
+        )
+        assert resp.status_code == 503
+
+    def test_invalid_organization_maps_to_422(self, client, monkeypatch):
+        from app.config import settings
+
+        monkeypatch.setattr(settings, "PARTNER_ADMIN_SECRET", "secret")
+        with patch("app.adapters.inbound.api.admin_partner.get_admin_register_partner_use_case") as mock_get:
+            mock_uc = MagicMock()
+            mock_uc.execute = AsyncMock(side_effect=InvalidPartnerOrganizationError())
+            mock_get.return_value = mock_uc
+            resp = client.post(
+                "/api/v1/auth/admin/partner-users",
+                json=_PARTNER_BODY,
+                headers={"X-Partner-Admin-Key": "secret"},
+            )
+
+        assert resp.status_code == 422
+        assert resp.json()["code"] == "INVALID_PARTNER_ORGANIZATION"
 
 
 class TestMeValidation:

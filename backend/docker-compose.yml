@@ -81,6 +81,7 @@ services:
       JWT_SECRET: "change-me-in-production"
       JWT_ALGORITHM: "HS256"
       JWT_EXPIRE_MINUTES: "60"
+      AUTH_PARTNER_ADMIN_SECRET: "dev-partner-admin-secret"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:

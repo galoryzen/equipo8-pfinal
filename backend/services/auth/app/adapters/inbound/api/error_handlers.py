@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.application.exceptions import (
     EmailAlreadyExistsError,
     InvalidCredentialsError,
+    InvalidPartnerOrganizationError,
     InvalidTokenError,
 )
 
@@ -30,6 +31,17 @@ def register_error_handlers(app: FastAPI) -> None:
             status_code=409,
             content={
                 "code": "EMAIL_ALREADY_EXISTS",
+                "message": str(exc),
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(InvalidPartnerOrganizationError)
+    async def invalid_partner_org_handler(request: Request, exc: InvalidPartnerOrganizationError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "INVALID_PARTNER_ORGANIZATION",
                 "message": str(exc),
                 "trace_id": request.headers.get("x-request-id"),
             },

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.adapters.inbound.api.admin_partner import router as admin_partner_router
 from app.adapters.inbound.api.dependencies import init_token_adapter
 from app.adapters.inbound.api.error_handlers import register_error_handlers
 from app.adapters.inbound.api.health import router as health_router
@@ -30,3 +31,4 @@ register_error_handlers(app)
 
 app.include_router(health_router, prefix="/api/v1/auth")
 app.include_router(login_router, prefix="/api/v1/auth")
+app.include_router(admin_partner_router, prefix="/api/v1/auth")
