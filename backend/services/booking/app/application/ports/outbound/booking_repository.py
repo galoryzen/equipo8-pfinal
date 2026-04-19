@@ -2,13 +2,26 @@ from abc import ABC, abstractmethod
 from datetime import date, datetime
 from uuid import UUID
 
-from app.domain.models import Booking
+from app.domain.models import Booking, BookingScope
 
 
 class BookingRepository(ABC):
     @abstractmethod
-    async def list_by_user_id(self, user_id: UUID) -> list[Booking]:
-        """Return all bookings for the user."""
+    async def list_by_user_id(
+        self,
+        user_id: UUID,
+        *,
+        scope: BookingScope = BookingScope.ALL,
+        today: date | None = None,
+    ) -> list[Booking]:
+        """Return user bookings filtered by scope relative to ``today``.
+
+        - ACTIVE: status in (CONFIRMED, PENDING_PAYMENT, PENDING_CONFIRMATION)
+          AND checkout >= today. Ordered by checkin ASC (upcoming first).
+        - PAST: (status = CONFIRMED AND checkout < today)
+          OR status in (CANCELLED, REJECTED). Ordered by checkout DESC.
+        - ALL: everything except CART and EXPIRED. Ordered by checkin DESC.
+        """
 
     @abstractmethod
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:

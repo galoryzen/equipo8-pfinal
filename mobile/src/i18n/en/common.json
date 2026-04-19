@@ -98,11 +98,57 @@
     "past": "Past",
     "noTrips": "No trips yet",
     "noTripsHint": "Start exploring and book your first trip!",
+    "noUpcoming": "No upcoming reservations",
+    "noPast": "No past reservations",
     "explore": "Explore stays",
+    "loadError": "We couldn't load your reservations",
     "inProgress": {
       "title": "In progress",
       "continueCta": "Continue booking",
       "countdown": "Expires in {{label}}"
+    },
+    "card": {
+      "viewDetails": "View details",
+      "unknownProperty": "Stay"
+    },
+    "status": {
+      "confirmed": "Confirmed",
+      "pendingPayment": "Payment pending",
+      "pendingConfirmation": "Pending confirmation",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "detail": {
+      "title": "Reservation detail",
+      "dates": "Dates",
+      "itinerary": "Itinerary",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "lodging": "Stay",
+      "roomType": "Room type",
+      "address": "Address",
+      "openInMaps": "Open in maps",
+      "code": "Reservation code",
+      "status": "Status",
+      "total": "Total",
+      "contact": "Hotel contact",
+      "callHotel": "Call",
+      "sendEmail": "Email",
+      "visitWebsite": "Website",
+      "amenities": "Included services",
+      "houseRules": "House rules",
+      "ruleCategory": {
+        "PETS": "Pets",
+        "SMOKING": "Smoking",
+        "CHILDREN": "Children",
+        "GENERAL": "General rules"
+      },
+      "policy": "Cancellation policy",
+      "policyFull": "Full refund",
+      "policyPartial": "Partial refund ({{percent}}%)",
+      "policyNonRefundable": "Non-refundable",
+      "rebook": "Book again",
+      "loadError": "We couldn't load the reservation detail"
     }
   },
   "booking": {

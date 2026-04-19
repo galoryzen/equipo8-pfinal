@@ -8,7 +8,18 @@ import pytest
 from app.application.exceptions import BookingNotFoundError
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
-from app.domain.models import Booking, BookingStatus, CancellationPolicyType
+from app.domain.models import (
+    Booking,
+    BookingScope,
+    BookingStatus,
+    CancellationPolicyType,
+)
+
+FIXED_TODAY = date(2026, 4, 19)
+
+
+def _clock() -> date:
+    return FIXED_TODAY
 
 
 def _booking(
@@ -42,7 +53,7 @@ def _booking(
 
 @pytest.mark.asyncio
 class TestListMyBookingsUseCase:
-    async def test_returns_all_bookings_for_user(self):
+    async def test_returns_all_bookings_for_user_with_default_scope(self):
         uid = UUID("a0000000-0000-0000-0000-000000000001")
         b1 = _booking(
             UUID("90000000-0000-0000-0000-000000000001"),
@@ -61,10 +72,10 @@ class TestListMyBookingsUseCase:
         repo = AsyncMock()
         repo.list_by_user_id.return_value = [b1, b2]
 
-        uc = ListMyBookingsUseCase(repo)
+        uc = ListMyBookingsUseCase(repo, clock=_clock)
         out = await uc.execute(user_id=uid)
 
-        repo.list_by_user_id.assert_awaited_once_with(uid)
+        repo.list_by_user_id.assert_awaited_once_with(uid, scope=BookingScope.ALL, today=FIXED_TODAY)
         assert len(out) == 2
         ids = {x.id for x in out}
         assert ids == {b1.id, b2.id}
@@ -81,7 +92,7 @@ class TestListMyBookingsUseCase:
         repo = AsyncMock()
         repo.list_by_user_id.return_value = [b1]
 
-        uc = ListMyBookingsUseCase(repo)
+        uc = ListMyBookingsUseCase(repo, clock=_clock)
         out = await uc.execute(user_id=uid)
 
         assert out[0].status == "PENDING_CONFIRMATION"
@@ -93,10 +104,30 @@ class TestListMyBookingsUseCase:
         repo = AsyncMock()
         repo.list_by_user_id.return_value = []
 
-        uc = ListMyBookingsUseCase(repo)
+        uc = ListMyBookingsUseCase(repo, clock=_clock)
         out = await uc.execute(user_id=uid)
 
         assert out == []
+
+    async def test_active_scope_forwarded_to_repo(self):
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        repo = AsyncMock()
+        repo.list_by_user_id.return_value = []
+
+        uc = ListMyBookingsUseCase(repo, clock=_clock)
+        await uc.execute(user_id=uid, scope=BookingScope.ACTIVE)
+
+        repo.list_by_user_id.assert_awaited_once_with(uid, scope=BookingScope.ACTIVE, today=FIXED_TODAY)
+
+    async def test_past_scope_forwarded_to_repo(self):
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        repo = AsyncMock()
+        repo.list_by_user_id.return_value = []
+
+        uc = ListMyBookingsUseCase(repo, clock=_clock)
+        await uc.execute(user_id=uid, scope=BookingScope.PAST)
+
+        repo.list_by_user_id.assert_awaited_once_with(uid, scope=BookingScope.PAST, today=FIXED_TODAY)
 
 
 @pytest.mark.asyncio

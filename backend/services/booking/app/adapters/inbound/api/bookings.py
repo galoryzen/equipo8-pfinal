@@ -13,6 +13,7 @@ from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCa
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
+from app.domain.models import BookingScope
 from app.schemas.booking import (
     BookingDetailOut,
     BookingListItemOut,
@@ -34,10 +35,11 @@ async def create_cart_booking(
 
 @router.get("/bookings", response_model=list[BookingListItemOut])
 async def list_my_bookings(
+    scope: BookingScope = BookingScope.ALL,
     user_id: UUID = Depends(get_current_user_id),
     use_case: ListMyBookingsUseCase = Depends(get_list_my_bookings_use_case),
 ):
-    return await use_case.execute(user_id=user_id)
+    return await use_case.execute(user_id=user_id, scope=scope)
 
 
 @router.get("/bookings/{booking_id}", response_model=BookingDetailOut)

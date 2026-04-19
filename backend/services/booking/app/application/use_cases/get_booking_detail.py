@@ -3,8 +3,13 @@ from uuid import UUID
 
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
+<<<<<<< Updated upstream
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType
 from app.schemas.booking import BookingDetailOut
+=======
+from app.domain.models import Booking, BookingItem, BookingStatus, CancellationPolicyType
+from app.schemas.booking import BookingDetailOut, BookingItemDetailOut
+>>>>>>> Stashed changes
 
 
 def _status_str(booking: Booking) -> str:
@@ -39,6 +44,10 @@ class GetBookingDetailUseCase:
 
 
 def _to_detail(booking: Booking) -> BookingDetailOut:
+<<<<<<< Updated upstream
+=======
+    items = [_to_item_detail(i) for i in booking.items]
+>>>>>>> Stashed changes
     return BookingDetailOut(
         id=booking.id,
         status=_status_str(booking),
@@ -47,13 +56,32 @@ def _to_detail(booking: Booking) -> BookingDetailOut:
         hold_expires_at=booking.hold_expires_at,
         total_amount=booking.total_amount,
         currency_code=booking.currency_code,
+<<<<<<< Updated upstream
         property_id=booking.property_id,
         room_type_id=booking.room_type_id,
         rate_plan_id=booking.rate_plan_id,
         unit_price=booking.unit_price,
+=======
+>>>>>>> Stashed changes
         policy_type_applied=_policy_type_str(booking.policy_type_applied),
         policy_hours_limit_applied=booking.policy_hours_limit_applied,
         policy_refund_percent_applied=booking.policy_refund_percent_applied,
         created_at=booking.created_at,
         updated_at=booking.updated_at,
+<<<<<<< Updated upstream
+=======
+        items=items,
+    )
+
+
+def _to_item_detail(item: BookingItem) -> BookingItemDetailOut:
+    return BookingItemDetailOut(
+        id=item.id,
+        property_id=item.property_id,
+        room_type_id=item.room_type_id,
+        rate_plan_id=item.rate_plan_id,
+        quantity=item.quantity,
+        unit_price=item.unit_price,
+        subtotal=item.subtotal,
+>>>>>>> Stashed changes
     )
