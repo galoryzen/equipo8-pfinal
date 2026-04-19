@@ -7,6 +7,7 @@ import {
   cancelCartBooking,
   createCartBooking,
   getBookingDetail,
+  listMyBookings,
 } from '@src/services/booking-service';
 import type { BookingDetail, CartBooking, CreateCartBookingPayload } from '@src/types/booking';
 
@@ -103,6 +104,34 @@ describe('getBookingDetail', () => {
     mockedApi.get.mockResolvedValueOnce({ data: DETAIL });
     await getBookingDetail('with space');
     expect(mockedApi.get).toHaveBeenCalledWith('/v1/booking/bookings/with%20space');
+  });
+});
+
+describe('listMyBookings', () => {
+  afterEach(() => jest.resetAllMocks());
+
+  it('defaults to scope=all', async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: [] });
+    await listMyBookings();
+    expect(mockedApi.get).toHaveBeenCalledWith('/v1/booking/bookings', {
+      params: { scope: 'all' },
+    });
+  });
+
+  it('forwards scope=active as query param', async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: [] });
+    await listMyBookings('active');
+    expect(mockedApi.get).toHaveBeenCalledWith('/v1/booking/bookings', {
+      params: { scope: 'active' },
+    });
+  });
+
+  it('forwards scope=past as query param', async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: [] });
+    await listMyBookings('past');
+    expect(mockedApi.get).toHaveBeenCalledWith('/v1/booking/bookings', {
+      params: { scope: 'past' },
+    });
   });
 });
 

@@ -7,7 +7,7 @@ from app.application.exceptions import PropertyNotFoundError
 from app.schemas.common import PaginatedResponse
 
 
-def _make_detail_response(pid):
+def _make_detail_response(pid, *, with_contact=True):
     """Minimal valid PropertyDetailResponse dict for API wiring tests."""
     return {
         "detail": {
@@ -17,6 +17,11 @@ def _make_detail_response(pid):
             "description": "Desc",
             "city": {"id": str(uuid4()), "name": "City", "department": None, "country": "MX"},
             "address": "123 Main St",
+            "check_in_time": "15:00:00" if with_contact else None,
+            "check_out_time": "12:00:00" if with_contact else None,
+            "phone": "+52 998 555 0101" if with_contact else None,
+            "email": "reservas@test.mx" if with_contact else None,
+            "website": "https://test.mx" if with_contact else None,
             "rating_avg": "4.5",
             "review_count": 10,
             "popularity_score": "80.0",
@@ -227,6 +232,38 @@ class TestPropertyDetailValidation:
         assert "detail" in body
         assert "reviews" in body
         assert body["detail"]["name"] == "Test Hotel"
+
+    @patch("app.adapters.inbound.api.properties.get_detail_use_case")
+    def test_detail_response_exposes_contact_and_hours(self, mock_factory, client):
+        pid = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _make_detail_response(pid, with_contact=True)
+        mock_factory.return_value = mock_uc
+
+        resp = client.get(f"/api/v1/catalog/properties/{pid}")
+
+        assert resp.status_code == 200
+        detail = resp.json()["detail"]
+        assert detail["check_in_time"] == "15:00:00"
+        assert detail["check_out_time"] == "12:00:00"
+        assert detail["phone"] == "+52 998 555 0101"
+        assert detail["email"] == "reservas@test.mx"
+        assert detail["website"] == "https://test.mx"
+
+    @patch("app.adapters.inbound.api.properties.get_detail_use_case")
+    def test_detail_response_handles_missing_contact_as_null(self, mock_factory, client):
+        pid = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _make_detail_response(pid, with_contact=False)
+        mock_factory.return_value = mock_uc
+
+        resp = client.get(f"/api/v1/catalog/properties/{pid}")
+
+        assert resp.status_code == 200
+        detail = resp.json()["detail"]
+        assert detail["check_in_time"] is None
+        assert detail["phone"] is None
+        assert detail["website"] is None
 
     @patch("app.adapters.inbound.api.properties.get_detail_use_case")
     def test_checkin_checkout_forwarded_to_use_case(self, mock_factory, client):

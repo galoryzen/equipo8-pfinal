@@ -1,6 +1,6 @@
 import enum
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    Time,
 )
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
@@ -114,6 +115,11 @@ class Property(Base):
     description: Mapped[str | None] = mapped_column(Text)
     city_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("city.id"), nullable=False)
     address: Mapped[str | None] = mapped_column(Text)
+    check_in_time: Mapped[time | None] = mapped_column(Time)
+    check_out_time: Mapped[time | None] = mapped_column(Time)
+    phone: Mapped[str | None] = mapped_column(String(30))
+    email: Mapped[str | None] = mapped_column(String(255))
+    website: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[PropertyStatus] = mapped_column(
         SAEnum(PropertyStatus, name="property_status", create_type=False, schema="public"),
         nullable=False,

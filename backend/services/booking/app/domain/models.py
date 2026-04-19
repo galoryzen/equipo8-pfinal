@@ -26,6 +26,12 @@ class CancellationPolicyType(str, enum.Enum):
     NON_REFUNDABLE = "NON_REFUNDABLE"
 
 
+class BookingScope(str, enum.Enum):
+    ACTIVE = "active"
+    PAST = "past"
+    ALL = "all"
+
+
 class Base(DeclarativeBase):
     pass
 

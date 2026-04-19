@@ -140,6 +140,11 @@ export interface PropertyDetail {
   description?: string;
   city: CityInfo;
   address?: string;
+  check_in_time?: string | null;
+  check_out_time?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
   rating_avg?: number;
   review_count: number;
   popularity_score: number;

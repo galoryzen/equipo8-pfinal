@@ -75,13 +75,14 @@ INSERT INTO catalog.amenity (id, code, name) VALUES
 -- 6 properties: 2 per hotel, spread across cities
 -- city_id is looked up by dane_code from the loaded cities
 
-INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address, status, rating_avg, review_count, popularity_score, default_cancellation_policy_id) VALUES
+INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address, check_in_time, check_out_time, phone, email, website, status, rating_avg, review_count, popularity_score, default_cancellation_policy_id) VALUES
   ('30000000-0000-0000-0000-000000000001',
    'e0000000-0000-0000-0000-000000000001',
    'Sol Caribe Cancún',
    'Resort frente al mar en la zona hotelera de Cancún. Disfruta de playas de arena blanca, piscinas infinitas y gastronomía internacional.',
    (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
    'Blvd. Kukulcán Km 12.5, Zona Hotelera, 77500 Cancún',
+   '15:00', '12:00', '+52 998 555 0101', 'reservas@solcaribe.mx', 'https://solcaribe.mx',
    'ACTIVE', 4.60, 124, 920.00,
    '10000000-0000-0000-0000-000000000001'),
 
@@ -91,6 +92,7 @@ INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address,
    'Hotel boutique en el corazón de la Ciudad de México, a pasos del Ángel de la Independencia y la zona de museos.',
    (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1741.480381'),
    'Paseo de la Reforma 265, Cuauhtémoc, 06500 CDMX',
+   '15:00', '11:00', '+52 55 5555 0202', 'reservas@solreforma.mx', 'https://solreforma.mx',
    'ACTIVE', 4.30, 87, 750.00,
    '10000000-0000-0000-0000-000000000002'),
 
@@ -100,6 +102,7 @@ INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address,
    'Hotel moderno en el barrio de Usaquén con vistas a los cerros orientales. Ideal para viajes de negocios y turismo.',
    (SELECT id FROM catalog.city WHERE dane_code = 'D.82.11.1'),
    'Cra. 7 #118-09, Usaquén, Bogotá',
+   '14:00', '12:00', '+57 1 555 0303', 'reservas@lunaandina.co', 'https://lunaandina.co',
    'ACTIVE', 4.10, 63, 580.00,
    '10000000-0000-0000-0000-000000000001'),
 
@@ -109,6 +112,7 @@ INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address,
    'Elegante hotel en Palermo Soho con diseño contemporáneo, rooftop bar y fácil acceso a la vida nocturna porteña.',
    (SELECT id FROM catalog.city WHERE dane_code = 'D.5.1818.790234'),
    'Thames 2062, Palermo, C1425 Buenos Aires',
+   '15:00', '10:00', '+54 11 5555 0404', 'reservas@lunaportena.ar', 'https://lunaportena.ar',
    'ACTIVE', 4.50, 98, 830.00,
    '10000000-0000-0000-0000-000000000002'),
 
@@ -118,6 +122,7 @@ INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address,
    'Hotel clásico en plena Gran Vía madrileña. Habitaciones amplias con balcón, desayuno buffet y terraza panorámica.',
    (SELECT id FROM catalog.city WHERE dane_code = 'D.28.650.62172'),
    'Gran Vía 28, 28013 Madrid',
+   '14:00', '11:00', '+34 91 555 0505', 'reservas@estrellagranvia.es', 'https://estrellagranvia.es',
    'ACTIVE', 4.80, 156, 980.00,
    '10000000-0000-0000-0000-000000000001'),
 
@@ -127,6 +132,7 @@ INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address,
    'Encantador hotel en el Barrio Gótico de Barcelona, a minutos de Las Ramblas y la Catedral. Arquitectura medieval restaurada.',
    (SELECT id FROM catalog.city WHERE dane_code = 'D.28.648.61405'),
    'Carrer dels Banys Nous 15, 08002 Barcelona',
+   '15:00', '12:00', '+34 93 555 0606', 'reservas@estrellagotico.es', 'https://estrellagotico.es',
    'ACTIVE', 3.90, 45, 490.00,
    '10000000-0000-0000-0000-000000000003');
 
@@ -520,6 +526,48 @@ INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_stat
   ('92000000-0000-0000-0000-000000000009', '90000000-0000-0000-0000-000000000003', 'CART',                   'PENDING_PAYMENT',        NULL, 'a0000000-0000-0000-0000-000000000003'),
   ('92000000-0000-0000-0000-00000000000a', '90000000-0000-0000-0000-000000000003', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL, NULL),
   ('92000000-0000-0000-0000-00000000000b', '90000000-0000-0000-0000-000000000003', 'PENDING_CONFIRMATION',   'CANCELLED',              'Cancelado por el usuario', 'a0000000-0000-0000-0000-000000000003');
+
+-- Booking 4: CONFIRMED past (Carlos in CDMX, completed 2 months ago) — "past" tab
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+  ('90000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000001', 'CONFIRMED',
+   CURRENT_DATE - INTERVAL '60 days', CURRENT_DATE - INTERVAL '57 days',
+   300.00, 'USD',
+   '30000000-0000-0000-0000-000000000002', '60000000-0000-0000-0000-000000000003', '70000000-0000-0000-0000-000000000003', 100.00,
+   'FULL', 48, 100);
+
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
+  ('92000000-0000-0000-0000-00000000000c', '90000000-0000-0000-0000-000000000004', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-00000000000d', '90000000-0000-0000-0000-000000000004', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-00000000000e', '90000000-0000-0000-0000-000000000004', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL),
+  ('92000000-0000-0000-0000-00000000000f', '90000000-0000-0000-0000-000000000004', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000001');
+
+-- Booking 5: CANCELLED (Carlos tried Bogotá last month) — "past" tab
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+  ('90000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000001', 'CANCELLED',
+   CURRENT_DATE - INTERVAL '30 days', CURRENT_DATE - INTERVAL '28 days',
+   190.00, 'USD',
+   '30000000-0000-0000-0000-000000000003', '60000000-0000-0000-0000-000000000005', '70000000-0000-0000-0000-000000000005', 95.00,
+   'PARTIAL', 24, 50);
+
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, reason, changed_by) VALUES
+  ('92000000-0000-0000-0000-000000000010', '90000000-0000-0000-0000-000000000005', NULL,                     'CART',                   NULL, 'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-000000000011', '90000000-0000-0000-0000-000000000005', 'CART',                   'PENDING_PAYMENT',        NULL, 'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-000000000012', '90000000-0000-0000-0000-000000000005', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL, NULL),
+  ('92000000-0000-0000-0000-000000000013', '90000000-0000-0000-0000-000000000005', 'PENDING_CONFIRMATION',   'CANCELLED',              'Cambio de planes', 'a0000000-0000-0000-0000-000000000001');
+
+-- Booking 6: REJECTED (Carlos, Palermo — hotel rechazó la solicitud) — "past" tab
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+  ('90000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000001', 'REJECTED',
+   CURRENT_DATE - INTERVAL '20 days', CURRENT_DATE - INTERVAL '17 days',
+   255.00, 'USD',
+   '30000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000007', '70000000-0000-0000-0000-000000000007', 85.00,
+   'NON_REFUNDABLE', NULL, NULL);
+
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, reason, changed_by) VALUES
+  ('92000000-0000-0000-0000-000000000014', '90000000-0000-0000-0000-000000000006', NULL,                     'CART',                   NULL, 'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-000000000015', '90000000-0000-0000-0000-000000000006', 'CART',                   'PENDING_PAYMENT',        NULL, 'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-000000000016', '90000000-0000-0000-0000-000000000006', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL, NULL),
+  ('92000000-0000-0000-0000-000000000017', '90000000-0000-0000-0000-000000000006', 'PENDING_CONFIRMATION',   'REJECTED',               'Sin disponibilidad confirmada por el hotel', 'b0000000-0000-0000-0000-000000000002');
 
 -- =============================================
 -- payments

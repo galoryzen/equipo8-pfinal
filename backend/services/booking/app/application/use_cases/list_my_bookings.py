@@ -1,7 +1,9 @@
+from datetime import UTC, date, datetime
+from typing import Callable
 from uuid import UUID
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking
+from app.domain.models import Booking, BookingScope
 from app.schemas.booking import BookingListItemOut
 
 
@@ -10,12 +12,26 @@ def _status_str(booking: Booking) -> str:
     return s.value if hasattr(s, "value") else str(s)
 
 
-class ListMyBookingsUseCase:
-    def __init__(self, repo: BookingRepository):
-        self._repo = repo
+def _default_today() -> date:
+    return datetime.now(UTC).date()
 
-    async def execute(self, user_id: UUID) -> list[BookingListItemOut]:
-        bookings = await self._repo.list_by_user_id(user_id)
+
+class ListMyBookingsUseCase:
+    def __init__(
+        self,
+        repo: BookingRepository,
+        clock: Callable[[], date] = _default_today,
+    ):
+        self._repo = repo
+        self._clock = clock
+
+    async def execute(
+        self,
+        user_id: UUID,
+        scope: BookingScope = BookingScope.ALL,
+    ) -> list[BookingListItemOut]:
+        today = self._clock()
+        bookings = await self._repo.list_by_user_id(user_id, scope=scope, today=today)
         return [_to_list_item(b) for b in bookings]
 
 

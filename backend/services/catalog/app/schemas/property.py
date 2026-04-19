@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 from uuid import UUID
 
@@ -116,6 +116,11 @@ class PropertyDetail(BaseModel):
     description: str | None = None
     city: CitySummary
     address: str | None = None
+    check_in_time: time | None = None
+    check_out_time: time | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
     rating_avg: Decimal | None = None
     review_count: int
     popularity_score: Decimal

@@ -69,6 +69,47 @@ class TestBookingsEndpoints:
         assert len(data) == 2
         mock_uc.execute.assert_awaited_once()
 
+    def test_list_forwards_active_scope_to_use_case(self, client_authenticated):
+        from app.domain.models import BookingScope
+
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.get("/api/v1/booking/bookings?scope=active")
+        finally:
+            app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
+
+        assert resp.status_code == 200
+        kwargs = mock_uc.execute.await_args.kwargs
+        assert kwargs["scope"] is BookingScope.ACTIVE
+
+    def test_list_forwards_past_scope_to_use_case(self, client_authenticated):
+        from app.domain.models import BookingScope
+
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.get("/api/v1/booking/bookings?scope=past")
+        finally:
+            app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
+
+        assert resp.status_code == 200
+        assert mock_uc.execute.await_args.kwargs["scope"] is BookingScope.PAST
+
+    def test_list_rejects_invalid_scope_with_422(self, client_authenticated):
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = []
+        app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.get("/api/v1/booking/bookings?scope=bogus")
+        finally:
+            app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
+
+        assert resp.status_code == 422
+        mock_uc.execute.assert_not_awaited()
+
     def test_list_each_booking_includes_flat_room_fields(self, client_authenticated):
         mock_uc = AsyncMock()
         mock_uc.execute.return_value = [_sample_list_row()]

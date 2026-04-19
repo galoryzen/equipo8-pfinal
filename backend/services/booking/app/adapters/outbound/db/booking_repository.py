@@ -1,19 +1,53 @@
 from datetime import UTC, date, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingStatus
+from app.domain.models import Booking, BookingScope, BookingStatus
+
+_ACTIVE_STATUSES = (
+    BookingStatus.CONFIRMED,
+    BookingStatus.PENDING_PAYMENT,
+    BookingStatus.PENDING_CONFIRMATION,
+)
+_PAST_TERMINAL_STATUSES = (BookingStatus.CANCELLED, BookingStatus.REJECTED)
+_EXCLUDED_FROM_ALL = (BookingStatus.CART, BookingStatus.EXPIRED)
 
 
 class SqlAlchemyBookingRepository(BookingRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def list_by_user_id(self, user_id: UUID) -> list[Booking]:
-        stmt = select(Booking).where(Booking.user_id == user_id).order_by(Booking.checkin.desc())
+    async def list_by_user_id(
+        self,
+        user_id: UUID,
+        *,
+        scope: BookingScope = BookingScope.ALL,
+        today: date | None = None,
+    ) -> list[Booking]:
+        today = today or datetime.now(UTC).date()
+        stmt = select(Booking).where(Booking.user_id == user_id)
+
+        if scope is BookingScope.ACTIVE:
+            stmt = stmt.where(
+                Booking.status.in_(_ACTIVE_STATUSES),
+                Booking.checkout >= today,
+            ).order_by(Booking.checkin.asc())
+        elif scope is BookingScope.PAST:
+            stmt = stmt.where(
+                or_(
+                    and_(
+                        Booking.status == BookingStatus.CONFIRMED,
+                        Booking.checkout < today,
+                    ),
+                    Booking.status.in_(_PAST_TERMINAL_STATUSES),
+                )
+            ).order_by(Booking.checkout.desc())
+        else:
+            stmt = stmt.where(Booking.status.not_in(_EXCLUDED_FROM_ALL)).order_by(Booking.checkin.desc())
+
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 

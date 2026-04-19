@@ -98,11 +98,57 @@
     "past": "Pasados",
     "noTrips": "Sin viajes aún",
     "noTripsHint": "¡Empieza a explorar y reserva tu primer viaje!",
+    "noUpcoming": "Sin reservas próximas",
+    "noPast": "Sin reservas pasadas",
     "explore": "Explorar hospedajes",
+    "loadError": "No pudimos cargar tus reservas",
     "inProgress": {
       "title": "En curso",
       "continueCta": "Continuar reserva",
       "countdown": "Expira en {{label}}"
+    },
+    "card": {
+      "viewDetails": "Ver detalles",
+      "unknownProperty": "Hospedaje"
+    },
+    "status": {
+      "confirmed": "Confirmada",
+      "pendingPayment": "Pago pendiente",
+      "pendingConfirmation": "Por confirmar",
+      "cancelled": "Cancelada",
+      "rejected": "Rechazada"
+    },
+    "detail": {
+      "title": "Detalle de reserva",
+      "dates": "Fechas",
+      "itinerary": "Itinerario",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "lodging": "Hospedaje",
+      "roomType": "Tipo de habitación",
+      "address": "Dirección",
+      "openInMaps": "Abrir en mapas",
+      "code": "Código de reserva",
+      "status": "Estado",
+      "total": "Total",
+      "contact": "Contacto del hospedaje",
+      "callHotel": "Llamar",
+      "sendEmail": "Correo",
+      "visitWebsite": "Sitio web",
+      "amenities": "Servicios incluidos",
+      "houseRules": "Reglas del hospedaje",
+      "ruleCategory": {
+        "PETS": "Mascotas",
+        "SMOKING": "Fumar",
+        "CHILDREN": "Niños",
+        "GENERAL": "Normas generales"
+      },
+      "policy": "Política de cancelación",
+      "policyFull": "Reembolso total",
+      "policyPartial": "Reembolso parcial ({{percent}}%)",
+      "policyNonRefundable": "No reembolsable",
+      "rebook": "Volver a reservar",
+      "loadError": "No pudimos cargar el detalle de la reserva"
     }
   },
   "booking": {
