@@ -7,11 +7,11 @@ import pytest
 
 from app.adapters.outbound.mock.mock_payment_gateway import MockPaymentGateway
 from app.application.dto import BookingForPayment
-from app.application.exceptions import PaymentAlreadyTerminalError
+from app.application.exceptions import PaymentAlreadyTerminalError, PaymentIntentNotFoundError
 from app.application.use_cases.confirm_payment_intent import ConfirmPaymentIntentUseCase
 from app.application.use_cases.create_payment_intent import CreatePaymentIntentUseCase
-from app.domain.models import PaymentIntent, PaymentIntentStatus
 from app.application.use_cases.payment_finalization import PaymentFinalizationService
+from app.domain.models import PaymentIntent, PaymentIntentStatus
 
 
 @pytest.mark.asyncio
@@ -80,6 +80,19 @@ async def test_confirm_idempotent_when_already_succeeded():
     )
     assert out.status == "already_succeeded"
     booking.notify_payment_confirmed.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_confirm_raises_when_intent_missing():
+    repo = AsyncMock()
+    repo.get_intent_by_id = AsyncMock(return_value=None)
+    uc = ConfirmPaymentIntentUseCase(repo, AsyncMock(), AsyncMock(), MockPaymentGateway())
+    with pytest.raises(PaymentIntentNotFoundError):
+        await uc.execute(
+            payment_intent_id=uuid.uuid4(),
+            user_id=uuid.uuid4(),
+            payment_token="tok",
+        )
 
 
 @pytest.mark.asyncio
