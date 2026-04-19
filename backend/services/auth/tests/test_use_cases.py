@@ -8,10 +8,12 @@ import pytest
 from app.application.exceptions import (
     EmailAlreadyExistsError,
     InvalidCredentialsError,
+    InvalidPartnerOrganizationError,
     InvalidTokenError,
 )
 from app.application.ports.outbound.token_port import TokenPort
 from app.application.ports.outbound.user_repository import UserRepository
+from app.application.use_cases.admin_register_partner_user import AdminRegisterPartnerUserUseCase
 from app.application.use_cases.login_user import LoginUserUseCase
 from app.application.use_cases.register_user import RegisterUserUseCase
 from app.application.use_cases.validate_token import ValidateTokenUseCase
@@ -189,6 +191,116 @@ class TestRegisterUserUseCase:
 
         mock_repo.create_user.assert_not_awaited()
         mock_token.create_access_token.assert_not_called()
+
+
+class TestAdminRegisterPartnerUserUseCase:
+    async def test_hotel_partner_persists_and_returns_metadata(self, mock_repo):
+        mock_repo.check_user_exists.return_value = False
+        mock_repo.hotel_exists_and_active.return_value = True
+        hid = uuid.uuid4()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        created = User(
+            id=uuid.uuid4(),
+            email="hotel.user@example.com",
+            full_name="Ana López",
+            phone="+521551112233",
+            country_code="MX",
+            role=UserRole.HOTEL,
+            password=b"x",
+            created_at=now,
+            updated_at=now,
+        )
+        mock_repo.create_hotel_partner_user.return_value = created
+        uc = AdminRegisterPartnerUserUseCase(mock_repo)
+
+        result = await uc.execute(
+            first_name="Ana",
+            last_name="López",
+            phone="+521551112233",
+            email="hotel.user@example.com",
+            country_code="MX",
+            password="secret123",
+            organization_type="HOTEL",
+            organization_id=hid,
+        )
+
+        assert result["role"] == "HOTEL"
+        assert result["organization_type"] == "HOTEL"
+        assert result["organization_id"] == str(hid)
+        mock_repo.agency_exists_and_active.assert_not_awaited()
+        mock_repo.create_hotel_partner_user.assert_awaited_once()
+        mock_repo.create_agency_partner_user.assert_not_awaited()
+
+    async def test_agency_partner_uses_agency_link(self, mock_repo):
+        mock_repo.check_user_exists.return_value = False
+        mock_repo.agency_exists_and_active.return_value = True
+        aid = uuid.uuid4()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        created = User(
+            id=uuid.uuid4(),
+            email="agency.user@example.com",
+            full_name="Bea Ruiz",
+            phone="+573001112233",
+            country_code="CO",
+            role=UserRole.AGENCY,
+            password=b"x",
+            created_at=now,
+            updated_at=now,
+        )
+        mock_repo.create_agency_partner_user.return_value = created
+        uc = AdminRegisterPartnerUserUseCase(mock_repo)
+
+        result = await uc.execute(
+            first_name="Bea",
+            last_name="Ruiz",
+            phone="+573001112233",
+            email="agency.user@example.com",
+            country_code="CO",
+            password="secret123",
+            organization_type="AGENCY",
+            organization_id=aid,
+        )
+
+        assert result["role"] == "AGENCY"
+        mock_repo.hotel_exists_and_active.assert_not_awaited()
+        mock_repo.create_agency_partner_user.assert_awaited_once()
+
+    async def test_raises_when_email_exists(self, mock_repo):
+        mock_repo.check_user_exists.return_value = True
+        uc = AdminRegisterPartnerUserUseCase(mock_repo)
+
+        with pytest.raises(EmailAlreadyExistsError):
+            await uc.execute(
+                first_name="A",
+                last_name="B",
+                phone="+1",
+                email="taken@example.com",
+                country_code="US",
+                password="secret123",
+                organization_type="HOTEL",
+                organization_id=uuid.uuid4(),
+            )
+
+        mock_repo.create_hotel_partner_user.assert_not_awaited()
+
+    async def test_raises_when_hotel_org_invalid(self, mock_repo):
+        mock_repo.check_user_exists.return_value = False
+        mock_repo.hotel_exists_and_active.return_value = False
+        uc = AdminRegisterPartnerUserUseCase(mock_repo)
+
+        with pytest.raises(InvalidPartnerOrganizationError):
+            await uc.execute(
+                first_name="A",
+                last_name="B",
+                phone="+1",
+                email="new@example.com",
+                country_code="US",
+                password="secret123",
+                organization_type="HOTEL",
+                organization_id=uuid.uuid4(),
+            )
+
+        mock_repo.create_hotel_partner_user.assert_not_awaited()
 
 
 class TestValidateTokenUseCase:

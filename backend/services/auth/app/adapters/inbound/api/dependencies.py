@@ -7,6 +7,7 @@ from app.adapters.outbound.db.user_repository import SqlAlchemyUserRepository
 from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.application.ports.outbound.token_port import TokenPort
 from app.application.ports.outbound.user_repository import UserRepository
+from app.application.use_cases.admin_register_partner_user import AdminRegisterPartnerUserUseCase
 from app.application.use_cases.login_user import LoginUserUseCase
 from app.application.use_cases.register_user import RegisterUserUseCase
 from app.application.use_cases.validate_token import ValidateTokenUseCase
@@ -40,6 +41,10 @@ def get_login_use_case(session: AsyncSession, token: TokenPort) -> LoginUserUseC
 
 def get_register_use_case(session: AsyncSession, token: TokenPort) -> RegisterUserUseCase:
     return RegisterUserUseCase(get_user_repository(session), token)
+
+
+def get_admin_register_partner_use_case(session: AsyncSession) -> AdminRegisterPartnerUserUseCase:
+    return AdminRegisterPartnerUserUseCase(get_user_repository(session))
 
 
 def get_validate_token_use_case(token: TokenPort) -> ValidateTokenUseCase:
