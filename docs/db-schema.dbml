@@ -138,6 +138,11 @@ Table catalog.property {
   description text
   city_id uuid [not null] // → catalog.city.id
   address text
+  check_in_time time
+  check_out_time time
+  phone varchar(30)
+  email varchar(255)
+  website varchar(500)
   status property_status [not null, default: 'ACTIVE']
   rating_avg decimal(3,2) [default: 0]
   review_count int [not null, default: 0]

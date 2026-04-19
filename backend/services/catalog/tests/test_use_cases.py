@@ -2,6 +2,7 @@
 
 import json
 from datetime import date, datetime
+from datetime import time as dt_time
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
@@ -222,6 +223,11 @@ def _make_fake_property(prop_id=None):
     prop.description = "A beautiful hotel."
     prop.city = city
     prop.address = "Blvd. Kukulcán Km 12.5"
+    prop.check_in_time = dt_time(15, 0)
+    prop.check_out_time = dt_time(12, 0)
+    prop.phone = "+52 998 555 0101"
+    prop.email = "reservas@solcaribe.mx"
+    prop.website = "https://solcaribe.mx"
     prop.rating_avg = Decimal("4.60")
     prop.review_count = 124
     prop.popularity_score = Decimal("88.5")
@@ -282,6 +288,48 @@ class TestGetPropertyDetail:
 
         mock_property_repo.get_review_stats.assert_not_called()
         mock_property_repo.get_reviews.assert_not_called()
+
+    async def test_detail_exposes_check_in_out_times_and_contact(
+        self, mock_property_repo, mock_cache
+    ):
+        """HU 'detalle completo': check-in/out hours, phone/email/website propagate to DTO."""
+        mock_property_repo.get_by_id.return_value = _make_fake_property()
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID)
+        detail = result["detail"]
+
+        assert detail["check_in_time"] == "15:00:00"
+        assert detail["check_out_time"] == "12:00:00"
+        assert detail["phone"] == "+52 998 555 0101"
+        assert detail["email"] == "reservas@solcaribe.mx"
+        assert detail["website"] == "https://solcaribe.mx"
+
+    async def test_detail_contact_fields_are_nullable(
+        self, mock_property_repo, mock_cache
+    ):
+        """Properties without contact data serialise the fields as null instead of failing."""
+        prop = _make_fake_property()
+        prop.check_in_time = None
+        prop.check_out_time = None
+        prop.phone = None
+        prop.email = None
+        prop.website = None
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID)
+        detail = result["detail"]
+
+        assert detail["check_in_time"] is None
+        assert detail["check_out_time"] is None
+        assert detail["phone"] is None
+        assert detail["email"] is None
+        assert detail["website"] is None
 
     async def test_passes_pagination_to_reviews(self, mock_property_repo, mock_cache):
         mock_property_repo.get_by_id.return_value = _make_fake_property()

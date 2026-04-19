@@ -50,8 +50,14 @@ export async function createCartBooking(
   }
 }
 
-export async function listMyBookings(): Promise<BookingListItem[]> {
-  const resp = await api.get<BookingListItem[]>('/v1/booking/bookings');
+export type BookingScope = 'active' | 'past' | 'all';
+
+export async function listMyBookings(
+  scope: BookingScope = 'all',
+): Promise<BookingListItem[]> {
+  const resp = await api.get<BookingListItem[]>('/v1/booking/bookings', {
+    params: { scope },
+  });
   return resp.data;
 }
 
