@@ -14,6 +14,7 @@ from app.application.exceptions import (
     WebhookIdempotentReplayError,
 )
 
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(InvalidTokenError)
     async def invalid_token_handler(request: Request, exc: InvalidTokenError):

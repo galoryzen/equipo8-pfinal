@@ -49,7 +49,10 @@ async def test_create_payment_intent_returns_token_and_persists():
     assert out.mock_payment_token.startswith("tok_mock_")
     assert out.webhook_signing_secret.startswith("whsec_")
     repo.add_intent.assert_awaited_once()
-    events.publish.assert_awaited()
+    events.publish.assert_awaited_once()
+    published_envelope = events.publish.await_args.args[0]
+    assert published_envelope.event_type == "PaymentAuthorized"
+    assert published_envelope.payload["booking_id"] == str(snap.id)
 
 
 @pytest.mark.asyncio

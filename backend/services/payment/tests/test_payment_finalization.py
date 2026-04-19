@@ -13,7 +13,7 @@ from app.application.exceptions import (
     PaymentNotAllowedError,
 )
 from app.application.use_cases.payment_finalization import PaymentFinalizationService
-from app.domain.event_names import PAYMENT_COMPLETED, PAYMENT_FAILED
+from app.domain.event_names import PAYMENT_FAILED, PAYMENT_SUCCEEDED
 from app.domain.models import PaymentIntentStatus
 from tests.conftest import make_payment_intent
 
@@ -37,8 +37,8 @@ async def test_finalize_from_confirm_succeeds_and_applies_terminal_success():
     repo.persist_success.assert_awaited_once()
     booking.notify_payment_confirmed.assert_awaited_once_with(intent.booking_id, intent.id)
     events.publish.assert_awaited()
-    call_kw = events.publish.call_args[0]
-    assert call_kw[0] == PAYMENT_COMPLETED
+    published_envelope = events.publish.call_args[0][0]
+    assert published_envelope.event_type == PAYMENT_SUCCEEDED
 
 
 @pytest.mark.asyncio
@@ -58,7 +58,7 @@ async def test_finalize_from_confirm_gateway_decline():
     assert out.status == "failed"
     repo.persist_failure.assert_awaited_once()
     booking.notify_payment_confirmed.assert_not_called()
-    assert events.publish.call_args[0][0] == PAYMENT_FAILED
+    assert events.publish.call_args[0][0].event_type == PAYMENT_FAILED
 
 
 @pytest.mark.asyncio
@@ -154,4 +154,4 @@ async def test_finalize_from_webhook_pending_runs_failure_path():
     await svc.finalize_from_webhook(intent, want_success=False)
 
     repo.persist_failure.assert_awaited_once()
-    assert events.publish.call_args[0][0] == PAYMENT_FAILED
+    assert events.publish.call_args[0][0].event_type == PAYMENT_FAILED

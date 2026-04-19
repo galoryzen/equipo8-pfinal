@@ -3,14 +3,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
+from contracts.events.base import DomainEventEnvelope
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jose import jwt as jose_jwt
+from shared.events.logging import LoggingDomainEventPublisher
 
 from app.adapters.inbound.api import dependencies as deps
 from app.adapters.inbound.api import health as health_mod
 from app.adapters.inbound.api.error_handlers import register_error_handlers
-from app.adapters.outbound.events.logging_event_publisher import LoggingDomainEventPublisher
 from app.adapters.outbound.http.booking_http_client import HttpBookingServiceClient
 from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.application.exceptions import (
@@ -163,7 +164,7 @@ def test_get_token_and_event_publishers():
 async def test_logging_event_publisher_invokes_logger(caplog):
     caplog.set_level("INFO")
     pub = LoggingDomainEventPublisher()
-    await pub.publish("TEST_EVT", {"k": "v"})
+    await pub.publish(DomainEventEnvelope(event_type="TEST_EVT", payload={"k": "v"}))
     assert any("TEST_EVT" in r.message for r in caplog.records)
 
 

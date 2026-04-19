@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     BOOKING_CALLBACK_SECRET: str = ""
     HTTP_CLIENT_TIMEOUT_SECONDS: float = 10.0
 
+    EVENT_BUS_BACKEND: str = "logging"
+    RABBITMQ_URL: str | None = None
+    EVENTBRIDGE_BUS_NAME: str | None = None
+    EVENTBRIDGE_REGION: str | None = None
+
     model_config = {"env_prefix": "PAYMENT_", "env_file": ".env", "extra": "ignore"}
 
 

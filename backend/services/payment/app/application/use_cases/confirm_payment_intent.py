@@ -1,8 +1,9 @@
 from uuid import UUID
 
+from shared.events import DomainEventPublisher
+
 from app.application.exceptions import PaymentIntentNotFoundError
 from app.application.ports.outbound.booking_client_port import BookingServiceClient
-from app.application.ports.outbound.domain_event_publisher import DomainEventPublisher
 from app.application.ports.outbound.payment_gateway_port import PaymentGatewayPort
 from app.application.ports.outbound.payment_repository import PaymentRepository
 from app.application.use_cases.payment_finalization import PaymentFinalizationService

@@ -1,5 +1,9 @@
-"""Event type names for future bus/outbox wiring (stub publisher logs these today)."""
+"""Canonical event type names (see backend/CLAUDE.md → Inter-service communication)."""
 
-PAYMENT_INITIATED = "PaymentInitiated"
-PAYMENT_COMPLETED = "PaymentCompleted"
-PAYMENT_FAILED = "PaymentFailed"
+from contracts.events.payment import (
+    PAYMENT_AUTHORIZED,
+    PAYMENT_FAILED,
+    PAYMENT_SUCCEEDED,
+)
+
+__all__ = ["PAYMENT_AUTHORIZED", "PAYMENT_FAILED", "PAYMENT_SUCCEEDED"]

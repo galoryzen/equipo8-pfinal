@@ -3,6 +3,10 @@ import uuid
 from datetime import UTC, datetime
 from uuid import UUID
 
+from contracts.events.base import DomainEventEnvelope
+from contracts.events.payment import PaymentFailedPayload, PaymentSucceededPayload
+from shared.events import DomainEventPublisher
+
 from app.application.exceptions import (
     BookingNotPayableError,
     BookingSnapshotError,
@@ -12,10 +16,9 @@ from app.application.exceptions import (
     PaymentNotAllowedError,
 )
 from app.application.ports.outbound.booking_client_port import BookingServiceClient
-from app.application.ports.outbound.domain_event_publisher import DomainEventPublisher
 from app.application.ports.outbound.payment_gateway_port import PaymentGatewayPort
 from app.application.ports.outbound.payment_repository import PaymentRepository
-from app.domain.event_names import PAYMENT_COMPLETED, PAYMENT_FAILED
+from app.domain.event_names import PAYMENT_FAILED, PAYMENT_SUCCEEDED
 from app.domain.models import (
     Payment,
     PaymentAttempt,
@@ -120,16 +123,17 @@ class PaymentFinalizationService:
                     context,
                 )
                 raise
-            await self._events.publish(
-                PAYMENT_COMPLETED,
-                {
-                    "payment_intent_id": str(intent.id),
-                    "booking_id": str(intent.booking_id),
-                    "payment_id": str(charge.id),
-                    "amount": str(intent.amount),
-                    "currency": intent.currency_code,
-                },
+            envelope = DomainEventEnvelope(
+                event_type=PAYMENT_SUCCEEDED,
+                payload=PaymentSucceededPayload(
+                    payment_intent_id=intent.id,
+                    booking_id=intent.booking_id,
+                    payment_id=charge.id,
+                    amount=intent.amount,
+                    currency=intent.currency_code,
+                ).model_dump(mode="json"),
             )
+            await self._events.publish(envelope)
             return
 
         detail = f"mock_decline:{context}"
@@ -141,11 +145,12 @@ class PaymentFinalizationService:
             created_at=now,
         )
         await self._repo.persist_failure(intent, attempt)
-        await self._events.publish(
-            PAYMENT_FAILED,
-            {
-                "payment_intent_id": str(intent.id),
-                "booking_id": str(intent.booking_id),
-                "reason": attempt.detail,
-            },
+        envelope = DomainEventEnvelope(
+            event_type=PAYMENT_FAILED,
+            payload=PaymentFailedPayload(
+                payment_intent_id=intent.id,
+                booking_id=intent.booking_id,
+                reason=attempt.detail,
+            ).model_dump(mode="json"),
         )
+        await self._events.publish(envelope)

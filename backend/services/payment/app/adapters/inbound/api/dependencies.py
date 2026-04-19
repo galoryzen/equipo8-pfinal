@@ -3,17 +3,16 @@ from uuid import UUID
 
 import httpx
 from fastapi import Depends, Header
+from shared.events import DomainEventPublisher, build_event_publisher
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.db.payment_repository import SqlAlchemyPaymentRepository
 from app.adapters.outbound.db.session import async_session
-from app.adapters.outbound.events.logging_event_publisher import LoggingDomainEventPublisher
 from app.adapters.outbound.http.booking_http_client import HttpBookingServiceClient
 from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.adapters.outbound.mock.mock_payment_gateway import MockPaymentGateway
 from app.application.exceptions import InvalidTokenError
 from app.application.ports.outbound.booking_client_port import BookingServiceClient
-from app.application.ports.outbound.domain_event_publisher import DomainEventPublisher
 from app.application.ports.outbound.payment_gateway_port import PaymentGatewayPort
 from app.application.ports.outbound.token_port import TokenPort
 from app.application.use_cases.confirm_payment_intent import ConfirmPaymentIntentUseCase
@@ -36,8 +35,17 @@ def _http_client() -> httpx.AsyncClient:
     return _payment_http_client
 
 
-_publisher = LoggingDomainEventPublisher()
+_publisher: DomainEventPublisher = build_event_publisher(
+    settings.EVENT_BUS_BACKEND,
+    rabbitmq_url=settings.RABBITMQ_URL,
+    eventbridge_bus_name=settings.EVENTBRIDGE_BUS_NAME,
+    eventbridge_region=settings.EVENTBRIDGE_REGION,
+)
 _mock_payment_gateway = MockPaymentGateway()
+
+
+def get_configured_event_publisher() -> DomainEventPublisher:
+    return _publisher
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:

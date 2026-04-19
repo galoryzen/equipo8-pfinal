@@ -72,6 +72,7 @@ services:
     volumes:
       - ./services/auth/app:/app/app
       - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       AUTH_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
@@ -99,6 +100,7 @@ services:
     volumes:
       - ./services/catalog/app:/app/app
       - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       CATALOG_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
@@ -125,6 +127,7 @@ services:
       - ./services/booking/app:/app/app
       - ./services/booking/tests:/app/tests
       - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       BOOKING_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
@@ -155,6 +158,7 @@ services:
       - ./services/payment/app:/app/app
       - ./services/payment/tests:/app/tests
       - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       PAYMENT_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
@@ -165,11 +169,15 @@ services:
       PAYMENT_JWT_ALGORITHM: "HS256"
       PAYMENT_BOOKING_SERVICE_URL: "http://thub-booking:8000"
       PAYMENT_BOOKING_CALLBACK_SECRET: "dev-payment-callback-secret"
+      PAYMENT_EVENT_BUS_BACKEND: "rabbitmq"
+      PAYMENT_RABBITMQ_URL: "amqp://travelhub:travelhub_dev@thub-rabbitmq:5672/"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
         condition: service_healthy
       thub-redis:
+        condition: service_healthy
+      thub-rabbitmq:
         condition: service_healthy
 
   thub-notification:
@@ -182,6 +190,7 @@ services:
     volumes:
       - ./services/notification/app:/app/app
       - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       NOTIFICATION_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"

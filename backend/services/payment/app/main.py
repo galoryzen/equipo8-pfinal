@@ -4,7 +4,10 @@ import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.api.dependencies import set_payment_http_client
+from app.adapters.inbound.api.dependencies import (
+    get_configured_event_publisher,
+    set_payment_http_client,
+)
 from app.adapters.inbound.api.error_handlers import register_error_handlers
 from app.adapters.inbound.api.health import router as health_router
 from app.adapters.inbound.api.payment_intents import router as payment_intents_router
@@ -21,6 +24,7 @@ async def lifespan(app: FastAPI):
     finally:
         set_payment_http_client(None)
         await client.aclose()
+        await get_configured_event_publisher().close()
         await engine.dispose()
 
 
