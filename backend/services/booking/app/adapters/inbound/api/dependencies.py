@@ -104,3 +104,5 @@ def get_booking_detail_use_case(
 ) -> GetBookingDetailUseCase:
     repo = SqlAlchemyBookingRepository(session)
     return GetBookingDetailUseCase(repo)
+
+

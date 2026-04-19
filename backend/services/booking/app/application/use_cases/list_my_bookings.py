@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from datetime import UTC, date, datetime
-from typing import Callable
 from uuid import UUID
 
 from app.application.ports.outbound.booking_repository import BookingRepository
