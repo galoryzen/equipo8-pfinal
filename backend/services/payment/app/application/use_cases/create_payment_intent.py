@@ -3,10 +3,6 @@ import uuid
 from datetime import UTC, datetime
 from uuid import UUID
 
-from contracts.events.base import DomainEventEnvelope
-from contracts.events.payment import PaymentAuthorizedPayload
-from shared.events import DomainEventPublisher
-
 from app.application.dto import BookingForPayment
 from app.application.exceptions import (
     BookingNotFoundError,
@@ -16,7 +12,6 @@ from app.application.exceptions import (
 from app.application.payment_rules import assert_booking_payable_for_intent
 from app.application.ports.outbound.booking_client_port import BookingServiceClient
 from app.application.ports.outbound.payment_repository import PaymentRepository
-from app.domain.event_names import PAYMENT_AUTHORIZED
 from app.domain.models import PaymentIntent, PaymentIntentStatus
 from app.schemas.payment import PaymentIntentCreatedOut
 
@@ -26,11 +21,9 @@ class CreatePaymentIntentUseCase:
         self,
         repo: PaymentRepository,
         booking_client: BookingServiceClient,
-        events: DomainEventPublisher,
     ):
         self._repo = repo
         self._booking = booking_client
-        self._events = events
 
     async def execute(
         self,
@@ -86,16 +79,6 @@ class CreatePaymentIntentUseCase:
             updated_at=now,
         )
         saved = await self._repo.add_intent(intent)
-        envelope = DomainEventEnvelope(
-            event_type=PAYMENT_AUTHORIZED,
-            payload=PaymentAuthorizedPayload(
-                payment_intent_id=saved.id,
-                booking_id=saved.booking_id,
-                amount=saved.amount,
-                currency=saved.currency_code,
-            ).model_dump(mode="json"),
-        )
-        await self._events.publish(envelope)
         return PaymentIntentCreatedOut(
             payment_intent_id=saved.id,
             mock_payment_token=saved.mock_payment_token,

@@ -18,7 +18,6 @@ from app.domain.models import PaymentIntent, PaymentIntentStatus
 async def test_create_payment_intent_returns_token_and_persists():
     repo = AsyncMock()
     booking = AsyncMock()
-    events = AsyncMock()
     future = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)
     snap = BookingForPayment(
         id=uuid.UUID("90000000-0000-0000-0000-000000000002"),
@@ -38,7 +37,7 @@ async def test_create_payment_intent_returns_token_and_persists():
 
     repo.add_intent = AsyncMock(side_effect=_add_intent)
 
-    uc = CreatePaymentIntentUseCase(repo, booking, events)
+    uc = CreatePaymentIntentUseCase(repo, booking)
     out = await uc.execute(
         booking_id=snap.id,
         user_id=uuid.UUID("a0000000-0000-0000-0000-000000000002"),
@@ -49,16 +48,11 @@ async def test_create_payment_intent_returns_token_and_persists():
     assert out.mock_payment_token.startswith("tok_mock_")
     assert out.webhook_signing_secret.startswith("whsec_")
     repo.add_intent.assert_awaited_once()
-    events.publish.assert_awaited_once()
-    published_envelope = events.publish.await_args.args[0]
-    assert published_envelope.event_type == "PaymentAuthorized"
-    assert published_envelope.payload["booking_id"] == str(snap.id)
 
 
 @pytest.mark.asyncio
 async def test_confirm_idempotent_when_already_succeeded():
     repo = AsyncMock()
-    booking = AsyncMock()
     events = AsyncMock()
     intent = PaymentIntent(
         id=uuid.uuid4(),
@@ -75,21 +69,21 @@ async def test_confirm_idempotent_when_already_succeeded():
         updated_at=datetime.now(UTC).replace(tzinfo=None),
     )
     repo.get_intent_by_id = AsyncMock(return_value=intent)
-    uc = ConfirmPaymentIntentUseCase(repo, booking, events, MockPaymentGateway())
+    uc = ConfirmPaymentIntentUseCase(repo, events, MockPaymentGateway())
     out = await uc.execute(
         payment_intent_id=intent.id,
         user_id=intent.user_id,
         payment_token="tok_mock_x",
     )
     assert out.status == "already_succeeded"
-    booking.notify_payment_confirmed.assert_not_called()
+    events.publish.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_confirm_raises_when_intent_missing():
     repo = AsyncMock()
     repo.get_intent_by_id = AsyncMock(return_value=None)
-    uc = ConfirmPaymentIntentUseCase(repo, AsyncMock(), AsyncMock(), MockPaymentGateway())
+    uc = ConfirmPaymentIntentUseCase(repo, AsyncMock(), MockPaymentGateway())
     with pytest.raises(PaymentIntentNotFoundError):
         await uc.execute(
             payment_intent_id=uuid.uuid4(),
@@ -101,7 +95,6 @@ async def test_confirm_raises_when_intent_missing():
 @pytest.mark.asyncio
 async def test_finalize_raises_when_intent_failed_and_confirm_retries():
     repo = AsyncMock()
-    booking = AsyncMock()
     events = AsyncMock()
     intent = PaymentIntent(
         id=uuid.uuid4(),
@@ -117,6 +110,6 @@ async def test_finalize_raises_when_intent_failed_and_confirm_retries():
         created_at=datetime.now(UTC).replace(tzinfo=None),
         updated_at=datetime.now(UTC).replace(tzinfo=None),
     )
-    svc = PaymentFinalizationService(repo, booking, events, MockPaymentGateway())
+    svc = PaymentFinalizationService(repo, events, MockPaymentGateway())
     with pytest.raises(PaymentAlreadyTerminalError):
         await svc.finalize_from_confirm(intent, intent.user_id, "tok_mock_x")

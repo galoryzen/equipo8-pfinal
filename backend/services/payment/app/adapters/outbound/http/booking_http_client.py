@@ -8,7 +8,6 @@ import httpx
 from app.application.dto import BookingForPayment
 from app.application.exceptions import (
     BookingNotFoundError,
-    BookingNotPayableError,
     BookingSnapshotError,
 )
 from app.application.ports.outbound.booking_client_port import BookingServiceClient
@@ -55,22 +54,3 @@ class HttpBookingServiceClient(BookingServiceClient):
             hold_expires_at=hold_dt,
             status=data["status"],
         )
-
-    async def notify_payment_confirmed(self, booking_id: UUID, payment_intent_id: UUID) -> None:
-        url = f"{self._base}/api/v1/booking/internal/bookings/{booking_id}/confirm-after-payment"
-        headers = {"X-Internal-Payment-Key": settings.BOOKING_CALLBACK_SECRET}
-        payload = {"payment_intent_id": str(payment_intent_id)}
-        try:
-            response = await self._client.post(url, json=payload, headers=headers)
-        except httpx.HTTPError as exc:
-            logger.warning("Booking confirm callback failed: %s", exc)
-            raise BookingSnapshotError("Booking confirmation unavailable") from exc
-
-        if response.status_code == 204:
-            return
-        if response.status_code == 409:
-            raise BookingNotPayableError(response.text)
-        if response.status_code == 404:
-            raise BookingSnapshotError("Booking not found for confirmation")
-        logger.warning("Booking confirm unexpected %s: %s", response.status_code, response.text)
-        raise BookingSnapshotError("Booking confirmation failed")

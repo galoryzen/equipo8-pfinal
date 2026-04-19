@@ -40,7 +40,7 @@ async def test_idempotency_returns_existing_intent():
     booking = AsyncMock()
     booking.get_booking_for_user = AsyncMock(return_value=snap)
 
-    uc = CreatePaymentIntentUseCase(repo, booking, AsyncMock())
+    uc = CreatePaymentIntentUseCase(repo, booking)
     out = await uc.execute(
         booking_id=booking_id,
         user_id=user_id,
@@ -70,7 +70,7 @@ async def test_idempotency_conflict_raises():
     booking = AsyncMock()
     booking.get_booking_for_user = AsyncMock(return_value=snap)
 
-    uc = CreatePaymentIntentUseCase(repo, booking, AsyncMock())
+    uc = CreatePaymentIntentUseCase(repo, booking)
     with pytest.raises(BookingNotPayableError, match="Idempotency-Key"):
         await uc.execute(
             booking_id=snap.id,
@@ -94,7 +94,7 @@ async def test_booking_snapshot_id_mismatch():
     booking = AsyncMock()
     booking.get_booking_for_user = AsyncMock(return_value=snap)
 
-    uc = CreatePaymentIntentUseCase(AsyncMock(), booking, AsyncMock())
+    uc = CreatePaymentIntentUseCase(AsyncMock(), booking)
     with pytest.raises(BookingSnapshotError, match="mismatch"):
         await uc.execute(
             booking_id=requested,
@@ -109,7 +109,7 @@ async def test_get_booking_not_found_propagates():
     booking = AsyncMock()
     booking.get_booking_for_user = AsyncMock(side_effect=BookingNotFoundError())
 
-    uc = CreatePaymentIntentUseCase(AsyncMock(), booking, AsyncMock())
+    uc = CreatePaymentIntentUseCase(AsyncMock(), booking)
     with pytest.raises(BookingNotFoundError):
         await uc.execute(
             booking_id=uuid.uuid4(),
@@ -124,7 +124,7 @@ async def test_get_booking_snapshot_error_propagates():
     booking = AsyncMock()
     booking.get_booking_for_user = AsyncMock(side_effect=BookingSnapshotError("timeout"))
 
-    uc = CreatePaymentIntentUseCase(AsyncMock(), booking, AsyncMock())
+    uc = CreatePaymentIntentUseCase(AsyncMock(), booking)
     with pytest.raises(BookingSnapshotError):
         await uc.execute(
             booking_id=uuid.uuid4(),
@@ -148,7 +148,7 @@ async def test_booking_not_payable_wrong_status():
     booking = AsyncMock()
     booking.get_booking_for_user = AsyncMock(return_value=snap)
 
-    uc = CreatePaymentIntentUseCase(AsyncMock(), booking, AsyncMock())
+    uc = CreatePaymentIntentUseCase(AsyncMock(), booking)
     with pytest.raises(BookingNotPayableError, match="PENDING"):
         await uc.execute(
             booking_id=bid,
@@ -172,7 +172,7 @@ async def test_booking_hold_expired():
     booking = AsyncMock()
     booking.get_booking_for_user = AsyncMock(return_value=snap)
 
-    uc = CreatePaymentIntentUseCase(AsyncMock(), booking, AsyncMock())
+    uc = CreatePaymentIntentUseCase(AsyncMock(), booking)
     with pytest.raises(BookingNotPayableError, match="expired"):
         await uc.execute(
             booking_id=bid,

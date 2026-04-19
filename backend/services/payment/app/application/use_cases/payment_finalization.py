@@ -8,14 +8,11 @@ from contracts.events.payment import PaymentFailedPayload, PaymentSucceededPaylo
 from shared.events import DomainEventPublisher
 
 from app.application.exceptions import (
-    BookingNotPayableError,
-    BookingSnapshotError,
     InvalidMockPaymentTokenError,
     PaymentAlreadyTerminalError,
     PaymentIntentNotFoundError,
     PaymentNotAllowedError,
 )
-from app.application.ports.outbound.booking_client_port import BookingServiceClient
 from app.application.ports.outbound.payment_gateway_port import PaymentGatewayPort
 from app.application.ports.outbound.payment_repository import PaymentRepository
 from app.domain.event_names import PAYMENT_FAILED, PAYMENT_SUCCEEDED
@@ -37,12 +34,10 @@ class PaymentFinalizationService:
     def __init__(
         self,
         repo: PaymentRepository,
-        booking: BookingServiceClient,
         events: DomainEventPublisher,
         payment_gateway: PaymentGatewayPort,
     ):
         self._repo = repo
-        self._booking = booking
         self._events = events
         self._payment_gateway = payment_gateway
 
@@ -114,15 +109,6 @@ class PaymentFinalizationService:
                 updated_at=now,
             )
             await self._repo.persist_success(intent, charge)
-            try:
-                await self._booking.notify_payment_confirmed(intent.booking_id, intent.id)
-            except (BookingSnapshotError, BookingNotPayableError):
-                logger.exception(
-                    "Payment captured but booking callback failed (intent=%s context=%s)",
-                    intent.id,
-                    context,
-                )
-                raise
             envelope = DomainEventEnvelope(
                 event_type=PAYMENT_SUCCEEDED,
                 payload=PaymentSucceededPayload(

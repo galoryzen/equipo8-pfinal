@@ -6,13 +6,12 @@ import httpx
 import pytest
 
 from app.adapters.outbound.http.booking_http_client import HttpBookingServiceClient
-from app.application.exceptions import BookingNotFoundError, BookingNotPayableError, BookingSnapshotError
+from app.application.exceptions import BookingNotFoundError, BookingSnapshotError
 
 
 def _fake_settings():
     class S:
         BOOKING_SERVICE_URL = "http://booking.test"
-        BOOKING_CALLBACK_SECRET = "cb-secret"
 
     return S()
 
@@ -120,65 +119,3 @@ async def test_get_booking_http_error():
             svc = HttpBookingServiceClient(client)
             with pytest.raises(BookingSnapshotError, match="unavailable"):
                 await svc.get_booking_for_user(bid, "Bearer x")
-
-
-@pytest.mark.asyncio
-async def test_notify_payment_confirmed_204():
-    bid = uuid.uuid4()
-    pid = uuid.uuid4()
-    seen = {}
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        seen["url"] = str(request.url)
-        assert request.headers.get("X-Internal-Payment-Key") == "cb-secret"
-        return httpx.Response(204)
-
-    transport = httpx.MockTransport(handler)
-    with patch("app.adapters.outbound.http.booking_http_client.settings", _fake_settings()):
-        async with httpx.AsyncClient(transport=transport) as client:
-            svc = HttpBookingServiceClient(client)
-            await svc.notify_payment_confirmed(bid, pid)
-    assert "confirm-after-payment" in seen["url"]
-
-
-@pytest.mark.asyncio
-async def test_notify_payment_confirmed_409_404_and_unexpected():
-    bid = uuid.uuid4()
-    pid = uuid.uuid4()
-
-    transport409 = httpx.MockTransport(lambda r: httpx.Response(409, text="conflict"))
-    with patch("app.adapters.outbound.http.booking_http_client.settings", _fake_settings()):
-        async with httpx.AsyncClient(transport=transport409) as client:
-            svc = HttpBookingServiceClient(client)
-            with pytest.raises(BookingNotPayableError):
-                await svc.notify_payment_confirmed(bid, pid)
-
-    transport404 = httpx.MockTransport(lambda r: httpx.Response(404))
-    with patch("app.adapters.outbound.http.booking_http_client.settings", _fake_settings()):
-        async with httpx.AsyncClient(transport=transport404) as client:
-            svc = HttpBookingServiceClient(client)
-            with pytest.raises(BookingSnapshotError, match="not found"):
-                await svc.notify_payment_confirmed(bid, pid)
-
-    transport500 = httpx.MockTransport(lambda r: httpx.Response(500))
-    with patch("app.adapters.outbound.http.booking_http_client.settings", _fake_settings()):
-        async with httpx.AsyncClient(transport=transport500) as client:
-            svc = HttpBookingServiceClient(client)
-            with pytest.raises(BookingSnapshotError, match="failed"):
-                await svc.notify_payment_confirmed(bid, pid)
-
-
-@pytest.mark.asyncio
-async def test_notify_payment_confirmed_http_error():
-    bid = uuid.uuid4()
-    pid = uuid.uuid4()
-
-    def boom(request: httpx.Request) -> httpx.Response:
-        raise httpx.TimeoutException("t", request=request)
-
-    transport = httpx.MockTransport(boom)
-    with patch("app.adapters.outbound.http.booking_http_client.settings", _fake_settings()):
-        async with httpx.AsyncClient(transport=transport) as client:
-            svc = HttpBookingServiceClient(client)
-            with pytest.raises(BookingSnapshotError, match="unavailable"):
-                await svc.notify_payment_confirmed(bid, pid)

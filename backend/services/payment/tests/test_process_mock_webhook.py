@@ -18,7 +18,7 @@ from tests.conftest import make_payment_intent
 async def test_execute_raises_when_intent_not_found():
     repo = AsyncMock()
     repo.get_intent_by_id = AsyncMock(return_value=None)
-    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), AsyncMock(), MockPaymentGateway())
+    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), MockPaymentGateway())
 
     with pytest.raises(PaymentIntentNotFoundError):
         await uc.execute(
@@ -34,7 +34,7 @@ async def test_execute_webhook_auth_error():
     intent = make_payment_intent(webhook_signing_secret="whsec_expected")
     repo = AsyncMock()
     repo.get_intent_by_id = AsyncMock(return_value=intent)
-    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), AsyncMock(), MockPaymentGateway())
+    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), MockPaymentGateway())
 
     with pytest.raises(WebhookAuthError):
         await uc.execute(
@@ -51,7 +51,7 @@ async def test_execute_idempotent_replay():
     repo = AsyncMock()
     repo.get_intent_by_id = AsyncMock(return_value=intent)
     repo.try_insert_webhook_event = AsyncMock(return_value=False)
-    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), AsyncMock(), MockPaymentGateway())
+    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), MockPaymentGateway())
 
     with pytest.raises(WebhookIdempotentReplayError):
         await uc.execute(
@@ -68,7 +68,7 @@ async def test_execute_raises_when_intent_vanishes_after_insert():
     repo = AsyncMock()
     repo.get_intent_by_id = AsyncMock(side_effect=[intent, None])
     repo.try_insert_webhook_event = AsyncMock(return_value=True)
-    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), AsyncMock(), MockPaymentGateway())
+    uc = ProcessMockWebhookUseCase(repo, AsyncMock(), MockPaymentGateway())
 
     with pytest.raises(PaymentIntentNotFoundError):
         await uc.execute(
@@ -98,10 +98,9 @@ async def test_execute_happy_path_delegates_to_finalizer():
     repo.get_intent_by_id = AsyncMock(side_effect=[intent, fresh, fresh])
     repo.try_insert_webhook_event = AsyncMock(return_value=True)
     repo.persist_success = AsyncMock()
-    booking = AsyncMock()
     events = AsyncMock()
 
-    uc = ProcessMockWebhookUseCase(repo, booking, events, MockPaymentGateway())
+    uc = ProcessMockWebhookUseCase(repo, events, MockPaymentGateway())
     await uc.execute(
         payment_intent_id=intent.id,
         idempotency_key="k1",
@@ -110,4 +109,4 @@ async def test_execute_happy_path_delegates_to_finalizer():
     )
 
     repo.persist_success.assert_awaited_once()
-    booking.notify_payment_confirmed.assert_awaited()
+    events.publish.assert_awaited()

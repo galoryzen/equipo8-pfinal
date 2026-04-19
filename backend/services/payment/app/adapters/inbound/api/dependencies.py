@@ -97,27 +97,24 @@ def get_current_user_id(
 def get_create_payment_intent_use_case(
     session: AsyncSession = Depends(get_db_session),
     booking: BookingServiceClient = Depends(get_booking_service_client),
-    events: DomainEventPublisher = Depends(get_event_publisher),
 ) -> CreatePaymentIntentUseCase:
     repo = SqlAlchemyPaymentRepository(session)
-    return CreatePaymentIntentUseCase(repo, booking, events)
+    return CreatePaymentIntentUseCase(repo, booking)
 
 
 def get_confirm_payment_intent_use_case(
     session: AsyncSession = Depends(get_db_session),
-    booking: BookingServiceClient = Depends(get_booking_service_client),
     events: DomainEventPublisher = Depends(get_event_publisher),
     gateway: PaymentGatewayPort = Depends(get_payment_gateway),
 ) -> ConfirmPaymentIntentUseCase:
     repo = SqlAlchemyPaymentRepository(session)
-    return ConfirmPaymentIntentUseCase(repo, booking, events, gateway)
+    return ConfirmPaymentIntentUseCase(repo, events, gateway)
 
 
 def get_process_mock_webhook_use_case(
     session: AsyncSession = Depends(get_db_session),
-    booking: BookingServiceClient = Depends(get_booking_service_client),
     events: DomainEventPublisher = Depends(get_event_publisher),
     gateway: PaymentGatewayPort = Depends(get_payment_gateway),
 ) -> ProcessMockWebhookUseCase:
     repo = SqlAlchemyPaymentRepository(session)
-    return ProcessMockWebhookUseCase(repo, booking, events, gateway)
+    return ProcessMockWebhookUseCase(repo, events, gateway)

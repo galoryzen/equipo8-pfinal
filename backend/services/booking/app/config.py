@@ -18,9 +18,6 @@ class Settings(BaseSettings):
     WORKER_ENABLED: bool = True
     WORKER_EXPIRE_INTERVAL_SECONDS: int = 60
 
-    # Shared secret for payment service → booking confirmation callback (must match payment service)
-    INTERNAL_PAYMENT_CALLBACK_KEY: str = ""
-
     model_config = {"env_prefix": "BOOKING_", "env_file": ".env", "extra": "ignore"}
 
 

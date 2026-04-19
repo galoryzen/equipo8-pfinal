@@ -8,7 +8,6 @@ from app.application.exceptions import (
     WebhookAuthError,
     WebhookIdempotentReplayError,
 )
-from app.application.ports.outbound.booking_client_port import BookingServiceClient
 from app.application.ports.outbound.payment_gateway_port import PaymentGatewayPort
 from app.application.ports.outbound.payment_repository import PaymentRepository
 from app.application.use_cases.payment_finalization import PaymentFinalizationService
@@ -19,12 +18,11 @@ class ProcessMockWebhookUseCase:
     def __init__(
         self,
         repo: PaymentRepository,
-        booking: BookingServiceClient,
         events: DomainEventPublisher,
         payment_gateway: PaymentGatewayPort,
     ):
         self._repo = repo
-        self._finalizer = PaymentFinalizationService(repo, booking, events, payment_gateway)
+        self._finalizer = PaymentFinalizationService(repo, events, payment_gateway)
 
     async def execute(
         self,

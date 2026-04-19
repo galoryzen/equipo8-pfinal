@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
 
     BOOKING_SERVICE_URL: str = "http://localhost:8003"
-    BOOKING_CALLBACK_SECRET: str = ""
     HTTP_CLIENT_TIMEOUT_SECONDS: float = 10.0
 
     EVENT_BUS_BACKEND: str = "logging"
