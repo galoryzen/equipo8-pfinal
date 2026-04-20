@@ -11,6 +11,10 @@ export const tokens = {
     primaryActive: '#0369A1',
     /** Sky 700 — text / links on white (≥4.5:1 for 14px body) */
     primaryOnLight: '#0369A1',
+    /** Manager selected nav accent */
+    accentOrange: '#EC5B13',
+    /** 10% alpha background for accentOrange */
+    accentOrangeSoft: '#EC5B131A',
   },
   text: {
     primary: '#111827',
