@@ -209,6 +209,18 @@
     "noPendingBookings": "No pending bookings.",
     "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking."
   },
+  "admin": {
+    "navbar": {
+      "title": "TravelHub Admin",
+      "dashboard": "Dashboard",
+      "bookings": "Bookings",
+      "hotels": "My Hotels",
+      "notifications": "Notifications",
+      "reports": "Reports",
+      "subtitle": "Super Admin",
+      "logout": "Log Out"
+    }
+  },
   "common": {
     "cancel": "Cancel",
     "unknownError": "Unknown error"

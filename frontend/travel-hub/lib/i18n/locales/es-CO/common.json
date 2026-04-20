@@ -214,6 +214,18 @@
     "noPendingBookings": "No hay reservas pendientes.",
     "noAvailability": "No hay disponibilidad suficiente. Puede ofrecer upgrade, cambiar fechas o rechazar la reserva."
   },
+  "admin": {
+    "navbar": {
+      "title": "TravelHub Admin",
+      "dashboard": "Dashboard",
+      "bookings": "Reservas",
+      "hotels": "Mis Hoteles",
+      "notifications": "Notificaciones",
+      "reports": "Reportes",
+      "subtitle": "Super Admin",
+      "logOut": "Cerrar sesión"
+    }
+  },
   "common": {
     "cancel": "Cancelar",
     "unknownError": "Error desconocido"
