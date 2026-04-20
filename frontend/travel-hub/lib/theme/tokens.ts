@@ -13,6 +13,8 @@ export const tokens = {
     primaryOnLight: '#0369A1',
     /** Manager selected nav accent */
     accentOrange: '#EC5B13',
+    /** Darker orange for text/icons on light orange backgrounds */
+    accentOrangeFg: '#9A3412',
     /** 10% alpha background for accentOrange */
     accentOrangeSoft: '#EC5B131A',
   },
