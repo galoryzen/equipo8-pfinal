@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import NextLink from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { getMe } from '@/app/lib/api/auth';
+import { getMe, logoutUser } from '@/app/lib/api/auth';
 import { defaultLocale } from '@/lib/i18n/settings';
 import { tokens as th } from '@/lib/theme/tokens';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
@@ -36,8 +36,9 @@ export default function Navbar() {
       .catch(() => setUser(null));
   }, []);
 
-  function handleLogout() {
+  async function handleLogout() {
     setMenuAnchor(null);
+    await logoutUser();
     document.cookie = 'access_token=; Max-Age=0; path=/';
     setUser(null);
     router.push('/');
