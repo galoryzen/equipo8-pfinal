@@ -40,6 +40,9 @@
     "seeAll": "Ver todo",
     "empty": "No hay destinos disponibles en este momento."
   },
+  "booking": {
+    "confirm_error": "No se pudo confirmar tu reserva. Por favor, inténtalo de nuevo."
+  },
   "recommended": {
     "title": "Recomendado para ti",
     "subtitle": "Propiedades según tu actividad reciente",

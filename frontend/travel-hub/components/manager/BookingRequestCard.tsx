@@ -49,7 +49,7 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                 {t('manager.pendingConfirmation')}
               </span>
             )}
-            <span className="text-xs text-gray-400">{booking.createdAt}</span>
+            <span className="text-xs text-gray-700">{booking.createdAt}</span>
           </div>
           <div className="font-semibold text-lg mb-1">{booking.propertyName}</div>
           <div className="text-sm text-gray-600 mb-1">
@@ -82,7 +82,7 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
         <div className="text-xl font-bold">
           {booking.currency} {booking.totalAmount.toLocaleString()}
         </div>
-        <div className="text-xs text-gray-400">{t('manager.totalStayValue')}</div>
+        <div className="text-xs text-gray-700">{t('manager.totalStayValue')}</div>
       </div>
     </div>
   );

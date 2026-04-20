@@ -41,7 +41,6 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
 
-
 def get_token_adapter() -> TokenPort:
     return JwtTokenAdapter()
 
@@ -92,13 +91,11 @@ def get_cancel_cart_booking_use_case(
     repo = SqlAlchemyBookingRepository(session)
     return CancelCartBookingUseCase(repo, catalog)
 
-
 def get_list_my_bookings_use_case(
     session: AsyncSession = Depends(get_db_session),
 ) -> ListMyBookingsUseCase:
     repo = SqlAlchemyBookingRepository(session)
     return ListMyBookingsUseCase(repo)
-
 
 def get_booking_detail_use_case(
     session: AsyncSession = Depends(get_db_session),
@@ -106,9 +103,37 @@ def get_booking_detail_use_case(
     repo = SqlAlchemyBookingRepository(session)
     return GetBookingDetailUseCase(repo)
 
-
 def get_confirm_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
 ) -> ConfirmBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
     return ConfirmBookingUseCase(repo)
+
+# Devuelve un dict con el role y user_id extraídos del token JWT
+def get_current_user_info(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+    token_adapter: TokenPort = Depends(get_token_adapter),
+) -> dict:
+    raw: str | None = None
+    if authorization and authorization.lower().startswith("bearer "):
+        raw = authorization[7:].strip()
+    elif access_token:
+        raw = access_token
+    if not raw:
+        raise InvalidTokenError("Authentication required")
+
+    payload = token_adapter.decode_access_token(raw)
+    if not payload:
+        raise InvalidTokenError("Invalid or expired token")
+
+    sub = payload.get("sub")
+    role = payload.get("role")
+    if not sub or not role:
+        raise InvalidTokenError("Invalid token payload")
+
+    try:
+        user_id = str(sub)
+    except Exception:
+        user_id = None
+    return {"role": role, "user_id": user_id}

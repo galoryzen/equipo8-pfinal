@@ -13,9 +13,12 @@ class ConfirmBookingUseCase:
     def __init__(self, repo: BookingRepository):
         self._repo = repo
 
-    async def execute(self, booking_id: UUID, user_id: UUID, notes: str | None = None) -> BookingDetailOut:
+    async def execute(self, booking_id: UUID, user_id: UUID | None, notes: str | None = None) -> BookingDetailOut:
         # 1. Obtener la reserva y validar permisos
-        booking = await self._repo.get_by_id_for_user(booking_id, user_id)
+        if user_id is None:
+            booking = await self._repo.get_by_id(booking_id)
+        else:
+            booking = await self._repo.get_by_id_for_user(booking_id, user_id)
         if booking is None:
             raise BookingNotFoundError()
         if booking.status != BookingStatus.PENDING_CONFIRMATION:

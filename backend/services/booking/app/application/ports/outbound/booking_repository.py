@@ -22,6 +22,14 @@ class BookingRepository(ABC):
           OR status in (CANCELLED, REJECTED). Ordered by checkout DESC.
         - ALL: everything except CART and EXPIRED. Ordered by checkin DESC.
         """
+    
+    @abstractmethod
+    async def list_all(self, status: str | None = None) -> list[Booking]:
+        """Return all bookings in the system, optionally filtered by status."""
+
+    @abstractmethod
+    async def list_by_hotel(self, hotel_id: UUID, status: str | None = None) -> list[Booking]:
+        """Return all bookings for a hotel, optionally filtered by status."""
 
     @abstractmethod
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:

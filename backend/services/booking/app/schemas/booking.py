@@ -27,6 +27,10 @@ class BookingListItemOut(BaseModel):
     property_id: UUID
     room_type_id: UUID
     created_at: datetime
+    image_url: str | None = None
+    property_name: str | None = None
+    nights: int | None = None
+    guest_name: str | None = None
 
 
 class BookingDetailOut(BaseModel):

@@ -35,7 +35,41 @@ class ListMyBookingsUseCase:
         return [_to_list_item(b) for b in bookings]
 
 
-def _to_list_item(booking: Booking) -> BookingListItemOut:
+async def _to_list_item(booking: Booking) -> BookingListItemOut:
+    # Obtener info de la propiedad desde catalog
+    property_name = None
+    image_url = None
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{settings.CATALOG_SERVICE_URL}/properties/{booking.property_id}")
+            if resp.status_code == 200:
+                property_info = resp.json()
+                detail = property_info.get("detail", {})
+                property_name = detail.get("name")
+                images = detail.get("images", [])
+                image_url = images[0]["url"] if images else None
+    except Exception:
+        property_name = None
+        image_url = None
+
+    # Calcular noches
+    nights = None
+    try:
+        if booking.checkin and booking.checkout:
+            nights = (booking.checkout - booking.checkin).days
+    except Exception:
+        nights = None
+
+    # Obtener nombre del huésped desde auth
+    guest_name = None
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{settings.AUTH_SERVICE_URL}/users/{booking.user_id}")
+            if resp.status_code == 200:
+                guest_name = resp.json().get("full_name")
+    except Exception:
+        guest_name = None
+
     return BookingListItemOut(
         id=booking.id,
         status=_status_str(booking),
@@ -46,4 +80,8 @@ def _to_list_item(booking: Booking) -> BookingListItemOut:
         property_id=booking.property_id,
         room_type_id=booking.room_type_id,
         created_at=booking.created_at,
+        property_name=property_name,
+        image_url=image_url,
+        nights=nights,
+        guest_name=guest_name,
     )

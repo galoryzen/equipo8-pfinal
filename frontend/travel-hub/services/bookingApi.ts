@@ -9,7 +9,7 @@ export async function confirmBooking(bookingId: string, notes: string) {
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.detail || 'Error al confirmar la reserva');
+    throw new Error(error.detail || 'booking.confirm_error');
   }
   return res.json();
 }

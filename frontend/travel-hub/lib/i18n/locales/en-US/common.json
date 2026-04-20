@@ -40,6 +40,9 @@
     "seeAll": "See all",
     "empty": "No destinations available right now."
   },
+  "booking": {
+    "confirm_error": "Could not confirm your booking. Please try again."
+  },
   "recommended": {
     "title": "Recommended for You",
     "subtitle": "Properties based on your recent activity",

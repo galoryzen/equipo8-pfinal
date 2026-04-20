@@ -15,7 +15,6 @@ _ACTIVE_STATUSES = (
 _PAST_TERMINAL_STATUSES = (BookingStatus.CANCELLED, BookingStatus.REJECTED)
 _EXCLUDED_FROM_ALL = (BookingStatus.CART, BookingStatus.EXPIRED)
 
-
 class SqlAlchemyBookingRepository(BookingRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
@@ -50,6 +49,25 @@ class SqlAlchemyBookingRepository(BookingRepository):
 
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_by_id(self, booking_id: UUID) -> Booking | None:
+        stmt = select(Booking).where(Booking.id == booking_id)
+        result = await self._session.execute(stmt)
+        return result.scalars().one_or_none()
+
+    async def list_all(self, status: str | None = None) -> list[Booking]:
+        stmt = select(Booking)
+        if status:
+            stmt = stmt.where(Booking.status == status)
+        stmt = stmt.order_by(Booking.checkin.desc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_by_hotel(self, hotel_id: UUID, status: str | None = None) -> list[Booking]:
+        stmt = select(Booking).where(Booking.property_id == hotel_id)
+        if status:
+            stmt = stmt.where(Booking.status == status)
+        stmt = stmt.order_by(Booking.checkin.desc())
 
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)
