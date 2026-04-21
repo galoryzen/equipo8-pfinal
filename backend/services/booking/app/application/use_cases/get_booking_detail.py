@@ -3,8 +3,9 @@ from uuid import UUID
 
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingStatus, CancellationPolicyType
-from app.schemas.booking import BookingDetailOut
+from app.application.ports.outbound.guest_repository import GuestRepository
+from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest
+from app.schemas.booking import BookingDetailOut, GuestOut
 
 
 def _status_str(booking: Booking) -> str:
@@ -17,8 +18,9 @@ def _policy_type_str(p: CancellationPolicyType | str) -> str:
 
 
 class GetBookingDetailUseCase:
-    def __init__(self, repo: BookingRepository):
+    def __init__(self, repo: BookingRepository, guest_repo: GuestRepository | None = None):
         self._repo = repo
+        self._guest_repo = guest_repo
 
     async def execute(self, booking_id: UUID, user_id: UUID) -> BookingDetailOut:
         booking = await self._repo.get_by_id_for_user(booking_id, user_id)
@@ -35,10 +37,14 @@ class GetBookingDetailUseCase:
             booking.updated_at = now_naive
             await self._repo.save(booking)
 
-        return _to_detail(booking)
+        guests: list[Guest] = []
+        if self._guest_repo is not None:
+            guests = await self._guest_repo.list_by_booking(booking.id)
+
+        return _to_detail(booking, guests)
 
 
-def _to_detail(booking: Booking) -> BookingDetailOut:
+def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
     return BookingDetailOut(
         id=booking.id,
         status=_status_str(booking),
@@ -54,6 +60,17 @@ def _to_detail(booking: Booking) -> BookingDetailOut:
         policy_type_applied=_policy_type_str(booking.policy_type_applied),
         policy_hours_limit_applied=booking.policy_hours_limit_applied,
         policy_refund_percent_applied=booking.policy_refund_percent_applied,
+        guests_count=booking.guests_count,
+        guests=[
+            GuestOut(
+                id=g.id,
+                is_primary=g.is_primary,
+                full_name=g.full_name,
+                email=g.email,
+                phone=g.phone,
+            )
+            for g in guests
+        ],
         created_at=booking.created_at,
         updated_at=booking.updated_at,
     )

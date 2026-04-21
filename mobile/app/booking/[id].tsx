@@ -240,6 +240,33 @@ export default function BookingDetailScreen() {
             </Text>
           </Card>
 
+          {booking.guests && booking.guests.length > 0 ? (
+            <Card style={styles.card}>
+              <Text style={styles.label}>{t('trips.detail.guests')}</Text>
+              {booking.guests.map((g, idx) => (
+                <View key={g.id ?? idx} style={styles.guestRow}>
+                  <Ionicons
+                    name={g.is_primary ? 'person' : 'person-outline'}
+                    size={18}
+                    color={colors.text.secondary}
+                  />
+                  <View style={styles.guestInfo}>
+                    <Text style={styles.value}>
+                      {g.full_name}
+                      {g.is_primary ? ` · ${t('trips.detail.guestPrimary')}` : ''}
+                    </Text>
+                    {g.is_primary && g.email ? (
+                      <Text style={styles.meta}>{g.email}</Text>
+                    ) : null}
+                    {g.is_primary && g.phone ? (
+                      <Text style={styles.meta}>{g.phone}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+            </Card>
+          ) : null}
+
           {hasContact ? (
             <Card style={styles.card}>
               <Text style={styles.label}>{t('trips.detail.contact')}</Text>
@@ -562,5 +589,15 @@ const styles = StyleSheet.create({
   },
   rebookButton: {
     marginTop: spacing.md,
+  },
+  guestRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  guestInfo: {
+    flex: 1,
+    gap: 2,
   },
 });

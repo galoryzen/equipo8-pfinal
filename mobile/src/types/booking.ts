@@ -6,6 +6,7 @@ export interface CreateCartBookingPayload {
   room_type_id: string;
   rate_plan_id: string;
   unit_price: string;
+  guests_count: number;
 }
 
 export interface CartBooking {
@@ -20,6 +21,7 @@ export interface CartBooking {
   room_type_id: string;
   rate_plan_id: string;
   unit_price: string;
+  guests_count: number;
 }
 
 export interface BookingListItem {
@@ -34,10 +36,23 @@ export interface BookingListItem {
   created_at: string;
 }
 
+export interface Guest {
+  id?: string;
+  is_primary: boolean;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface SaveGuestsPayload {
+  guests: Guest[];
+}
+
 export interface BookingDetail extends CartBooking {
   policy_type_applied: string;
   policy_hours_limit_applied: number | null;
   policy_refund_percent_applied: number | null;
+  guests: Guest[];
   created_at: string;
   updated_at: string;
 }

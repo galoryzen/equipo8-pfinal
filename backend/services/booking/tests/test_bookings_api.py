@@ -49,6 +49,7 @@ def _sample_detail():
         policy_type_applied="FULL",
         policy_hours_limit_applied=48,
         policy_refund_percent_applied=100,
+        guests_count=2,
         created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
         updated_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
     )

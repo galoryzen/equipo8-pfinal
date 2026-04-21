@@ -6,6 +6,8 @@ import type {
   BookingListItem,
   CartBooking,
   CreateCartBookingPayload,
+  Guest,
+  SaveGuestsPayload,
 } from '@src/types/booking';
 
 /**
@@ -69,6 +71,46 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
 export async function cancelCartBooking(bookingId: string): Promise<BookingDetail> {
   const resp = await api.post<BookingDetail>(
     `/v1/booking/bookings/${encodeURIComponent(bookingId)}/cancel`,
+  );
+  return resp.data;
+}
+
+/**
+ * Typed error wrapping the 422 codes returned by PUT /bookings/:id/guests.
+ * `code` mirrors backend: GUESTS_COUNT_MISMATCH | PRIMARY_GUEST_REQUIRED |
+ * PRIMARY_GUEST_MISSING_CONTACT.
+ */
+export class GuestsValidationError extends Error {
+  constructor(public code: string, message: string) {
+    super(message);
+    this.name = 'GuestsValidationError';
+  }
+}
+
+export async function saveBookingGuests(
+  bookingId: string,
+  payload: SaveGuestsPayload,
+): Promise<Guest[]> {
+  try {
+    const resp = await api.put<Guest[]>(
+      `/v1/booking/bookings/${encodeURIComponent(bookingId)}/guests`,
+      payload,
+    );
+    return resp.data;
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 422) {
+      const body = err.response?.data as { code?: string; message?: string } | undefined;
+      if (body?.code) {
+        throw new GuestsValidationError(body.code, body.message ?? 'Invalid guests payload');
+      }
+    }
+    throw err;
+  }
+}
+
+export async function listBookingGuests(bookingId: string): Promise<Guest[]> {
+  const resp = await api.get<Guest[]>(
+    `/v1/booking/bookings/${encodeURIComponent(bookingId)}/guests`,
   );
   return resp.data;
 }

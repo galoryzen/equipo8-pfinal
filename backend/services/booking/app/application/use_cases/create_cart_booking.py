@@ -69,6 +69,7 @@ class CreateCartBookingUseCase:
             policy_hours_limit_applied=None,
             policy_refund_percent_applied=None,
             inventory_released=False,  # hold is live in Catalog; reconciler flips on release
+            guests_count=payload.guests_count,
             created_at=now,
             updated_at=now,
         )
@@ -111,4 +112,5 @@ def _to_cart_out(booking: Booking) -> CartBookingOut:
         room_type_id=booking.room_type_id,
         rate_plan_id=booking.rate_plan_id,
         unit_price=booking.unit_price,
+        guests_count=booking.guests_count,
     )

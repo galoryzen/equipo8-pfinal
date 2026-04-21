@@ -7,9 +7,12 @@ from app.application.exceptions import (
     BookingNotFoundError,
     CatalogUnavailableError,
     ConflictingActiveCartError,
+    GuestsCountMismatchError,
     InvalidBookingStateError,
     InvalidTokenError,
     InventoryUnavailableError,
+    PrimaryGuestMissingContactError,
+    PrimaryGuestRequiredError,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,6 +71,41 @@ def register_error_handlers(app: FastAPI) -> None:
                 "code": "CART_ALREADY_EXISTS",
                 "message": "You already have a reservation in progress",
                 "existing_booking_id": str(exc.existing_booking_id),
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(GuestsCountMismatchError)
+    async def guests_count_mismatch_handler(request: Request, exc: GuestsCountMismatchError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "GUESTS_COUNT_MISMATCH",
+                "message": str(exc),
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(PrimaryGuestRequiredError)
+    async def primary_guest_required_handler(request: Request, exc: PrimaryGuestRequiredError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "PRIMARY_GUEST_REQUIRED",
+                "message": str(exc),
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(PrimaryGuestMissingContactError)
+    async def primary_guest_missing_contact_handler(
+        request: Request, exc: PrimaryGuestMissingContactError
+    ):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "PRIMARY_GUEST_MISSING_CONTACT",
+                "message": str(exc),
                 "trace_id": request.headers.get("x-request-id"),
             },
         )
