@@ -48,6 +48,7 @@ def _sample_cart() -> CartBookingOut:
         room_type_id=ROOM_TYPE_ID,
         rate_plan_id=RATE_PLAN_ID,
         unit_price=Decimal("100.00"),
+        guests_count=1,
     )
 
 
@@ -67,6 +68,7 @@ def _sample_detail(status: str = "CANCELLED") -> BookingDetailOut:
         policy_type_applied="FULL",
         policy_hours_limit_applied=None,
         policy_refund_percent_applied=None,
+        guests_count=1,
         created_at=datetime(2026, 4, 1, 12, 0, 0),
         updated_at=datetime(2026, 4, 1, 12, 30, 0),
     )

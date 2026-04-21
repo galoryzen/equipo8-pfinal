@@ -26,7 +26,7 @@ CHECKIN = date(2026, 6, 1)
 CHECKOUT = date(2026, 6, 4)  # 3 nights
 
 
-def _cart_booking() -> Booking:
+def _cart_booking(guests_count: int = 1) -> Booking:
     now = datetime(2026, 4, 1, 12, 0, 0)
     return Booking(
         id=BOOKING_ID,
@@ -45,12 +45,13 @@ def _cart_booking() -> Booking:
         policy_hours_limit_applied=None,
         policy_refund_percent_applied=None,
         inventory_released=False,
+        guests_count=guests_count,
         created_at=now,
         updated_at=now,
     )
 
 
-def _payload() -> CreateCartBookingIn:
+def _payload(guests_count: int = 1) -> CreateCartBookingIn:
     return CreateCartBookingIn(
         checkin=CHECKIN,
         checkout=CHECKOUT,
@@ -59,6 +60,7 @@ def _payload() -> CreateCartBookingIn:
         room_type_id=ROOM_TYPE_ID,
         rate_plan_id=RATE_PLAN_ID,
         unit_price=Decimal("100.00"),
+        guests_count=guests_count,
     )
 
 
@@ -202,6 +204,43 @@ class TestCreateCartBookingUseCase:
             checkin=CHECKIN,
             checkout=CHECKOUT,
         )
+
+    async def test_persists_guests_count_from_payload(self):
+        captured: list[Booking] = []
+
+        async def fake_create(b: Booking) -> Booking:
+            captured.append(b)
+            return b
+
+        repo = AsyncMock()
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        repo.create.side_effect = fake_create
+        catalog = _catalog_mock()
+
+        uc = CreateCartBookingUseCase(repo, catalog)
+        out = await uc.execute(user_id=USER_ID, payload=_payload(guests_count=3))
+
+        assert captured[0].guests_count == 3
+        assert out.guests_count == 3
+
+    async def test_guests_count_defaults_to_one_when_omitted(self):
+        captured: list[Booking] = []
+
+        async def fake_create(b: Booking) -> Booking:
+            captured.append(b)
+            return b
+
+        repo = AsyncMock()
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        repo.create.side_effect = fake_create
+        catalog = _catalog_mock()
+
+        uc = CreateCartBookingUseCase(repo, catalog)
+        await uc.execute(user_id=USER_ID, payload=_payload())
+
+        assert captured[0].guests_count == 1
 
     async def test_persistence_and_rollback_failure_still_propagates_original(self, caplog):
         repo = AsyncMock()

@@ -40,6 +40,7 @@ def _booking(status: BookingStatus = BookingStatus.CART) -> Booking:
         policy_hours_limit_applied=None,
         policy_refund_percent_applied=None,
         inventory_released=False,
+        guests_count=1,
         created_at=now,
         updated_at=now,
     )

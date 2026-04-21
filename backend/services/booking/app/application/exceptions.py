@@ -28,3 +28,19 @@ class ConflictingActiveCartError(Exception):
     def __init__(self, existing_booking_id):
         self.existing_booking_id = existing_booking_id
         super().__init__(f"User already has active cart {existing_booking_id}")
+
+
+class GuestsValidationError(Exception):
+    """Base for guest payload validation errors on a booking."""
+
+
+class GuestsCountMismatchError(GuestsValidationError):
+    """Raised when the number of submitted guests does not match booking.guests_count."""
+
+
+class PrimaryGuestRequiredError(GuestsValidationError):
+    """Raised when the submitted guest list has zero or more than one primary."""
+
+
+class PrimaryGuestMissingContactError(GuestsValidationError):
+    """Raised when the primary guest is missing required email or phone."""

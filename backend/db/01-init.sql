@@ -284,6 +284,7 @@ CREATE TABLE booking.booking (
     -- New CARTs start as FALSE because Catalog is already holding inventory;
     -- legacy rows (pre-integration) default to TRUE (nothing to release).
     inventory_released          BOOLEAN NOT NULL DEFAULT TRUE,
+    guests_count                INT NOT NULL DEFAULT 1 CHECK (guests_count BETWEEN 1 AND 20),
     created_at                  TIMESTAMP NOT NULL DEFAULT now(),
     updated_at                  TIMESTAMP NOT NULL DEFAULT now()
 );
@@ -292,6 +293,20 @@ CREATE INDEX idx_booking_room_status ON booking.booking (property_id, room_type_
 CREATE INDEX idx_booking_pending_release
     ON booking.booking (status, hold_expires_at)
     WHERE inventory_released = FALSE;
+
+CREATE TABLE booking.guest (
+    id          UUID PRIMARY KEY,
+    booking_id  UUID NOT NULL REFERENCES booking.booking(id) ON DELETE CASCADE,
+    is_primary  BOOLEAN NOT NULL,
+    full_name   VARCHAR(255) NOT NULL,
+    email       VARCHAR(255),
+    phone       VARCHAR(32),
+    created_at  TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX uq_guest_primary_per_booking
+    ON booking.guest (booking_id) WHERE is_primary = TRUE;
+CREATE INDEX idx_guest_booking ON booking.guest (booking_id);
 
 CREATE TABLE booking.booking_status_history (
     id          UUID PRIMARY KEY,

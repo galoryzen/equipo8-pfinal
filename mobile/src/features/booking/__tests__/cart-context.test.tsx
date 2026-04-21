@@ -70,6 +70,7 @@ const SNAPSHOT: CartSnapshot = {
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
   unit_price: '120.00',
+  guests_count: 1,
   property_name: 'Casa Medina',
   room_name: 'Suite Deluxe',
   image_url: 'https://example.com/img.jpg',
@@ -83,6 +84,7 @@ const PAYLOAD: CreateCartBookingPayload = {
   room_type_id: SNAPSHOT.room_type_id,
   rate_plan_id: SNAPSHOT.rate_plan_id,
   unit_price: SNAPSHOT.unit_price,
+  guests_count: 1,
 };
 
 const EXTRAS: CartExtras = {
@@ -97,6 +99,7 @@ const DETAIL_SERVER: BookingDetail = {
   policy_type_applied: 'FULL',
   policy_hours_limit_applied: null,
   policy_refund_percent_applied: null,
+  guests: [],
   created_at: '2026-04-18T12:00:00',
   updated_at: '2026-04-18T12:00:00',
 };

@@ -148,7 +148,9 @@
       "policyPartial": "Reembolso parcial ({{percent}}%)",
       "policyNonRefundable": "No reembolsable",
       "rebook": "Volver a reservar",
-      "loadError": "No pudimos cargar el detalle de la reserva"
+      "loadError": "No pudimos cargar el detalle de la reserva",
+      "guests": "Huéspedes",
+      "guestPrimary": "Principal"
     }
   },
   "booking": {
@@ -157,7 +159,29 @@
       "guestDetails": "Datos del huésped",
       "paymentMethod": "Método de pago",
       "continueToPayment": "Continuar al pago",
-      "comingSoon": "Próximamente"
+      "comingSoon": "Próximamente",
+      "guests": {
+        "primary": "Huésped principal",
+        "additional": "Huésped {{number}}",
+        "fullName": "Nombre completo",
+        "email": "Correo electrónico",
+        "phone": "Teléfono",
+        "autofilledFromProfile": "Autocompletado desde tu perfil — por favor verifícalo.",
+        "saved": "Información del huésped guardada",
+        "errors": {
+          "required": "Este campo es obligatorio",
+          "invalidEmail": "Ingresa un correo válido",
+          "invalidPhone": "Ingresa un teléfono válido",
+          "countMismatch": "La cantidad de huéspedes no coincide con tu reserva",
+          "primaryRequired": "Debe haber un huésped principal",
+          "primaryMissingContact": "El huésped principal necesita correo y teléfono válidos",
+          "saveFailed": "No pudimos guardar la información. Intenta de nuevo."
+        }
+      }
+    },
+    "payment": {
+      "title": "Pago",
+      "comingSoon": "El flujo de pago estará disponible próximamente."
     },
     "cart": {
       "unavailable": "La habitación ya no está disponible para las fechas seleccionadas",
