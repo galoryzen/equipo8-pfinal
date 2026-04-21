@@ -10,10 +10,11 @@ PAYMENT_FAILED = "PaymentFailed"
 
 class PaymentRequestedPayload(BaseModel):
     booking_id: UUID
-    payment_intent_id: UUID
+    user_id: UUID
     amount: Decimal
     currency: str
     idempotency_key: str
+    force_decline: bool = False
 
 
 class PaymentAuthorizedPayload(BaseModel):

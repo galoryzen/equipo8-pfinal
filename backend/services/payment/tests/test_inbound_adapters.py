@@ -18,13 +18,8 @@ from app.application.exceptions import (
     BookingNotFoundError,
     BookingNotPayableError,
     BookingSnapshotError,
-    InvalidMockPaymentTokenError,
     InvalidTokenError,
-    PaymentAlreadyTerminalError,
     PaymentIntentNotFoundError,
-    PaymentNotAllowedError,
-    WebhookAuthError,
-    WebhookIdempotentReplayError,
 )
 from app.application.ports.outbound.token_port import TokenPort
 from app.config import settings
@@ -47,16 +42,6 @@ def test_register_error_handlers_all_branches():
                 raise BookingNotPayableError("np")
             case "intent_not_found":
                 raise PaymentIntentNotFoundError()
-            case "not_allowed":
-                raise PaymentNotAllowedError()
-            case "invalid_mock_token":
-                raise InvalidMockPaymentTokenError("tok")
-            case "already_terminal":
-                raise PaymentAlreadyTerminalError("done")
-            case "webhook_auth":
-                raise WebhookAuthError()
-            case "webhook_replay":
-                raise WebhookIdempotentReplayError()
             case _:
                 raise AssertionError("unknown kind")
 
@@ -67,11 +52,6 @@ def test_register_error_handlers_all_branches():
         ("booking_snapshot", 503, "BOOKING_UNAVAILABLE"),
         ("booking_not_payable", 409, "BOOKING_NOT_PAYABLE"),
         ("intent_not_found", 404, "PAYMENT_INTENT_NOT_FOUND"),
-        ("not_allowed", 403, "PAYMENT_NOT_ALLOWED"),
-        ("invalid_mock_token", 422, "INVALID_PAYMENT_TOKEN"),
-        ("already_terminal", 409, "PAYMENT_INTENT_TERMINAL"),
-        ("webhook_auth", 401, "WEBHOOK_UNAUTHORIZED"),
-        ("webhook_replay", 200, "WEBHOOK_DUPLICATE"),
     ]
     for kind, status, code in cases:
         r = client.get("/boom", params={"kind": kind}, headers={"x-request-id": "trace-1"})

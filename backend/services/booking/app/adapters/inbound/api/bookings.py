@@ -1,10 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
 from app.adapters.inbound.api.dependencies import (
     get_booking_detail_use_case,
     get_cancel_cart_booking_use_case,
+    get_checkout_booking_use_case,
     get_create_cart_booking_use_case,
     get_current_user_id,
     get_list_booking_guests_use_case,
@@ -12,6 +13,7 @@ from app.adapters.inbound.api.dependencies import (
     get_save_booking_guests_use_case,
 )
 from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
+from app.application.use_cases.checkout_booking import CheckoutBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
@@ -62,6 +64,19 @@ async def cancel_cart_booking(
     booking_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
     use_case: CancelCartBookingUseCase = Depends(get_cancel_cart_booking_use_case),
+):
+    return await use_case.execute(booking_id=booking_id, user_id=user_id)
+
+
+@router.post(
+    "/bookings/{booking_id}/checkout",
+    response_model=BookingDetailOut,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def checkout_booking(
+    booking_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    use_case: CheckoutBookingUseCase = Depends(get_checkout_booking_use_case),
 ):
     return await use_case.execute(booking_id=booking_id, user_id=user_id)
 

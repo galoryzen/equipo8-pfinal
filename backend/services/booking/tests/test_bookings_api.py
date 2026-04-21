@@ -7,9 +7,14 @@ from uuid import UUID
 
 from app.adapters.inbound.api.dependencies import (
     get_booking_detail_use_case,
+    get_checkout_booking_use_case,
     get_list_my_bookings_use_case,
 )
-from app.application.exceptions import BookingNotFoundError
+from app.application.exceptions import (
+    BookingNotFoundError,
+    CheckoutGuestsIncompleteError,
+    InvalidBookingStateError,
+)
 from app.main import app
 from app.schemas.booking import BookingDetailOut, BookingListItemOut
 
@@ -167,6 +172,55 @@ class TestBookingsEndpoints:
             resp = client_authenticated.get(f"/api/v1/booking/bookings/{BOOKING_ID}")
         finally:
             app.dependency_overrides.pop(get_booking_detail_use_case, None)
+
+        assert resp.status_code == 404
+        assert resp.json()["code"] == "BOOKING_NOT_FOUND"
+
+    def test_checkout_returns_202_and_detail(self, client_authenticated):
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail()
+        app.dependency_overrides[get_checkout_booking_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/checkout")
+        finally:
+            app.dependency_overrides.pop(get_checkout_booking_use_case, None)
+
+        assert resp.status_code == 202
+        body = resp.json()
+        assert body["id"] == str(BOOKING_ID)
+
+    def test_checkout_maps_invalid_state_to_409(self, client_authenticated):
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = InvalidBookingStateError("Cannot checkout booking in state CONFIRMED")
+        app.dependency_overrides[get_checkout_booking_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/checkout")
+        finally:
+            app.dependency_overrides.pop(get_checkout_booking_use_case, None)
+
+        assert resp.status_code == 409
+        assert resp.json()["code"] == "INVALID_BOOKING_STATE"
+
+    def test_checkout_maps_guests_incomplete_to_422(self, client_authenticated):
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = CheckoutGuestsIncompleteError("Booking expects 3 guests, found 2")
+        app.dependency_overrides[get_checkout_booking_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/checkout")
+        finally:
+            app.dependency_overrides.pop(get_checkout_booking_use_case, None)
+
+        assert resp.status_code == 422
+        assert resp.json()["code"] == "CHECKOUT_GUESTS_INCOMPLETE"
+
+    def test_checkout_maps_booking_not_found_to_404(self, client_authenticated):
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = BookingNotFoundError()
+        app.dependency_overrides[get_checkout_booking_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/checkout")
+        finally:
+            app.dependency_overrides.pop(get_checkout_booking_use_case, None)
 
         assert resp.status_code == 404
         assert resp.json()["code"] == "BOOKING_NOT_FOUND"

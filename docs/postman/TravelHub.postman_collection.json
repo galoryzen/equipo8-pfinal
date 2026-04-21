@@ -386,33 +386,6 @@
             },
             "url": "{{baseUrl}}/api/v1/payment/payment-intents"
           }
-        },
-        {
-          "name": "Confirm payment intent",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"payment_token\": \"{{mockPaymentToken}}\"\n}"
-            },
-            "url": "{{baseUrl}}/api/v1/payment/payment-intents/{{paymentIntentId}}/confirm"
-          }
-        },
-        {
-          "name": "Mock webhook (succeeded)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"payment_intent_id\": \"{{paymentIntentId}}\",\n  \"status\": \"succeeded\",\n  \"idempotency_key\": \"{{webhookIdempotencyKey}}\",\n  \"webhook_signing_secret\": \"{{webhookSecret}}\"\n}"
-            },
-            "url": "{{baseUrl}}/api/v1/payment/webhooks/mock"
-          }
         }
       ]
     },

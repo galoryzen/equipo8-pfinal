@@ -137,13 +137,43 @@ services:
       BOOKING_JWT_SECRET: "change-me-in-production"
       BOOKING_JWT_ALGORITHM: "HS256"
       BOOKING_CATALOG_SERVICE_URL: "http://thub-catalog:8000"
-      BOOKING_WORKER_ENABLED: "true"
-      BOOKING_WORKER_EXPIRE_INTERVAL_SECONDS: "60"
+      BOOKING_EVENT_BUS_BACKEND: "rabbitmq"
+      BOOKING_RABBITMQ_URL: "amqp://travelhub:travelhub_dev@thub-rabbitmq:5672/"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
         condition: service_healthy
       thub-redis:
+        condition: service_healthy
+      thub-rabbitmq:
+        condition: service_healthy
+
+  thub-booking-worker:
+    build:
+      context: .
+      dockerfile: services/booking/Dockerfile
+    container_name: thub-booking-worker
+    volumes:
+      - ./services/booking/app:/app/app
+      - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
+    command: ["python", "-m", "app.worker"]
+    environment:
+      BOOKING_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      BOOKING_DB_SCHEMA: "booking"
+      BOOKING_DEBUG: "true"
+      BOOKING_CATALOG_SERVICE_URL: "http://thub-catalog:8000"
+      BOOKING_EVENT_BUS_BACKEND: "rabbitmq"
+      BOOKING_RABBITMQ_URL: "amqp://travelhub:travelhub_dev@thub-rabbitmq:5672/"
+      BOOKING_PAYMENT_RESULT_QUEUE: "booking.payment-result"
+      BOOKING_SCHEDULER_ENABLED: "true"
+      BOOKING_CONSUMER_ENABLED: "true"
+      BOOKING_WORKER_EXPIRE_INTERVAL_SECONDS: "60"
+      PYTHONPATH: "/app"
+    depends_on:
+      thub-postgres:
+        condition: service_healthy
+      thub-rabbitmq:
         condition: service_healthy
 
   thub-payment:
@@ -174,6 +204,30 @@ services:
       thub-postgres:
         condition: service_healthy
       thub-redis:
+        condition: service_healthy
+      thub-rabbitmq:
+        condition: service_healthy
+
+  thub-payment-worker:
+    build:
+      context: .
+      dockerfile: services/payment/Dockerfile
+    container_name: thub-payment-worker
+    volumes:
+      - ./services/payment/app:/app/app
+      - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
+    command: ["python", "-m", "app.worker"]
+    environment:
+      PAYMENT_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      PAYMENT_DB_SCHEMA: "payments"
+      PAYMENT_DEBUG: "true"
+      PAYMENT_EVENT_BUS_BACKEND: "rabbitmq"
+      PAYMENT_RABBITMQ_URL: "amqp://travelhub:travelhub_dev@thub-rabbitmq:5672/"
+      PAYMENT_REQUESTED_QUEUE: "payment.payment-requested"
+      PYTHONPATH: "/app"
+    depends_on:
+      thub-postgres:
         condition: service_healthy
       thub-rabbitmq:
         condition: service_healthy

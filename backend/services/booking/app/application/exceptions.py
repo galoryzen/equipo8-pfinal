@@ -44,3 +44,13 @@ class PrimaryGuestRequiredError(GuestsValidationError):
 
 class PrimaryGuestMissingContactError(GuestsValidationError):
     """Raised when the primary guest is missing required email or phone."""
+
+
+class CheckoutGuestsIncompleteError(Exception):
+    """Raised when a booking fails the guests-complete check at checkout time.
+
+    Covers: count mismatch, zero primaries, multiple primaries. Kept separate
+    from GuestsValidationError (which applies when saving guests) because the
+    checkout semantics are simpler: we only need a single 422 surface for the
+    front to display.
+    """

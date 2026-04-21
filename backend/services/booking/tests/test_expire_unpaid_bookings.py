@@ -1,4 +1,4 @@
-"""Unit tests for ExpireCartBookingsUseCase."""
+"""Unit tests for ExpireUnpaidBookingsUseCase."""
 
 from datetime import date, datetime
 from decimal import Decimal
@@ -9,16 +9,16 @@ import pytest
 
 from app.application.exceptions import CatalogUnavailableError
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
-from app.application.use_cases.expire_cart_bookings import ExpireCartBookingsUseCase
+from app.application.use_cases.expire_unpaid_bookings import ExpireUnpaidBookingsUseCase
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType
 
 
-def _cart(booking_id: UUID) -> Booking:
+def _booking(booking_id: UUID, *, status: BookingStatus = BookingStatus.CART) -> Booking:
     now = datetime(2026, 4, 1, 12, 0, 0)
     return Booking(
         id=booking_id,
         user_id=UUID("a0000000-0000-0000-0000-000000000001"),
-        status=BookingStatus.CART,
+        status=status,
         checkin=date(2026, 6, 1),
         checkout=date(2026, 6, 4),
         hold_expires_at=datetime(2026, 4, 1, 11, 45, 0),  # past
@@ -38,60 +38,78 @@ def _cart(booking_id: UUID) -> Booking:
 
 
 @pytest.mark.asyncio
-class TestExpireCartBookingsUseCase:
-    async def test_noop_when_no_expired_carts(self):
+class TestExpireUnpaidBookingsUseCase:
+    async def test_noop_when_no_expired_bookings(self):
         repo = AsyncMock()
-        repo.find_expired_carts.return_value = []
+        repo.find_expired_unpaid_bookings.return_value = []
         catalog = AsyncMock(spec=CatalogInventoryPort)
 
-        uc = ExpireCartBookingsUseCase(repo, catalog)
+        uc = ExpireUnpaidBookingsUseCase(repo, catalog)
         result = await uc.execute()
 
         assert result == 0
         repo.save.assert_not_awaited()
         catalog.release_hold.assert_not_awaited()
 
-    async def test_transitions_and_releases_inline(self):
-        booking = _cart(UUID("90000000-0000-0000-0000-000000000001"))
+    async def test_transitions_cart_and_releases_inline(self):
+        booking = _booking(UUID("90000000-0000-0000-0000-000000000001"))
         repo = AsyncMock()
-        repo.find_expired_carts.return_value = [booking]
+        repo.find_expired_unpaid_bookings.return_value = [booking]
         catalog = AsyncMock(spec=CatalogInventoryPort)
 
-        uc = ExpireCartBookingsUseCase(repo, catalog)
+        uc = ExpireUnpaidBookingsUseCase(repo, catalog)
         result = await uc.execute()
 
         assert result == 1
         assert booking.status == BookingStatus.EXPIRED
         assert booking.inventory_released is True
         catalog.release_hold.assert_awaited_once()
-        # One save for the state transition, one for flipping inventory_released.
         assert repo.save.await_count == 2
 
-    async def test_state_transition_persists_when_release_fails(self):
-        booking = _cart(UUID("90000000-0000-0000-0000-000000000002"))
+    async def test_transitions_pending_payment_same_way(self):
+        booking = _booking(
+            UUID("90000000-0000-0000-0000-000000000002"),
+            status=BookingStatus.PENDING_PAYMENT,
+        )
         repo = AsyncMock()
-        repo.find_expired_carts.return_value = [booking]
+        repo.find_expired_unpaid_bookings.return_value = [booking]
         catalog = AsyncMock(spec=CatalogInventoryPort)
-        catalog.release_hold.side_effect = CatalogUnavailableError("down")
 
-        uc = ExpireCartBookingsUseCase(repo, catalog)
+        uc = ExpireUnpaidBookingsUseCase(repo, catalog)
         result = await uc.execute()
 
         assert result == 1
         assert booking.status == BookingStatus.EXPIRED
-        assert booking.inventory_released is False  # reconciler will pick this up
+        assert booking.inventory_released is True
+        catalog.release_hold.assert_awaited_once()
+
+    async def test_state_transition_persists_when_release_fails(self):
+        booking = _booking(UUID("90000000-0000-0000-0000-000000000003"))
+        repo = AsyncMock()
+        repo.find_expired_unpaid_bookings.return_value = [booking]
+        catalog = AsyncMock(spec=CatalogInventoryPort)
+        catalog.release_hold.side_effect = CatalogUnavailableError("down")
+
+        uc = ExpireUnpaidBookingsUseCase(repo, catalog)
+        result = await uc.execute()
+
+        assert result == 1
+        assert booking.status == BookingStatus.EXPIRED
+        assert booking.inventory_released is False
         assert repo.save.await_count == 1
 
-    async def test_processes_multiple_independently(self):
-        b1 = _cart(UUID("90000000-0000-0000-0000-000000000001"))
-        b2 = _cart(UUID("90000000-0000-0000-0000-000000000002"))
+    async def test_processes_mixed_statuses_independently(self):
+        b1 = _booking(UUID("90000000-0000-0000-0000-000000000001"))
+        b2 = _booking(
+            UUID("90000000-0000-0000-0000-000000000002"),
+            status=BookingStatus.PENDING_PAYMENT,
+        )
         repo = AsyncMock()
-        repo.find_expired_carts.return_value = [b1, b2]
+        repo.find_expired_unpaid_bookings.return_value = [b1, b2]
         catalog = AsyncMock(spec=CatalogInventoryPort)
-        # first succeeds, second fails
         catalog.release_hold.side_effect = [None, CatalogUnavailableError("partial outage")]
 
-        uc = ExpireCartBookingsUseCase(repo, catalog)
+        uc = ExpireUnpaidBookingsUseCase(repo, catalog)
         result = await uc.execute()
 
         assert result == 2

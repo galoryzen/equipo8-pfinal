@@ -5,7 +5,7 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingScope, BookingStatus
+from app.domain.models import Booking, BookingScope, BookingStatus, BookingStatusHistory
 
 _ACTIVE_STATUSES = (
     BookingStatus.CONFIRMED,
@@ -110,9 +110,9 @@ class SqlAlchemyBookingRepository(BookingRepository):
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
-    async def find_expired_carts(self, now: datetime) -> list[Booking]:
+    async def find_expired_unpaid_bookings(self, now: datetime) -> list[Booking]:
         stmt = select(Booking).where(
-            Booking.status == BookingStatus.CART,
+            Booking.status.in_((BookingStatus.CART, BookingStatus.PENDING_PAYMENT)),
             Booking.hold_expires_at.is_not(None),
             Booking.hold_expires_at < now,
         )
@@ -126,3 +126,22 @@ class SqlAlchemyBookingRepository(BookingRepository):
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def add_status_history(self, row: BookingStatusHistory) -> None:
+        self._session.add(row)
+        await self._session.commit()
+
+    async def find_last_status_history_by_reason(
+        self, booking_id: UUID, reason: str
+    ) -> BookingStatusHistory | None:
+        stmt = (
+            select(BookingStatusHistory)
+            .where(
+                BookingStatusHistory.booking_id == booking_id,
+                BookingStatusHistory.reason == reason,
+            )
+            .order_by(BookingStatusHistory.changed_at.desc())
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().one_or_none()

@@ -2,11 +2,10 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.payment_repository import PaymentRepository
-from app.domain.models import Payment, PaymentAttempt, PaymentIntent, PaymentIntentStatus, WebhookEvent
+from app.domain.models import Payment, PaymentAttempt, PaymentIntent, PaymentIntentStatus
 
 
 class SqlAlchemyPaymentRepository(PaymentRepository):
@@ -28,15 +27,6 @@ class SqlAlchemyPaymentRepository(PaymentRepository):
         await self._session.commit()
         await self._session.refresh(intent)
         return intent
-
-    async def try_insert_webhook_event(self, row: WebhookEvent) -> bool:
-        self._session.add(row)
-        try:
-            await self._session.commit()
-            return True
-        except IntegrityError:
-            await self._session.rollback()
-            return False
 
     async def persist_failure(self, intent: PaymentIntent, attempt: PaymentAttempt) -> None:
         now = datetime.now(UTC).replace(tzinfo=None)

@@ -15,9 +15,7 @@ from app.application.exceptions import InvalidTokenError
 from app.application.ports.outbound.booking_client_port import BookingServiceClient
 from app.application.ports.outbound.payment_gateway_port import PaymentGatewayPort
 from app.application.ports.outbound.token_port import TokenPort
-from app.application.use_cases.confirm_payment_intent import ConfirmPaymentIntentUseCase
 from app.application.use_cases.create_payment_intent import CreatePaymentIntentUseCase
-from app.application.use_cases.process_mock_webhook import ProcessMockWebhookUseCase
 from app.config import settings
 
 _payment_http_client: httpx.AsyncClient | None = None
@@ -100,21 +98,3 @@ def get_create_payment_intent_use_case(
 ) -> CreatePaymentIntentUseCase:
     repo = SqlAlchemyPaymentRepository(session)
     return CreatePaymentIntentUseCase(repo, booking)
-
-
-def get_confirm_payment_intent_use_case(
-    session: AsyncSession = Depends(get_db_session),
-    events: DomainEventPublisher = Depends(get_event_publisher),
-    gateway: PaymentGatewayPort = Depends(get_payment_gateway),
-) -> ConfirmPaymentIntentUseCase:
-    repo = SqlAlchemyPaymentRepository(session)
-    return ConfirmPaymentIntentUseCase(repo, events, gateway)
-
-
-def get_process_mock_webhook_use_case(
-    session: AsyncSession = Depends(get_db_session),
-    events: DomainEventPublisher = Depends(get_event_publisher),
-    gateway: PaymentGatewayPort = Depends(get_payment_gateway),
-) -> ProcessMockWebhookUseCase:
-    repo = SqlAlchemyPaymentRepository(session)
-    return ProcessMockWebhookUseCase(repo, events, gateway)
