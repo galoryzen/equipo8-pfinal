@@ -7,8 +7,7 @@ from typing import ClassVar
 from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class BookingStatus(str, enum.Enum):
     CART = "CART"
