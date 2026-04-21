@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 
 from app.adapters.inbound.api.dependencies import (
     get_booking_detail_use_case,
@@ -41,9 +41,6 @@ async def create_cart_booking(
 ):
     return await use_case.execute(user_id=user_id, payload=body)
 
-
-
-from fastapi import Query
 
 @router.get("/bookings", response_model=list[BookingListItemOut])
 async def list_bookings(

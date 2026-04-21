@@ -49,6 +49,7 @@ def _make_booking(status: BookingStatus = BookingStatus.PENDING_CONFIRMATION) ->
         policy_type_applied=CancellationPolicyType.FULL,
         policy_hours_limit_applied=None,
         policy_refund_percent_applied=None,
+        guests_count=1,
         created_at=now,
         updated_at=now,
     )

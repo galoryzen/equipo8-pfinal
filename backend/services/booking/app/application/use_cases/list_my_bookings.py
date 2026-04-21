@@ -2,7 +2,10 @@ from collections.abc import Callable
 from datetime import UTC, date, datetime
 from uuid import UUID
 
+import httpx
+
 from app.application.ports.outbound.booking_repository import BookingRepository
+from app.config import settings
 from app.domain.models import Booking, BookingScope
 from app.schemas.booking import BookingListItemOut
 
@@ -32,7 +35,7 @@ class ListMyBookingsUseCase:
     ) -> list[BookingListItemOut]:
         today = self._clock()
         bookings = await self._repo.list_by_user_id(user_id, scope=scope, today=today)
-        return [_to_list_item(b) for b in bookings]
+        return [await _to_list_item(b) for b in bookings]
 
 
 async def _to_list_item(booking: Booking) -> BookingListItemOut:

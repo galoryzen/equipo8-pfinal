@@ -72,6 +72,15 @@ class Booking(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
 
+    guests: Mapped[list["Guest"]] = relationship(
+        back_populates="booking",
+        cascade="all, delete-orphan",
+    )
+    items: Mapped[list["BookingItem"]] = relationship(
+        back_populates="booking",
+        cascade="all, delete-orphan",
+    )
+
 
 class Guest(Base):
     __tablename__ = "guest"
@@ -92,9 +101,7 @@ class Guest(Base):
 
     confirmed_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
-    items: Mapped[list["BookingItem"]] = relationship(
-        back_populates="booking",
-    )
+    booking: Mapped[Booking] = relationship(back_populates="guests")
 
 
 class BookingItem(Base):
