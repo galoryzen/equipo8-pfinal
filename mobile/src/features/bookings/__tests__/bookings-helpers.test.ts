@@ -54,6 +54,8 @@ describe('isPastBookingForRebook', () => {
       policy_type_applied: 'FULL',
       policy_hours_limit_applied: null,
       policy_refund_percent_applied: null,
+      guests_count: 1,
+      guests: [],
       created_at: '2026-03-20T10:00:00',
       updated_at: '2026-03-20T10:00:00',
       ...overrides,

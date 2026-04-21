@@ -79,6 +79,8 @@ def _to_detail(booking: Booking) -> BookingDetailOut:
         policy_type_applied=policy_str,
         policy_hours_limit_applied=booking.policy_hours_limit_applied,
         policy_refund_percent_applied=booking.policy_refund_percent_applied,
+        guests_count=booking.guests_count or 1,
+        guests=[],
         created_at=booking.created_at,
         updated_at=booking.updated_at,
     )

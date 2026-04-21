@@ -148,7 +148,9 @@
       "policyPartial": "Partial refund ({{percent}}%)",
       "policyNonRefundable": "Non-refundable",
       "rebook": "Book again",
-      "loadError": "We couldn't load the reservation detail"
+      "loadError": "We couldn't load the reservation detail",
+      "guests": "Guests",
+      "guestPrimary": "Primary"
     }
   },
   "booking": {
@@ -157,7 +159,29 @@
       "guestDetails": "Guest details",
       "paymentMethod": "Payment method",
       "continueToPayment": "Continue to payment",
-      "comingSoon": "Coming soon"
+      "comingSoon": "Coming soon",
+      "guests": {
+        "primary": "Primary guest",
+        "additional": "Guest {{number}}",
+        "fullName": "Full name",
+        "email": "Email",
+        "phone": "Phone",
+        "autofilledFromProfile": "Autofilled from your profile — please confirm.",
+        "saved": "Guest information saved",
+        "errors": {
+          "required": "This field is required",
+          "invalidEmail": "Enter a valid email",
+          "invalidPhone": "Enter a valid phone number",
+          "countMismatch": "The number of guests does not match your reservation",
+          "primaryRequired": "One guest must be marked as primary",
+          "primaryMissingContact": "The primary guest needs a valid email and phone",
+          "saveFailed": "We couldn't save the guest information. Please try again."
+        }
+      }
+    },
+    "payment": {
+      "title": "Payment",
+      "comingSoon": "Payment flow coming soon."
     },
     "cart": {
       "unavailable": "Room no longer available for the selected dates",

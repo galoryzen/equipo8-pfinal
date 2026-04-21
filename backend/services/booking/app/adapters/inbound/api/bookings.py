@@ -7,18 +7,24 @@ from app.adapters.inbound.api.dependencies import (
     get_cancel_cart_booking_use_case,
     get_create_cart_booking_use_case,
     get_current_user_id,
+    get_list_booking_guests_use_case,
     get_list_my_bookings_use_case,
+    get_save_booking_guests_use_case,
 )
 from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
+from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
+from app.application.use_cases.save_booking_guests import SaveBookingGuestsUseCase
 from app.domain.models import BookingScope
 from app.schemas.booking import (
     BookingDetailOut,
     BookingListItemOut,
     CartBookingOut,
     CreateCartBookingIn,
+    GuestOut,
+    SaveGuestsIn,
 )
 
 router = APIRouter()
@@ -56,5 +62,24 @@ async def cancel_cart_booking(
     booking_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
     use_case: CancelCartBookingUseCase = Depends(get_cancel_cart_booking_use_case),
+):
+    return await use_case.execute(booking_id=booking_id, user_id=user_id)
+
+
+@router.put("/bookings/{booking_id}/guests", response_model=list[GuestOut])
+async def save_booking_guests(
+    booking_id: UUID,
+    body: SaveGuestsIn,
+    user_id: UUID = Depends(get_current_user_id),
+    use_case: SaveBookingGuestsUseCase = Depends(get_save_booking_guests_use_case),
+):
+    return await use_case.execute(booking_id=booking_id, user_id=user_id, payload=body)
+
+
+@router.get("/bookings/{booking_id}/guests", response_model=list[GuestOut])
+async def list_booking_guests(
+    booking_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    use_case: ListBookingGuestsUseCase = Depends(get_list_booking_guests_use_case),
 ):
     return await use_case.execute(booking_id=booking_id, user_id=user_id)

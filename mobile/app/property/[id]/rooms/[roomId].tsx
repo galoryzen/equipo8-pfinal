@@ -45,6 +45,7 @@ export default function RoomDetailScreen() {
     promotionValue,
     checkin,
     checkout,
+    guests,
   } = useLocalSearchParams<{
     id: string;
     roomId: string;
@@ -108,6 +109,9 @@ export default function RoomDetailScreen() {
     if (!room || !ratePlanId || !checkin || !checkout || !property) return null;
     const price = Number(unitPrice);
     if (!Number.isFinite(price)) return null;
+    const parsedGuests = guests ? parseInt(guests, 10) : 1;
+    const guestsCount =
+      Number.isFinite(parsedGuests) && parsedGuests > 0 ? parsedGuests : 1;
     return {
       checkin,
       checkout,
@@ -116,8 +120,9 @@ export default function RoomDetailScreen() {
       room_type_id: room.id,
       rate_plan_id: ratePlanId,
       unit_price: String(price),
+      guests_count: guestsCount,
     };
-  }, [property, room, ratePlanId, checkin, checkout, currency, unitPrice]);
+  }, [property, room, ratePlanId, checkin, checkout, currency, unitPrice, guests]);
 
   const continueExtras = useMemo<CartExtras | null>(() => {
     if (!room || !property) return null;

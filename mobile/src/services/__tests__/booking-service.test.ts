@@ -23,6 +23,7 @@ const PAYLOAD: CreateCartBookingPayload = {
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
   unit_price: '120.00',
+  guests_count: 1,
 };
 
 const CART: CartBooking = {
@@ -37,6 +38,7 @@ const CART: CartBooking = {
   room_type_id: PAYLOAD.room_type_id,
   rate_plan_id: PAYLOAD.rate_plan_id,
   unit_price: PAYLOAD.unit_price,
+  guests_count: 1,
 };
 
 const DETAIL: BookingDetail = {
@@ -44,6 +46,7 @@ const DETAIL: BookingDetail = {
   policy_type_applied: 'FULL',
   policy_hours_limit_applied: null,
   policy_refund_percent_applied: null,
+  guests: [],
   created_at: '2026-04-18T20:45:00',
   updated_at: '2026-04-18T20:45:00',
 };

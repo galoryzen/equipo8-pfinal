@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import ClassVar
 
-from sqlalchemy import Boolean, Numeric, String
+from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -68,5 +68,24 @@ class Booking(Base):
     confirmation_payment_intent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, default=None
     )
+    guests_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(nullable=False)
+
+
+class Guest(Base):
+    __tablename__ = "guest"
+    __table_args__: ClassVar[dict] = {"schema": BOOKING_SCHEMA}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    booking_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{BOOKING_SCHEMA}.booking.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
