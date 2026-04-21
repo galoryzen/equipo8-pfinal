@@ -3,11 +3,20 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-PAYMENT_SUCCEEDED = "PaymentSucceeded"
+PAYMENT_REQUESTED = "PaymentRequested"
+PAYMENT_AUTHORIZED = "PaymentAuthorized"
 PAYMENT_FAILED = "PaymentFailed"
 
 
-class PaymentSucceededPayload(BaseModel):
+class PaymentRequestedPayload(BaseModel):
+    booking_id: UUID
+    payment_intent_id: UUID
+    amount: Decimal
+    currency: str
+    idempotency_key: str
+
+
+class PaymentAuthorizedPayload(BaseModel):
     payment_intent_id: UUID
     booking_id: UUID
     payment_id: UUID

@@ -1,8 +1,10 @@
 import pytest
-from shared.events import build_event_publisher
+from shared.events import build_event_consumer, build_event_publisher
 from shared.events.eventbridge import EventBridgeEventPublisher
 from shared.events.logging import LoggingDomainEventPublisher
 from shared.events.rabbitmq import RabbitMQEventPublisher
+from shared.events.rabbitmq_consumer import RabbitMQEventConsumer
+from shared.events.sqs_consumer import SqsEventConsumer
 
 
 def test_factory_returns_logging_publisher():
@@ -45,3 +47,51 @@ async def test_eventbridge_publish_raises_not_implemented():
     envelope = DomainEventEnvelope(event_type="Test", payload={})
     with pytest.raises(NotImplementedError, match="wire boto3"):
         await pub.publish(envelope)
+
+
+def test_consumer_factory_returns_rabbitmq_consumer_without_connecting():
+    c = build_event_consumer(
+        "rabbitmq",
+        rabbitmq_url="amqp://localhost:5672/",
+        queue_name="payment.payment-requested",
+    )
+    assert isinstance(c, RabbitMQEventConsumer)
+
+
+def test_consumer_factory_rabbitmq_requires_url():
+    with pytest.raises(ValueError, match="rabbitmq_url"):
+        build_event_consumer("rabbitmq", queue_name="q")
+
+
+def test_consumer_factory_rabbitmq_requires_queue_name():
+    with pytest.raises(ValueError, match="queue_name"):
+        build_event_consumer("rabbitmq", rabbitmq_url="amqp://x")
+
+
+def test_consumer_factory_returns_sqs_stub():
+    c = build_event_consumer(
+        "sqs",
+        sqs_queue_url="https://sqs.us-east-1.amazonaws.com/123/queue",
+        sqs_region="us-east-1",
+    )
+    assert isinstance(c, SqsEventConsumer)
+
+
+def test_consumer_factory_sqs_requires_queue_url():
+    with pytest.raises(ValueError, match="sqs_queue_url"):
+        build_event_consumer("sqs")
+
+
+@pytest.mark.asyncio
+async def test_sqs_consumer_run_raises_not_implemented():
+    c = build_event_consumer(
+        "sqs",
+        sqs_queue_url="https://sqs.us-east-1.amazonaws.com/123/queue",
+    )
+    with pytest.raises(NotImplementedError, match="wire boto3"):
+        await c.run()
+
+
+def test_consumer_factory_rejects_unknown_backend():
+    with pytest.raises(ValueError, match="Unknown event bus backend"):
+        build_event_consumer("kafka", rabbitmq_url="amqp://x", queue_name="q")

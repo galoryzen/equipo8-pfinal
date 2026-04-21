@@ -11,7 +11,7 @@ from app.application.exceptions import (
     PaymentNotAllowedError,
 )
 from app.application.use_cases.payment_finalization import PaymentFinalizationService
-from app.domain.event_names import PAYMENT_FAILED, PAYMENT_SUCCEEDED
+from app.domain.event_names import PAYMENT_AUTHORIZED, PAYMENT_FAILED
 from app.domain.models import PaymentIntentStatus
 from tests.conftest import make_payment_intent
 
@@ -34,7 +34,7 @@ async def test_finalize_from_confirm_succeeds_and_applies_terminal_success():
     repo.persist_success.assert_awaited_once()
     events.publish.assert_awaited()
     published_envelope = events.publish.call_args[0][0]
-    assert published_envelope.event_type == PAYMENT_SUCCEEDED
+    assert published_envelope.event_type == PAYMENT_AUTHORIZED
 
 
 @pytest.mark.asyncio
