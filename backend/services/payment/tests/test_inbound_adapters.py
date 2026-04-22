@@ -79,13 +79,21 @@ def test_jwt_adapter_invalid_token_returns_none():
     assert adapter.decode_access_token("not.valid.jwt") is None
 
 
+def test_get_authorization_header_bearer_takes_priority():
+    assert deps.get_authorization_header("Bearer abc", access_token="other") == "Bearer abc"
+
+
+def test_get_authorization_header_falls_back_to_cookie():
+    assert deps.get_authorization_header(None, access_token="tok123") == "Bearer tok123"
+
+
+def test_get_authorization_header_non_bearer_header_falls_back_to_cookie():
+    assert deps.get_authorization_header("Token x", access_token="tok123") == "Bearer tok123"
+
+
 def test_get_authorization_header_requires_value():
     with pytest.raises(InvalidTokenError):
-        deps.get_authorization_header(None)
-
-
-def test_get_authorization_header_passes_through():
-    assert deps.get_authorization_header("Bearer abc") == "Bearer abc"
+        deps.get_authorization_header(None, access_token=None)
 
 
 def test_get_current_user_id_happy_path():
