@@ -28,6 +28,10 @@ class BookingListItemOut(BaseModel):
     property_id: UUID
     room_type_id: UUID
     created_at: datetime
+    image_url: str | None = None
+    property_name: str | None = None
+    nights: int | None = None
+    guest_name: str | None = None
 
 
 class GuestIn(BaseModel):
@@ -72,6 +76,14 @@ class BookingDetailOut(BaseModel):
     guests: list[GuestOut] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
+
+
+class PaginatedBookingListOut(BaseModel):
+    items: list[BookingListItemOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 class CartBookingOut(BaseModel):

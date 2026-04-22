@@ -1,5 +1,6 @@
 """API wiring tests for traveler bookings (list + detail)."""
 
+import math
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
@@ -7,6 +8,7 @@ from uuid import UUID
 
 from app.adapters.inbound.api.dependencies import (
     get_booking_detail_use_case,
+    get_current_user_info,
     get_checkout_booking_use_case,
     get_list_my_bookings_use_case,
 )
@@ -16,12 +18,18 @@ from app.application.exceptions import (
     InvalidBookingStateError,
 )
 from app.main import app
-from app.schemas.booking import BookingDetailOut, BookingListItemOut
+from app.schemas.booking import BookingDetailOut, BookingListItemOut, PaginatedBookingListOut
 
 BOOKING_ID = UUID("90000000-0000-0000-0000-000000000001")
 PROPERTY_ID = UUID("30000000-0000-0000-0000-000000000001")
 ROOM_TYPE_ID = UUID("60000000-0000-0000-0000-000000000001")
 RATE_PLAN_ID = UUID("70000000-0000-0000-0000-000000000001")
+
+
+def _paginated(items: list[BookingListItemOut], page: int = 1, page_size: int = 10) -> PaginatedBookingListOut:
+    total = len(items)
+    total_pages = math.ceil(total / page_size) if total else 0
+    return PaginatedBookingListOut(items=items, total=total, page=page, page_size=page_size, total_pages=total_pages)
 
 
 def _sample_list_row():
@@ -63,7 +71,7 @@ def _sample_detail():
 class TestBookingsEndpoints:
     def test_list_returns_all_bookings_for_authenticated_user(self, client_authenticated):
         mock_uc = AsyncMock()
-        mock_uc.execute.return_value = [_sample_list_row(), _sample_list_row()]
+        mock_uc.execute.return_value = _paginated([_sample_list_row(), _sample_list_row()])
         app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.get("/api/v1/booking/bookings")
@@ -72,14 +80,14 @@ class TestBookingsEndpoints:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data) == 2
+        assert len(data["items"]) == 2
         mock_uc.execute.assert_awaited_once()
 
     def test_list_forwards_active_scope_to_use_case(self, client_authenticated):
         from app.domain.models import BookingScope
 
         mock_uc = AsyncMock()
-        mock_uc.execute.return_value = []
+        mock_uc.execute.return_value = _paginated([])
         app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.get("/api/v1/booking/bookings?scope=active")
@@ -94,7 +102,7 @@ class TestBookingsEndpoints:
         from app.domain.models import BookingScope
 
         mock_uc = AsyncMock()
-        mock_uc.execute.return_value = []
+        mock_uc.execute.return_value = _paginated([])
         app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.get("/api/v1/booking/bookings?scope=past")
@@ -106,7 +114,7 @@ class TestBookingsEndpoints:
 
     def test_list_rejects_invalid_scope_with_422(self, client_authenticated):
         mock_uc = AsyncMock()
-        mock_uc.execute.return_value = []
+        mock_uc.execute.return_value = _paginated([])
         app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.get("/api/v1/booking/bookings?scope=bogus")
@@ -118,7 +126,7 @@ class TestBookingsEndpoints:
 
     def test_list_each_booking_includes_flat_room_fields(self, client_authenticated):
         mock_uc = AsyncMock()
-        mock_uc.execute.return_value = [_sample_list_row()]
+        mock_uc.execute.return_value = _paginated([_sample_list_row()])
         app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.get("/api/v1/booking/bookings")
@@ -126,7 +134,7 @@ class TestBookingsEndpoints:
             app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
 
         assert resp.status_code == 200
-        first = resp.json()[0]
+        first = resp.json()["items"][0]
         assert first["status"] == "CONFIRMED"
         assert first["property_id"] == str(PROPERTY_ID)
         assert first["room_type_id"] == str(ROOM_TYPE_ID)
@@ -134,7 +142,7 @@ class TestBookingsEndpoints:
 
     def test_list_empty_when_user_has_no_bookings(self, client_authenticated):
         mock_uc = AsyncMock()
-        mock_uc.execute.return_value = []
+        mock_uc.execute.return_value = _paginated([])
         app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.get("/api/v1/booking/bookings")
@@ -142,7 +150,25 @@ class TestBookingsEndpoints:
             app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
 
         assert resp.status_code == 200
-        assert resp.json() == []
+        assert resp.json()["items"] == []
+
+    def test_list_hotel_role_delegates_user_id_to_use_case(self, client_authenticated):
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        mock_uc.execute_hotel.return_value = _paginated([])
+        app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+        }
+        try:
+            resp = client_authenticated.get("/api/v1/booking/bookings")
+        finally:
+            app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 200
+        assert mock_uc.execute_hotel.await_args.kwargs["user_id"] == user_id
 
     def test_detail_returns_booking_with_flat_fields(self, client_authenticated):
         mock_uc = AsyncMock()

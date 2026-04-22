@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime
 from uuid import UUID
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
@@ -14,7 +14,6 @@ _ACTIVE_STATUSES = (
 )
 _PAST_TERMINAL_STATUSES = (BookingStatus.CANCELLED, BookingStatus.REJECTED)
 _EXCLUDED_FROM_ALL = (BookingStatus.CART, BookingStatus.EXPIRED)
-
 
 class SqlAlchemyBookingRepository(BookingRepository):
     def __init__(self, session: AsyncSession):
@@ -51,6 +50,36 @@ class SqlAlchemyBookingRepository(BookingRepository):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_by_id(self, booking_id: UUID) -> Booking | None:
+        stmt = select(Booking).where(Booking.id == booking_id)
+        result = await self._session.execute(stmt)
+        return result.scalars().one_or_none()
+
+    async def list_all(self, status: str | None = None) -> list[Booking]:
+        stmt = select(Booking)
+        if status:
+            stmt = stmt.where(Booking.status == status)
+        stmt = stmt.order_by(Booking.checkin.desc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_by_hotel(self, hotel_id: UUID, status: str | None = None) -> list[Booking]:
+        stmt = (
+            select(Booking)
+            .where(
+                text(
+                    "booking.booking.property_id IN "
+                    "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
+                )
+            )
+            .params(hotel_id=str(hotel_id))
+        )
+        if status:
+            stmt = stmt.where(Booking.status == status)
+        stmt = stmt.order_by(Booking.checkin.desc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)
         result = await self._session.execute(stmt)
@@ -70,6 +99,16 @@ class SqlAlchemyBookingRepository(BookingRepository):
     async def save(self, booking: Booking) -> None:
         await self._session.merge(booking)
         await self._session.commit()
+
+    async def update(self, booking: Booking) -> None:
+        self._session.add(booking)
+        await self._session.commit()
+
+    async def check_inventory(self, booking: Booking) -> bool:
+        return True
+
+    async def decrement_inventory(self, booking: Booking) -> None:
+        pass
 
     async def find_active_cart(
         self,

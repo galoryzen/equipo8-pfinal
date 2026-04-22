@@ -121,3 +121,13 @@ class TestMe:
 
         resp = client.get("/api/v1/auth/me", cookies={"access_token": "invalid-token"})
         assert resp.status_code == 401
+
+
+class TestLogout:
+    def test_logout_clears_cookie(self, client):
+        resp = client.post("/api/v1/auth/logout")
+
+        assert resp.status_code == 204
+        set_cookie = resp.headers.get("set-cookie", "")
+        assert "access_token=" in set_cookie
+        assert "Max-Age=0" in set_cookie

@@ -7,8 +7,7 @@ from typing import ClassVar
 from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class BookingStatus(str, enum.Enum):
     CART = "CART"
@@ -37,6 +36,7 @@ class Base(DeclarativeBase):
 
 
 BOOKING_SCHEMA = "booking"
+
 
 
 class Booking(Base):
@@ -71,6 +71,15 @@ class Booking(Base):
     guests_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
+
+    guests: Mapped[list["Guest"]] = relationship(
+        back_populates="booking",
+        cascade="all, delete-orphan",
+    )
+    items: Mapped[list["BookingItem"]] = relationship(
+        back_populates="booking",
+        cascade="all, delete-orphan",
+    )
 
 
 class BookingStatusHistory(Base):
@@ -112,3 +121,27 @@ class Guest(Base):
     phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
+
+    confirmed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    booking: Mapped[Booking] = relationship(back_populates="guests")
+
+
+class BookingItem(Base):
+    __tablename__ = "booking_item"
+    __table_args__ = {"schema": BOOKING_SCHEMA}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    booking_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(Booking.id),
+        nullable=False,
+    )
+    property_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    room_type_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    rate_plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+
+    booking: Mapped[Booking] = relationship(back_populates="items")

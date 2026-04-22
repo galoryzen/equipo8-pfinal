@@ -27,6 +27,14 @@ def _set_token_cookie(response: Response, token: str) -> None:
     )
 
 
+def _clear_token_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key="access_token",
+        secure=not settings.DEBUG,
+        samesite="lax",
+    )
+
+
 @router.post("/login")
 async def login(
     request: LoginRequest,
@@ -83,3 +91,8 @@ async def me(
 
     use_case = get_validate_token_use_case(token)
     return use_case.execute(access_token)
+
+
+@router.post("/logout", status_code=204)
+async def logout(response: Response):
+    _clear_token_cookie(response)

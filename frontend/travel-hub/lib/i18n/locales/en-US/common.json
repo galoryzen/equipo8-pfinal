@@ -40,6 +40,9 @@
     "seeAll": "See all",
     "empty": "No destinations available right now."
   },
+  "booking": {
+    "confirm_error": "Could not confirm your booking. Please try again."
+  },
   "recommended": {
     "title": "Recommended for You",
     "subtitle": "Properties based on your recent activity",
@@ -192,5 +195,37 @@
     "securityBadge": "Your payment is protected by TravelHub Secure. We use 256-bit encryption.",
     "payButton": "Pay ${{amount}}",
     "terms": "By clicking Pay, you agree to TravelHub's Terms & Conditions."
+  },
+  "manager": {
+    "pendingConfirmation": "Pending confirmation",
+    "confirmBooking": "Confirm booking",
+    "confirmBookingTitle": "Confirm booking",
+    "confirmBookingHint": "You can add internal notes for hotel staff (optional).",
+    "internalNotesPlaceholder": "Internal notes...",
+    "decline": "Decline",
+    "nights": "nights",
+    "guests": "guest(s)",
+    "totalStayValue": "Total stay value",
+    "confirming": "Confirming...",
+    "notifications": "Notifications",
+    "pendingBookingsToday": "You have {{count}} bookings pending confirmation today.",
+    "noPendingBookings": "No pending bookings.",
+    "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking."
+  },
+  "admin": {
+    "navbar": {
+      "title": "TravelHub Admin",
+      "dashboard": "Dashboard",
+      "bookings": "Bookings",
+      "hotels": "My Hotels",
+      "notifications": "Notifications",
+      "reports": "Reports",
+      "subtitle": "Super Admin",
+      "logOut": "Log Out"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "unknownError": "Unknown error"
   }
 }

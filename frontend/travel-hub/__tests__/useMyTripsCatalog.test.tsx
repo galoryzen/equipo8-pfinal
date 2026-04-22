@@ -1,7 +1,7 @@
 import { useMyTripsCatalog } from '@/app/hooks/useMyTripsCatalog';
 import { getMyBookings } from '@/app/lib/api/booking';
 import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
-import type { BookingListItem } from '@/app/lib/types/booking';
+import type { BookingListItem, PaginatedResponse } from '@/app/lib/types/booking';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +13,10 @@ vi.mock('@/app/lib/api/booking', () => ({
 vi.mock('@/app/lib/myTrips/loadPropertyDetails', () => ({
   fetchPropertyDetailsMap: vi.fn(),
 }));
+
+function paginatedBookings(items: BookingListItem[]): PaginatedResponse<BookingListItem> {
+  return { items, total: items.length, page: 1, page_size: 10, total_pages: items.length ? 1 : 0 };
+}
 
 function makeBooking(
   id: string,
@@ -71,7 +75,7 @@ describe('useMyTripsCatalog', () => {
   it('loads bookings and catalog map on success', async () => {
     const bookings = [makeBooking('b1', 'p1')];
     const map = { p1: minimalProperty('p1') };
-    vi.mocked(getMyBookings).mockResolvedValue(bookings);
+    vi.mocked(getMyBookings).mockResolvedValue(paginatedBookings(bookings));
     vi.mocked(fetchPropertyDetailsMap).mockResolvedValue(map);
 
     const { result } = renderHook(() => useMyTripsCatalog());
@@ -86,7 +90,7 @@ describe('useMyTripsCatalog', () => {
   it('deduplicates property_id across bookings and items', async () => {
     const pid = '30000000-0000-0000-0000-000000000001';
     const bookings = [makeBooking('b1', pid), makeBooking('b2', pid)];
-    vi.mocked(getMyBookings).mockResolvedValue(bookings);
+    vi.mocked(getMyBookings).mockResolvedValue(paginatedBookings(bookings));
     vi.mocked(fetchPropertyDetailsMap).mockResolvedValue({ [pid]: minimalProperty(pid) });
 
     const { result } = renderHook(() => useMyTripsCatalog());
@@ -97,7 +101,7 @@ describe('useMyTripsCatalog', () => {
   });
 
   it('handles empty bookings without error', async () => {
-    vi.mocked(getMyBookings).mockResolvedValue([]);
+    vi.mocked(getMyBookings).mockResolvedValue(paginatedBookings([]));
     vi.mocked(fetchPropertyDetailsMap).mockResolvedValue({});
 
     const { result } = renderHook(() => useMyTripsCatalog());
@@ -132,7 +136,7 @@ describe('useMyTripsCatalog', () => {
 
   it('keeps bookings when catalog map has partial nulls', async () => {
     const bookings = [makeBooking('b1', 'p1'), makeBooking('b2', 'p2')];
-    vi.mocked(getMyBookings).mockResolvedValue(bookings);
+    vi.mocked(getMyBookings).mockResolvedValue(paginatedBookings(bookings));
     vi.mocked(fetchPropertyDetailsMap).mockResolvedValue({
       p1: minimalProperty('p1'),
       p2: null,
@@ -147,7 +151,7 @@ describe('useMyTripsCatalog', () => {
   });
 
   it('surfaces error when fetchPropertyDetailsMap throws', async () => {
-    vi.mocked(getMyBookings).mockResolvedValue([makeBooking('b1', 'p1')]);
+    vi.mocked(getMyBookings).mockResolvedValue(paginatedBookings([makeBooking('b1', 'p1')]));
     vi.mocked(fetchPropertyDetailsMap).mockRejectedValue(new Error('catalog unavailable'));
 
     const { result } = renderHook(() => useMyTripsCatalog());
@@ -159,7 +163,7 @@ describe('useMyTripsCatalog', () => {
   });
 
   it('reload triggers another load', async () => {
-    vi.mocked(getMyBookings).mockResolvedValue([]);
+    vi.mocked(getMyBookings).mockResolvedValue(paginatedBookings([]));
     vi.mocked(fetchPropertyDetailsMap).mockResolvedValue({});
 
     const { result } = renderHook(() => useMyTripsCatalog());

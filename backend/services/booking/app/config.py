@@ -2,6 +2,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    AUTH_SERVICE_URL: str = "http://thub-auth:8000/api/v1/auth"
+    CATALOG_SERVICE_URL: str = "http://thub-catalog:8000/api/v1/catalog"
     SERVICE_NAME: str = "booking"
     DATABASE_URL: str = "postgresql+asyncpg://travelhub:travelhub_dev@postgres:5432/travelhub"
     DB_SCHEMA: str = "booking"

@@ -14,6 +14,7 @@ from app.domain.models import (
     BookingStatus,
     CancellationPolicyType,
 )
+from app.schemas.booking import PaginatedBookingListOut
 
 FIXED_TODAY = date(2026, 4, 19)
 
@@ -77,8 +78,8 @@ class TestListMyBookingsUseCase:
         out = await uc.execute(user_id=uid)
 
         repo.list_by_user_id.assert_awaited_once_with(uid, scope=BookingScope.ALL, today=FIXED_TODAY)
-        assert len(out) == 2
-        ids = {x.id for x in out}
+        assert len(out.items) == 2
+        ids = {x.id for x in out.items}
         assert ids == {b1.id, b2.id}
 
     async def test_each_item_includes_status(self):
@@ -96,9 +97,9 @@ class TestListMyBookingsUseCase:
         uc = ListMyBookingsUseCase(repo, clock=_clock)
         out = await uc.execute(user_id=uid)
 
-        assert out[0].status == "PENDING_CONFIRMATION"
-        assert out[0].property_id == b1.property_id
-        assert out[0].room_type_id == b1.room_type_id
+        assert out.items[0].status == "PENDING_CONFIRMATION"
+        assert out.items[0].property_id == b1.property_id
+        assert out.items[0].room_type_id == b1.room_type_id
 
     async def test_user_with_no_bookings_returns_empty_list(self):
         uid = UUID("a0000000-0000-0000-0000-000000000099")
@@ -108,7 +109,7 @@ class TestListMyBookingsUseCase:
         uc = ListMyBookingsUseCase(repo, clock=_clock)
         out = await uc.execute(user_id=uid)
 
-        assert out == []
+        assert out == PaginatedBookingListOut(items=[], total=0, page=1, page_size=10, total_pages=1)
 
     async def test_active_scope_forwarded_to_repo(self):
         uid = UUID("a0000000-0000-0000-0000-000000000001")

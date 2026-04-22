@@ -57,3 +57,14 @@ export async function getMe(): Promise<AuthResponse | null> {
     return null;
   }
 }
+
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetch(`${API_URL}/api/v1/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {
+    // Best-effort logout; caller should still navigate away.
+  }
+}

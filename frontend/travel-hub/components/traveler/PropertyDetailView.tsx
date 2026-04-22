@@ -115,9 +115,9 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
   useEffect(() => {
     if (authStatus !== 'authenticated') return;
     getMyBookings()
-      .then((bookings) => {
+      .then(({ items }) => {
         const map: Record<string, string> = {};
-        for (const b of bookings) {
+        for (const b of items) {
           if (b.status === 'CART') {
             map[b.room_type_id] = b.id;
           }
