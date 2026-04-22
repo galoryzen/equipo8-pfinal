@@ -181,7 +181,40 @@
     },
     "payment": {
       "title": "Payment",
-      "comingSoon": "Payment flow coming soon."
+      "noReservation": "No active reservation",
+      "cardDetails": "Card details",
+      "cardNumber": "Card number",
+      "cardNumberPlaceholder": "1234 5678 9012 3456",
+      "expiry": "Expiry (MM/YY)",
+      "expiryPlaceholder": "MM/YY",
+      "cvv": "CVV",
+      "cvvPlaceholder": "123",
+      "cardholderName": "Name on card",
+      "payButton": "Pay {{amount}} {{currency}}",
+      "processing": "Processing your payment…",
+      "processingHint": "Please don't close this screen. This usually takes a few seconds.",
+      "retry": "Try again",
+      "backToTrips": "Go to my bookings",
+      "backToCatalog": "Back to search",
+      "errors": {
+        "required": "Required",
+        "invalidCard": "Enter a valid card number",
+        "invalidExpiry": "Invalid expiry (use MM/YY)",
+        "invalidCvv": "Enter a valid CVV",
+        "holdExpired": "Your reservation hold has expired.",
+        "checkoutFailed": "Payment could not be processed. Please try again.",
+        "guestsIncomplete": "Guest information is incomplete. Go back and complete it.",
+        "timeout": "Payment is taking longer than expected. Check 'My bookings' shortly."
+      }
+    },
+    "success": {
+      "title": "Payment authorized!",
+      "subtitle": "Your reservation is being reviewed",
+      "statusNote": "The agency will review and confirm your reservation shortly.",
+      "totalLabel": "Total paid",
+      "viewBookings": "View my bookings",
+      "home": "Back to home",
+      "loadError": "We couldn't load your reservation. Check 'My bookings' to see its status."
     },
     "cart": {
       "unavailable": "Room no longer available for the selected dates",

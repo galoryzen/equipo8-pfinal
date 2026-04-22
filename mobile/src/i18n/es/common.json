@@ -181,7 +181,40 @@
     },
     "payment": {
       "title": "Pago",
-      "comingSoon": "El flujo de pago estará disponible próximamente."
+      "noReservation": "No hay una reserva activa",
+      "cardDetails": "Datos de la tarjeta",
+      "cardNumber": "Número de tarjeta",
+      "cardNumberPlaceholder": "1234 5678 9012 3456",
+      "expiry": "Expiración (MM/AA)",
+      "expiryPlaceholder": "MM/AA",
+      "cvv": "CVV",
+      "cvvPlaceholder": "123",
+      "cardholderName": "Nombre en la tarjeta",
+      "payButton": "Pagar {{amount}} {{currency}}",
+      "processing": "Procesando tu pago…",
+      "processingHint": "No cierres esta pantalla. Esto suele tardar unos segundos.",
+      "retry": "Reintentar",
+      "backToTrips": "Ir a mis reservas",
+      "backToCatalog": "Volver a la búsqueda",
+      "errors": {
+        "required": "Requerido",
+        "invalidCard": "Ingresa un número de tarjeta válido",
+        "invalidExpiry": "Expiración inválida (usa MM/AA)",
+        "invalidCvv": "Ingresa un CVV válido",
+        "holdExpired": "La retención de tu reserva expiró.",
+        "checkoutFailed": "No pudimos procesar el pago. Intenta de nuevo.",
+        "guestsIncomplete": "Faltan datos de huéspedes. Regresa y complétalos.",
+        "timeout": "El pago está tardando más de lo esperado. Revisa 'Mis reservas' en un momento."
+      }
+    },
+    "success": {
+      "title": "¡Pago autorizado!",
+      "subtitle": "Tu reserva está siendo revisada",
+      "statusNote": "La agencia revisará y confirmará tu reserva en breve.",
+      "totalLabel": "Total pagado",
+      "viewBookings": "Ver mis reservas",
+      "home": "Volver al inicio",
+      "loadError": "No pudimos cargar tu reserva. Revisa 'Mis reservas' para ver su estado."
     },
     "cart": {
       "unavailable": "La habitación ya no está disponible para las fechas seleccionadas",
