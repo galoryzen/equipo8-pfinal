@@ -45,6 +45,13 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@/app/lib/api/booking', () => ({
+  CartConflictError: class CartConflictError extends Error {
+    existingBookingId: string;
+    constructor(existingBookingId: string) {
+      super('Cart conflict');
+      this.existingBookingId = existingBookingId;
+    }
+  },
   createCartBooking: vi.fn(),
   getBookingDetail: vi.fn(),
 }));
@@ -155,7 +162,7 @@ describe('TravelerPaymentPage', () => {
     render(<TravelerPaymentPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Test Hotel')).toBeTruthy();
+      expect(screen.getAllByText('Test Hotel').length).toBeGreaterThan(0);
     });
   });
 });
