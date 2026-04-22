@@ -8,7 +8,7 @@ import { renderWithI18n } from './test-utils';
 
 vi.mock('@/app/lib/api/booking', () => ({
   fetchPendingConfirmationBookings: vi.fn(async () => {
-    return mockBookings.map((b) => ({
+    const items = mockBookings.map((b) => ({
       id: b.id,
       property_name: b.propertyName,
       image_url: b.imageUrl,
@@ -22,6 +22,13 @@ vi.mock('@/app/lib/api/booking', () => ({
       currency_code: b.currency,
       created_at: b.createdAt,
     }));
+    return {
+      items,
+      total: items.length,
+      page: 1,
+      page_size: 5,
+      total_pages: 1,
+    };
   }),
   confirmBooking: vi.fn(async () => undefined),
 }));

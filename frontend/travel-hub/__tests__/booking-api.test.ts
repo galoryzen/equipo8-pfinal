@@ -1,10 +1,10 @@
 import { getBookingDetail, getMyBookings } from '@/app/lib/api/booking';
-import type { BookingDetail, BookingListItem } from '@/app/lib/types/booking';
+import type { BookingDetail, BookingListItem, PaginatedResponse } from '@/app/lib/types/booking';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 function expectFetchListCall(): void {
   const call = vi.mocked(global.fetch).mock.calls[0];
-  expect(call?.[0]).toMatch(/\/api\/v1\/booking\/bookings$/);
+  expect(call?.[0]).toMatch(/\/api\/v1\/booking\/bookings/);
   expect(call?.[1]).toEqual({ credentials: 'include' });
 }
 
@@ -25,19 +25,25 @@ describe('booking API', () => {
 
   describe('getMyBookings', () => {
     it('returns JSON on success and sends credentials: include', async () => {
-      const payload: BookingListItem[] = [
-        {
-          id: 'b1',
-          status: 'CONFIRMED',
-          checkin: '2026-06-01',
-          checkout: '2026-06-05',
-          total_amount: '100',
-          currency_code: 'USD',
-          property_id: 'p1',
-          room_type_id: 'r1',
-          created_at: '2026-01-01',
-        },
-      ];
+      const payload: PaginatedResponse<BookingListItem> = {
+        items: [
+          {
+            id: 'b1',
+            status: 'CONFIRMED',
+            checkin: '2026-06-01',
+            checkout: '2026-06-05',
+            total_amount: '100',
+            currency_code: 'USD',
+            property_id: 'p1',
+            room_type_id: 'r1',
+            created_at: '2026-01-01',
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 10,
+        total_pages: 1,
+      };
       vi.mocked(global.fetch).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(payload),
