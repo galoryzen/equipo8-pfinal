@@ -32,6 +32,7 @@ class BookingListItemOut(BaseModel):
     property_name: str | None = None
     nights: int | None = None
     guest_name: str | None = None
+    guests_count: int | None = None
 
 
 class GuestIn(BaseModel):

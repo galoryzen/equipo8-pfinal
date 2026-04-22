@@ -104,7 +104,7 @@ async def _to_list_item(booking: Booking) -> BookingListItemOut:
     image_url = None
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{settings.CATALOG_SERVICE_URL}/properties/{booking.property_id}")
+            resp = await client.get(f"{settings.CATALOG_SERVICE_URL}/api/v1/catalog/properties/{booking.property_id}")
             if resp.status_code == 200:
                 property_info = resp.json()
                 detail = property_info.get("detail", {})
@@ -147,4 +147,5 @@ async def _to_list_item(booking: Booking) -> BookingListItemOut:
         image_url=image_url,
         nights=nights,
         guest_name=guest_name,
+        guests_count=booking.guests_count,
     )
