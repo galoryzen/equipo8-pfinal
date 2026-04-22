@@ -69,7 +69,7 @@ function toBooking(b: PendingConfirmationBookingItem): Booking {
     checkin: parseString(b.checkin),
     checkout: parseString(b.checkout),
     nights: parseNumber(b.nights),
-    guests: parseNumber(b.guests),
+    guests: parseNumber(b.guests_count),
     totalAmount: parseNumber(b.total_amount),
     currency: parseString(b.currency_code, '$'),
     createdAt: parseString(b.created_at),

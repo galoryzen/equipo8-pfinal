@@ -267,6 +267,7 @@ function PaymentPageContent() {
           room_type_id: roomTypeId,
           rate_plan_id: ratePlanId,
           unit_price: unitPrice,
+          guests_count: guests,
         });
         if (!mountedRef.current) return;
         localStorage.setItem(key, newBooking.id);

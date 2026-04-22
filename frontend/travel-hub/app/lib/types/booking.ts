@@ -6,6 +6,7 @@ export interface CreateCartBookingPayload {
   room_type_id: string;
   rate_plan_id: string;
   unit_price: string;
+  guests_count?: number;
 }
 
 export interface CartBooking {
@@ -39,7 +40,7 @@ export interface PendingConfirmationBookingItem extends BookingListItem {
   property_name?: string | null;
   nights?: number | null;
   guest_name?: string | null;
-  guests?: number | null;
+  guests_count?: number | null;
 }
 
 export interface PendingConfirmationBookingsEnvelope {
