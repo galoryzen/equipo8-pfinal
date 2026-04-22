@@ -80,10 +80,11 @@ function isExpiryInPast(expiry: string): boolean {
   const month = parseInt(match[1], 10);
   const year = parseInt(match[2], 10) + 2000;
   const now = new Date();
-  return (
-    year < now.getFullYear() ||
-    (year === now.getFullYear() && month < now.getMonth() + 1 && month > 0 && month <= 12)
-  );
+
+  const isYearValid = year >= now.getFullYear();
+  const isMonthValid = month > 0 && month <= 12;
+
+  return !isYearValid || !isMonthValid;
 }
 
 interface AdditionalGuest {
@@ -767,7 +768,12 @@ function PaymentPageContent() {
                         fullWidth
                         size="small"
                         required
-                        helperText={t('payment.emailHelper')}
+                        error={email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}
+                        helperText={
+                          email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+                            ? t('payment.emailInvalid')
+                            : t('payment.emailHelper')
+                        }
                       />
                     </Grid>
                     <Grid size={12}>

@@ -165,6 +165,7 @@
     "lastName": "Last Name",
     "emailAddress": "Email Address",
     "emailHelper": "Confirmation email will be sent to this address.",
+    "emailInvalid": "Please enter a valid email address.",
     "phoneNumber": "Phone Number",
     "paymentMethod": "Payment Method",
     "secure": "Secure",

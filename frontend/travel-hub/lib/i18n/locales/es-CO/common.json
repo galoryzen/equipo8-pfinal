@@ -170,6 +170,7 @@
     "lastName": "Apellido",
     "emailAddress": "Correo electrónico",
     "emailHelper": "Se enviará un correo de confirmación a esta dirección.",
+    "emailInvalid": "Por favor ingresa un correo electrónico válido.",
     "phoneNumber": "Número de teléfono",
     "paymentMethod": "Método de pago",
     "secure": "Seguro",
