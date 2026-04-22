@@ -3,6 +3,8 @@ import type {
   BookingListItem,
   CartBooking,
   CreateCartBookingPayload,
+  PendingConfirmationBookingItem,
+  PendingConfirmationBookingsEnvelope,
 } from '@/app/lib/types/booking';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
@@ -49,4 +51,43 @@ export async function createCartBooking(payload: CreateCartBookingPayload): Prom
     throw new Error(await readErrorMessage(res));
   }
   return res.json();
+}
+
+export async function fetchPendingConfirmationBookings(): Promise<
+  PendingConfirmationBookingItem[]
+> {
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings?status=PENDING_CONFIRMATION`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+
+  const data: unknown = await res.json();
+  if (Array.isArray(data)) {
+    return data as PendingConfirmationBookingItem[];
+  }
+
+  if (data && typeof data === 'object' && 'bookings' in data) {
+    const envelope = data as PendingConfirmationBookingsEnvelope;
+    if (Array.isArray(envelope.bookings)) {
+      return envelope.bookings;
+    }
+  }
+
+  throw new Error('Invalid pending bookings response format');
+}
+
+export async function confirmBooking(bookingId: string): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/confirm`,
+    {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
 }

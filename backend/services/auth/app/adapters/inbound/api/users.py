@@ -17,6 +17,7 @@ async def get_user_by_id(
     user = await repo.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    hotel_id = await repo.get_hotel_id_by_user_id(user_id)
     return UserOut(
         id=str(user.id),
         email=user.email,
@@ -24,4 +25,5 @@ async def get_user_by_id(
         phone=getattr(user, "phone", None),
         role=str(user.role) if hasattr(user, "role") else None,
         country_code=getattr(user, "country_code", None),
+        hotel_id=str(hotel_id) if hotel_id else None,
     )

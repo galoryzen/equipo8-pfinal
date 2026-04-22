@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 
+import { confirmBooking, fetchPendingConfirmationBookings } from '@/app/lib/api/booking';
+import type { PendingConfirmationBookingItem } from '@/app/lib/types/booking';
 import { useTranslation } from 'react-i18next';
 
 import { BookingRequestCard } from '@/components/manager/BookingRequestCard';
 
-type Booking = {
+interface Booking {
   id: string;
   propertyName: string;
   imageUrl: string;
@@ -19,11 +21,24 @@ type Booking = {
   totalAmount: number;
   currency: string;
   createdAt: string;
-};
+}
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz'}/api/v1/booking/bookings?status=PENDING_CONFIRMATION`;
+function parseString(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return fallback;
+}
 
-const ManagerNotificationsPage: React.FC = () => {
+function parseNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+export default function ManagerNotificationsPage(): React.ReactNode {
   const { t } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,28 +46,26 @@ const ManagerNotificationsPage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch(API_URL, {
-      credentials: 'include',
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Error fetching bookings');
-        const data = await res.json();
-        setBookings(
-          (data.bookings || data).map((b: Record<string, unknown>) => ({
-            id: String(b.id),
-            propertyName: String(b.propertyName ?? b.property_name),
-            imageUrl: String(b.imageUrl ?? b.image_url ?? '/default-hotel.jpg'),
-            status: String(b.status),
-            guestName: String(b.guestName ?? b.guest_name),
-            checkin: String(b.checkin ?? b.check_in),
-            checkout: String(b.checkout ?? b.check_out),
-            nights: Number(b.nights),
-            guests: Number(b.guests),
-            totalAmount: Number(b.totalAmount ?? b.total_amount),
-            currency: String(b.currency ?? '$'),
-            createdAt: String(b.createdAt ?? b.created_at ?? ''),
-          }))
-        );
+    fetchPendingConfirmationBookings()
+      .then((bookings) => {
+        const data = bookings.map((b: PendingConfirmationBookingItem) => {
+          return {
+            id: parseString(b.id),
+            propertyName: parseString(b.property_name),
+            imageUrl: parseString(b.image_url, '/default-hotel.jpg'),
+            status: parseString(b.status),
+            guestName: parseString(b.guest_name),
+            checkin: parseString(b.checkin),
+            checkout: parseString(b.checkout),
+            nights: parseNumber(b.nights),
+            guests: parseNumber(b.guests),
+            totalAmount: parseNumber(b.total_amount),
+            currency: parseString(b.currency_code, '$'),
+            createdAt: parseString(b.created_at),
+          };
+        });
+
+        setBookings(data);
         setError(null);
       })
       .catch((err) => {
@@ -65,12 +78,7 @@ const ManagerNotificationsPage: React.FC = () => {
   const handleConfirmClick = async (id: string) => {
     try {
       setLoading(true);
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
-      const res = await fetch(`${baseUrl}/api/v1/booking/bookings/${id}/confirm`, {
-        method: 'PATCH',
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Error al confirmar la reserva');
+      await confirmBooking(id);
       setBookings((prev) => prev.filter((b) => b.id !== id));
     } catch (err) {
       if (err instanceof Error) {
@@ -88,28 +96,57 @@ const ManagerNotificationsPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">{t('manager.notifications')}</h1>
-      <p className="mb-6 text-gray-600">
-        {t('manager.pendingBookingsToday', { count: bookings.length })}
-      </p>
-      {loading && <div className="text-gray-400">Cargando...</div>}
-      {error && <div className="text-red-500">{error}</div>}
-      <div className="space-y-6">
-        {!loading && bookings.length === 0 && !error && (
-          <div className="text-gray-400">{t('manager.noPendingBookings')}</div>
-        )}
-        {bookings.map((booking) => (
-          <BookingRequestCard
-            key={booking.id}
-            booking={booking}
-            onConfirm={handleConfirmClick}
-            onDecline={handleDecline}
-          />
-        ))}
+    <div className="min-h-[calc(100vh-6rem)] rounded-3xl bg-[#F3F5F9] p-6 md:p-8">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-8">
+          <h1 className="text-4xl font-black tracking-tight text-slate-900">
+            {t('manager.notifications')}
+          </h1>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            {t('manager.pendingBookingsToday', { count: bookings.length })}
+          </p>
+        </header>
+
+        <section>
+          <div className="mb-6 flex items-end justify-between border-b border-slate-200 pb-3">
+            <h2 className="text-lg font-extrabold text-orange-400">Reservation Requests</h2>
+          </div>
+
+          {loading && <div className="text-slate-400">Cargando...</div>}
+          {error && <div className="rounded-lg bg-red-100 p-3 text-red-700">{error}</div>}
+
+          <div className="space-y-5">
+            {!loading && bookings.length === 0 && !error && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600">
+                {t('manager.noPendingBookings')}
+              </div>
+            )}
+
+            {bookings.map((booking) => (
+              <BookingRequestCard
+                key={booking.id}
+                booking={booking}
+                onConfirm={handleConfirmClick}
+                onDecline={handleDecline}
+              />
+            ))}
+          </div>
+        </section>
+
+        <footer className="mt-7 flex items-center justify-between border-t border-slate-200 pt-4 text-sm">
+          <span className="text-slate-500">
+            Showing {bookings.length} of {bookings.length} pending requests
+          </span>
+          <div className="flex gap-5 font-semibold text-slate-500">
+            <button type="button" className="transition hover:text-slate-900">
+              Previous
+            </button>
+            <button type="button" className="transition hover:text-slate-900">
+              Next
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   );
-};
-
-export default ManagerNotificationsPage;
+}

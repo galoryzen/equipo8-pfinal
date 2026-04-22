@@ -34,6 +34,18 @@ export interface BookingListItem {
   created_at: string;
 }
 
+export interface PendingConfirmationBookingItem extends BookingListItem {
+  image_url?: string | null;
+  property_name?: string | null;
+  nights?: number | null;
+  guest_name?: string | null;
+  guests?: number | null;
+}
+
+export interface PendingConfirmationBookingsEnvelope {
+  bookings: PendingConfirmationBookingItem[];
+}
+
 export interface BookingDetail {
   id: string;
   status: string;

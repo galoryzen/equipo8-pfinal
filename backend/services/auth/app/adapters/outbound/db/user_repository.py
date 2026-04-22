@@ -22,6 +22,15 @@ class SqlAlchemyUserRepository(UserRepository):
         result = await self._session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
+    async def get_hotel_id_by_user_id(self, user_id: uuid.UUID) -> uuid.UUID | None:
+        result = await self._session.execute(
+            select(HotelUser.hotel_id).where(
+                HotelUser.user_id == user_id,
+                HotelUser.is_active.is_(True),
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_email(self, email: str) -> User | None:
         result = await self._session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()

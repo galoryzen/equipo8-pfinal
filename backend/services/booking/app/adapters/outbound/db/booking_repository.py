@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime
 from uuid import UUID
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
@@ -64,10 +64,21 @@ class SqlAlchemyBookingRepository(BookingRepository):
         return list(result.scalars().all())
 
     async def list_by_hotel(self, hotel_id: UUID, status: str | None = None) -> list[Booking]:
-        stmt = select(Booking).where(Booking.property_id == hotel_id)
+        stmt = (
+            select(Booking)
+            .where(
+                text(
+                    "booking.booking.property_id IN "
+                    "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
+                )
+            )
+            .params(hotel_id=str(hotel_id))
+        )
         if status:
             stmt = stmt.where(Booking.status == status)
         stmt = stmt.order_by(Booking.checkin.desc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
 
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)

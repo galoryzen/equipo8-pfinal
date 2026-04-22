@@ -7,6 +7,7 @@ from uuid import UUID
 
 from app.adapters.inbound.api.dependencies import (
     get_booking_detail_use_case,
+    get_current_user_info,
     get_list_my_bookings_use_case,
 )
 from app.application.exceptions import BookingNotFoundError
@@ -138,6 +139,24 @@ class TestBookingsEndpoints:
 
         assert resp.status_code == 200
         assert resp.json() == []
+
+    def test_list_hotel_role_delegates_user_id_to_use_case(self, client_authenticated):
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        mock_uc.execute_hotel.return_value = []
+        app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+        }
+        try:
+            resp = client_authenticated.get("/api/v1/booking/bookings")
+        finally:
+            app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 200
+        assert mock_uc.execute_hotel.await_args.kwargs["user_id"] == user_id
 
     def test_detail_returns_booking_with_flat_fields(self, client_authenticated):
         mock_uc = AsyncMock()

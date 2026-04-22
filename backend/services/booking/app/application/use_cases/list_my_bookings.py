@@ -37,6 +37,39 @@ class ListMyBookingsUseCase:
         bookings = await self._repo.list_by_user_id(user_id, scope=scope, today=today)
         return [await _to_list_item(b) for b in bookings]
 
+    async def execute_admin(self, status: str | None = None) -> list[BookingListItemOut]:
+        bookings = await self._repo.list_all(status=status)
+        return [await _to_list_item(b) for b in bookings]
+
+    async def execute_hotel(self, user_id: str | UUID, status: str | None = None) -> list[BookingListItemOut]:
+        hotel_id = await _resolve_hotel_id_for_user(user_id)
+        bookings = await self._repo.list_by_hotel(hotel_id=hotel_id, status=status)
+        return [await _to_list_item(b) for b in bookings]
+
+
+async def _resolve_hotel_id_for_user(user_id: str | UUID) -> UUID:
+    try:
+        uid = UUID(str(user_id))
+    except (TypeError, ValueError) as e:
+        raise ValueError("user_id invalido para resolver hotel") from e
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{settings.AUTH_SERVICE_URL}/users/{uid}")
+
+            if resp.status_code != 200:
+                raise ValueError("No se pudo resolver hotel_id para el usuario")
+
+            payload = resp.json()
+            hotel_id = payload.get("hotel_id")
+            if not hotel_id:
+                raise ValueError("hotel_id es requerido para este rol")
+            return UUID(str(hotel_id))
+    except ValueError:
+        raise
+    except Exception as e:
+        raise ValueError("No se pudo resolver hotel_id para el usuario") from e
+
 
 async def _to_list_item(booking: Booking) -> BookingListItemOut:
     # Obtener info de la propiedad desde catalog

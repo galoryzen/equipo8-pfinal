@@ -9,6 +9,7 @@ class UserOut(BaseModel):
     phone: Optional[str] = None
     role: Optional[str] = None
     country_code: Optional[str] = None
+    hotel_id: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: str = Field(..., description="The email address of the user", min_length=1, max_length=255)

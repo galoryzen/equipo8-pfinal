@@ -33,35 +33,58 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
   const isPending = booking.status === 'PENDING_CONFIRMATION';
 
   return (
-    <div className="flex bg-white rounded-lg shadow p-4 items-center justify-between">
-      <div className="flex items-center gap-4">
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col md:flex-row">
         <Image
           src={booking.imageUrl}
           alt={booking.propertyName}
-          width={128}
-          height={96}
-          className="w-32 h-24 object-cover rounded"
+          width={320}
+          height={220}
+          className="h-48 w-full object-cover md:h-auto md:w-64"
         />
-        <div>
-          <div className="flex gap-2 items-center mb-1">
-            {isPending && (
-              <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 rounded">
-                {t('manager.pendingConfirmation')}
-              </span>
-            )}
-            <span className="text-xs text-gray-700">{booking.createdAt}</span>
+        <div className="flex flex-1 flex-col justify-between gap-5 p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="rounded bg-orange-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-orange-700">
+                  {isPending ? t('manager.pendingConfirmation') : booking.status}
+                </span>
+                <span className="text-xs text-slate-400">{booking.createdAt}</span>
+              </div>
+              <h3 className="truncate text-2xl font-extrabold leading-tight text-slate-800">
+                Reservation Request: {booking.propertyName}
+              </h3>
+              <p className="mt-2 text-sm text-slate-500">
+                {booking.guestName} · {booking.checkin} - {booking.checkout} ({booking.nights}{' '}
+                {t('manager.nights')}) · {booking.guests} {t('manager.guests')}
+              </p>
+            </div>
+            <div className="text-left md:text-right">
+              <div className="text-4xl font-black leading-none text-slate-900">
+                {booking.currency}
+                {booking.totalAmount.toLocaleString()}
+              </div>
+              <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {t('manager.totalStayValue')}
+              </div>
+            </div>
           </div>
-          <div className="font-semibold text-lg mb-1">{booking.propertyName}</div>
-          <div className="text-sm text-gray-600 mb-1">
-            {booking.guestName} • {booking.checkin} - {booking.checkout} ({booking.nights}{' '}
-            {t('manager.nights')}) • {booking.guests} {t('manager.guests')}
-          </div>
-          <div className="flex gap-2 mt-2">
+
+          <div className="h-px bg-slate-200" />
+
+          <div className="flex flex-wrap gap-3">
             <Button
               variant="outlined"
               color="inherit"
               onClick={() => onDecline(booking.id)}
-              sx={{ minWidth: 100 }}
+              sx={{
+                minWidth: 112,
+                borderColor: '#CBD5E1',
+                color: '#475569',
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: '10px',
+              }}
             >
               {t('manager.decline')}
             </Button>
@@ -70,7 +93,13 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                 variant="contained"
                 color="success"
                 onClick={() => onConfirm(booking.id)}
-                sx={{ minWidth: 100 }}
+                sx={{
+                  minWidth: 160,
+                  textTransform: 'none',
+                  fontWeight: 800,
+                  borderRadius: '10px',
+                  boxShadow: 'none',
+                }}
               >
                 {t('manager.confirmBooking')}
               </Button>
@@ -78,12 +107,6 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
           </div>
         </div>
       </div>
-      <div className="text-right">
-        <div className="text-xl font-bold">
-          {booking.currency} {booking.totalAmount.toLocaleString()}
-        </div>
-        <div className="text-xs text-gray-700">{t('manager.totalStayValue')}</div>
-      </div>
-    </div>
+    </article>
   );
 };

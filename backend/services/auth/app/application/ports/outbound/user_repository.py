@@ -6,8 +6,16 @@ from app.domain.models import User
 
 class UserRepository(ABC):
     @abstractmethod
+    async def get_by_id(self, user_id: uuid.UUID) -> User | None:
+        """Get user by id."""
+
+    @abstractmethod
     async def get_by_email(self, email: str) -> User | None:
         """Get user by email."""
+
+    @abstractmethod
+    async def get_hotel_id_by_user_id(self, user_id: uuid.UUID) -> uuid.UUID | None:
+        """Return active hotel id for a hotel user, if available."""
 
     @abstractmethod
     async def check_user_exists(self, email: str) -> bool:

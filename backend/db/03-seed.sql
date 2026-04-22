@@ -513,6 +513,20 @@ INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_stat
   ('92000000-0000-0000-0000-000000000006', '90000000-0000-0000-0000-000000000002', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000002'),
   ('92000000-0000-0000-0000-000000000007', '90000000-0000-0000-0000-000000000002', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL);
 
+-- Booking 7: PENDING_CONFIRMATION (for Roberto's hotel in Cancún, 2 nights)
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, hold_expires_at, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+  ('90000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000004', 'PENDING_CONFIRMATION',
+   CURRENT_DATE + INTERVAL '8 days', CURRENT_DATE + INTERVAL '10 days',
+   now() + INTERVAL '20 minutes',
+   240.00, 'USD',
+   '30000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 120.00,
+   'FULL', 48, 100);
+
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
+  ('92000000-0000-0000-0000-000000000018', '90000000-0000-0000-0000-000000000007', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000004'),
+  ('92000000-0000-0000-0000-000000000019', '90000000-0000-0000-0000-000000000007', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000004'),
+  ('92000000-0000-0000-0000-000000000020', '90000000-0000-0000-0000-000000000007', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL);
+
 -- Booking 3: CANCELLED (Lucía in Buenos Aires, 4 nights)
 INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
   ('90000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', 'CANCELLED',
