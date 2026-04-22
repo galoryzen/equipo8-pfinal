@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 import { confirmBooking, fetchPendingConfirmationBookings } from '@/app/lib/api/booking';
 import type { PendingConfirmationBookingItem } from '@/app/lib/types/booking';
+import { tokens } from '@/lib/theme/tokens';
 import { useTranslation } from 'react-i18next';
 
 import { BookingRequestCard } from '@/components/manager/BookingRequestCard';
@@ -96,28 +97,76 @@ export default function ManagerNotificationsPage(): React.ReactNode {
   };
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] rounded-3xl bg-[#F3F5F9] p-6 md:p-8">
+    <div
+      className="min-h-[calc(100vh-6rem)] rounded-3xl p-6 md:p-8"
+      style={{ backgroundColor: tokens.surface.pageWarm }}
+    >
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8">
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">
+        <header className="mb-6">
+          <h1 className="text-4xl font-black tracking-tight" style={{ color: tokens.text.primary }}>
             {t('manager.notifications')}
           </h1>
-          <p className="mt-1 text-sm font-medium text-slate-500">
+          <p className="mt-1 text-sm font-medium" style={{ color: tokens.text.secondary }}>
             {t('manager.pendingBookingsToday', { count: bookings.length })}
           </p>
         </header>
 
-        <section>
-          <div className="mb-6 flex items-end justify-between border-b border-slate-200 pb-3">
-            <h2 className="text-lg font-extrabold text-orange-400">Reservation Requests</h2>
+        <section aria-labelledby="pending-requests-heading">
+          <div
+            className="mb-6 border-b pb-3"
+            style={{ borderBottomColor: tokens.border.subtle, borderBottomWidth: 1 }}
+          >
+            <div className="flex items-end justify-between">
+              <div className="flex flex-col gap-2">
+                <h2
+                  id="pending-requests-heading"
+                  className="text-sm font-extrabold uppercase tracking-wide"
+                  style={{ color: tokens.brand.accentOrangeFg }}
+                >
+                  Pending Requests
+                </h2>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="h-0.5 w-32 rounded"
+                    aria-hidden="true"
+                    style={{ backgroundColor: tokens.brand.accentOrange }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {loading && <div className="text-slate-400">Cargando...</div>}
-          {error && <div className="rounded-lg bg-red-100 p-3 text-red-700">{error}</div>}
+          <div aria-live="polite" aria-busy={loading ? 'true' : 'false'}>
+            {loading && (
+              <div className="text-sm font-medium" style={{ color: tokens.text.muted }}>
+                Cargando...
+              </div>
+            )}
+            {error && (
+              <div
+                role="alert"
+                className="rounded-lg border p-3 text-sm font-medium"
+                style={{
+                  backgroundColor: tokens.state.warningBg,
+                  borderColor: tokens.state.warningBorder,
+                  color: tokens.state.warningFg,
+                }}
+              >
+                {error}
+              </div>
+            )}
+          </div>
 
-          <div className="space-y-5">
+          <div className="mt-5 space-y-5">
             {!loading && bookings.length === 0 && !error && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600">
+              <div
+                className="rounded-2xl border p-6 text-sm font-medium"
+                style={{
+                  borderColor: tokens.border.default,
+                  backgroundColor: tokens.surface.paper,
+                  color: tokens.text.secondary,
+                }}
+              >
                 {t('manager.noPendingBookings')}
               </div>
             )}
@@ -133,15 +182,32 @@ export default function ManagerNotificationsPage(): React.ReactNode {
           </div>
         </section>
 
-        <footer className="mt-7 flex items-center justify-between border-t border-slate-200 pt-4 text-sm">
-          <span className="text-slate-500">
+        <footer
+          className="mt-7 flex items-center justify-between border-t pt-4 text-sm"
+          style={{ borderTopColor: tokens.border.subtle, borderTopWidth: 1 }}
+        >
+          <span style={{ color: tokens.text.secondary }}>
             Showing {bookings.length} of {bookings.length} pending requests
           </span>
-          <div className="flex gap-5 font-semibold text-slate-500">
-            <button type="button" className="transition hover:text-slate-900">
+          <div className="flex gap-5 font-semibold" style={{ color: tokens.text.secondary }}>
+            <button
+              type="button"
+              className="rounded-md px-2 py-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{
+                color: tokens.text.secondary,
+                outlineColor: tokens.brand.primary,
+              }}
+            >
               Previous
             </button>
-            <button type="button" className="transition hover:text-slate-900">
+            <button
+              type="button"
+              className="rounded-md px-2 py-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{
+                color: tokens.text.secondary,
+                outlineColor: tokens.brand.primary,
+              }}
+            >
               Next
             </button>
           </div>

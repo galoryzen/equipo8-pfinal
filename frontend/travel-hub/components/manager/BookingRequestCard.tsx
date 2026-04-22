@@ -2,6 +2,7 @@ import React from 'react';
 
 import Image from 'next/image';
 
+import { tokens } from '@/lib/theme/tokens';
 import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
 
@@ -49,7 +50,9 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                 <span className="rounded bg-orange-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-orange-700">
                   {isPending ? t('manager.pendingConfirmation') : booking.status}
                 </span>
-                <span className="text-xs text-slate-400">{booking.createdAt}</span>
+                <span className="text-xs font-medium" style={{ color: tokens.text.secondary }}>
+                  {booking.createdAt}
+                </span>
               </div>
               <h3 className="truncate text-2xl font-extrabold leading-tight text-slate-800">
                 Reservation Request: {booking.propertyName}
@@ -64,7 +67,10 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                 {booking.currency}
                 {booking.totalAmount.toLocaleString()}
               </div>
-              <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <div
+                className="mt-1 text-xs font-semibold uppercase tracking-wide"
+                style={{ color: tokens.text.secondary }}
+              >
                 {t('manager.totalStayValue')}
               </div>
             </div>
