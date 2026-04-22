@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import NextLink from 'next/link';
 
+import { getMe } from '@/app/lib/api/auth';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
@@ -28,6 +31,8 @@ const COPY: Record<NotFoundVariant, { title: string; description: string }> = {
   },
 };
 
+const MANAGER_ROLES = new Set(['HOTEL', 'AGENCY', 'ADMIN']);
+
 interface NotFoundViewProps {
   /** Qué mensaje mostrar; por defecto ruta inexistente. */
   variant?: NotFoundVariant;
@@ -35,6 +40,17 @@ interface NotFoundViewProps {
 
 export default function NotFoundView({ variant = 'route' }: NotFoundViewProps) {
   const { title, description } = COPY[variant];
+  const [isManager, setIsManager] = useState(false);
+
+  useEffect(() => {
+    getMe()
+      .then((user) => {
+        if (user && MANAGER_ROLES.has(user.role)) setIsManager(true);
+      })
+      .catch(() => {});
+  }, []);
+
+  const homeHref = isManager ? '/manager' : '/';
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 8, md: 12 } }}>
@@ -59,7 +75,7 @@ export default function NotFoundView({ variant = 'route' }: NotFoundViewProps) {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
           <Button
             component={NextLink}
-            href="/"
+            href={homeHref}
             variant="outlined"
             size="large"
             startIcon={<HomeOutlinedIcon />}
@@ -67,17 +83,19 @@ export default function NotFoundView({ variant = 'route' }: NotFoundViewProps) {
           >
             Ir al inicio
           </Button>
-          <Button
-            component={NextLink}
-            href="/traveler/search"
-            variant="contained"
-            size="large"
-            disableElevation
-            startIcon={<SearchIcon />}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
-          >
-            Buscar alojamientos
-          </Button>
+          {!isManager && (
+            <Button
+              component={NextLink}
+              href="/traveler/search"
+              variant="contained"
+              size="large"
+              disableElevation
+              startIcon={<SearchIcon />}
+              sx={{ borderRadius: 2, textTransform: 'none' }}
+            >
+              Buscar alojamientos
+            </Button>
+          )}
         </Stack>
       </Box>
     </Container>
