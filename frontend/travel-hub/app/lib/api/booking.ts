@@ -3,6 +3,7 @@ import type {
   BookingListItem,
   CartBooking,
   CreateCartBookingPayload,
+  GuestPayload,
   PaginatedResponse,
   PendingConfirmationBookingItem,
 } from '@/app/lib/types/booking';
@@ -44,6 +45,15 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
   return res.json();
 }
 
+export class CartConflictError extends Error {
+  existingBookingId: string;
+  constructor(message: string, existingBookingId: string) {
+    super(message);
+    this.name = 'CartConflictError';
+    this.existingBookingId = existingBookingId;
+  }
+}
+
 export async function createCartBooking(payload: CreateCartBookingPayload): Promise<CartBooking> {
   const res = await fetch(`${API_URL}/api/v1/booking/bookings`, {
     method: 'POST',
@@ -52,7 +62,11 @@ export async function createCartBooking(payload: CreateCartBookingPayload): Prom
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    throw new Error(await readErrorMessage(res));
+    const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (body?.code === 'CART_ALREADY_EXISTS' && typeof body.existing_booking_id === 'string') {
+      throw new CartConflictError(String(body.message), body.existing_booking_id);
+    }
+    throw new Error(body && 'message' in body ? String(body.message) : `Error ${res.status}`);
   }
   return res.json();
 }
@@ -101,4 +115,34 @@ export async function rejectBooking(bookingId: string): Promise<void> {
   if (!res.ok) {
     throw new Error(await readErrorMessage(res));
   }
+}
+
+export async function saveBookingGuests(bookingId: string, guests: GuestPayload[]): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/guests`,
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guests }),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+}
+
+export async function checkoutBooking(bookingId: string): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/checkout`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json();
 }

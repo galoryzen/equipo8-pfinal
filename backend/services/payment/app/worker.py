@@ -27,7 +27,13 @@ async def main() -> None:
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, _request_stop)
 
+    def _on_task_done(task: asyncio.Task) -> None:
+        if not task.cancelled() and task.exception() is not None:
+            logger.error("Consumer task crashed", exc_info=task.exception())
+            stop.set()
+
     run_task = asyncio.create_task(consumer.run())
+    run_task.add_done_callback(_on_task_done)
     try:
         await stop.wait()
     finally:

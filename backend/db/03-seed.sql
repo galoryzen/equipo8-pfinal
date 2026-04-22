@@ -702,6 +702,98 @@ INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_stat
   ('92000000-0000-0000-0000-000000000017', '90000000-0000-0000-0000-000000000006', 'PENDING_CONFIRMATION',   'REJECTED',               'Sin disponibilidad confirmada por el hotel', 'b0000000-0000-0000-0000-000000000002');
 
 -- =============================================
+-- guests_count + guest rows
+-- =============================================
+
+-- Set realistic guests_count for every booking
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000001'; -- Carlos  · Cancún CONFIRMED
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000002'; -- María   · Madrid PENDING_CONFIRMATION
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000003'; -- Lucía   · Buenos Aires CANCELLED
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000004'; -- Carlos  · CDMX CONFIRMED past
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000005'; -- Carlos  · Bogotá CANCELLED
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000006'; -- Carlos  · Palermo REJECTED
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000007'; -- Pablo   · Cancún PENDING_CONFIRMATION
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000008'; -- Carlos  · Cancún Standard
+UPDATE booking.booking SET guests_count = 3 WHERE id = '90000000-0000-0000-0000-000000000009'; -- María   · Cancún Suite
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000010'; -- Lucía   · CDMX Standard
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000011'; -- Pablo   · CDMX Deluxe
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000012'; -- Emily   · Cancún Standard
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000013'; -- Carlos  · CDMX Deluxe
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000014'; -- María   · Cancún Suite
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000015'; -- Lucía   · Cancún Standard
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000016'; -- Pablo   · CDMX Standard
+UPDATE booking.booking SET guests_count = 3 WHERE id = '90000000-0000-0000-0000-000000000017'; -- Emily   · CDMX Deluxe
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000018'; -- Carlos  · Cancún Suite
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000019'; -- María   · CDMX Standard
+UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000020'; -- Lucía   · CDMX Deluxe
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000021'; -- Pablo   · Cancún Standard
+UPDATE booking.booking SET guests_count = 4 WHERE id = '90000000-0000-0000-0000-000000000022'; -- Emily   · Cancún Suite
+
+-- Guest rows — primary guest is always the booking user
+INSERT INTO booking.guest (id, booking_id, is_primary, full_name, email, phone, created_at, updated_at) VALUES
+  -- Booking 1: Carlos (2 guests)
+  ('c0000000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000001', TRUE,  'Carlos García',    'carlos@example.com',  '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-000000000002', '90000000-0000-0000-0000-000000000001', FALSE, 'Ana García',       NULL, NULL,             now(), now()),
+  -- Booking 2: María (2 guests)
+  ('c0000000-0000-0000-0000-000000000003', '90000000-0000-0000-0000-000000000002', TRUE,  'María López',      'maria@example.com',   '+573001234567',  now(), now()),
+  ('c0000000-0000-0000-0000-000000000004', '90000000-0000-0000-0000-000000000002', FALSE, 'Luis López',       NULL, NULL,             now(), now()),
+  -- Booking 3: Lucía (1 guest)
+  ('c0000000-0000-0000-0000-000000000005', '90000000-0000-0000-0000-000000000003', TRUE,  'Lucía Fernández',  'lucia@example.com',   '+5491123456789', now(), now()),
+  -- Booking 4: Carlos past (1 guest)
+  ('c0000000-0000-0000-0000-000000000006', '90000000-0000-0000-0000-000000000004', TRUE,  'Carlos García',    'carlos@example.com',  '+5215512345678', now(), now()),
+  -- Booking 5: Carlos cancelled (2 guests)
+  ('c0000000-0000-0000-0000-000000000007', '90000000-0000-0000-0000-000000000005', TRUE,  'Carlos García',    'carlos@example.com',  '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-000000000008', '90000000-0000-0000-0000-000000000005', FALSE, 'Miguel García',    NULL, NULL,             now(), now()),
+  -- Booking 6: Carlos rejected (1 guest)
+  ('c0000000-0000-0000-0000-000000000009', '90000000-0000-0000-0000-000000000006', TRUE,  'Carlos García',    'carlos@example.com',  '+5215512345678', now(), now()),
+  -- Booking 7: Pablo (1 guest)
+  ('c0000000-0000-0000-0000-00000000000a', '90000000-0000-0000-0000-000000000007', TRUE,  'Pablo Ruiz',       'pablo@example.com',   '+34612345678',   now(), now()),
+  -- Booking 8: Carlos (2 guests)
+  ('c0000000-0000-0000-0000-00000000000b', '90000000-0000-0000-0000-000000000008', TRUE,  'Carlos García',    'carlos@example.com',  '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-00000000000c', '90000000-0000-0000-0000-000000000008', FALSE, 'Laura García',     NULL, NULL,             now(), now()),
+  -- Booking 9: María (3 guests)
+  ('c0000000-0000-0000-0000-00000000000d', '90000000-0000-0000-0000-000000000009', TRUE,  'María López',      'maria@example.com',   '+573001234567',  now(), now()),
+  ('c0000000-0000-0000-0000-00000000000e', '90000000-0000-0000-0000-000000000009', FALSE, 'Carmen López',     NULL, NULL,             now(), now()),
+  ('c0000000-0000-0000-0000-00000000000f', '90000000-0000-0000-0000-000000000009', FALSE, 'Diego López',      NULL, NULL,             now(), now()),
+  -- Booking 10: Lucía (1 guest)
+  ('c0000000-0000-0000-0000-000000000010', '90000000-0000-0000-0000-000000000010', TRUE,  'Lucía Fernández',  'lucia@example.com',   '+5491123456789', now(), now()),
+  -- Booking 11: Pablo (2 guests)
+  ('c0000000-0000-0000-0000-000000000011', '90000000-0000-0000-0000-000000000011', TRUE,  'Pablo Ruiz',       'pablo@example.com',   '+34612345678',   now(), now()),
+  ('c0000000-0000-0000-0000-000000000012', '90000000-0000-0000-0000-000000000011', FALSE, 'Elena Ruiz',       NULL, NULL,             now(), now()),
+  -- Booking 12: Emily (2 guests)
+  ('c0000000-0000-0000-0000-000000000013', '90000000-0000-0000-0000-000000000012', TRUE,  'Emily Johnson',    'emily@example.com',   '+12025551234',   now(), now()),
+  ('c0000000-0000-0000-0000-000000000014', '90000000-0000-0000-0000-000000000012', FALSE, 'Mark Johnson',     NULL, NULL,             now(), now()),
+  -- Booking 13: Carlos (1 guest)
+  ('c0000000-0000-0000-0000-000000000015', '90000000-0000-0000-0000-000000000013', TRUE,  'Carlos García',    'carlos@example.com',  '+5215512345678', now(), now()),
+  -- Booking 14: María (2 guests)
+  ('c0000000-0000-0000-0000-000000000016', '90000000-0000-0000-0000-000000000014', TRUE,  'María López',      'maria@example.com',   '+573001234567',  now(), now()),
+  ('c0000000-0000-0000-0000-000000000017', '90000000-0000-0000-0000-000000000014', FALSE, 'Andrés López',     NULL, NULL,             now(), now()),
+  -- Booking 15: Lucía (2 guests)
+  ('c0000000-0000-0000-0000-000000000018', '90000000-0000-0000-0000-000000000015', TRUE,  'Lucía Fernández',  'lucia@example.com',   '+5491123456789', now(), now()),
+  ('c0000000-0000-0000-0000-000000000019', '90000000-0000-0000-0000-000000000015', FALSE, 'Tomás Fernández',  NULL, NULL,             now(), now()),
+  -- Booking 16: Pablo (1 guest)
+  ('c0000000-0000-0000-0000-00000000001a', '90000000-0000-0000-0000-000000000016', TRUE,  'Pablo Ruiz',       'pablo@example.com',   '+34612345678',   now(), now()),
+  -- Booking 17: Emily (3 guests)
+  ('c0000000-0000-0000-0000-00000000001b', '90000000-0000-0000-0000-000000000017', TRUE,  'Emily Johnson',    'emily@example.com',   '+12025551234',   now(), now()),
+  ('c0000000-0000-0000-0000-00000000001c', '90000000-0000-0000-0000-000000000017', FALSE, 'Sarah Johnson',    NULL, NULL,             now(), now()),
+  ('c0000000-0000-0000-0000-00000000001d', '90000000-0000-0000-0000-000000000017', FALSE, 'Tom Johnson',      NULL, NULL,             now(), now()),
+  -- Booking 18: Carlos (2 guests)
+  ('c0000000-0000-0000-0000-00000000001e', '90000000-0000-0000-0000-000000000018', TRUE,  'Carlos García',    'carlos@example.com',  '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-00000000001f', '90000000-0000-0000-0000-000000000018', FALSE, 'Sofía García',     NULL, NULL,             now(), now()),
+  -- Booking 19: María (1 guest)
+  ('c0000000-0000-0000-0000-000000000020', '90000000-0000-0000-0000-000000000019', TRUE,  'María López',      'maria@example.com',   '+573001234567',  now(), now()),
+  -- Booking 20: Lucía (2 guests)
+  ('c0000000-0000-0000-0000-000000000021', '90000000-0000-0000-0000-000000000020', TRUE,  'Lucía Fernández',  'lucia@example.com',   '+5491123456789', now(), now()),
+  ('c0000000-0000-0000-0000-000000000022', '90000000-0000-0000-0000-000000000020', FALSE, 'Valentina Fernández', NULL, NULL,          now(), now()),
+  -- Booking 21: Pablo (1 guest)
+  ('c0000000-0000-0000-0000-000000000023', '90000000-0000-0000-0000-000000000021', TRUE,  'Pablo Ruiz',       'pablo@example.com',   '+34612345678',   now(), now()),
+  -- Booking 22: Emily (4 guests)
+  ('c0000000-0000-0000-0000-000000000024', '90000000-0000-0000-0000-000000000022', TRUE,  'Emily Johnson',    'emily@example.com',   '+12025551234',   now(), now()),
+  ('c0000000-0000-0000-0000-000000000025', '90000000-0000-0000-0000-000000000022', FALSE, 'Chris Johnson',    NULL, NULL,             now(), now()),
+  ('c0000000-0000-0000-0000-000000000026', '90000000-0000-0000-0000-000000000022', FALSE, 'Amy Johnson',      NULL, NULL,             now(), now()),
+  ('c0000000-0000-0000-0000-000000000027', '90000000-0000-0000-0000-000000000022', FALSE, 'Ryan Johnson',     NULL, NULL,             now(), now());
+
+-- =============================================
 -- payments
 -- =============================================
 

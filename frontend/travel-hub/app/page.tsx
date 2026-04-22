@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import { getMe } from '@/app/lib/api/auth';
 import type { CityOut } from '@/app/lib/types/catalog';
 import { tokens as th } from '@/lib/theme/tokens';
 import Box from '@mui/material/Box';
@@ -27,11 +28,21 @@ function defaultCheckout(): string {
   return d.toISOString().slice(0, 10);
 }
 
+const MANAGER_ROLES = new Set(['HOTEL', 'AGENCY', 'ADMIN']);
+
 export default function HomePage() {
   const router = useRouter();
   const [checkin, setCheckin] = useState(defaultCheckin);
   const [checkout, setCheckout] = useState(defaultCheckout);
   const [guests, setGuests] = useState(1);
+
+  useEffect(() => {
+    getMe()
+      .then((user) => {
+        if (user && MANAGER_ROLES.has(user.role)) router.replace('/manager');
+      })
+      .catch(() => {});
+  }, [router]);
 
   const handleSearch = (city: CityOut | null) => {
     if (city) {

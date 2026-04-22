@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { getMe, logoutUser } from '@/app/lib/api/auth';
@@ -155,7 +156,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               {MENU_ITEMS.map((item, index) => (
                 <ListItem key={index} disablePadding sx={{ display: 'block' }}>
                   <ListItemButton
-                    component="a"
+                    component={Link}
                     href={item.href}
                     selected={isActive(item.href)}
                     sx={{

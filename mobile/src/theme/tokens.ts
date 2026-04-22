@@ -25,6 +25,8 @@ export const colors = {
   status: {
     success: '#22C55E',
     error: '#EF4444',
+    /** Red 700 — error text on white / soft surfaces, ≥4.5:1 WCAG AA */
+    errorText: '#B91C1C',
     warning: '#F59E0B',
   },
 

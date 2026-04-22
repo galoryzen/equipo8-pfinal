@@ -41,6 +41,14 @@ const eslintConfig = defineConfig([
     },
     plugins: { i18next },
   },
+  // Disable a11y rules for test files — axe handles accessibility assertions there.
+  {
+    name: 'jsx-a11y/disable-in-tests',
+    files: ['**/__tests__/**', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    rules: Object.fromEntries(
+      Object.keys(jsxA11y.flatConfigs.recommended.rules).map((rule) => [rule, 'off'])
+    ),
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

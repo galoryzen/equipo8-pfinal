@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from uuid import UUID
 
 import httpx
-from fastapi import Depends, Header
+from fastapi import Cookie, Depends, Header
 from shared.events import DomainEventPublisher, build_event_publisher
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -67,18 +67,23 @@ def get_payment_gateway() -> PaymentGatewayPort:
     return _mock_payment_gateway
 
 
-def get_authorization_header(authorization: str | None = Header(None)) -> str:
-    if not authorization:
-        raise InvalidTokenError("Authentication required")
-    return authorization
+def get_authorization_header(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> str:
+    """Return a canonical 'Bearer <token>' string from either the Authorization
+    header or the access_token cookie (same pattern as the booking service)."""
+    if authorization and authorization.lower().startswith("bearer "):
+        return authorization
+    if access_token:
+        return f"Bearer {access_token}"
+    raise InvalidTokenError("Authentication required")
 
 
 def get_current_user_id(
     authorization: str = Depends(get_authorization_header),
     token_adapter: TokenPort = Depends(get_token_adapter),
 ) -> UUID:
-    if not authorization.lower().startswith("bearer "):
-        raise InvalidTokenError("Authentication required")
     raw = authorization[7:].strip()
     payload = token_adapter.decode_access_token(raw)
     if not payload:
