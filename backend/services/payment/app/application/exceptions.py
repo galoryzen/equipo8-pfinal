@@ -16,23 +16,3 @@ class BookingNotPayableError(Exception):
 
 class PaymentIntentNotFoundError(Exception):
     pass
-
-
-class PaymentNotAllowedError(Exception):
-    """User cannot act on this intent."""
-
-
-class PaymentAlreadyTerminalError(Exception):
-    """Intent already succeeded or failed — idempotent no-op for duplicate operations."""
-
-
-class InvalidMockPaymentTokenError(Exception):
-    pass
-
-
-class WebhookAuthError(Exception):
-    pass
-
-
-class WebhookIdempotentReplayError(Exception):
-    """Duplicate webhook with same idempotency key — caller should return success without side effects."""

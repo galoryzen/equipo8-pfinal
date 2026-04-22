@@ -60,13 +60,11 @@ export default function CheckoutScreen() {
   const { user } = useAuth();
   const countdown = useCountdown(cart?.hold_expires_at);
 
-  // Si no hay cart (directo navigate o session expirada), volver al home.
-  useEffect(() => {
-    if (!loading && !cart) {
-      router.replace('/');
-    }
-  }, [loading, cart, router]);
-
+  // NOTE: this screen stays mounted in the Stack when the user advances to
+  // /booking/payment. If we redirected to "/" whenever cart turns null, we'd
+  // race with the post-checkout flow (the payment screen clears the cart once
+  // it's authorized, which is expected). Render an empty state instead and let
+  // the user re-enter the flow from home manually.
   const guestsCount = cart?.guests_count ?? 1;
 
   const [guests, setGuests] = useState<Guest[]>(() =>

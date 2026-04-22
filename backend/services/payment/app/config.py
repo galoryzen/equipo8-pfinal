@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     EVENTBRIDGE_BUS_NAME: str | None = None
     EVENTBRIDGE_REGION: str | None = None
 
+    PAYMENT_REQUESTED_QUEUE: str = "payment.payment-requested"
+
     model_config = {"env_prefix": "PAYMENT_", "env_file": ".env", "extra": "ignore"}
 
 

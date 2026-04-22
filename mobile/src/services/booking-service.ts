@@ -114,3 +114,36 @@ export async function listBookingGuests(bookingId: string): Promise<Guest[]> {
   );
   return resp.data;
 }
+
+/**
+ * Raised when POST /checkout returns 409 or 422. `code` mirrors the backend
+ * contract: INVALID_BOOKING_STATE (409, cart not in CART or hold expired) or
+ * CHECKOUT_GUESTS_INCOMPLETE (422, guests missing/primary issue).
+ */
+export class CheckoutInvalidStateError extends Error {
+  constructor(public code: string, message: string) {
+    super(message);
+    this.name = 'CheckoutInvalidStateError';
+  }
+}
+
+export async function checkoutBooking(bookingId: string): Promise<BookingDetail> {
+  try {
+    const resp = await api.post<BookingDetail>(
+      `/v1/booking/bookings/${encodeURIComponent(bookingId)}/checkout`,
+    );
+    return resp.data;
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response) {
+      const status = err.response.status;
+      const body = err.response.data as { code?: string; message?: string } | undefined;
+      if (status === 409 || status === 422) {
+        throw new CheckoutInvalidStateError(
+          body?.code ?? 'CHECKOUT_INVALID',
+          body?.message ?? 'Checkout failed',
+        );
+      }
+    }
+    throw err;
+  }
+}

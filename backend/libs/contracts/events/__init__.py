@@ -1,15 +1,19 @@
 from contracts.events.base import DomainEventEnvelope
 from contracts.events.payment import (
+    PAYMENT_AUTHORIZED,
     PAYMENT_FAILED,
-    PAYMENT_SUCCEEDED,
+    PAYMENT_REQUESTED,
+    PaymentAuthorizedPayload,
     PaymentFailedPayload,
-    PaymentSucceededPayload,
+    PaymentRequestedPayload,
 )
 
 __all__ = [
     "DomainEventEnvelope",
+    "PAYMENT_AUTHORIZED",
     "PAYMENT_FAILED",
-    "PAYMENT_SUCCEEDED",
+    "PAYMENT_REQUESTED",
+    "PaymentAuthorizedPayload",
     "PaymentFailedPayload",
-    "PaymentSucceededPayload",
+    "PaymentRequestedPayload",
 ]

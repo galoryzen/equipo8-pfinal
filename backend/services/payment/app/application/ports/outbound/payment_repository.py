@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from app.domain.models import Payment, PaymentAttempt, PaymentIntent, WebhookEvent
+from app.domain.models import Payment, PaymentAttempt, PaymentIntent
 
 
 class PaymentRepository(ABC):
@@ -24,7 +24,3 @@ class PaymentRepository(ABC):
     @abstractmethod
     async def persist_success(self, intent: PaymentIntent, charge: Payment) -> None:
         pass
-
-    @abstractmethod
-    async def try_insert_webhook_event(self, row: WebhookEvent) -> bool:
-        """Return True if inserted, False if idempotency key already existed."""
