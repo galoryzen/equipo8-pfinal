@@ -122,8 +122,6 @@ class Guest(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
 
-    confirmed_at: Mapped[datetime | None] = mapped_column(nullable=True)
-
     booking: Mapped[Booking] = relationship(back_populates="guests")
 
 
