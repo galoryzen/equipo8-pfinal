@@ -7,31 +7,20 @@ from app.domain.models import Booking, BookingStatus
 from app.schemas.booking import BookingDetailOut
 
 
-class InventoryConflictError(Exception):
-    pass
-
-
-class ConfirmBookingUseCase:
+class RejectBookingUseCase:
     def __init__(self, repo: BookingRepository):
         self._repo = repo
 
-    async def execute(self, booking_id: UUID, user_id: UUID | None, notes: str | None = None) -> BookingDetailOut:
-        if user_id is None:
-            booking = await self._repo.get_by_id(booking_id)
-        else:
-            booking = await self._repo.get_by_id_for_user(booking_id, user_id)
+    async def execute(self, booking_id: UUID) -> BookingDetailOut:
+        booking = await self._repo.get_by_id(booking_id)
         if booking is None:
             raise BookingNotFoundError()
         if booking.status != BookingStatus.PENDING_CONFIRMATION:
             raise ValueError("La reserva no está pendiente de confirmación.")
 
-        if not await self._repo.check_inventory(booking):
-            raise InventoryConflictError("No hay disponibilidad suficiente para confirmar la reserva.")
-
-        booking.status = BookingStatus.CONFIRMED
+        booking.status = BookingStatus.REJECTED
         booking.updated_at = datetime.utcnow()
         await self._repo.update(booking)
-        await self._repo.decrement_inventory(booking)
         return _to_detail(booking)
 
 

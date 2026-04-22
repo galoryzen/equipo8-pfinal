@@ -78,6 +78,14 @@ class BookingDetailOut(BaseModel):
     updated_at: datetime
 
 
+class PaginatedBookingListOut(BaseModel):
+    items: list[BookingListItemOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
 class CartBookingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

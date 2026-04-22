@@ -3,8 +3,8 @@ import type {
   BookingListItem,
   CartBooking,
   CreateCartBookingPayload,
+  PaginatedResponse,
   PendingConfirmationBookingItem,
-  PendingConfirmationBookingsEnvelope,
 } from '@/app/lib/types/booking';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
@@ -20,8 +20,12 @@ async function readErrorMessage(res: Response): Promise<string> {
 /**
  * Lists bookings for the authenticated traveler (cookie `access_token`, same origin).
  */
-export async function getMyBookings(): Promise<BookingListItem[]> {
-  const res = await fetch(`${API_URL}/api/v1/booking/bookings`, {
+export async function getMyBookings(
+  page = 1,
+  pageSize = 10
+): Promise<PaginatedResponse<BookingListItem>> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
     credentials: 'include',
   });
   if (!res.ok) {
@@ -53,34 +57,41 @@ export async function createCartBooking(payload: CreateCartBookingPayload): Prom
   return res.json();
 }
 
-export async function fetchPendingConfirmationBookings(): Promise<
-  PendingConfirmationBookingItem[]
-> {
-  const res = await fetch(`${API_URL}/api/v1/booking/bookings?status=PENDING_CONFIRMATION`, {
+export async function fetchPendingConfirmationBookings(
+  page = 1,
+  pageSize = 5
+): Promise<PaginatedResponse<PendingConfirmationBookingItem>> {
+  const params = new URLSearchParams({
+    status: 'PENDING_CONFIRMATION',
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
     credentials: 'include',
   });
   if (!res.ok) {
     throw new Error(await readErrorMessage(res));
   }
-
-  const data: unknown = await res.json();
-  if (Array.isArray(data)) {
-    return data as PendingConfirmationBookingItem[];
-  }
-
-  if (data && typeof data === 'object' && 'bookings' in data) {
-    const envelope = data as PendingConfirmationBookingsEnvelope;
-    if (Array.isArray(envelope.bookings)) {
-      return envelope.bookings;
-    }
-  }
-
-  throw new Error('Invalid pending bookings response format');
+  return res.json();
 }
 
 export async function confirmBooking(bookingId: string): Promise<void> {
   const res = await fetch(
     `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/confirm`,
+    {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+}
+
+export async function rejectBooking(bookingId: string): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/reject`,
     {
       method: 'PATCH',
       credentials: 'include',

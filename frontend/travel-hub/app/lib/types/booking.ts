@@ -46,6 +46,14 @@ export interface PendingConfirmationBookingsEnvelope {
   bookings: PendingConfirmationBookingItem[];
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 export interface BookingDetail {
   id: string;
   status: string;

@@ -19,6 +19,7 @@ from app.application.use_cases.create_cart_booking import CreateCartBookingUseCa
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
+from app.application.use_cases.reject_booking import RejectBookingUseCase
 from app.application.use_cases.save_booking_guests import SaveBookingGuestsUseCase
 from app.config import settings
 
@@ -128,6 +129,13 @@ def get_confirm_booking_use_case(
 ) -> ConfirmBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
     return ConfirmBookingUseCase(repo)
+
+
+def get_reject_booking_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> RejectBookingUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return RejectBookingUseCase(repo)
 
 # Devuelve un dict con el role y user_id extraídos del token JWT
 def get_current_user_info(
