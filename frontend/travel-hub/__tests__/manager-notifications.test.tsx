@@ -1,3 +1,4 @@
+import { confirmBooking } from '@/app/lib/api/booking';
 import ManagerNotificationsPage from '@/app/manager/notifications/page';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -5,52 +6,52 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockBookings } from './mockBookings';
 import { renderWithI18n } from './test-utils';
 
-vi.mock('@/services/bookingApi', () => ({
-  confirmBooking: vi.fn(async (id, notes) => {
-    if (notes === 'conflicto') throw new Error('conflicto de inventario');
-    return { status: 'CONFIRMED' };
+vi.mock('@/app/lib/api/booking', () => ({
+  fetchPendingConfirmationBookings: vi.fn(async () => {
+    return mockBookings.map((b) => ({
+      id: b.id,
+      property_name: b.propertyName,
+      image_url: b.imageUrl,
+      status: b.status,
+      guest_name: b.guestName,
+      checkin: b.checkin,
+      checkout: b.checkout,
+      nights: b.nights,
+      guests: b.guests,
+      total_amount: b.totalAmount,
+      currency_code: b.currency,
+      created_at: b.createdAt,
+    }));
   }),
+  confirmBooking: vi.fn(async () => undefined),
 }));
 
 describe('ManagerNotificationsPage', () => {
   it('muestra reservas pendientes y permite confirmar', async () => {
-    type Booking = (typeof mockBookings)[number];
-    let bookingsState: Booking[] = [...mockBookings];
-    const setBookings: React.Dispatch<React.SetStateAction<Booking[]>> = (fn) => {
-      bookingsState = typeof fn === 'function' ? fn(bookingsState) : fn;
-    };
-    const { rerender } = renderWithI18n(
-      <ManagerNotificationsPage testBookings={bookingsState} testSetBookings={setBookings} />
-    );
-    expect(screen.getByText(/Deluxe Garden Suite/)).toBeTruthy();
-    // Click en el botón de la card (el primero con ese texto)
-    const cardButtons = screen.getAllByRole('button', { name: /Confirm(ar reserva| booking)/i });
-    fireEvent.click(cardButtons[0]);
-    // Click en el botón del modal (el último con ese texto)
-    const modalButtons = screen.getAllByRole('button', { name: /Confirm(ar reserva| booking)/i });
-    fireEvent.click(modalButtons[modalButtons.length - 1]);
-    // Simular actualización de bookings
-    rerender(<ManagerNotificationsPage testBookings={[]} testSetBookings={setBookings} />);
-    await waitFor(() =>
-      expect(screen.queryByText(/notas internas para el personal del hotel/i)).toBeFalsy()
-    );
+    renderWithI18n(<ManagerNotificationsPage />);
+
+    expect(await screen.findByText(/Deluxe Garden Suite/i)).toBeTruthy();
+
+    const confirmButtons = screen.getAllByRole('button', { name: /confirm/i });
+    fireEvent.click(confirmButtons[0]);
+
+    await waitFor(() => expect(screen.queryByText(/Deluxe Garden Suite/i)).toBeFalsy());
     expect(screen.getByText(/No hay reservas pendientes|No pending bookings/i)).toBeTruthy();
+    expect(vi.mocked(confirmBooking)).toHaveBeenCalledTimes(1);
   });
 
   it('muestra alerta de conflicto de inventario', async () => {
-    type Booking = (typeof mockBookings)[number];
-    let bookingsState: Booking[] = [...mockBookings];
-    const setBookings: React.Dispatch<React.SetStateAction<Booking[]>> = (fn) => {
-      bookingsState = typeof fn === 'function' ? fn(bookingsState) : fn;
-    };
-    renderWithI18n(
-      <ManagerNotificationsPage testBookings={bookingsState} testSetBookings={setBookings} />
-    );
-    // Click en el botón de la card (el primero con ese texto)
-    const cardButtons = screen.getAllByRole('button', { name: /Confirm(ar reserva| booking)/i });
-    fireEvent.click(cardButtons[0]);
-    // Click en el botón del modal (el último con ese texto)
-    const modalButtons = screen.getAllByRole('button', { name: /Confirm(ar reserva| booking)/i });
-    fireEvent.click(modalButtons[modalButtons.length - 1]);
+    vi.mocked(confirmBooking).mockRejectedValueOnce(new Error('conflicto de inventario'));
+    renderWithI18n(<ManagerNotificationsPage />);
+
+    expect(await screen.findByText(/Deluxe Garden Suite/i)).toBeTruthy();
+
+    const confirmButtons = screen.getAllByRole('button', { name: /confirm/i });
+    fireEvent.click(confirmButtons[0]);
+
+    await waitFor(async () => {
+      const alert = await screen.findByRole('alert');
+      expect(alert.textContent ?? '').toMatch(/conflicto de inventario/i);
+    });
   });
 });
