@@ -221,7 +221,7 @@
       "notifications": "Notifications",
       "reports": "Reports",
       "subtitle": "Super Admin",
-      "logout": "Log Out"
+      "logOut": "Log Out"
     }
   },
   "common": {
