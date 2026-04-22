@@ -131,8 +131,14 @@ function PaymentPageContent() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  // Additional guests (non-primary)
-  const [additionalGuests, setAdditionalGuests] = useState<AdditionalGuest[]>([]);
+  // Additional guests (non-primary) — pre-filled from the guest count chosen at reservation
+  const [additionalGuests, setAdditionalGuests] = useState<AdditionalGuest[]>(() =>
+    Array.from({ length: Math.max(0, guests - 1) }, () => ({
+      id: crypto.randomUUID(),
+      firstName: '',
+      lastName: '',
+    }))
+  );
 
   // Payment method
   const [paymentTab, setPaymentTab] = useState(0);
@@ -872,7 +878,7 @@ function PaymentPageContent() {
                   )}
 
                   {/* Add guest button */}
-                  {additionalGuests.length < 19 && (
+                  {additionalGuests.length < Math.max(guests - 1, 0) && (
                     <Button
                       variant="outlined"
                       size="small"
