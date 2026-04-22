@@ -5,8 +5,16 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { createCartBooking, getBookingDetail } from '@/app/lib/api/booking';
+import {
+  CartConflictError,
+  checkoutBooking,
+  createCartBooking,
+  getBookingDetail,
+  saveBookingGuests,
+} from '@/app/lib/api/booking';
+import { createPaymentIntent } from '@/app/lib/api/payment';
 import type { CartBooking } from '@/app/lib/types/booking';
+import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import Alert from '@mui/material/Alert';
 import Backdrop from '@mui/material/Backdrop';
 import Box from '@mui/material/Box';
@@ -18,8 +26,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import LinearProgress from '@mui/material/LinearProgress';
 import Paper from '@mui/material/Paper';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -59,6 +70,29 @@ function formatDateShort(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
 }
 
+function formatExpiryInput(digits: string): string {
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
+}
+
+function isExpiryInPast(expiry: string): boolean {
+  const match = expiry.match(/^(\d{2})\/(\d{2})$/);
+  if (!match) return false;
+  const month = parseInt(match[1], 10);
+  const year = parseInt(match[2], 10) + 2000;
+  const now = new Date();
+  return (
+    year < now.getFullYear() ||
+    (year === now.getFullYear() && month < now.getMonth() + 1 && month > 0 && month <= 12)
+  );
+}
+
+interface AdditionalGuest {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 function PaymentPageContent() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -80,6 +114,7 @@ function PaymentPageContent() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
+  const [conflictBookingId, setConflictBookingId] = useState<string | null>(null);
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [expired, setExpired] = useState(false);
   const [isResumed, setIsResumed] = useState(false);
@@ -89,6 +124,15 @@ function PaymentPageContent() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+
+  // Processing / snackbar
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  // Additional guests (non-primary)
+  const [additionalGuests, setAdditionalGuests] = useState<AdditionalGuest[]>([]);
 
   // Payment method
   const [paymentTab, setPaymentTab] = useState(0);
@@ -106,6 +150,15 @@ function PaymentPageContent() {
     const b = new Date(checkout + 'T00:00:00');
     return Math.max(0, Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24)));
   }, [checkin, checkout]);
+
+  const guestDetailsFilled = useMemo(
+    () =>
+      firstName.trim().length > 0 &&
+      lastName.trim().length > 0 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
+      phone.trim().length > 0,
+    [firstName, lastName, email, phone]
+  );
 
   const basePrice = useMemo(() => parseFloat(unitPrice) * nights, [unitPrice, nights]);
   const taxes = useMemo(() => parseFloat((basePrice * TAX_RATE).toFixed(2)), [basePrice]);
@@ -218,6 +271,9 @@ function PaymentPageContent() {
         router.replace(`/traveler/payment?${params.toString()}`);
       } catch (e) {
         if (mountedRef.current) {
+          if (e instanceof CartConflictError) {
+            setConflictBookingId(e.existingBookingId);
+          }
           setInitError(e instanceof Error ? e.message : 'Could not create booking hold.');
           setLoading(false);
         }
@@ -254,6 +310,111 @@ function PaymentPageContent() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [bookingId, propertyId, roomTypeId, checkin, checkout, handleBookingResolved]);
 
+  const handlePay = useCallback(async () => {
+    if (!bookingId) return;
+    setIsProcessing(true);
+    setProcessingProgress(10);
+
+    try {
+      // 0. Read current booking status — save-guests requires CART state,
+      //    but a previous failed attempt may have already moved it to PENDING_PAYMENT.
+      const current = await getBookingDetail(bookingId);
+      setProcessingProgress(20);
+
+      if (current.status === 'CART') {
+        // 1. Save guests (only valid in CART state)
+        const guests = [
+          {
+            is_primary: true,
+            full_name: `${firstName.trim()} ${lastName.trim()}`,
+            email: email.trim(),
+            phone: phone.trim(),
+          },
+          ...additionalGuests.map((g) => ({
+            is_primary: false,
+            full_name: `${g.firstName.trim()} ${g.lastName.trim()}`,
+            email: null,
+            phone: null,
+          })),
+        ];
+        await saveBookingGuests(bookingId, guests);
+        setProcessingProgress(45);
+
+        // 2. Checkout (CART → PENDING_PAYMENT)
+        await checkoutBooking(bookingId);
+        setProcessingProgress(65);
+      } else if (current.status === 'PENDING_PAYMENT') {
+        // Already past checkout from a previous attempt — skip straight to payment intent
+        setProcessingProgress(65);
+      } else {
+        throw new Error(`${t('payment.paymentError')} (status: ${current.status})`);
+      }
+
+      // 3. Create payment intent (idempotent: backend returns existing intent if already created)
+      await createPaymentIntent(bookingId);
+      setProcessingProgress(80);
+
+      // 4. Poll for booking status (max 30s)
+      const deadline = Date.now() + 30_000;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const detail = await getBookingDetail(bookingId);
+        if (detail.status === 'CONFIRMED') {
+          setProcessingProgress(100);
+          await new Promise((r) => setTimeout(r, 600));
+          const confirmParams = new URLSearchParams({
+            booking_id: bookingId,
+            property_name: propertyName,
+            room_name: roomName,
+            image_url: imageUrl,
+            checkin,
+            checkout,
+            guests: String(guests),
+            unit_price: unitPrice,
+            currency,
+            guest_name: `${firstName.trim()} ${lastName.trim()}`,
+            guest_email: email.trim(),
+            ...(cardNumber.length >= 4 && {
+              card_last4: cardNumber.replace(/\s/g, '').slice(-4),
+              card_brand: 'Visa',
+            }),
+          });
+          router.push(`/traveler/payment/confirmation?${confirmParams.toString()}`);
+          return;
+        }
+        if (detail.status === 'REJECTED' || detail.status === 'CANCELLED') {
+          throw new Error(t('payment.paymentRejected'));
+        }
+      }
+      throw new Error(t('payment.paymentTimeout'));
+    } catch (err) {
+      setIsProcessing(false);
+      setProcessingProgress(0);
+      setSnackbarMessage(err instanceof Error ? err.message : t('payment.paymentError'));
+      setSnackbarOpen(true);
+    }
+  }, [
+    bookingId,
+    firstName,
+    lastName,
+    email,
+    phone,
+    additionalGuests,
+    router,
+    t,
+    cardNumber,
+    checkin,
+    checkout,
+    currency,
+    guests,
+    imageUrl,
+    propertyName,
+    roomName,
+    unitPrice,
+  ]);
+
+  const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
@@ -266,19 +427,48 @@ function PaymentPageContent() {
   }
 
   if (initError) {
+    const resumeParams = conflictBookingId
+      ? new URLSearchParams({
+          booking_id: conflictBookingId,
+          property_id: propertyId,
+          room_type_id: roomTypeId,
+          rate_plan_id: ratePlanId,
+          checkin,
+          checkout,
+          guests: String(guests),
+          unit_price: unitPrice,
+          currency,
+          property_name: propertyName,
+          room_name: roomName,
+          ...(imageUrl && { image_url: imageUrl }),
+        })
+      : null;
+
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
         <Alert severity="error" sx={{ mb: 3 }}>
           {initError}
         </Alert>
-        <Button
-          component={NextLink}
-          href="/traveler/search"
-          variant="outlined"
-          sx={{ textTransform: 'none' }}
-        >
-          {t('payment.backToSearch')}
-        </Button>
+        <Stack spacing={2} direction="row" flexWrap="wrap">
+          {resumeParams && (
+            <Button
+              component={NextLink}
+              href={`/traveler/payment?${resumeParams.toString()}`}
+              variant="contained"
+              sx={{ textTransform: 'none' }}
+            >
+              {t('payment.resumeReservation')}
+            </Button>
+          )}
+          <Button
+            component={NextLink}
+            href="/traveler/search"
+            variant="outlined"
+            sx={{ textTransform: 'none' }}
+          >
+            {t('payment.backToSearch')}
+          </Button>
+        </Stack>
       </Container>
     );
   }
@@ -287,6 +477,109 @@ function PaymentPageContent() {
 
   return (
     <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 6 }}>
+      {/* ── Processing overlay ── */}
+      <Backdrop
+        open={isProcessing}
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 2, bgcolor: 'grey.50' }}
+      >
+        <Container maxWidth="sm" sx={{ textAlign: 'center', py: 6 }}>
+          <Box
+            sx={{
+              width: 96,
+              height: 96,
+              borderRadius: '50%',
+              border: '3px solid',
+              borderColor: 'grey.200',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 4,
+            }}
+          >
+            <CircularProgress size={48} thickness={3} />
+          </Box>
+
+          <Typography variant="h4" fontWeight={800} sx={{ mb: 1.5, letterSpacing: '-0.02em' }}>
+            {t('payment.processingTitle')}
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 4 }}>
+            {t('payment.processingBody')}{' '}
+            <Box component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>
+              {propertyName}
+            </Box>
+            {'. '}
+            {t('payment.processingNote')}
+          </Typography>
+
+          <Box sx={{ mb: 5 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="body2" color="primary.main" fontWeight={600}>
+                {t('payment.processingStatus')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {processingProgress}%
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={processingProgress}
+              sx={{ height: 8, borderRadius: 4 }}
+            />
+          </Box>
+
+          <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
+            {[
+              {
+                icon: '🛡️',
+                label: t('payment.processingFeature1Title'),
+                desc: t('payment.processingFeature1Desc'),
+              },
+              {
+                icon: '💳',
+                label: t('payment.processingFeature2Title'),
+                desc: t('payment.processingFeature2Desc'),
+              },
+              {
+                icon: '🎧',
+                label: t('payment.processingFeature3Title'),
+                desc: t('payment.processingFeature3Desc'),
+              },
+            ].map((f) => (
+              <Grid key={f.label} size={{ xs: 12, sm: 4 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, textAlign: 'center' }}>
+                  <Typography variant="h5" sx={{ mb: 0.5 }}>
+                    {f.icon}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700}>
+                    {f.label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {f.desc}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Typography variant="caption" color="text.secondary">
+            {t('payment.processingWarning')}
+          </Typography>
+        </Container>
+      </Backdrop>
+
+      {/* ── Error snackbar ── */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setSnackbarOpen(false)} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
       {/* Expired overlay */}
       <Backdrop open={expired} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Paper
@@ -428,6 +721,20 @@ function PaymentPageContent() {
                     </Button>
                   </Box>
 
+                  {/* Primary guest */}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight={600}
+                    sx={{
+                      mb: 1,
+                      display: 'block',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {t('payment.primaryGuest')}
+                  </Typography>
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
@@ -436,6 +743,7 @@ function PaymentPageContent() {
                         onChange={(e) => setFirstName(e.target.value)}
                         fullWidth
                         size="small"
+                        required
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
@@ -445,6 +753,7 @@ function PaymentPageContent() {
                         onChange={(e) => setLastName(e.target.value)}
                         fullWidth
                         size="small"
+                        required
                       />
                     </Grid>
                     <Grid size={12}>
@@ -455,6 +764,7 @@ function PaymentPageContent() {
                         onChange={(e) => setEmail(e.target.value)}
                         fullWidth
                         size="small"
+                        required
                         helperText={t('payment.emailHelper')}
                       />
                     </Grid>
@@ -466,6 +776,7 @@ function PaymentPageContent() {
                         onChange={(e) => setPhone(e.target.value)}
                         fullWidth
                         size="small"
+                        required
                         slotProps={{
                           input: {
                             startAdornment: (
@@ -480,11 +791,107 @@ function PaymentPageContent() {
                       />
                     </Grid>
                   </Grid>
+
+                  {/* Additional guests */}
+                  {additionalGuests.length > 0 && (
+                    <Stack spacing={2} sx={{ mt: 3 }}>
+                      {additionalGuests.map((ag, idx) => (
+                        <Box key={ag.id}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              mb: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={600}
+                              sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                            >
+                              {t('payment.additionalGuest')} {idx + 1}
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              aria-label="remove guest"
+                              onClick={() =>
+                                setAdditionalGuests((prev) => prev.filter((g) => g.id !== ag.id))
+                              }
+                              sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                            >
+                              ✕
+                            </IconButton>
+                          </Box>
+                          <Grid container spacing={2}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <TextField
+                                label={t('payment.firstName')}
+                                value={ag.firstName}
+                                onChange={(e) =>
+                                  setAdditionalGuests((prev) =>
+                                    prev.map((g) =>
+                                      g.id === ag.id ? { ...g, firstName: e.target.value } : g
+                                    )
+                                  )
+                                }
+                                fullWidth
+                                size="small"
+                                required
+                              />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <TextField
+                                label={t('payment.lastName')}
+                                value={ag.lastName}
+                                onChange={(e) =>
+                                  setAdditionalGuests((prev) =>
+                                    prev.map((g) =>
+                                      g.id === ag.id ? { ...g, lastName: e.target.value } : g
+                                    )
+                                  )
+                                }
+                                fullWidth
+                                size="small"
+                                required
+                              />
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+
+                  {/* Add guest button */}
+                  {additionalGuests.length < 19 && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() =>
+                        setAdditionalGuests((prev) => [
+                          ...prev,
+                          { id: crypto.randomUUID(), firstName: '', lastName: '' },
+                        ])
+                      }
+                      sx={{ mt: 3, textTransform: 'none', fontWeight: 600, borderStyle: 'dashed' }}
+                    >
+                      + {t('payment.addGuest')}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
               {/* Payment Method */}
-              <Card variant="outlined" sx={{ borderRadius: 2 }}>
+              <Card
+                variant="outlined"
+                sx={{
+                  borderRadius: 2,
+                  opacity: guestDetailsFilled ? 1 : 0.55,
+                  pointerEvents: guestDetailsFilled ? 'auto' : 'none',
+                  transition: 'opacity 0.2s',
+                }}
+              >
                 <CardContent sx={{ p: 3 }}>
                   <Box
                     sx={{
@@ -495,7 +902,7 @@ function PaymentPageContent() {
                     }}
                   >
                     <Typography variant="h6" fontWeight={700}>
-                      💳 {t('payment.paymentMethod')}
+                      {guestDetailsFilled ? '💳' : '🔒'} {t('payment.paymentMethod')}
                     </Typography>
                     <Chip
                       label={t('payment.secure')}
@@ -505,6 +912,12 @@ function PaymentPageContent() {
                       sx={{ fontWeight: 600 }}
                     />
                   </Box>
+
+                  {!guestDetailsFilled && (
+                    <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
+                      {t('payment.fillGuestDetailsFirst')}
+                    </Alert>
+                  )}
 
                   <Tabs
                     value={paymentTab}
@@ -526,7 +939,11 @@ function PaymentPageContent() {
                         label={t('payment.cardNumber')}
                         placeholder="0000 0000 0000 0000"
                         value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+                          const formatted = digits.replace(/(.{4})/g, '$1 ').trim();
+                          setCardNumber(formatted);
+                        }}
                         fullWidth
                         size="small"
                         inputProps={{ maxLength: 19 }}
@@ -535,12 +952,17 @@ function PaymentPageContent() {
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
                             label={t('payment.expiryDate')}
-                            placeholder="MM / YY"
+                            placeholder="MM/YY"
                             value={expiry}
-                            onChange={(e) => setExpiry(e.target.value)}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              setExpiry(formatExpiryInput(digits));
+                            }}
                             fullWidth
                             size="small"
-                            inputProps={{ maxLength: 7 }}
+                            inputProps={{ maxLength: 5 }}
+                            error={expiryError}
+                            helperText={expiryError ? t('payment.expiryInPast') : undefined}
                           />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
@@ -659,6 +1081,7 @@ function PaymentPageContent() {
                     href={propertyId ? `/traveler/hotel?id=${propertyId}` : '/traveler/search'}
                     variant="text"
                     size="small"
+                    startIcon={<CreateOutlinedIcon fontSize="small" />}
                     sx={{
                       textTransform: 'none',
                       p: 0,
@@ -668,7 +1091,7 @@ function PaymentPageContent() {
                       minWidth: 0,
                     }}
                   >
-                    ✏️ {t('payment.editBooking')}
+                    {t('payment.editBooking')}
                   </Button>
                 </Box>
 
@@ -752,7 +1175,8 @@ function PaymentPageContent() {
                   variant="contained"
                   fullWidth
                   size="large"
-                  disabled={expired}
+                  disabled={expired || !guestDetailsFilled || expiryError}
+                  onClick={handlePay}
                   sx={{ textTransform: 'none', fontWeight: 700, py: 1.5, borderRadius: 2 }}
                 >
                   🔒 {t('payment.payButton', { amount: displayTotal.toFixed(2) })}

@@ -153,6 +153,7 @@
   "payment": {
     "preparing": "Preparando tu reserva temporal…",
     "backToSearch": "Volver a la búsqueda",
+    "resumeReservation": "Retomar mi reserva",
     "expiredTitle": "Reserva temporal vencida",
     "expiredBody": "Tu tiempo de espera de 15 minutos ha terminado. Las habitaciones están sujetas a disponibilidad — inicia una nueva búsqueda.",
     "newSearch": "Nueva búsqueda",

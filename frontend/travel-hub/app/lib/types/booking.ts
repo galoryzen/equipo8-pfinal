@@ -54,6 +54,13 @@ export interface PaginatedResponse<T> {
   total_pages: number;
 }
 
+export interface GuestPayload {
+  is_primary: boolean;
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+}
+
 export interface BookingDetail {
   id: string;
   status: string;
