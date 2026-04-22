@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.application.exceptions import (
     BookingNotFoundError,
     CatalogUnavailableError,
+    CheckoutGuestsIncompleteError,
     ConflictingActiveCartError,
     GuestsCountMismatchError,
     InvalidBookingStateError,
@@ -105,6 +106,19 @@ def register_error_handlers(app: FastAPI) -> None:
             status_code=422,
             content={
                 "code": "PRIMARY_GUEST_MISSING_CONTACT",
+                "message": str(exc),
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(CheckoutGuestsIncompleteError)
+    async def checkout_guests_incomplete_handler(
+        request: Request, exc: CheckoutGuestsIncompleteError
+    ):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "CHECKOUT_GUESTS_INCOMPLETE",
                 "message": str(exc),
                 "trace_id": request.headers.get("x-request-id"),
             },

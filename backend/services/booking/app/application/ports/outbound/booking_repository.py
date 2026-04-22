@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date, datetime
 from uuid import UUID
 
-from app.domain.models import Booking, BookingScope
+from app.domain.models import Booking, BookingScope, BookingStatusHistory
 
 
 class BookingRepository(ABC):
@@ -78,9 +78,19 @@ class BookingRepository(ABC):
         """
 
     @abstractmethod
-    async def find_expired_carts(self, now: datetime) -> list[Booking]:
-        """Return CART bookings whose hold_expires_at has elapsed."""
+    async def find_expired_unpaid_bookings(self, now: datetime) -> list[Booking]:
+        """Return CART or PENDING_PAYMENT bookings whose hold_expires_at has elapsed."""
 
     @abstractmethod
     async def find_unreleased_terminal_bookings(self) -> list[Booking]:
         """Return CANCELLED/EXPIRED bookings whose inventory hold has not yet been released."""
+
+    @abstractmethod
+    async def add_status_history(self, row: BookingStatusHistory) -> None:
+        """Persist a new row in booking_status_history."""
+
+    @abstractmethod
+    async def find_last_status_history_by_reason(
+        self, booking_id: UUID, reason: str
+    ) -> BookingStatusHistory | None:
+        """Return the most recent history row for this booking matching reason exactly, or None."""

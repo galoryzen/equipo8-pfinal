@@ -3,6 +3,7 @@ from uuid import UUID
 
 import httpx
 from fastapi import Cookie, Depends, Header
+from shared.events import DomainEventPublisher, build_event_publisher
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.db.booking_repository import SqlAlchemyBookingRepository
@@ -15,6 +16,7 @@ from app.application.ports.outbound.catalog_inventory_port import CatalogInvento
 from app.application.ports.outbound.token_port import TokenPort
 from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
 from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
+from app.application.use_cases.checkout_booking import CheckoutBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
@@ -39,6 +41,24 @@ def _get_catalog_http_client() -> httpx.AsyncClient:
     if _catalog_http_client is None:
         _catalog_http_client = httpx.AsyncClient(timeout=settings.CATALOG_HTTP_TIMEOUT_SECONDS)
     return _catalog_http_client
+
+
+# ── Shared domain event publisher for the API process. Built once from
+# settings at import-time. Closed cleanly from main.py lifespan.
+_publisher: DomainEventPublisher = build_event_publisher(
+    settings.EVENT_BUS_BACKEND,
+    rabbitmq_url=settings.RABBITMQ_URL,
+    eventbridge_bus_name=settings.EVENTBRIDGE_BUS_NAME,
+    eventbridge_region=settings.EVENTBRIDGE_REGION,
+)
+
+
+def get_configured_event_publisher() -> DomainEventPublisher:
+    return _publisher
+
+
+def get_event_publisher() -> DomainEventPublisher:
+    return _publisher
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -165,3 +185,14 @@ def get_current_user_info(
     except Exception:
         user_id = None
     return {"role": role, "user_id": user_id}
+
+
+def get_checkout_booking_use_case(
+    session: AsyncSession = Depends(get_db_session),
+    events: DomainEventPublisher = Depends(get_event_publisher),
+) -> CheckoutBookingUseCase:
+    booking_repo = SqlAlchemyBookingRepository(session)
+    guest_repo = SqlAlchemyGuestRepository(session)
+    return CheckoutBookingUseCase(booking_repo, guest_repo, events)
+
+

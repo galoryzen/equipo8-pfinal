@@ -19,24 +19,24 @@ async def test_start_registers_two_jobs_then_shutdown_is_clean():
     try:
         scheduler.start()
         job_ids = {j.id for j in scheduler._scheduler.get_jobs()}
-        assert job_ids == {"expire_carts", "reconcile_inventory"}
+        assert job_ids == {"expire_unpaid", "reconcile_inventory"}
     finally:
         scheduler.shutdown()
         await client.aclose()
 
 
 @pytest.mark.asyncio
-async def test_expire_carts_job_swallows_use_case_exceptions():
+async def test_expire_unpaid_job_swallows_use_case_exceptions():
     """Job errors must never crash the scheduler."""
     client = httpx.AsyncClient()
     scheduler = BookingScheduler(client)
-    with patch("app.adapters.inbound.scheduler.ExpireCartBookingsUseCase") as mock_uc_cls:
+    with patch("app.adapters.inbound.scheduler.ExpireUnpaidBookingsUseCase") as mock_uc_cls:
         mock_uc = AsyncMock()
         mock_uc.execute.side_effect = RuntimeError("boom")
         mock_uc_cls.return_value = mock_uc
 
         # Must not raise.
-        await scheduler._expire_carts_job()
+        await scheduler._expire_unpaid_job()
 
     await client.aclose()
 

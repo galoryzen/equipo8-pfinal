@@ -82,6 +82,29 @@ class Booking(Base):
     )
 
 
+class BookingStatusHistory(Base):
+    __tablename__ = "booking_status_history"
+    __table_args__: ClassVar[dict] = {"schema": BOOKING_SCHEMA}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    booking_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{BOOKING_SCHEMA}.booking.id"),
+        nullable=False,
+    )
+    from_status: Mapped[BookingStatus | None] = mapped_column(
+        SAEnum(BookingStatus, name="booking_status", native_enum=True, create_type=False),
+        nullable=True,
+    )
+    to_status: Mapped[BookingStatus] = mapped_column(
+        SAEnum(BookingStatus, name="booking_status", native_enum=True, create_type=False),
+        nullable=False,
+    )
+    reason: Mapped[str | None] = mapped_column(String, nullable=True)
+    changed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    changed_at: Mapped[datetime] = mapped_column(nullable=False)
+
+
 class Guest(Base):
     __tablename__ = "guest"
     __table_args__: ClassVar[dict] = {"schema": BOOKING_SCHEMA}

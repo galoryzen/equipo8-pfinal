@@ -9,8 +9,8 @@ from app.domain.models import BookingStatus
 logger = logging.getLogger(__name__)
 
 
-class ExpireCartBookingsUseCase:
-    """Transition CART bookings whose hold has elapsed to EXPIRED.
+class ExpireUnpaidBookingsUseCase:
+    """Transition CART or PENDING_PAYMENT bookings whose hold has elapsed to EXPIRED.
 
     State transition runs first (always); the Catalog release is attempted
     inline as a best-effort to free inventory immediately. If it fails, the
@@ -23,29 +23,29 @@ class ExpireCartBookingsUseCase:
 
     async def execute(self) -> int:
         now = datetime.now(UTC).replace(tzinfo=None)
-        carts = await self._repo.find_expired_carts(now)
-        if not carts:
+        bookings = await self._repo.find_expired_unpaid_bookings(now)
+        if not bookings:
             return 0
 
-        for cart in carts:
-            cart.status = BookingStatus.EXPIRED
-            cart.inventory_released = False
-            cart.updated_at = now
-            await self._repo.save(cart)
+        for booking in bookings:
+            booking.status = BookingStatus.EXPIRED
+            booking.inventory_released = False
+            booking.updated_at = now
+            await self._repo.save(booking)
 
             try:
                 await self._catalog.release_hold(
-                    room_type_id=cart.room_type_id,
-                    checkin=cart.checkin,
-                    checkout=cart.checkout,
+                    room_type_id=booking.room_type_id,
+                    checkin=booking.checkin,
+                    checkout=booking.checkout,
                 )
-                cart.inventory_released = True
-                cart.updated_at = datetime.now(UTC).replace(tzinfo=None)
-                await self._repo.save(cart)
+                booking.inventory_released = True
+                booking.updated_at = datetime.now(UTC).replace(tzinfo=None)
+                await self._repo.save(booking)
             except CatalogUnavailableError:
                 logger.warning(
                     "Inline release failed while expiring booking %s — reconciler will retry",
-                    cart.id,
+                    booking.id,
                 )
 
-        return len(carts)
+        return len(bookings)

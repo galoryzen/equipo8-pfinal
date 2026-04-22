@@ -63,15 +63,6 @@ class PaymentAttempt(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False)
 
 
-class WebhookEvent(Base):
-    __tablename__ = "webhook_event"
-    __table_args__: ClassVar[dict] = {"schema": PAYMENTS_SCHEMA}
-
-    idempotency_key: Mapped[str] = mapped_column(String, primary_key=True)
-    payment_intent_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    received_at: Mapped[datetime] = mapped_column(nullable=False)
-
-
 class Payment(Base):
     __tablename__ = "payment"
     __table_args__: ClassVar[dict] = {"schema": PAYMENTS_SCHEMA}

@@ -6,6 +6,7 @@ from app.adapters.inbound.api.dependencies import (
     get_booking_detail_use_case,
     get_cancel_cart_booking_use_case,
     get_confirm_booking_use_case,
+    get_checkout_booking_use_case,
     get_create_cart_booking_use_case,
     get_current_user_id,
     get_current_user_info,
@@ -16,6 +17,7 @@ from app.adapters.inbound.api.dependencies import (
 )
 from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
 from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
+from app.application.use_cases.checkout_booking import CheckoutBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
@@ -115,6 +117,19 @@ async def reject_booking(
         return await use_case.execute(booking_id=booking_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+
+@router.post(
+    "/bookings/{booking_id}/checkout",
+    response_model=BookingDetailOut,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def checkout_booking(
+    booking_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    use_case: CheckoutBookingUseCase = Depends(get_checkout_booking_use_case),
+):
+    return await use_case.execute(booking_id=booking_id, user_id=user_id)
 
 
 @router.put("/bookings/{booking_id}/guests", response_model=list[GuestOut])

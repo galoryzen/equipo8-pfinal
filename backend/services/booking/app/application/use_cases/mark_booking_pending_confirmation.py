@@ -1,4 +1,4 @@
-"""Transition booking to CONFIRMED after a successful payment (payment service callback)."""
+"""Transition booking to PENDING_CONFIRMATION after the PSP authorizes the payment."""
 
 from datetime import UTC, datetime
 from uuid import UUID
@@ -8,8 +8,8 @@ from app.application.ports.outbound.booking_repository import BookingRepository
 from app.domain.models import BookingStatus
 
 
-class ConfirmBookingAfterPaymentUseCase:
-    """Idempotent confirmation: same payment_intent_id replays as success."""
+class MarkBookingPendingConfirmationUseCase:
+    """Idempotent transition PENDING_PAYMENT → PENDING_CONFIRMATION. Replays with the same intent are no-op."""
 
     def __init__(self, repo: BookingRepository):
         self._repo = repo
@@ -19,21 +19,23 @@ class ConfirmBookingAfterPaymentUseCase:
         if booking is None:
             raise BookingNotFoundError()
 
-        if booking.status == BookingStatus.CONFIRMED:
+        if booking.status == BookingStatus.PENDING_CONFIRMATION:
             if booking.confirmation_payment_intent_id == payment_intent_id:
                 return
-            raise InvalidBookingStateError("Booking already confirmed with a different payment")
-
-        if booking.status not in (BookingStatus.PENDING_PAYMENT, BookingStatus.PENDING_CONFIRMATION):
             raise InvalidBookingStateError(
-                f"Cannot confirm payment for booking in state {booking.status.value}"
+                "Booking already associated with a different payment intent"
+            )
+
+        if booking.status != BookingStatus.PENDING_PAYMENT:
+            raise InvalidBookingStateError(
+                f"Cannot mark booking pending confirmation from state {booking.status.value}"
             )
 
         now = datetime.now(UTC).replace(tzinfo=None)
         if booking.hold_expires_at is not None and booking.hold_expires_at <= now:
             raise InvalidBookingStateError("Booking hold has expired")
 
-        booking.status = BookingStatus.CONFIRMED
+        booking.status = BookingStatus.PENDING_CONFIRMATION
         booking.confirmation_payment_intent_id = payment_intent_id
         booking.updated_at = now
         await self._repo.save(booking)

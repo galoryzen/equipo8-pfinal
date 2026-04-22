@@ -27,7 +27,13 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 DEFAULT_CSV = os.path.join(PROJECT_ROOT, "Jira.csv")
 OUTPUT_FILE = os.path.join(PROJECT_ROOT, "docs", "velocity_chart.png")
 
-VELOCITY = 16  # pts por semana proyectados
+VELOCITY = 16  # pts por semana proyectados (default)
+
+# Overrides puntuales cuando una semana cambia su capacidad proyectada.
+# Ej: S2-W1 = 18 porque entraron 2 HU nuevas al sprint sobre la estimacion base.
+VELOCITY_OVERRIDES = {
+    "S2-W1": 18,
+}
 
 # ── Semanas del proyecto ──────────────────────────────────────────────
 WEEKS = [
@@ -101,7 +107,7 @@ def build_chart(week_pts: dict[str, float], velocity: int, output: str):
     """Genera el velocity bar chart."""
     labels = [w[0] for w in WEEKS]
     realized = [week_pts[label] for label in labels]
-    projected = [velocity] * len(labels)
+    projected = [VELOCITY_OVERRIDES.get(label, velocity) for label in labels]
 
     # Sprint boundaries
     sprint_boundaries = []
