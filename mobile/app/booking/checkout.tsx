@@ -29,7 +29,8 @@ function countdownColor(remainingMs: number): {
 } {
   if (remainingMs <= URGENT_THRESHOLD_MS) return { bg: '#FEE2E2', fg: '#991B1B' };
   if (remainingMs <= WARNING_THRESHOLD_MS) return { bg: '#FEF3C7', fg: '#92400E' };
-  return { bg: colors.surface.soft, fg: colors.text.secondary };
+  // text.muted (#475569, Slate 600) — ≥4.5:1 on surface.soft (#F8FAFC)
+  return { bg: colors.surface.soft, fg: colors.text.muted };
 }
 
 type GuestErrors = {
@@ -73,6 +74,20 @@ export default function CheckoutScreen() {
   const [errors, setErrors] = useState<Record<number, GuestErrors>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const guestsReady = useMemo(
+    () =>
+      guests.every((g) => {
+        if (!g.full_name.trim()) return false;
+        if (g.is_primary) {
+          const email = (g.email ?? '').trim();
+          const phone = (g.phone ?? '').trim();
+          if (!email || !phone) return false;
+        }
+        return true;
+      }),
+    [guests],
+  );
 
   // Hydrate the form from the server so returning to checkout after a save
   // shows the data the user already entered (incl. phone, which isn't on
@@ -309,7 +324,7 @@ export default function CheckoutScreen() {
             title={t('booking.checkout.continueToPayment')}
             onPress={handleContinue}
             loading={submitting}
-            disabled={submitting}
+            disabled={submitting || !guestsReady}
           />
         </View>
 
@@ -383,7 +398,8 @@ const styles = StyleSheet.create({
   dates: {
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
+    // text.muted (#475569, Slate 600) — meets WCAG AA on white
+    color: colors.text.muted,
   },
   section: {
     gap: spacing.sm,
@@ -407,13 +423,15 @@ const styles = StyleSheet.create({
   hintText: {
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.xs,
-    color: colors.text.secondary,
+    // text.muted (#475569, Slate 600) — meets WCAG AA on surface.soft (#F8FAFC)
+    color: colors.text.muted,
     fontStyle: 'italic',
   },
   submitError: {
     fontFamily: typography.fontFamily.medium,
     fontSize: typography.fontSize.sm,
-    color: colors.status.error,
+    // status.errorText (#B91C1C, red-700) — meets WCAG AA on white (~6:1)
+    color: colors.status.errorText,
     textAlign: 'center',
   },
   footer: {
@@ -453,7 +471,8 @@ const styles = StyleSheet.create({
   expiredBody: {
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
+    // text.muted (#475569, Slate 600) — meets WCAG AA on white
+    color: colors.text.muted,
     lineHeight: 22,
   },
   expiredActions: {

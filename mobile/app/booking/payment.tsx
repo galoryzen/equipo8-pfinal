@@ -345,7 +345,11 @@ export default function PaymentScreen() {
         <Modal visible={isProcessing} transparent animationType="fade">
           <View style={styles.processingBackdrop}>
             <View style={styles.processingSheet}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator
+                size="large"
+                color={colors.primary}
+                accessibilityLabel={t('booking.payment.processing')}
+              />
               <Text style={styles.processingTitle}>{t('booking.payment.processing')}</Text>
               <Text style={styles.processingHint}>{t('booking.payment.processingHint')}</Text>
             </View>
