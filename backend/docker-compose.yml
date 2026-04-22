@@ -158,6 +158,7 @@ services:
       - ./libs/shared:/app/shared
       - ./libs/contracts:/app/contracts
     command: ["python", "-m", "app.worker"]
+    restart: on-failure
     environment:
       BOOKING_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
       BOOKING_DB_SCHEMA: "booking"
@@ -218,6 +219,7 @@ services:
       - ./libs/shared:/app/shared
       - ./libs/contracts:/app/contracts
     command: ["python", "-m", "app.worker"]
+    restart: on-failure
     environment:
       PAYMENT_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
       PAYMENT_DB_SCHEMA: "payments"

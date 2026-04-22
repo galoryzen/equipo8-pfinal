@@ -12,7 +12,6 @@ import {
   getBookingDetail,
   saveBookingGuests,
 } from '@/app/lib/api/booking';
-import { createPaymentIntent } from '@/app/lib/api/payment';
 import type { CartBooking } from '@/app/lib/types/booking';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import Alert from '@mui/material/Alert';
@@ -350,16 +349,17 @@ function PaymentPageContent() {
         throw new Error(`${t('payment.paymentError')} (status: ${current.status})`);
       }
 
-      // 3. Create payment intent (idempotent: backend returns existing intent if already created)
-      await createPaymentIntent(bookingId);
       setProcessingProgress(80);
 
-      // 4. Poll for booking status (max 30s)
+      // 4. Poll until the payment worker transitions the booking out of PENDING_PAYMENT.
       const deadline = Date.now() + 30_000;
       while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 2000));
         const detail = await getBookingDetail(bookingId);
-        if (detail.status === 'CONFIRMED') {
+
+        const isSuccess = detail.status === 'PENDING_CONFIRMATION' || detail.status === 'CONFIRMED';
+
+        if (isSuccess) {
           setProcessingProgress(100);
           await new Promise((r) => setTimeout(r, 600));
           const confirmParams = new URLSearchParams({
@@ -382,9 +382,11 @@ function PaymentPageContent() {
           router.push(`/traveler/payment/confirmation?${confirmParams.toString()}`);
           return;
         }
+
         if (detail.status === 'REJECTED' || detail.status === 'CANCELLED') {
           throw new Error(t('payment.paymentRejected'));
         }
+        // PENDING_PAYMENT → still waiting for the event bus; keep polling
       }
       throw new Error(t('payment.paymentTimeout'));
     } catch (err) {

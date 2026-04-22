@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import UTC, datetime
+import logging
 from uuid import UUID
 
 from contracts.events.base import DomainEventEnvelope
@@ -17,6 +18,8 @@ from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest
 from app.schemas.booking import BookingDetailOut, GuestOut
+
+logger = logging.getLogger(__name__)
 
 
 class CheckoutBookingUseCase:
@@ -75,6 +78,7 @@ class CheckoutBookingUseCase:
                 force_decline=False,
             ).model_dump(mode="json"),
         )
+        logger.info("Publishing payment requested event:")
         await self._events.publish(envelope)
 
         return _to_detail(booking, guests)
