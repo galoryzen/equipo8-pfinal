@@ -4,6 +4,7 @@ from uuid import UUID
 
 import httpx
 
+from app.application.hotel_partner import resolve_hotel_id_for_user
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.config import settings
 from app.domain.models import Booking, BookingScope
@@ -67,35 +68,11 @@ class ListMyBookingsUseCase:
         page: int = 1,
         page_size: int = 10,
     ) -> PaginatedBookingListOut:
-        hotel_id = await _resolve_hotel_id_for_user(user_id)
+        hotel_id = await resolve_hotel_id_for_user(user_id)
         bookings = await self._repo.list_by_hotel(hotel_id=hotel_id, status=status)
         items = [await _to_list_item(b) for b in bookings]
         page_items, total, total_pages = _paginate(items, page, page_size)
         return PaginatedBookingListOut(items=page_items, total=total, page=page, page_size=page_size, total_pages=total_pages)
-
-
-async def _resolve_hotel_id_for_user(user_id: str | UUID) -> UUID:
-    try:
-        uid = UUID(str(user_id))
-    except (TypeError, ValueError) as e:
-        raise ValueError("user_id invalido para resolver hotel") from e
-
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{settings.AUTH_SERVICE_URL}/users/{uid}")
-
-            if resp.status_code != 200:
-                raise ValueError("No se pudo resolver hotel_id para el usuario")
-
-            payload = resp.json()
-            hotel_id = payload.get("hotel_id")
-            if not hotel_id:
-                raise ValueError("hotel_id es requerido para este rol")
-            return UUID(str(hotel_id))
-    except ValueError:
-        raise
-    except Exception as e:
-        raise ValueError("No se pudo resolver hotel_id para el usuario") from e
 
 
 async def _to_list_item(booking: Booking) -> BookingListItemOut:
