@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-
-import { getPublicApiBaseUrl } from '@/app/lib/api/publicApiUrl';
+import { useEffect, useState } from 'react';
 
 type Metric = {
   value: number | null;
@@ -55,6 +53,8 @@ type DashboardResponse = Partial<{
   recentActivity?: unknown[];
   upcomingCheckins?: unknown[];
 }>;
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
 const EMPTY_DATA: DashboardData = {
   metrics: {
@@ -172,8 +172,6 @@ export function useDashboardData(from: string, to: string) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<DashboardError | null>(null);
 
-  const apiBaseUrl = useMemo(() => getPublicApiBaseUrl(), []);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -183,7 +181,7 @@ export function useDashboardData(from: string, to: string) {
 
       try {
         const params = new URLSearchParams({ from, to });
-        const response = await fetch(`${apiBaseUrl}/api/v1/dashboard/metrics?${params}`, {
+        const response = await fetch(`${API_URL}/api/v1/dashboard/metrics?${params}`, {
           credentials: 'include',
         });
 
@@ -231,7 +229,7 @@ export function useDashboardData(from: string, to: string) {
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, from, to]);
+  }, [from, to]);
 
   return { data, loading, error };
 }
