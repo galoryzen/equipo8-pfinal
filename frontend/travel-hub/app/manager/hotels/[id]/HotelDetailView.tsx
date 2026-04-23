@@ -36,7 +36,9 @@ import {
   MOCK_HOTEL_STATS,
   MOCK_ROOM_TYPES,
   type RoomTypeIcon,
+  type RoomTypeItem,
 } from '../_data';
+import RoomTypeManageView from './RoomTypeManageView';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -175,6 +177,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
     monthlyRevenue: 0,
   };
 
+  const [selectedRoomType, setSelectedRoomType] = useState<RoomTypeItem | null>(null);
   const [roomTypeSearch, setRoomTypeSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'occupied'>('all');
   const [page, setPage] = useState(1);
@@ -222,6 +225,16 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
           {t('manager.hotels.hotelDetail.breadcrumbLabel')}
         </Button>
       </Box>
+    );
+  }
+
+  if (selectedRoomType) {
+    return (
+      <RoomTypeManageView
+        hotelName={hotel.name}
+        roomType={selectedRoomType}
+        onBack={() => setSelectedRoomType(null)}
+      />
     );
   }
 
@@ -579,6 +592,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
                       <Box role="cell" sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button
                           size="small"
+                          onClick={() => setSelectedRoomType(rt)}
                           aria-label={t(
                             'manager.hotels.hotelDetail.roomManagement.manageRoomType',
                             { name: rt.name }

@@ -297,6 +297,37 @@
           "showing": "Mostrando {{count}} tipos de habitación",
           "paginationLabel": "Paginación de tipos de habitación"
         }
+      },
+      "roomTypeManage": {
+        "breadcrumbRoomTypes": "Tipos de habitación",
+        "breadcrumbManage": "Gestionar {{name}}",
+        "title": "Gestionar habitación: {{name}}",
+        "subtitle": "Configura la disponibilidad, precios y políticas de cancelación para esta categoría de habitación.",
+        "saveChanges": "Guardar cambios",
+        "savedSuccess": "Cambios guardados correctamente.",
+        "availabilityPeriod": {
+          "title": "Período de disponibilidad",
+          "startLabel": "Fecha y hora de inicio",
+          "endLabel": "Fecha y hora de fin"
+        },
+        "pricingOffers": {
+          "title": "Precios y ofertas",
+          "discountLabel": "Descuento a aplicar (%)",
+          "discountHelper": "Este descuento se aplicará a la tarifa base durante el período de disponibilidad."
+        },
+        "cancellationPolicy": {
+          "title": "Política de cancelación",
+          "policyTypeLabel": "Tipo de política",
+          "totallyRefundable": "Totalmente reembolsable",
+          "totallyRefundableDesc": "Reembolso completo si se cancela antes de la fecha de aplicación.",
+          "partialRefundable": "Reembolso parcial",
+          "partialRefundableDesc": "Se reembolsa un porcentaje específico al cancelar.",
+          "nonRefundable": "No reembolsable",
+          "nonRefundableDesc": "No se emite reembolso independientemente de cuándo se cancele.",
+          "refundPctLabel": "Porcentaje de reembolso (%)",
+          "applyDateLabel": "Fecha de aplicación de la política",
+          "applyDateHelper": "La última fecha en que el huésped puede ejercer esta política."
+        }
       }
     }
   },

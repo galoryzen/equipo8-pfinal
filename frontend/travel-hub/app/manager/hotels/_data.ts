@@ -1,5 +1,16 @@
 // ─── Types ─────────────────────────────────────────────────────────────────
 
+export type CancellationPolicyType = 'totallyRefundable' | 'partialRefundable' | 'nonRefundable';
+
+export interface RoomTypeDetail {
+  availabilityStart: Date;
+  availabilityEnd: Date;
+  discountPct: number;
+  cancellationPolicy: CancellationPolicyType;
+  refundPct: number;
+  cancellationApplyDate: Date;
+}
+
 export interface Hotel {
   id: string;
   name: string;
@@ -167,6 +178,97 @@ export const MOCK_HOTEL_STATS: Record<string, HotelStats> = {
   'HOTEL-001': { occupancyRate: 85, activeBookings: 42, monthlyRevenue: 24500 },
   'HOTEL-002': { occupancyRate: 80, activeBookings: 18, monthlyRevenue: 9800 },
   'HOTEL-003': { occupancyRate: 60, activeBookings: 25, monthlyRevenue: 15200 },
+};
+
+export const MOCK_ROOM_TYPE_DETAILS: Record<string, RoomTypeDetail> = {
+  rt1: {
+    availabilityStart: new Date('2026-11-01T14:00'),
+    availabilityEnd: new Date('2026-03-31T11:00'),
+    discountPct: 15,
+    cancellationPolicy: 'partialRefundable',
+    refundPct: 50,
+    cancellationApplyDate: new Date('2026-10-15'),
+  },
+  rt2: {
+    availabilityStart: new Date('2026-10-01T15:00'),
+    availabilityEnd: new Date('2026-04-30T12:00'),
+    discountPct: 20,
+    cancellationPolicy: 'totallyRefundable',
+    refundPct: 100,
+    cancellationApplyDate: new Date('2026-09-30'),
+  },
+  rt3: {
+    availabilityStart: new Date('2026-09-15T13:00'),
+    availabilityEnd: new Date('2027-05-15T10:00'),
+    discountPct: 10,
+    cancellationPolicy: 'nonRefundable',
+    refundPct: 0,
+    cancellationApplyDate: new Date('2026-08-15'),
+  },
+  rt4: {
+    availabilityStart: new Date('2026-12-01T16:00'),
+    availabilityEnd: new Date('2027-02-28T09:00'),
+    discountPct: 25,
+    cancellationPolicy: 'partialRefundable',
+    refundPct: 30,
+    cancellationApplyDate: new Date('2026-11-30'),
+  },
+  rt5: {
+    availabilityStart: new Date('2026-08-01T12:00'),
+    availabilityEnd: new Date('2027-01-31T11:00'),
+    discountPct: 5,
+    cancellationPolicy: 'totallyRefundable',
+    refundPct: 100,
+    cancellationApplyDate: new Date('2026-12-31'),
+  },
+  rt6: {
+    availabilityStart: new Date('2026-09-01T14:00'),
+    availabilityEnd: new Date('2026-12-31T23:59'),
+    discountPct: 12,
+    cancellationPolicy: 'partialRefundable',
+    refundPct: 40,
+    cancellationApplyDate: new Date('2026-11-15'),
+  },
+  rt7: {
+    availabilityStart: new Date('2026-10-15T10:00'),
+    availabilityEnd: new Date('2027-02-28T12:00'),
+    discountPct: 8,
+    cancellationPolicy: 'nonRefundable',
+    refundPct: 0,
+    cancellationApplyDate: new Date('2026-10-01'),
+  },
+  rt8: {
+    availabilityStart: new Date('2026-11-01T11:00'),
+    availabilityEnd: new Date('2027-03-31T10:00'),
+    discountPct: 18,
+    cancellationPolicy: 'totallyRefundable',
+    refundPct: 100,
+    cancellationApplyDate: new Date('2026-10-15'),
+  },
+  rt9: {
+    availabilityStart: new Date('2026-10-01T14:00'),
+    availabilityEnd: new Date('2027-04-30T11:00'),
+    discountPct: 22,
+    cancellationPolicy: 'partialRefundable',
+    refundPct: 60,
+    cancellationApplyDate: new Date('2026-09-15'),
+  },
+  rt10: {
+    availabilityStart: new Date('2026-12-15T15:00'),
+    availabilityEnd: new Date('2027-06-30T12:00'),
+    discountPct: 30,
+    cancellationPolicy: 'totallyRefundable',
+    refundPct: 100,
+    cancellationApplyDate: new Date('2026-11-30'),
+  },
+  rt11: {
+    availabilityStart: new Date('2027-01-01T12:00'),
+    availabilityEnd: new Date('2027-06-30T10:00'),
+    discountPct: 35,
+    cancellationPolicy: 'partialRefundable',
+    refundPct: 25,
+    cancellationApplyDate: new Date('2026-12-31'),
+  },
 };
 
 export const MOCK_ROOM_TYPES: Record<string, RoomTypeItem[]> = {

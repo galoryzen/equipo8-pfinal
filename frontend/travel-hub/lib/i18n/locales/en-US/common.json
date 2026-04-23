@@ -292,6 +292,37 @@
           "showing": "Showing {{count}} room types",
           "paginationLabel": "Room types pagination"
         }
+      },
+      "roomTypeManage": {
+        "breadcrumbRoomTypes": "Room Types",
+        "breadcrumbManage": "Manage {{name}}",
+        "title": "Manage Room: {{name}}",
+        "subtitle": "Configure availability, pricing, and cancellation policies for this room category.",
+        "saveChanges": "Save Changes",
+        "savedSuccess": "Changes saved successfully.",
+        "availabilityPeriod": {
+          "title": "Availability Period",
+          "startLabel": "Start Date & Time",
+          "endLabel": "End Date & Time"
+        },
+        "pricingOffers": {
+          "title": "Pricing & Offers",
+          "discountLabel": "Discount to Apply (%)",
+          "discountHelper": "This discount will be applied to the base rate during the availability period."
+        },
+        "cancellationPolicy": {
+          "title": "Cancellation Policy",
+          "policyTypeLabel": "Policy Type",
+          "totallyRefundable": "Totally Refundable",
+          "totallyRefundableDesc": "Full refund if cancelled before the apply date.",
+          "partialRefundable": "Partial Refundable",
+          "partialRefundableDesc": "Specific percentage refunded upon cancellation.",
+          "nonRefundable": "Non-Refundable",
+          "nonRefundableDesc": "No refund issued regardless of when cancelled.",
+          "refundPctLabel": "Refund Percentage (%)",
+          "applyDateLabel": "Cancellation Policy Apply Date",
+          "applyDateHelper": "The last date this policy can be exercised by the guest."
+        }
       }
     }
   },
