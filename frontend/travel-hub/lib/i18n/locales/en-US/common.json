@@ -231,7 +231,42 @@
     "notifications": "Notifications",
     "pendingBookingsToday": "You have {{count}} bookings pending confirmation today.",
     "noPendingBookings": "No pending bookings.",
-    "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking."
+    "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking.",
+    "hotels": {
+      "title": "My Hotels",
+      "subtitle": "Manage and oversee all your listed properties and their room inventory.",
+      "searchPlaceholder": "Find a hotel by name or location...",
+      "filters": "Filters",
+      "noResults": "No hotels match your search.",
+      "hotelIdPrefix": "ID:",
+      "rooms_one": "{{count}} Room",
+      "rooms_other": "{{count}} Rooms",
+      "statusActive": "Active",
+      "statusPendingReview": "Pending Review",
+      "manageRooms": "Manage Rooms",
+      "manageRoomsFor": "Manage rooms for {{hotelName}}",
+      "backToHotels": "Back to hotels",
+      "tableHeaders": {
+        "hotelDetails": "Hotel Details",
+        "location": "Location",
+        "inventory": "Inventory",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "roomManagement": {
+        "title": "Room Management: {{hotelName}}",
+        "subtitle": "Showing all {{totalRooms}} rooms across {{categories}} categories.",
+        "searchPlaceholder": "Find room by number (e.g. 402) or type...",
+        "noResults": "No rooms match your search or filter.",
+        "filterAllTypes": "All Types",
+        "filterSuites": "Suites",
+        "filterDeluxe": "Deluxe",
+        "statusAvailable": "Available",
+        "statusOccupied": "Occupied",
+        "manageRoom": "Manage room {{number}}",
+        "addNewRoom": "Add New Room"
+      }
+    }
   },
   "admin": {
     "navbar": {
