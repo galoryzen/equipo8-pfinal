@@ -36,6 +36,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 type DateRangeOption = 'last7' | 'last30' | 'currentMonth';
+type DashboardTranslate = ReturnType<typeof useTranslation>['t'];
 
 function formatLocalDate(date: Date): string {
   const year = date.getFullYear();
@@ -138,10 +139,7 @@ function formatEnumFallback(value: string): string {
     .join(' ');
 }
 
-function getDashboardStatusLabel(
-  status: string,
-  t: (key: string, options?: object) => string
-): string {
+function getDashboardStatusLabel(status: string, t: DashboardTranslate): string {
   const normalizedStatus = status.toLowerCase();
   return t(`manager.dashboard.status.${normalizedStatus}`, {
     defaultValue: formatEnumFallback(status),
@@ -151,7 +149,7 @@ function getDashboardStatusLabel(
 function getDashboardActivityLabel(
   activityType: string,
   originalDescription: string,
-  t: (key: string, options?: object) => string
+  t: DashboardTranslate
 ): string {
   const normalizedType = activityType.toLowerCase();
   return t(`manager.dashboard.activity.${normalizedType}`, {
