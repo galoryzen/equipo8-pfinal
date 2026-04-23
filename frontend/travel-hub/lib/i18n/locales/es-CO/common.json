@@ -270,6 +270,33 @@
         "statusOccupied": "Ocupada",
         "manageRoom": "Gestionar habitación {{number}}",
         "addNewRoom": "Agregar habitación"
+      },
+      "hotelDetail": {
+        "breadcrumbLabel": "Mis Hoteles",
+        "breadcrumbNav": "Navegación de página",
+        "idLabel": "ID:",
+        "locationLabel": "Ubicación:",
+        "stats": {
+          "occupancyRate": "Tasa de ocupación",
+          "activeBookings": "Reservas activas",
+          "revenue": "Ingresos (mes)"
+        },
+        "roomManagement": {
+          "sectionTitle": "Gestión de habitaciones",
+          "searchPlaceholder": "Buscar por número o tipo de habitación",
+          "statusFilterLabel": "Filtrar por estado",
+          "allStatuses": "Todos los estados",
+          "statusAvailable": "Disponible",
+          "statusOccupied": "Ocupada",
+          "tableRoomType": "Tipo de habitación",
+          "tableAvailable": "Disponible",
+          "tableAction": "Acción",
+          "availableCount": "{{available}} / {{total}} Disponibles",
+          "manageRoomType": "Gestionar habitaciones de tipo {{name}}",
+          "manage": "Gestionar",
+          "showing": "Mostrando {{count}} tipos de habitación",
+          "paginationLabel": "Paginación de tipos de habitación"
+        }
       }
     }
   },

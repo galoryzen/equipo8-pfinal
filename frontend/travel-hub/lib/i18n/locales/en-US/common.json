@@ -265,6 +265,33 @@
         "statusOccupied": "Occupied",
         "manageRoom": "Manage room {{number}}",
         "addNewRoom": "Add New Room"
+      },
+      "hotelDetail": {
+        "breadcrumbLabel": "My Hotels",
+        "breadcrumbNav": "Page navigation",
+        "idLabel": "ID:",
+        "locationLabel": "Location:",
+        "stats": {
+          "occupancyRate": "Occupancy Rate",
+          "activeBookings": "Active Bookings",
+          "revenue": "Revenue (Month)"
+        },
+        "roomManagement": {
+          "sectionTitle": "Room Management",
+          "searchPlaceholder": "Search by room # or type",
+          "statusFilterLabel": "Filter by status",
+          "allStatuses": "All Statuses",
+          "statusAvailable": "Available",
+          "statusOccupied": "Occupied",
+          "tableRoomType": "Room Type",
+          "tableAvailable": "Available",
+          "tableAction": "Action",
+          "availableCount": "{{available}} / {{total}} Available",
+          "manageRoomType": "Manage {{name}} rooms",
+          "manage": "Manage",
+          "showing": "Showing {{count}} room types",
+          "paginationLabel": "Room types pagination"
+        }
       }
     }
   },
