@@ -89,3 +89,24 @@ async def test_execute_invalid_range(monkeypatch):
             date_to=date(2026, 3, 1),
         )
     repo.aggregate_hotel_period.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_execute_rejects_date_to_in_future(monkeypatch):
+    async def fake_resolve(_uid):
+        return UUID("c0000000-0000-0000-0000-000000000001")
+
+    monkeypatch.setattr(
+        "app.application.use_cases.get_hotel_dashboard_metrics.resolve_hotel_id_for_user",
+        fake_resolve,
+    )
+    repo = MagicMock()
+    repo.aggregate_hotel_period = AsyncMock()
+    uc = GetHotelDashboardMetricsUseCase(repo)
+    with pytest.raises(ValueError, match="posterior"):
+        await uc.execute(
+            user_id=UUID("a0000000-0000-0000-0000-000000000001"),
+            date_from=date(2099, 1, 1),
+            date_to=date(2099, 1, 31),
+        )
+    repo.aggregate_hotel_period.assert_not_called()

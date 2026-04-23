@@ -19,9 +19,12 @@ class GetHotelDashboardMetricsUseCase:
 
     async def execute(self, user_id: UUID, date_from: date, date_to: date) -> dict:
         # CACHE (future): key f"dashboard:metrics:{hotel_id}:{date_from}:{date_to}"
-        hotel_id = await resolve_hotel_id_for_user(user_id)
         if date_to < date_from:
             raise ValueError("Rango de fechas inválido: 'to' debe ser >= 'from'")
+        if date_to > date.today():
+            raise ValueError("Rango de fechas inválido: 'to' no puede ser posterior a la fecha actual.")
+
+        hotel_id = await resolve_hotel_id_for_user(user_id)
 
         period_end_exclusive = date_to + timedelta(days=1)
 

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import UnauthorizedDashboard from '@/app/manager/components/UnauthorizedDashboard';
 import { useDashboardData } from '@/app/manager/hooks/useDashboardData';
+import { tokens } from '@/lib/theme/tokens';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -17,7 +18,9 @@ import {
   Card,
   CardContent,
   Chip,
+  FormControl,
   Grid,
+  InputLabel,
   List,
   ListItem,
   ListItemIcon,
@@ -65,6 +68,7 @@ function calculateDateRange(option: DateRangeOption): { from: string; to: string
   return { from: formatLocalDate(fromDate), to };
 }
 
+// TODO: Locale and currency are fixed for now; replace with user locale / currency once language selection is available.
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -95,40 +99,86 @@ function formatVariation(value: number): { text: string; color: string; icon: Re
   if (value > 0) {
     return {
       text: `+${value.toFixed(1)}%`,
-      color: '#16A34A',
+      color: tokens.state.successFg,
       icon: <ArrowUpwardIcon sx={{ fontSize: 14 }} />,
     };
   }
   if (value < 0) {
     return {
       text: `${value.toFixed(1)}%`,
-      color: '#DC2626',
+      color: tokens.state.errorFg,
       icon: <ArrowDownwardIcon sx={{ fontSize: 14 }} />,
     };
   }
-  return { text: '0.0%', color: '#6B7280', icon: <RemoveIcon sx={{ fontSize: 14 }} /> };
+  return {
+    text: '0.0%',
+    color: tokens.text.secondary,
+    icon: <RemoveIcon sx={{ fontSize: 14 }} />,
+  };
 }
+
+const ACTIVITY_ICON_BY_TYPE: Record<string, { Icon: typeof AccessTimeIcon; color: string }> = {
+  BOOKING_CONFIRMED: { Icon: CheckCircleIcon, color: tokens.dashboard.activity.confirmed },
+  BOOKING_CANCELLED: { Icon: ErrorOutlineIcon, color: tokens.dashboard.activity.cancelled },
+  BOOKING_PENDING_CONFIRMATION: {
+    Icon: AccessTimeIcon,
+    color: tokens.dashboard.activity.pendingConfirmation,
+  },
+  BOOKING_PENDING_PAYMENT: {
+    Icon: AccessTimeIcon,
+    color: tokens.dashboard.activity.pendingPayment,
+  },
+  PAYMENT_CAPTURED: {
+    Icon: MonetizationOnOutlinedIcon,
+    color: tokens.dashboard.activity.confirmed,
+  },
+  REVIEW_CREATED: { Icon: StarBorderIcon, color: tokens.dashboard.activity.reviewCreated },
+};
+
+const ACTIVITY_ICON_DEFAULT = {
+  Icon: AccessTimeIcon,
+  color: tokens.dashboard.activity.default,
+} as const;
 
 function getActivityIcon(type: string): React.ReactNode {
-  if (type === 'BOOKING_CONFIRMED')
-    return <CheckCircleIcon sx={{ color: '#16A34A', fontSize: 18 }} />;
-  if (type === 'BOOKING_CANCELLED')
-    return <ErrorOutlineIcon sx={{ color: '#DC2626', fontSize: 18 }} />;
-  if (type === 'BOOKING_PENDING_CONFIRMATION')
-    return <AccessTimeIcon sx={{ color: '#F59E0B', fontSize: 18 }} />;
-  if (type === 'BOOKING_PENDING_PAYMENT')
-    return <AccessTimeIcon sx={{ color: '#3B82F6', fontSize: 18 }} />;
-  if (type === 'PAYMENT_CAPTURED')
-    return <MonetizationOnOutlinedIcon sx={{ color: '#16A34A', fontSize: 18 }} />;
-  if (type === 'REVIEW_CREATED') return <StarBorderIcon sx={{ color: '#A855F7', fontSize: 18 }} />;
-  return <AccessTimeIcon sx={{ color: '#6B7280', fontSize: 18 }} />;
+  const { Icon, color } = ACTIVITY_ICON_BY_TYPE[type] ?? ACTIVITY_ICON_DEFAULT;
+  return <Icon sx={{ color, fontSize: 18 }} />;
 }
 
-function getStatusChipColor(status: string): 'success' | 'info' | 'warning' | 'default' {
-  if (status === 'CONFIRMED') return 'success';
-  if (status === 'PENDING_PAYMENT') return 'info';
-  if (status === 'PENDING_CONFIRMATION') return 'warning';
-  return 'default';
+function getStatusChipSx(status: string): Record<string, string | number> {
+  if (status === 'CONFIRMED') {
+    return {
+      backgroundColor: tokens.dashboard.statusChip.confirmed.bg,
+      color: tokens.dashboard.statusChip.confirmed.fg,
+      border: `1px solid ${tokens.dashboard.statusChip.confirmed.border}`,
+      fontWeight: 700,
+    };
+  }
+
+  if (status === 'PENDING_PAYMENT') {
+    return {
+      backgroundColor: tokens.dashboard.statusChip.pendingPayment.bg,
+      color: tokens.dashboard.statusChip.pendingPayment.fg,
+      border: `1px solid ${tokens.dashboard.statusChip.pendingPayment.border}`,
+      fontWeight: 700,
+    };
+  }
+
+  if (status === 'PENDING_CONFIRMATION') {
+    return {
+      backgroundColor: tokens.dashboard.statusChip.pendingConfirmation.bg,
+      color: tokens.dashboard.statusChip.pendingConfirmation.fg,
+      border: `1px solid ${tokens.dashboard.statusChip.pendingConfirmation.border}`,
+      fontWeight: 700,
+    };
+  }
+
+  return {
+    backgroundColor: tokens.dashboard.statusChip.fallback.bg,
+    color: tokens.dashboard.statusChip.fallback.fg,
+    border: `1px solid ${tokens.dashboard.statusChip.fallback.border}`,
+    fontWeight: 700,
+  };
 }
 
 function formatEnumFallback(value: string): string {
@@ -167,7 +217,7 @@ function BookingTrendChart({
   ariaLabel: string;
 }): React.ReactNode {
   if (data.length === 0) {
-    return <Typography sx={{ color: '#64748B' }}>{emptyText}</Typography>;
+    return <Typography sx={{ color: tokens.dashboard.mutedText }}>{emptyText}</Typography>;
   }
 
   const width = 720;
@@ -200,13 +250,24 @@ function BookingTrendChart({
           y1={padding.top + chartHeight}
           x2={width - padding.right}
           y2={padding.top + chartHeight}
-          stroke="#CBD5E1"
+          stroke={tokens.border.subtleHover}
         />
-        <polyline fill="none" stroke="#2563EB" strokeWidth="3" points={polylinePoints} />
+        <polyline
+          fill="none"
+          stroke={tokens.dashboard.chart.line}
+          strokeWidth="3"
+          points={polylinePoints}
+        />
         {points.map((point) => (
           <g key={`${point.date}-${point.bookings}`}>
-            <circle cx={point.x} cy={point.y} r="4" fill="#2563EB" />
-            <text x={point.x} y={height - 8} textAnchor="middle" fontSize="11" fill="#64748B">
+            <circle cx={point.x} cy={point.y} r="4" fill={tokens.dashboard.chart.line} />
+            <text
+              x={point.x}
+              y={height - 8}
+              textAnchor="middle"
+              fontSize="11"
+              fill={tokens.dashboard.mutedText}
+            >
               {formatShortDate(point.date)}
             </text>
           </g>
@@ -227,13 +288,13 @@ function MetricCard({
 }): React.ReactNode {
   const trend = formatVariation(variation);
   return (
-    <Card sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid #E2E8F0' }}>
+    <Card sx={{ borderRadius: 3, boxShadow: 'none', border: `1px solid ${tokens.border.subtle}` }}>
       <CardContent>
         <Stack spacing={1}>
-          <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 600 }}>
+          <Typography variant="body2" sx={{ color: tokens.dashboard.mutedText, fontWeight: 600 }}>
             {label}
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A' }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: tokens.dashboard.heading }}>
             {value}
           </Typography>
           <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: trend.color }}>
@@ -250,7 +311,7 @@ function MetricCard({
 
 function MetricCardSkeleton(): React.ReactNode {
   return (
-    <Card sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid #E2E8F0' }}>
+    <Card sx={{ borderRadius: 3, boxShadow: 'none', border: `1px solid ${tokens.border.subtle}` }}>
       <CardContent>
         <Stack spacing={1.2}>
           <Skeleton variant="text" width="45%" />
@@ -265,6 +326,8 @@ function MetricCardSkeleton(): React.ReactNode {
 export default function ManagerDashboardPage() {
   const { t } = useTranslation();
   const [range, setRange] = useState<DateRangeOption>('last7');
+  const dateRangeLabel =
+    t('manager.dashboard.filters.dateRange', { defaultValue: 'Date range' }) || 'Date range';
 
   const { from, to } = useMemo(() => calculateDateRange(range), [range]);
   const { data, loading, error } = useDashboardData(from, to);
@@ -307,30 +370,45 @@ export default function ManagerDashboardPage() {
         sx={{ mb: 3 }}
       >
         <Box>
-          <Typography component="h1" sx={{ fontSize: '2rem', fontWeight: 800, color: '#0F172A' }}>
+          <Typography
+            component="h1"
+            sx={{ fontSize: '2rem', fontWeight: 800, color: tokens.dashboard.heading }}
+          >
             {t('manager.dashboard.title')}
           </Typography>
-          <Typography sx={{ color: '#64748B', mt: 0.5 }}>
+          <Typography sx={{ color: tokens.dashboard.mutedText, mt: 0.5 }}>
             {t('manager.dashboard.subtitle')}
           </Typography>
         </Box>
 
-        <Select
-          size="small"
-          value={range}
-          onChange={(event) => setRange(event.target.value as DateRangeOption)}
-          sx={{ minWidth: 190, bgcolor: '#FFFFFF' }}
-        >
-          <MenuItem value="last7">{t('manager.dashboard.filters.last7days')}</MenuItem>
-          <MenuItem value="last30">{t('manager.dashboard.filters.last30days')}</MenuItem>
-          <MenuItem value="currentMonth">{t('manager.dashboard.filters.currentMonth')}</MenuItem>
-        </Select>
+        <FormControl size="small" sx={{ minWidth: 190, bgcolor: tokens.surface.paper }}>
+          <InputLabel id="manager-dashboard-date-range-label">{dateRangeLabel}</InputLabel>
+          <Select
+            labelId="manager-dashboard-date-range-label"
+            id="manager-dashboard-date-range"
+            value={range}
+            label={dateRangeLabel}
+            onChange={(event) => setRange(event.target.value as DateRangeOption)}
+            inputProps={{ 'aria-label': dateRangeLabel }}
+          >
+            <MenuItem value="last7">{t('manager.dashboard.filters.last7days')}</MenuItem>
+            <MenuItem value="last30">{t('manager.dashboard.filters.last30days')}</MenuItem>
+            <MenuItem value="currentMonth">{t('manager.dashboard.filters.currentMonth')}</MenuItem>
+          </Select>
+        </FormControl>
       </Stack>
 
       {error && !isUnauthorized && (
-        <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 'none', border: '1px solid #FECACA' }}>
+        <Card
+          sx={{
+            mb: 3,
+            borderRadius: 3,
+            boxShadow: 'none',
+            border: `1px solid ${tokens.dashboard.alert.errorBg}`,
+          }}
+        >
           <CardContent>
-            <Typography sx={{ color: '#B91C1C', fontWeight: 700 }}>
+            <Typography sx={{ color: tokens.dashboard.alert.errorText, fontWeight: 700 }}>
               {t('manager.dashboard.errors.loading')}
             </Typography>
           </CardContent>
@@ -354,10 +432,15 @@ export default function ManagerDashboardPage() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Card
-            sx={{ minHeight: 260, borderRadius: 3, boxShadow: 'none', border: '1px solid #E2E8F0' }}
+            sx={{
+              minHeight: 260,
+              borderRadius: 3,
+              boxShadow: 'none',
+              border: `1px solid ${tokens.border.subtle}`,
+            }}
           >
             <CardContent>
-              <Typography sx={{ fontWeight: 700, color: '#0F172A', mb: 2 }}>
+              <Typography sx={{ fontWeight: 700, color: tokens.dashboard.heading, mb: 2 }}>
                 {t('manager.dashboard.sections.bookingTrends')}
               </Typography>
               <Box
@@ -383,10 +466,15 @@ export default function ManagerDashboardPage() {
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Card
-            sx={{ minHeight: 260, borderRadius: 3, boxShadow: 'none', border: '1px solid #E2E8F0' }}
+            sx={{
+              minHeight: 260,
+              borderRadius: 3,
+              boxShadow: 'none',
+              border: `1px solid ${tokens.border.subtle}`,
+            }}
           >
             <CardContent>
-              <Typography sx={{ fontWeight: 700, color: '#0F172A', mb: 2 }}>
+              <Typography sx={{ fontWeight: 700, color: tokens.dashboard.heading, mb: 2 }}>
                 {t('manager.dashboard.sections.recentActivity')}
               </Typography>
               {loading ? (
@@ -396,11 +484,24 @@ export default function ManagerDashboardPage() {
                   <Skeleton variant="text" />
                 </Stack>
               ) : data.recentActivity.length === 0 ? (
-                <Typography sx={{ color: '#64748B' }}>
+                <Typography sx={{ color: tokens.dashboard.mutedText }}>
                   {t('manager.dashboard.empty.noData')}
                 </Typography>
               ) : (
-                <List disablePadding sx={{ maxHeight: 190, overflowY: 'auto' }}>
+                <List
+                  disablePadding
+                  tabIndex={0}
+                  aria-label={t('manager.dashboard.sections.recentActivity')}
+                  sx={{
+                    maxHeight: 190,
+                    overflowY: 'auto',
+                    borderRadius: 1,
+                    '&:focus-visible': {
+                      outline: `2px solid ${tokens.brand.primaryOnLight}`,
+                      outlineOffset: 2,
+                    },
+                  }}
+                >
                   {data.recentActivity.map((activity, index) => (
                     <ListItem
                       key={`${activity.timestamp}-${index}`}
@@ -413,13 +514,19 @@ export default function ManagerDashboardPage() {
                       <ListItemText
                         primary={
                           <Typography
-                            sx={{ color: '#0F172A', fontWeight: 600, fontSize: '0.9rem' }}
+                            sx={{
+                              color: tokens.dashboard.heading,
+                              fontWeight: 600,
+                              fontSize: '0.9rem',
+                            }}
                           >
                             {getDashboardActivityLabel(activity.type, activity.description, t)}
                           </Typography>
                         }
                         secondary={
-                          <Typography sx={{ color: '#64748B', fontSize: '0.78rem', mt: 0.2 }}>
+                          <Typography
+                            sx={{ color: tokens.dashboard.mutedText, fontSize: '0.78rem', mt: 0.2 }}
+                          >
                             {formatDateTime(activity.timestamp)}
                           </Typography>
                         }
@@ -433,9 +540,11 @@ export default function ManagerDashboardPage() {
         </Grid>
       </Grid>
 
-      <Card sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid #E2E8F0' }}>
+      <Card
+        sx={{ borderRadius: 3, boxShadow: 'none', border: `1px solid ${tokens.border.subtle}` }}
+      >
         <CardContent>
-          <Typography sx={{ fontWeight: 700, color: '#0F172A', mb: 1.5 }}>
+          <Typography sx={{ fontWeight: 700, color: tokens.dashboard.heading, mb: 1.5 }}>
             {t('manager.dashboard.sections.upcomingCheckins')}
           </Typography>
           <Table size="small">
@@ -459,7 +568,9 @@ export default function ManagerDashboardPage() {
               ) : data.upcomingCheckins.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6}>
-                    <Typography sx={{ py: 2, textAlign: 'center', color: '#64748B' }}>
+                    <Typography
+                      sx={{ py: 2, textAlign: 'center', color: tokens.dashboard.mutedText }}
+                    >
                       {t('manager.dashboard.empty.noUpcomingCheckins')}
                     </Typography>
                   </TableCell>
@@ -474,9 +585,9 @@ export default function ManagerDashboardPage() {
                     <TableCell>
                       <Chip
                         label={getDashboardStatusLabel(checkin.status, t)}
-                        color={getStatusChipColor(checkin.status)}
                         size="small"
                         variant="filled"
+                        sx={getStatusChipSx(checkin.status)}
                       />
                     </TableCell>
                     <TableCell align="right">{formatCurrency(checkin.amount)}</TableCell>

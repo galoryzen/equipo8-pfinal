@@ -1,5 +1,6 @@
 'use client';
 
+import { tokens } from '@/lib/theme/tokens';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { Box, Button, Card, CardContent, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +24,7 @@ export default function UnauthorizedDashboard(): React.ReactNode {
           maxWidth: 560,
           borderRadius: 3,
           boxShadow: 'none',
-          border: '1px solid #E2E8F0',
+          border: `1px solid ${tokens.border.subtle}`,
         }}
       >
         <CardContent sx={{ py: 5 }}>
@@ -33,8 +34,8 @@ export default function UnauthorizedDashboard(): React.ReactNode {
                 width: 56,
                 height: 56,
                 borderRadius: '50%',
-                bgcolor: '#FEF3C7',
-                color: '#B45309',
+                bgcolor: tokens.state.warningBg,
+                color: tokens.state.warningFg,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -43,11 +44,11 @@ export default function UnauthorizedDashboard(): React.ReactNode {
               <LockOutlinedIcon />
             </Box>
 
-            <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A' }}>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: tokens.text.primary }}>
               {t('manager.dashboard.errors.unauthorizedTitle')}
             </Typography>
 
-            <Typography sx={{ color: '#64748B', maxWidth: 420 }}>
+            <Typography sx={{ color: tokens.text.secondary, maxWidth: 420 }}>
               {t('manager.dashboard.errors.unauthorized')}
             </Typography>
 
