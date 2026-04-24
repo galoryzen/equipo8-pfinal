@@ -215,3 +215,100 @@ class TestUpdateRatePlanCancellationPolicyUseCase:
 
         assert out["type"] == "FULL"
         mock_manager_repo.update_rate_plan_cancellation_policy.assert_awaited_once_with(rid, body)
+
+
+class TestListManagerHotelsUseCaseEmpty:
+    async def test_empty_result_still_paginated(self, mock_manager_repo):
+        hid = uuid4()
+        mock_manager_repo.list_manager_hotels.return_value = ([], 0)
+        uc = ListManagerHotelsUseCase(mock_manager_repo)
+
+        out = await uc.execute(hotel_id=hid, page=1, page_size=20)
+
+        assert out.items == []
+        assert out.total == 0
+        assert out.total_pages == 0
+
+
+class TestListRoomTypesAvailabilityUseCaseOptionalRatePlan:
+    async def test_rate_plan_id_none_allowed(self, mock_manager_repo):
+        prop_id = uuid4()
+        rt_id = uuid4()
+        mock_manager_repo.list_room_types_with_availability.return_value = (
+            [
+                {
+                    "id": rt_id,
+                    "name": "Basic",
+                    "icon": "standard",
+                    "available": 0,
+                    "total": 2,
+                    "rate_plan_id": None,
+                }
+            ],
+            1,
+        )
+        uc = ListRoomTypesAvailabilityUseCase(mock_manager_repo)
+
+        out = await uc.execute(property_id=prop_id, page=1, page_size=10)
+
+        assert out.items[0].rate_plan_id is None
+
+
+class TestGetHotelMetricsUseCaseRounding:
+    async def test_full_occupancy_when_no_rooms_available(self, mock_manager_repo):
+        mock_manager_repo.get_property_occupancy.return_value = (0, 8)
+        uc = GetHotelMetricsUseCase(repo=mock_manager_repo, booking_stats={"active_bookings": 1, "monthly_revenue": 0})
+
+        out = await uc.execute(property_id=uuid4())
+
+        assert out.occupancyRate == 100.0
+
+    async def test_rounds_to_one_decimal(self, mock_manager_repo):
+        """(1 - 1/3) * 100 = 66.666... -> 66.7"""
+        mock_manager_repo.get_property_occupancy.return_value = (1, 3)
+        uc = GetHotelMetricsUseCase(repo=mock_manager_repo, booking_stats={})
+
+        out = await uc.execute(property_id=uuid4())
+
+        assert out.occupancyRate == 66.7
+
+
+class TestGetRatePlanCancellationPolicyUseCaseWithPolicy:
+    async def test_returns_policy_dict(self, mock_manager_repo):
+        rid = uuid4()
+        expected = {
+            "type": "PARTIAL",
+            "refund_percent": 50,
+            "hours_limit": None,
+        }
+        mock_manager_repo.get_rate_plan_cancellation_policy.return_value = expected
+        uc = GetRatePlanCancellationPolicyUseCase(mock_manager_repo)
+
+        out = await uc.execute(rate_plan_id=rid)
+
+        assert out == expected
+
+
+class TestUpdateRatePlanCancellationPolicyUseCasePartial:
+    async def test_partial_with_refund_percent(self, mock_manager_repo):
+        mock_manager_repo.update_rate_plan_cancellation_policy.return_value = {
+            "type": "PARTIAL",
+            "refund_percent": 75,
+            "hours_limit": None,
+        }
+        uc = UpdateRatePlanCancellationPolicyUseCase(mock_manager_repo)
+        rid = uuid4()
+        body = UpdateCancellationPolicyIn(type="PARTIAL", refund_percent=75)
+
+        out = await uc.execute(rate_plan_id=rid, data=body)
+
+        assert out["refund_percent"] == 75
+
+
+class TestDeletePromotionUseCaseErrors:
+    async def test_propagates_repo_value_error(self, mock_manager_repo):
+        mock_manager_repo.delete_promotion.side_effect = ValueError("promotion not found")
+        uc = DeletePromotionUseCase(mock_manager_repo)
+
+        with pytest.raises(ValueError, match="promotion not found"):
+            await uc.execute(promotion_id=uuid4())
