@@ -349,76 +349,78 @@
           "errorRefundPctRange": "El porcentaje de reembolso debe estar entre 1% y 99%.",
           "applyDateLabel": "Fecha de aplicación de la política",
           "applyDateHelper": "La última fecha en que el huésped puede ejercer esta política."
+        },
+        "dashboard": {
+          "title": "Resumen del dashboard",
+          "subtitle": "Resumen del rendimiento de tu hotel para el periodo seleccionado.",
+          "metrics": {
+            "totalBookings": "Reservas totales",
+            "revenue": "Ingresos",
+            "occupancyRate": "Tasa de ocupación",
+            "averageRating": "Calificación promedio"
+          },
+          "sections": {
+            "bookingTrends": "Tendencias de reservas",
+            "recentActivity": "Actividad reciente",
+            "upcomingCheckins": "Próximos check-ins"
+          },
+          "filters": {
+            "last7days": "Últimos 7 días",
+            "last30days": "Últimos 30 días",
+            "currentMonth": "Mes actual"
+          },
+          "empty": {
+            "noData": "No hay datos disponibles",
+            "noUpcomingCheckins": "No hay próximos check-ins"
+          },
+          "errors": {
+            "loading": "Error al cargar el dashboard",
+            "unauthorizedTitle": "Acceso restringido",
+            "unauthorized": "El socio de agencia no está autorizado para consultar métricas del hotel."
+          },
+          "actions": {
+            "goToBookings": "Ir a reservas"
+          },
+          "table": {
+            "guest": "Huésped",
+            "roomType": "Tipo de habitación",
+            "checkIn": "Check-in",
+            "checkOut": "Check-out",
+            "status": "Estado",
+            "amount": "Monto"
+          },
+          "status": {
+            "confirmed": "Confirmada",
+            "pending_payment": "Pago pendiente",
+            "pending_confirmation": "Confirmación pendiente",
+            "cancelled": "Cancelada"
+          },
+          "activity": {
+            "booking_confirmed": "Reserva confirmada",
+            "booking_cancelled": "Reserva cancelada",
+            "booking_pending_confirmation": "Reserva pendiente de confirmación",
+            "booking_pending_payment": "Reserva pendiente de pago",
+            "payment_captured": "Pago capturado",
+            "review_created": "Reseña creada"
+          }
         }
-    "dashboard": {
-      "title": "Resumen del dashboard",
-      "subtitle": "Resumen del rendimiento de tu hotel para el periodo seleccionado.",
-      "metrics": {
-        "totalBookings": "Reservas totales",
-        "revenue": "Ingresos",
-        "occupancyRate": "Tasa de ocupación",
-        "averageRating": "Calificación promedio"
       },
-      "sections": {
-        "bookingTrends": "Tendencias de reservas",
-        "recentActivity": "Actividad reciente",
-        "upcomingCheckins": "Próximos check-ins"
+      "admin": {
+        "navbar": {
+          "title": "TravelHub Admin",
+          "dashboard": "Dashboard",
+          "bookings": "Reservas",
+          "hotels": "Mis Hoteles",
+          "notifications": "Notificaciones",
+          "reports": "Reportes",
+          "subtitle": "Super Admin",
+          "logOut": "Cerrar sesión"
+        }
       },
-      "filters": {
-        "last7days": "Últimos 7 días",
-        "last30days": "Últimos 30 días",
-        "currentMonth": "Mes actual"
-      },
-      "empty": {
-        "noData": "No hay datos disponibles",
-        "noUpcomingCheckins": "No hay próximos check-ins"
-      },
-      "errors": {
-        "loading": "Error al cargar el dashboard",
-        "unauthorizedTitle": "Acceso restringido",
-        "unauthorized": "El socio de agencia no está autorizado para consultar métricas del hotel."
-      },
-      "actions": {
-        "goToBookings": "Ir a reservas"
-      },
-      "table": {
-        "guest": "Huésped",
-        "roomType": "Tipo de habitación",
-        "checkIn": "Check-in",
-        "checkOut": "Check-out",
-        "status": "Estado",
-        "amount": "Monto"
-      },
-      "status": {
-        "confirmed": "Confirmada",
-        "pending_payment": "Pago pendiente",
-        "pending_confirmation": "Confirmación pendiente",
-        "cancelled": "Cancelada"
-      },
-      "activity": {
-        "booking_confirmed": "Reserva confirmada",
-        "booking_cancelled": "Reserva cancelada",
-        "booking_pending_confirmation": "Reserva pendiente de confirmación",
-        "booking_pending_payment": "Reserva pendiente de pago",
-        "payment_captured": "Pago capturado",
-        "review_created": "Reseña creada"
+      "common": {
+        "cancel": "Cancelar",
+        "unknownError": "Error desconocido"
       }
     }
-  },
-  "admin": {
-    "navbar": {
-      "title": "TravelHub Admin",
-      "dashboard": "Dashboard",
-      "bookings": "Reservas",
-      "hotels": "Mis Hoteles",
-      "notifications": "Notificaciones",
-      "reports": "Reportes",
-      "subtitle": "Super Admin",
-      "logOut": "Cerrar sesión"
-    }
-  },
-  "common": {
-    "cancel": "Cancelar",
-    "unknownError": "Error desconocido"
   }
 }
