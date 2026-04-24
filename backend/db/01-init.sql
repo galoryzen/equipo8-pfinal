@@ -385,14 +385,17 @@ CREATE TABLE payments.refund (
 -- =============================================
 
 CREATE TABLE notifications.notification (
-    id          UUID PRIMARY KEY,
-    booking_id  UUID NOT NULL REFERENCES booking.booking(id),
-    user_id     UUID NOT NULL REFERENCES users.users(id),
-    channel     notification_channel NOT NULL,
-    type        VARCHAR NOT NULL,
-    status      notification_status NOT NULL DEFAULT 'PENDING',
-    sent_at     TIMESTAMP,
-    created_at  TIMESTAMP NOT NULL DEFAULT now()
+    id                   UUID PRIMARY KEY,
+    event_id             UUID NOT NULL UNIQUE,
+    booking_id           UUID NOT NULL REFERENCES booking.booking(id),
+    user_id              UUID NOT NULL REFERENCES users.users(id),
+    channel              notification_channel NOT NULL,
+    type                 VARCHAR NOT NULL,
+    status               notification_status NOT NULL DEFAULT 'PENDING',
+    to_email             VARCHAR,
+    provider_message_id  VARCHAR,
+    sent_at              TIMESTAMP,
+    created_at           TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE TABLE notifications.device_token (

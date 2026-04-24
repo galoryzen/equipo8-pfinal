@@ -79,7 +79,8 @@ jobs:
               --cluster travelhub \
               --service thub-$svc \
               --task-definition "$NEW_TASK_DEF" \
-              --force-new-deployment
+              --force-new-deployment \
+              --query 'service.serviceArn' --output text
 
             # For booking/payment, roll the matching worker service with the
             # same image. Worker env vars are owned by Terraform and
@@ -105,7 +106,8 @@ jobs:
                 --cluster travelhub \
                 --service "$WORKER_FAMILY" \
                 --task-definition "$NEW_WORKER_TASK_DEF" \
-                --force-new-deployment
+                --force-new-deployment \
+                --query 'service.serviceArn' --output text
             fi
 
             echo "::endgroup::"

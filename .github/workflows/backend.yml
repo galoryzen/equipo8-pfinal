@@ -142,12 +142,13 @@ jobs:
               --cluster travelhub \
               --service thub-$svc \
               --task-definition "$NEW_TASK_DEF" \
-              --force-new-deployment
+              --force-new-deployment \
+              --query 'service.serviceArn' --output text
 
-            # For booking/payment, roll the matching worker service with the
-            # same image. Worker env vars are owned by Terraform and
-            # preserved via describe-task-definition.
-            if [[ "$svc" == "booking" || "$svc" == "payment" ]]; then
+            # For services with a matching worker, roll it with the same image.
+            # Worker env vars are owned by Terraform and preserved via
+            # describe-task-definition.
+            if [[ "$svc" == "booking" || "$svc" == "payment" || "$svc" == "notification" ]]; then
               WORKER_FAMILY="thub-$svc-worker"
               aws ecs describe-task-definition \
                 --task-definition "$WORKER_FAMILY" \
@@ -168,7 +169,8 @@ jobs:
                 --cluster travelhub \
                 --service "$WORKER_FAMILY" \
                 --task-definition "$NEW_WORKER_TASK_DEF" \
-                --force-new-deployment
+                --force-new-deployment \
+                --query 'service.serviceArn' --output text
             fi
 
             echo "::endgroup::"

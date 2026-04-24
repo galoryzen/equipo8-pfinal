@@ -67,3 +67,31 @@ variable "github_repo" {
   type        = string
   default     = "galoryzen/equipo8-pfinal"
 }
+
+# --- SES (notification emails) ---
+
+variable "ses_from_address" {
+  description = "SES verified sender email address"
+  type        = string
+  default     = "noreply@travelhub.galoryzen.xyz"
+}
+
+variable "ses_mail_from_subdomain" {
+  description = "Subdomain used as SES Custom MAIL FROM for SPF alignment"
+  type        = string
+  default     = "mail.travelhub.galoryzen.xyz"
+}
+
+variable "ses_test_recipients" {
+  description = "SES verified recipient emails for sandbox testing"
+  type        = list(string)
+  default     = ["rjlopezgr@gmail.com"]
+}
+
+# --- Internal service-to-service auth ---
+
+variable "internal_service_token" {
+  description = "Shared secret required by /internal/* endpoints (X-Internal-Token header)"
+  type        = string
+  sensitive   = true
+}
