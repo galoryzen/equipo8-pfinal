@@ -76,7 +76,8 @@ async def test_payment_succeeded_delegates_to_mark_use_case():
 
     assert b.status == BookingStatus.PENDING_CONFIRMATION
     assert b.confirmation_payment_intent_id == intent_id
-    repo.save.assert_awaited_once_with(b)
+    repo.save_and_record_status_history.assert_awaited_once()
+    repo.save.assert_not_awaited()
 
 
 @pytest.mark.asyncio

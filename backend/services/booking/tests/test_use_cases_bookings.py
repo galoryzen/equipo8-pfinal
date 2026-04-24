@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
 import pytest
@@ -15,6 +15,15 @@ from app.domain.models import (
     CancellationPolicyType,
 )
 from app.schemas.booking import PaginatedBookingListOut
+
+
+def _mock_catalog_client():
+    """Stub httpx.AsyncClient whose get() always returns 404 (no enrichment)."""
+    response = MagicMock()
+    response.status_code = 404
+    client = AsyncMock()
+    client.get = AsyncMock(return_value=response)
+    return client
 
 FIXED_TODAY = date(2026, 4, 19)
 
@@ -72,12 +81,14 @@ class TestListMyBookingsUseCase:
             date(2026, 6, 3),
         )
         repo = AsyncMock()
-        repo.list_by_user_id.return_value = [b1, b2]
+        repo.list_by_user_id.return_value = ([b1, b2], 2)
 
-        uc = ListMyBookingsUseCase(repo, clock=_clock)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
         out = await uc.execute(user_id=uid)
 
-        repo.list_by_user_id.assert_awaited_once_with(uid, scope=BookingScope.ALL, today=FIXED_TODAY)
+        repo.list_by_user_id.assert_awaited_once_with(
+            uid, scope=BookingScope.ALL, today=FIXED_TODAY, page=1, page_size=10
+        )
         assert len(out.items) == 2
         ids = {x.id for x in out.items}
         assert ids == {b1.id, b2.id}
@@ -92,9 +103,9 @@ class TestListMyBookingsUseCase:
             date(2026, 5, 4),
         )
         repo = AsyncMock()
-        repo.list_by_user_id.return_value = [b1]
+        repo.list_by_user_id.return_value = ([b1], 1)
 
-        uc = ListMyBookingsUseCase(repo, clock=_clock)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
         out = await uc.execute(user_id=uid)
 
         assert out.items[0].status == "PENDING_CONFIRMATION"
@@ -104,7 +115,7 @@ class TestListMyBookingsUseCase:
     async def test_user_with_no_bookings_returns_empty_list(self):
         uid = UUID("a0000000-0000-0000-0000-000000000099")
         repo = AsyncMock()
-        repo.list_by_user_id.return_value = []
+        repo.list_by_user_id.return_value = ([], 0)
 
         uc = ListMyBookingsUseCase(repo, clock=_clock)
         out = await uc.execute(user_id=uid)
@@ -114,22 +125,59 @@ class TestListMyBookingsUseCase:
     async def test_active_scope_forwarded_to_repo(self):
         uid = UUID("a0000000-0000-0000-0000-000000000001")
         repo = AsyncMock()
-        repo.list_by_user_id.return_value = []
+        repo.list_by_user_id.return_value = ([], 0)
 
         uc = ListMyBookingsUseCase(repo, clock=_clock)
         await uc.execute(user_id=uid, scope=BookingScope.ACTIVE)
 
-        repo.list_by_user_id.assert_awaited_once_with(uid, scope=BookingScope.ACTIVE, today=FIXED_TODAY)
+        repo.list_by_user_id.assert_awaited_once_with(
+            uid, scope=BookingScope.ACTIVE, today=FIXED_TODAY, page=1, page_size=10
+        )
 
     async def test_past_scope_forwarded_to_repo(self):
         uid = UUID("a0000000-0000-0000-0000-000000000001")
         repo = AsyncMock()
-        repo.list_by_user_id.return_value = []
+        repo.list_by_user_id.return_value = ([], 0)
 
         uc = ListMyBookingsUseCase(repo, clock=_clock)
         await uc.execute(user_id=uid, scope=BookingScope.PAST)
 
-        repo.list_by_user_id.assert_awaited_once_with(uid, scope=BookingScope.PAST, today=FIXED_TODAY)
+        repo.list_by_user_id.assert_awaited_once_with(
+            uid, scope=BookingScope.PAST, today=FIXED_TODAY, page=1, page_size=10
+        )
+
+    async def test_execute_hotel_uses_hotel_id_directly(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        b1 = _booking(
+            UUID("90000000-0000-0000-0000-000000000001"),
+            UUID("a0000000-0000-0000-0000-000000000001"),
+            BookingStatus.CONFIRMED,
+            date(2026, 5, 1),
+            date(2026, 5, 4),
+        )
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b1], 1)
+
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
+        out = await uc.execute_hotel(hotel_id=hotel_id)
+
+        repo.list_by_hotel.assert_awaited_once_with(
+            hotel_id=hotel_id, status=None, page=1, page_size=10
+        )
+        assert len(out.items) == 1
+
+    async def test_pagination_metadata_is_correct(self):
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        repo = AsyncMock()
+        repo.list_by_user_id.return_value = ([], 25)
+
+        uc = ListMyBookingsUseCase(repo, clock=_clock)
+        out = await uc.execute(user_id=uid, page=2, page_size=10)
+
+        assert out.total == 25
+        assert out.page == 2
+        assert out.page_size == 10
+        assert out.total_pages == 3
 
 
 @pytest.mark.asyncio

@@ -13,23 +13,30 @@ class BookingRepository(ABC):
         *,
         scope: BookingScope = BookingScope.ALL,
         today: date | None = None,
-    ) -> list[Booking]:
-        """Return user bookings filtered by scope relative to ``today``.
+        page: int = 1,
+        page_size: int = 10,
+    ) -> tuple[list[Booking], int]:
+        """Return (bookings_page, total_count) for a user filtered by scope.
 
         - ACTIVE: status in (CONFIRMED, PENDING_PAYMENT, PENDING_CONFIRMATION)
           AND checkout >= today. Ordered by checkin ASC (upcoming first).
         - PAST: (status = CONFIRMED AND checkout < today)
           OR status in (CANCELLED, REJECTED). Ordered by checkout DESC.
         - ALL: everything except CART and EXPIRED. Ordered by checkin DESC.
+        Pagination is applied at the DB level via LIMIT/OFFSET.
         """
-    
-    @abstractmethod
-    async def list_all(self, status: str | None = None) -> list[Booking]:
-        """Return all bookings in the system, optionally filtered by status."""
 
     @abstractmethod
-    async def list_by_hotel(self, hotel_id: UUID, status: str | None = None) -> list[Booking]:
-        """Return all bookings for a hotel, optionally filtered by status."""
+    async def list_all(
+        self, status: str | None = None, page: int = 1, page_size: int = 10
+    ) -> tuple[list[Booking], int]:
+        """Return (bookings_page, total_count) for all bookings, optionally filtered by status."""
+
+    @abstractmethod
+    async def list_by_hotel(
+        self, hotel_id: UUID, status: str | None = None, page: int = 1, page_size: int = 10
+    ) -> tuple[list[Booking], int]:
+        """Return (bookings_page, total_count) for a hotel, optionally filtered by status."""
 
     @abstractmethod
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
@@ -88,6 +95,12 @@ class BookingRepository(ABC):
     @abstractmethod
     async def add_status_history(self, row: BookingStatusHistory) -> None:
         """Persist a new row in booking_status_history."""
+
+    @abstractmethod
+    async def save_and_record_status_history(
+        self, booking: Booking, row: BookingStatusHistory
+    ) -> None:
+        """Persist booking changes and the status history row in a single transaction."""
 
     @abstractmethod
     async def find_last_status_history_by_reason(

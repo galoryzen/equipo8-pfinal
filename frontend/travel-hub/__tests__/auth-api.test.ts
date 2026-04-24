@@ -1,4 +1,4 @@
-import { getMe, loginUser, logoutUser, registerUser } from '@/app/lib/api/auth';
+import { _resetMeCache, getMe, loginUser, logoutUser, registerUser } from '@/app/lib/api/auth';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 function mockFetch(ok: boolean, body: unknown, status = ok ? 200 : 400) {
@@ -9,7 +9,10 @@ function mockFetch(ok: boolean, body: unknown, status = ok ? 200 : 400) {
   } as Response);
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  _resetMeCache();
+});
 
 describe('registerUser', () => {
   const payload = {
@@ -56,6 +59,20 @@ describe('loginUser', () => {
       json: () => Promise.reject(new Error('parse fail')),
     } as unknown as Response);
     await expect(loginUser('x@y.com', 'bad')).rejects.toThrow('Error 401');
+  });
+
+  it('primes getMe cache after successful login', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ id: '2', email: 'b@c.com', role: 'TRAVELER' }),
+    } as Response);
+
+    await loginUser('b@c.com', 'pw');
+    const me = await getMe();
+
+    expect(me).toEqual({ id: '2', email: 'b@c.com', role: 'TRAVELER' });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 });
 

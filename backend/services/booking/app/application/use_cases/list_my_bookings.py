@@ -1,10 +1,10 @@
+import asyncio
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from uuid import UUID
 
 import httpx
 
-from app.application.hotel_partner import resolve_hotel_id_for_user
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.config import settings
 from app.domain.models import Booking, BookingScope
@@ -20,95 +20,33 @@ def _default_today() -> date:
     return datetime.now(UTC).date()
 
 
-def _paginate(items: list, page: int, page_size: int) -> tuple[list, int, int]:
-    """Return (page_items, total, total_pages)."""
-    total = len(items)
-    total_pages = max(1, -(-total // page_size))  # ceiling division
-    start = (page - 1) * page_size
-    return items[start : start + page_size], total, total_pages
+async def _fetch_property_info(client: httpx.AsyncClient, property_id: UUID) -> dict | None:
+    try:
+        resp = await client.get(
+            f"{settings.CATALOG_SERVICE_URL}/api/v1/catalog/properties/{property_id}"
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        pass
+    return None
 
 
-class ListMyBookingsUseCase:
-    def __init__(
-        self,
-        repo: BookingRepository,
-        clock: Callable[[], date] = _default_today,
-    ):
-        self._repo = repo
-        self._clock = clock
-
-    async def execute(
-        self,
-        user_id: UUID,
-        scope: BookingScope = BookingScope.ALL,
-        page: int = 1,
-        page_size: int = 10,
-    ) -> PaginatedBookingListOut:
-        today = self._clock()
-        bookings = await self._repo.list_by_user_id(user_id, scope=scope, today=today)
-        items = [await _to_list_item(b) for b in bookings]
-        page_items, total, total_pages = _paginate(items, page, page_size)
-        return PaginatedBookingListOut(items=page_items, total=total, page=page, page_size=page_size, total_pages=total_pages)
-
-    async def execute_admin(
-        self,
-        status: str | None = None,
-        page: int = 1,
-        page_size: int = 10,
-    ) -> PaginatedBookingListOut:
-        bookings = await self._repo.list_all(status=status)
-        items = [await _to_list_item(b) for b in bookings]
-        page_items, total, total_pages = _paginate(items, page, page_size)
-        return PaginatedBookingListOut(items=page_items, total=total, page=page, page_size=page_size, total_pages=total_pages)
-
-    async def execute_hotel(
-        self,
-        user_id: str | UUID,
-        status: str | None = None,
-        page: int = 1,
-        page_size: int = 10,
-    ) -> PaginatedBookingListOut:
-        hotel_id = await resolve_hotel_id_for_user(user_id)
-        bookings = await self._repo.list_by_hotel(hotel_id=hotel_id, status=status)
-        items = [await _to_list_item(b) for b in bookings]
-        page_items, total, total_pages = _paginate(items, page, page_size)
-        return PaginatedBookingListOut(items=page_items, total=total, page=page, page_size=page_size, total_pages=total_pages)
-
-
-async def _to_list_item(booking: Booking) -> BookingListItemOut:
-    # Obtener info de la propiedad desde catalog
+def _map_booking_to_list_item(booking: Booking, prop_info: dict | None) -> BookingListItemOut:
     property_name = None
     image_url = None
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{settings.CATALOG_SERVICE_URL}/api/v1/catalog/properties/{booking.property_id}")
-            if resp.status_code == 200:
-                property_info = resp.json()
-                detail = property_info.get("detail", {})
-                property_name = detail.get("name")
-                images = detail.get("images", [])
-                image_url = images[0]["url"] if images else None
-    except Exception:
-        property_name = None
-        image_url = None
+    if prop_info:
+        detail = prop_info.get("detail", {})
+        property_name = detail.get("name")
+        images = detail.get("images", [])
+        image_url = images[0]["url"] if images else None
 
-    # Calcular noches
     nights = None
-    try:
-        if booking.checkin and booking.checkout:
+    if booking.checkin and booking.checkout:
+        try:
             nights = (booking.checkout - booking.checkin).days
-    except Exception:
-        nights = None
-
-    # Obtener nombre del huésped desde auth
-    guest_name = None
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{settings.AUTH_SERVICE_URL}/users/{booking.user_id}")
-            if resp.status_code == 200:
-                guest_name = resp.json().get("full_name")
-    except Exception:
-        guest_name = None
+        except Exception:
+            pass
 
     return BookingListItemOut(
         id=booking.id,
@@ -123,6 +61,83 @@ async def _to_list_item(booking: Booking) -> BookingListItemOut:
         property_name=property_name,
         image_url=image_url,
         nights=nights,
-        guest_name=guest_name,
+        guest_name=None,  # auth fan-out removed; not needed for list view
         guests_count=booking.guests_count,
     )
+
+
+class ListMyBookingsUseCase:
+    def __init__(
+        self,
+        repo: BookingRepository,
+        clock: Callable[[], date] = _default_today,
+        catalog_http_client: httpx.AsyncClient | None = None,
+    ):
+        self._repo = repo
+        self._clock = clock
+        self._catalog_client = catalog_http_client
+
+    async def _enrich(self, bookings: list[Booking]) -> list[BookingListItemOut]:
+        if not bookings:
+            return []
+
+        unique_pids = list({b.property_id for b in bookings})
+        owned = self._catalog_client is None
+        client = self._catalog_client or httpx.AsyncClient(timeout=5.0)
+
+        try:
+            results = await asyncio.gather(
+                *[_fetch_property_info(client, pid) for pid in unique_pids]
+            )
+        finally:
+            if owned:
+                await client.aclose()
+
+        prop_map: dict[UUID, dict | None] = dict(zip(unique_pids, results))
+        return [_map_booking_to_list_item(b, prop_map.get(b.property_id)) for b in bookings]
+
+    async def execute(
+        self,
+        user_id: UUID,
+        scope: BookingScope = BookingScope.ALL,
+        page: int = 1,
+        page_size: int = 10,
+    ) -> PaginatedBookingListOut:
+        today = self._clock()
+        bookings, total = await self._repo.list_by_user_id(
+            user_id, scope=scope, today=today, page=page, page_size=page_size
+        )
+        items = await self._enrich(bookings)
+        total_pages = max(1, -(-total // page_size))
+        return PaginatedBookingListOut(
+            items=items, total=total, page=page, page_size=page_size, total_pages=total_pages
+        )
+
+    async def execute_admin(
+        self,
+        status: str | None = None,
+        page: int = 1,
+        page_size: int = 10,
+    ) -> PaginatedBookingListOut:
+        bookings, total = await self._repo.list_all(status=status, page=page, page_size=page_size)
+        items = await self._enrich(bookings)
+        total_pages = max(1, -(-total // page_size))
+        return PaginatedBookingListOut(
+            items=items, total=total, page=page, page_size=page_size, total_pages=total_pages
+        )
+
+    async def execute_hotel(
+        self,
+        hotel_id: UUID,
+        status: str | None = None,
+        page: int = 1,
+        page_size: int = 10,
+    ) -> PaginatedBookingListOut:
+        bookings, total = await self._repo.list_by_hotel(
+            hotel_id=hotel_id, status=status, page=page, page_size=page_size
+        )
+        items = await self._enrich(bookings)
+        total_pages = max(1, -(-total // page_size))
+        return PaginatedBookingListOut(
+            items=items, total=total, page=page, page_size=page_size, total_pages=total_pages
+        )

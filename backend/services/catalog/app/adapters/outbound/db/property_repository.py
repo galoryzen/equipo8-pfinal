@@ -2,10 +2,10 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import case, desc, nulls_last, select
+from sqlalchemy import and_, case, desc, nulls_last, select
 from sqlalchemy import func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload, selectinload, with_loader_criteria
 
 from app.application.ports.outbound.property_repository import (
     PropertyRepository as PropertyRepositoryPort,
@@ -385,25 +385,41 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
         return items, total
 
-    async def get_by_id(self, property_id: UUID) -> Property | None:
+    async def get_by_id(
+        self,
+        property_id: UUID,
+        *,
+        checkin: date | None = None,
+        checkout: date | None = None,
+    ) -> Property | None:
+        options = [
+            joinedload(Property.city),
+            joinedload(Property.default_cancellation_policy),
+            selectinload(Property.images),
+            selectinload(Property.amenities),
+            selectinload(Property.policies),
+            selectinload(Property.room_types).selectinload(RoomType.amenities),
+            selectinload(Property.room_types).selectinload(RoomType.images),
+            selectinload(Property.room_types)
+            .selectinload(RoomType.rate_plans)
+            .joinedload(RatePlan.cancellation_policy),
+            selectinload(Property.room_types)
+            .selectinload(RoomType.rate_plans)
+            .selectinload(RatePlan.rate_calendar),
+            selectinload(Property.room_types).selectinload(RoomType.rate_plans).selectinload(RatePlan.promotions),
+        ]
+        if checkin is not None and checkout is not None:
+            # Restrict calendar rows to the requested date window at SQL level,
+            # avoiding hydration of the entire rate_calendar history.
+            options.append(
+                with_loader_criteria(
+                    RateCalendar,
+                    and_(RateCalendar.day >= checkin, RateCalendar.day < checkout),
+                )
+            )
         stmt = (
             select(Property)
-            .options(
-                joinedload(Property.city),
-                joinedload(Property.default_cancellation_policy),
-                selectinload(Property.images),
-                selectinload(Property.amenities),
-                selectinload(Property.policies),
-                selectinload(Property.room_types).selectinload(RoomType.amenities),
-                selectinload(Property.room_types).selectinload(RoomType.images),
-                selectinload(Property.room_types)
-                .selectinload(RoomType.rate_plans)
-                .joinedload(RatePlan.cancellation_policy),
-                selectinload(Property.room_types)
-                .selectinload(RoomType.rate_plans)
-                .selectinload(RatePlan.rate_calendar),
-                selectinload(Property.room_types).selectinload(RoomType.rate_plans).selectinload(RatePlan.promotions),
-            )
+            .options(*options)
             .where(
                 Property.id == property_id,
                 Property.status == PropertyStatus.ACTIVE,

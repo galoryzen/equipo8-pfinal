@@ -52,10 +52,12 @@ vi.mock('@/app/lib/api/booking', () => ({
       this.existingBookingId = existingBookingId;
     }
   },
+  cancelCartBooking: vi.fn(),
   createCartBooking: vi.fn(),
   getBookingDetail: vi.fn(),
 }));
 
+const mockCancel = vi.mocked(bookingApi.cancelCartBooking);
 const mockCreate = vi.mocked(bookingApi.createCartBooking);
 const mockDetail = vi.mocked(bookingApi.getBookingDetail);
 
@@ -77,6 +79,8 @@ describe('TravelerPaymentPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    mockCancel.mockReset();
+    mockDetail.mockReset();
   });
 
   it('shows a loading spinner on mount', () => {
@@ -130,6 +134,41 @@ describe('TravelerPaymentPage', () => {
       expect(screen.getByText('Room unavailable')).toBeTruthy();
       expect(screen.getByText('payment.backToSearch')).toBeTruthy();
     });
+  });
+
+  it('replaces existing cart and continues when create returns conflict', async () => {
+    const ConflictError = bookingApi.CartConflictError as unknown as new (
+      existingBookingId: string
+    ) => Error;
+    const conflictError = new ConflictError('existing-cart-1');
+    mockCreate.mockRejectedValueOnce(conflictError).mockResolvedValueOnce(CART);
+    mockCancel.mockResolvedValue({
+      id: 'existing-cart-1',
+      status: 'CANCELLED',
+      checkin: '2026-05-01',
+      checkout: '2026-05-02',
+      hold_expires_at: null,
+      total_amount: '0',
+      currency_code: 'USD',
+      property_id: 'p-old',
+      room_type_id: 'r-old',
+      rate_plan_id: 'rp-old',
+      unit_price: '0',
+      policy_type_applied: 'STANDARD',
+      policy_hours_limit_applied: 24,
+      policy_refund_percent_applied: 100,
+      created_at: '2026-01-01',
+      updated_at: '2026-01-01',
+    });
+
+    render(<TravelerPaymentPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('payment.pageTitle')).toBeTruthy();
+    });
+
+    expect(mockCancel).toHaveBeenCalledWith('existing-cart-1');
+    expect(mockCreate).toHaveBeenCalledTimes(2);
   });
 
   it('stores booking id in localStorage after creation', async () => {

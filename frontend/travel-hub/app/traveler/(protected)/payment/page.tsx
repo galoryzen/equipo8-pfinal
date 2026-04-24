@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   CartConflictError,
+  cancelCartBooking,
   checkoutBooking,
   createCartBooking,
   getBookingDetail,
@@ -258,17 +259,33 @@ function PaymentPageContent() {
         return;
       }
 
+      const createPayload = {
+        checkin,
+        checkout,
+        currency_code: currency,
+        property_id: propertyId,
+        room_type_id: roomTypeId,
+        rate_plan_id: ratePlanId,
+        unit_price: unitPrice,
+        guests_count: guests,
+      };
+
       try {
-        const newBooking: CartBooking = await createCartBooking({
-          checkin,
-          checkout,
-          currency_code: currency,
-          property_id: propertyId,
-          room_type_id: roomTypeId,
-          rate_plan_id: ratePlanId,
-          unit_price: unitPrice,
-          guests_count: guests,
-        });
+        let newBooking: CartBooking;
+        try {
+          newBooking = await createCartBooking(createPayload);
+        } catch (e) {
+          if (!(e instanceof CartConflictError)) throw e;
+          setConflictBookingId(e.existingBookingId);
+          // If another cart exists, attempt to replace it automatically.
+          try {
+            await cancelCartBooking(e.existingBookingId);
+          } catch {
+            // Best effort: retry create anyway in case the server already expired it.
+          }
+          newBooking = await createCartBooking(createPayload);
+        }
+
         if (!mountedRef.current) return;
         localStorage.setItem(key, newBooking.id);
         setIsResumed(false);
@@ -360,9 +377,13 @@ function PaymentPageContent() {
       setProcessingProgress(80);
 
       // 4. Poll until the payment worker transitions the booking out of PENDING_PAYMENT.
+      // Linear backoff: 1 s → 2 s → 3 s → 4 s → 5 s (capped), then 5 s each.
+      // This reduces the number of requests while keeping initial feedback fast.
+      let pollDelay = 1_000;
       const deadline = Date.now() + 30_000;
       while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 2000));
+        await new Promise((r) => setTimeout(r, pollDelay));
+        pollDelay = Math.min(pollDelay + 1_000, 5_000);
         const detail = await getBookingDetail(bookingId);
 
         const isSuccess = detail.status === 'PENDING_CONFIRMATION' || detail.status === 'CONFIRMED';

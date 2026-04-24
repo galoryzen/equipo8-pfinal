@@ -122,7 +122,7 @@ def get_list_my_bookings_use_case(
     session: AsyncSession = Depends(get_db_session),
 ) -> ListMyBookingsUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return ListMyBookingsUseCase(repo)
+    return ListMyBookingsUseCase(repo, catalog_http_client=_get_catalog_http_client())
 
 def get_booking_detail_use_case(
     session: AsyncSession = Depends(get_db_session),
@@ -163,7 +163,7 @@ def get_reject_booking_use_case(
     repo = SqlAlchemyBookingRepository(session)
     return RejectBookingUseCase(repo, events, catalog)
 
-# Devuelve un dict con el role y user_id extraídos del token JWT
+# Devuelve un dict con el role, user_id y hotel_id (cuando aplica) extraídos del token JWT
 def get_current_user_info(
     authorization: str | None = Header(None),
     access_token: str | None = Cookie(default=None),
@@ -186,11 +186,12 @@ def get_current_user_info(
     if not sub or not role:
         raise InvalidTokenError("Invalid token payload")
 
-    try:
-        user_id = str(sub)
-    except Exception:
-        user_id = None
-    return {"role": role, "user_id": user_id}
+    hotel_id = payload.get("hotel_id")
+    return {
+        "role": role,
+        "user_id": str(sub),
+        "hotel_id": str(hotel_id) if hotel_id else None,
+    }
 
 
 def get_checkout_booking_use_case(

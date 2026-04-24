@@ -89,17 +89,25 @@ class SqlAlchemyManagerRepository(ManagerRepository):
         rt_count_result = await self._session.execute(rt_count_stmt)
         rt_counts: dict[UUID, int] = {row[0]: row[1] for row in rt_count_result.all()}
 
-        # Total capacity per property: SUM of MAX available_units per room type (historical max)
+        # Total capacity per property: two-stage aggregate avoids correlated subquery.
+        # Stage 1: max available_units per room_type (non-correlated GROUP BY).
+        # Stage 2: sum those maxes by property_id.
+        max_per_rt_cte = (
+            select(
+                InventoryCalendar.room_type_id,
+                sa_func.max(InventoryCalendar.available_units).label("max_units"),
+            )
+            .join(RoomType, RoomType.id == InventoryCalendar.room_type_id)
+            .where(RoomType.property_id.in_(property_ids))
+            .group_by(InventoryCalendar.room_type_id)
+            .cte("max_per_rt")
+        )
         total_cap_stmt = (
             select(
                 RoomType.property_id,
-                sa_func.sum(
-                    select(sa_func.max(InventoryCalendar.available_units))
-                    .where(InventoryCalendar.room_type_id == RoomType.id)
-                    .correlate(RoomType)
-                    .scalar_subquery()
-                ).label("total_capacity"),
+                sa_func.coalesce(sa_func.sum(max_per_rt_cte.c.max_units), 0).label("total_capacity"),
             )
+            .join(max_per_rt_cte, max_per_rt_cte.c.room_type_id == RoomType.id, isouter=True)
             .where(RoomType.property_id.in_(property_ids))
             .group_by(RoomType.property_id)
         )
@@ -152,18 +160,18 @@ class SqlAlchemyManagerRepository(ManagerRepository):
         """Return (available_today, total_capacity)."""
         today = datetime.now(timezone.utc).date()
 
-        # Total capacity: sum of historical max available_units per room type
-        total_stmt = (
+        # Total capacity: two-stage aggregate avoids correlated subquery.
+        max_per_rt_cte = (
             select(
-                sa_func.sum(
-                    select(sa_func.max(InventoryCalendar.available_units))
-                    .where(InventoryCalendar.room_type_id == RoomType.id)
-                    .correlate(RoomType)
-                    .scalar_subquery()
-                )
+                InventoryCalendar.room_type_id,
+                sa_func.max(InventoryCalendar.available_units).label("max_units"),
             )
+            .join(RoomType, RoomType.id == InventoryCalendar.room_type_id)
             .where(RoomType.property_id == property_id)
+            .group_by(InventoryCalendar.room_type_id)
+            .cte("max_per_rt")
         )
+        total_stmt = select(sa_func.coalesce(sa_func.sum(max_per_rt_cte.c.max_units), 0))
         total_result = await self._session.execute(total_stmt)
         total_capacity = int(total_result.scalar() or 0)
 

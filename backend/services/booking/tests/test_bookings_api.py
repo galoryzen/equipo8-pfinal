@@ -152,7 +152,8 @@ class TestBookingsEndpoints:
         assert resp.status_code == 200
         assert resp.json()["items"] == []
 
-    def test_list_hotel_role_delegates_user_id_to_use_case(self, client_authenticated):
+    def test_list_hotel_role_delegates_hotel_id_to_use_case(self, client_authenticated):
+        hotel_id = str(UUID("e0000000-0000-0000-0000-000000000001"))
         user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
         mock_uc = AsyncMock()
         mock_uc.execute_hotel.return_value = _paginated([])
@@ -160,6 +161,7 @@ class TestBookingsEndpoints:
         app.dependency_overrides[get_current_user_info] = lambda: {
             "role": "HOTEL",
             "user_id": user_id,
+            "hotel_id": hotel_id,
         }
         try:
             resp = client_authenticated.get("/api/v1/booking/bookings")
@@ -168,7 +170,23 @@ class TestBookingsEndpoints:
             app.dependency_overrides.pop(get_current_user_info, None)
 
         assert resp.status_code == 200
-        assert mock_uc.execute_hotel.await_args.kwargs["user_id"] == user_id
+        assert str(mock_uc.execute_hotel.await_args.kwargs["hotel_id"]) == hotel_id
+
+    def test_list_hotel_role_without_hotel_id_returns_400(self, client_authenticated):
+        mock_uc = AsyncMock()
+        app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": str(UUID("b0000000-0000-0000-0000-000000000001")),
+            "hotel_id": None,
+        }
+        try:
+            resp = client_authenticated.get("/api/v1/booking/bookings")
+        finally:
+            app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 400
 
     def test_detail_returns_booking_with_flat_fields(self, client_authenticated):
         mock_uc = AsyncMock()
