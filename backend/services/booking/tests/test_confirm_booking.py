@@ -75,12 +75,18 @@ async def test_confirm_booking_success():
     assert repo.decremented
     assert result.status == BookingStatus.CONFIRMED.value
 
-    # BookingConfirmed event published with booking_id + user_id (the traveler).
+    # BookingConfirmed event published with all fields needed to render the email.
     events.publish.assert_awaited_once()
     envelope = events.publish.await_args.args[0]
     assert envelope.event_type == BOOKING_CONFIRMED
     assert envelope.payload["booking_id"] == str(booking.id)
     assert envelope.payload["user_id"] == str(booking.user_id)
+    assert envelope.payload["property_id"] == str(booking.property_id)
+    assert envelope.payload["checkin"] == booking.checkin.isoformat()
+    assert envelope.payload["checkout"] == booking.checkout.isoformat()
+    assert envelope.payload["guests_count"] == booking.guests_count
+    assert envelope.payload["total_amount"] == str(booking.total_amount)
+    assert envelope.payload["currency_code"] == booking.currency_code
 
 
 @pytest.mark.asyncio

@@ -819,20 +819,23 @@ INSERT INTO payments.refund (id, payment_id, amount, status, reason) VALUES
 -- notifications
 -- =============================================
 
--- Email confirmation for booking 1
-INSERT INTO notifications.notification (id, booking_id, user_id, channel, type, status, sent_at) VALUES
-  ('b1000000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001',
-   'EMAIL', 'BOOKING_CONFIRMED', 'SENT', now() - INTERVAL '2 days');
+-- Email confirmation for booking 1 (seed event_id is arbitrary; unique per seed row)
+INSERT INTO notifications.notification (id, event_id, booking_id, user_id, channel, type, status, to_email, sent_at) VALUES
+  ('b1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-0000000e0001',
+   '90000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001',
+   'EMAIL', 'BOOKING_CONFIRMED', 'SENT', 'carlos@example.com', now() - INTERVAL '2 days');
 
 -- Push confirmation for booking 1
-INSERT INTO notifications.notification (id, booking_id, user_id, channel, type, status, sent_at) VALUES
-  ('b1000000-0000-0000-0000-000000000002', '90000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001',
+INSERT INTO notifications.notification (id, event_id, booking_id, user_id, channel, type, status, sent_at) VALUES
+  ('b1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-0000000e0002',
+   '90000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001',
    'PUSH', 'BOOKING_CONFIRMED', 'SENT', now() - INTERVAL '2 days');
 
 -- Email cancellation for booking 3
-INSERT INTO notifications.notification (id, booking_id, user_id, channel, type, status, sent_at) VALUES
-  ('b1000000-0000-0000-0000-000000000003', '90000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003',
-   'EMAIL', 'BOOKING_CANCELLED', 'SENT', now() - INTERVAL '1 day');
+INSERT INTO notifications.notification (id, event_id, booking_id, user_id, channel, type, status, to_email, sent_at) VALUES
+  ('b1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-0000000e0003',
+   '90000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003',
+   'EMAIL', 'BOOKING_CANCELLED', 'SENT', 'juan@example.com', now() - INTERVAL '1 day');
 
 -- Device tokens
 INSERT INTO notifications.device_token (id, user_id, platform, token) VALUES

@@ -4,7 +4,7 @@ set -e
 REGION="us-east-1"
 PROFILE="personal"
 CLUSTER="travelhub"
-SERVICES=("thub-auth" "thub-catalog" "thub-booking" "thub-payment" "thub-notification")
+SERVICES=("thub-auth" "thub-catalog" "thub-booking" "thub-payment" "thub-notification" "thub-booking-worker" "thub-payment-worker" "thub-notification-worker")
 DB_INSTANCE="travelhub-db"
 NAT_INSTANCE_NAME="travelhub-fck-nat"
 

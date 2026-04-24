@@ -97,3 +97,36 @@ resource "aws_iam_role_policy_attachment" "ecs_task_sqs_consume" {
   role       = aws_iam_role.ecs_task.name
   policy_arn = aws_iam_policy.ecs_task_sqs_consume.arn
 }
+
+# --- SES send (notification worker sends booking confirmation emails) ---
+# Scoped via ses:FromAddress so the shared task role can only send as the
+# single verified noreply@ identity — not as any identity in the account.
+
+resource "aws_iam_policy" "ecs_task_ses_send" {
+  name        = "${var.project_name}-ecs-task-ses-send"
+  description = "Allow ECS tasks to send emails via SES from the verified address"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail",
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "ses:FromAddress" = var.ses_from_address
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_ses_send" {
+  role       = aws_iam_role.ecs_task.name
+  policy_arn = aws_iam_policy.ecs_task_ses_send.arn
+}

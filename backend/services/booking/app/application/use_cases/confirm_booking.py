@@ -53,6 +53,12 @@ class ConfirmBookingUseCase:
                 payload=BookingConfirmedPayload(
                     booking_id=booking.id,
                     user_id=booking.user_id,
+                    property_id=booking.property_id,
+                    checkin=booking.checkin,
+                    checkout=booking.checkout,
+                    guests_count=booking.guests_count or 1,
+                    total_amount=booking.total_amount,
+                    currency_code=booking.currency_code,
                 ).model_dump(mode="json"),
             )
         )
