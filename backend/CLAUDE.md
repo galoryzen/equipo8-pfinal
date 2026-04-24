@@ -191,7 +191,9 @@ make format-check s=catalog   # ruff format --check
 
 - **Synchronous (HTTP):** Booking → Catalog (`createHold`, `releaseHold`, `confirmHold`)
 - **Asynchronous (EventBridge + SQS in prod, RabbitMQ locally):** All other cross-service flows
-- Key events: `PaymentRequested`, `PaymentAuthorized`, `PaymentFailed`, `PaymentSucceeded`, `BookingConfirmed`, `BookingCancelled`, `RefundRequested`
+- Key events: `PaymentRequested`, `PaymentSucceeded`, `PaymentFailed`, `BookingConfirmed`, `BookingRejected`
+- `BookingConfirmed` is published by Booking on hotel confirm; no consumer today (future: notification service)
+- `BookingRejected` is published by Booking on hotel reject; consumed by Payment to issue a 100% refund
 - Event contracts in `libs/contracts/`
 
 ## Booking state machine
@@ -203,4 +205,4 @@ CART → PENDING_PAYMENT → PENDING_CONFIRMATION → CONFIRMED
                                                → EXPIRED
 ```
 
-Saga pattern (choreography): Booking publishes events, Payment and Notification react independently. Two-phase payments: authorize at checkout, capture on hotel confirm.
+Saga pattern (choreography): Booking publishes `PaymentRequested` at checkout; the Payment worker authorizes against the mock PSP and publishes `PaymentSucceeded` or `PaymentFailed`; the Booking worker consumes the result and moves the booking to `PENDING_CONFIRMATION` (on success) or records a history row (on failure). Single-phase payments: `PaymentSucceeded` is terminal — no capture step in the MVP. The transition `PENDING_CONFIRMATION → CONFIRMED` is driven by the manual `PATCH /bookings/{id}/confirm` endpoint, not by an event.

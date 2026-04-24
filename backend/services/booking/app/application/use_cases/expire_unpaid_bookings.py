@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from app.application.exceptions import CatalogUnavailableError
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
-from app.domain.models import BookingStatus
+from app.domain.models import BookingStatus, new_status_history_row
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +28,19 @@ class ExpireUnpaidBookingsUseCase:
             return 0
 
         for booking in bookings:
+            previous_status = booking.status
             booking.status = BookingStatus.EXPIRED
             booking.inventory_released = False
             booking.updated_at = now
             await self._repo.save(booking)
+            await self._repo.add_status_history(
+                new_status_history_row(
+                    booking.id,
+                    from_status=previous_status,
+                    to_status=BookingStatus.EXPIRED,
+                    reason="hold_expired",
+                )
+            )
 
             try:
                 await self._catalog.release_hold(

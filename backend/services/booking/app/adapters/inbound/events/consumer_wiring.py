@@ -1,4 +1,4 @@
-from contracts.events.payment import PAYMENT_AUTHORIZED, PAYMENT_FAILED
+from contracts.events.payment import PAYMENT_FAILED, PAYMENT_SUCCEEDED
 from shared.events import DomainEventConsumer, build_event_consumer
 
 from app.adapters.inbound.events.handlers import make_payment_result_handler
@@ -23,6 +23,6 @@ def build_worker_consumer() -> DomainEventConsumer:
         rabbitmq_url=settings.RABBITMQ_URL,
         queue_name=settings.PAYMENT_RESULT_QUEUE,
     )
-    consumer.subscribe(PAYMENT_AUTHORIZED, handler)
+    consumer.subscribe(PAYMENT_SUCCEEDED, handler)
     consumer.subscribe(PAYMENT_FAILED, handler)
     return consumer

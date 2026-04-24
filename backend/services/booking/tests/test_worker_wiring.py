@@ -1,6 +1,6 @@
 import pytest
 
-from contracts.events.payment import PAYMENT_AUTHORIZED, PAYMENT_FAILED
+from contracts.events.payment import PAYMENT_SUCCEEDED, PAYMENT_FAILED
 from shared.events.rabbitmq_consumer import RabbitMQEventConsumer
 
 
@@ -16,7 +16,7 @@ def test_build_worker_consumer_registers_both_payment_events(monkeypatch):
     consumer = build_worker_consumer()
 
     assert isinstance(consumer, RabbitMQEventConsumer)
-    assert PAYMENT_AUTHORIZED in consumer._handlers
+    assert PAYMENT_SUCCEEDED in consumer._handlers
     assert PAYMENT_FAILED in consumer._handlers
 
 

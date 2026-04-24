@@ -146,16 +146,18 @@ def get_list_booking_guests_use_case(
 
 def get_confirm_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
+    events: DomainEventPublisher = Depends(get_event_publisher),
 ) -> ConfirmBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return ConfirmBookingUseCase(repo)
+    return ConfirmBookingUseCase(repo, events)
 
 
 def get_reject_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
+    events: DomainEventPublisher = Depends(get_event_publisher),
 ) -> RejectBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return RejectBookingUseCase(repo)
+    return RejectBookingUseCase(repo, events)
 
 # Devuelve un dict con el role y user_id extraídos del token JWT
 def get_current_user_info(

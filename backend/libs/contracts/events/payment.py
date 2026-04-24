@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 PAYMENT_REQUESTED = "PaymentRequested"
-PAYMENT_AUTHORIZED = "PaymentAuthorized"
+PAYMENT_SUCCEEDED = "PaymentSucceeded"
 PAYMENT_FAILED = "PaymentFailed"
 
 
@@ -17,7 +17,7 @@ class PaymentRequestedPayload(BaseModel):
     force_decline: bool = False
 
 
-class PaymentAuthorizedPayload(BaseModel):
+class PaymentSucceededPayload(BaseModel):
     payment_intent_id: UUID
     booking_id: UUID
     payment_id: UUID

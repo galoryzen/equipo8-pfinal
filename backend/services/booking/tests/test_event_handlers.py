@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from contracts.events.base import DomainEventEnvelope
-from contracts.events.payment import PAYMENT_AUTHORIZED
+from contracts.events.payment import PAYMENT_SUCCEEDED
 
 from app.adapters.inbound.events.handlers import make_payment_result_handler
 
@@ -20,7 +20,7 @@ async def test_handle_commits_on_success():
     session = AsyncMock()
     session_factory = _make_session_factory(session)
 
-    envelope = DomainEventEnvelope(event_type=PAYMENT_AUTHORIZED, payload={})
+    envelope = DomainEventEnvelope(event_type=PAYMENT_SUCCEEDED, payload={})
 
     with patch(
         "app.adapters.inbound.events.handlers.HandlePaymentResultUseCase"
@@ -40,7 +40,7 @@ async def test_handle_rollback_on_failure():
     session = AsyncMock()
     session_factory = _make_session_factory(session)
 
-    envelope = DomainEventEnvelope(event_type=PAYMENT_AUTHORIZED, payload={})
+    envelope = DomainEventEnvelope(event_type=PAYMENT_SUCCEEDED, payload={})
 
     with patch(
         "app.adapters.inbound.events.handlers.HandlePaymentResultUseCase"

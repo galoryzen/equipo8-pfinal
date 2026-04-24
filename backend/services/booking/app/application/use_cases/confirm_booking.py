@@ -1,9 +1,13 @@
 from datetime import datetime
 from uuid import UUID
 
+from contracts.events.base import DomainEventEnvelope
+from contracts.events.booking import BOOKING_CONFIRMED, BookingConfirmedPayload
+from shared.events import DomainEventPublisher
+
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingStatus
+from app.domain.models import Booking, BookingStatus, new_status_history_row
 from app.schemas.booking import BookingDetailOut
 
 
@@ -12,8 +16,9 @@ class InventoryConflictError(Exception):
 
 
 class ConfirmBookingUseCase:
-    def __init__(self, repo: BookingRepository):
+    def __init__(self, repo: BookingRepository, events: DomainEventPublisher):
         self._repo = repo
+        self._events = events
 
     async def execute(self, booking_id: UUID, user_id: UUID | None, notes: str | None = None) -> BookingDetailOut:
         if user_id is None:
@@ -32,6 +37,25 @@ class ConfirmBookingUseCase:
         booking.updated_at = datetime.utcnow()
         await self._repo.update(booking)
         await self._repo.decrement_inventory(booking)
+        reason = f"hotel_confirmed:{notes}" if notes else "hotel_confirmed"
+        await self._repo.add_status_history(
+            new_status_history_row(
+                booking.id,
+                from_status=BookingStatus.PENDING_CONFIRMATION,
+                to_status=BookingStatus.CONFIRMED,
+                reason=reason,
+                changed_by=user_id,
+            )
+        )
+        await self._events.publish(
+            DomainEventEnvelope(
+                event_type=BOOKING_CONFIRMED,
+                payload=BookingConfirmedPayload(
+                    booking_id=booking.id,
+                    user_id=booking.user_id,
+                ).model_dump(mode="json"),
+            )
+        )
         return _to_detail(booking)
 
 

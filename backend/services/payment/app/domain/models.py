@@ -82,3 +82,19 @@ class Payment(Base):
     processed_at: Mapped[datetime | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
+
+
+class Refund(Base):
+    __tablename__ = "refund"
+    __table_args__: ClassVar[dict] = {"schema": PAYMENTS_SCHEMA}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    payment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # Per docs/db-schema.dbml the column is varchar — kept as plain str so we
+    # don't collide with the existing `payment_status` PG enum that only covers
+    # transaction states (AUTHORIZED/CAPTURED/FAILED/CANCELLED). Refund status
+    # values used today: "SUCCEEDED", "FAILED".
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    reason: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(nullable=False)
