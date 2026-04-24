@@ -50,10 +50,11 @@ def _get_catalog_http_client() -> httpx.AsyncClient:
 # ── Shared domain event publisher for the API process. Built once from
 # settings at import-time. Closed cleanly from main.py lifespan.
 _publisher: DomainEventPublisher = build_event_publisher(
-    settings.EVENT_BUS_BACKEND,
+    settings.EVENT_PUBLISHER_BACKEND,
     rabbitmq_url=settings.RABBITMQ_URL,
     eventbridge_bus_name=settings.EVENTBRIDGE_BUS_NAME,
     eventbridge_region=settings.EVENTBRIDGE_REGION,
+    eventbridge_source=f"travelhub.{settings.SERVICE_NAME}",
 )
 
 
@@ -150,16 +151,19 @@ def get_list_booking_guests_use_case(
 
 def get_confirm_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
+    events: DomainEventPublisher = Depends(get_event_publisher),
 ) -> ConfirmBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return ConfirmBookingUseCase(repo)
+    return ConfirmBookingUseCase(repo, events)
 
 
 def get_reject_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
+    events: DomainEventPublisher = Depends(get_event_publisher),
+    catalog: CatalogInventoryPort = Depends(get_catalog_client),
 ) -> RejectBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return RejectBookingUseCase(repo)
+    return RejectBookingUseCase(repo, events, catalog)
 
 # Devuelve un dict con el role y user_id extraídos del token JWT
 def get_current_user_info(

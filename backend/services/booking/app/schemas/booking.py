@@ -46,6 +46,10 @@ class SaveGuestsIn(BaseModel):
     guests: list[GuestIn] = Field(min_length=1, max_length=20)
 
 
+class RejectBookingIn(BaseModel):
+    reason: str | None = Field(default=None, max_length=500)
+
+
 class GuestOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -6,7 +6,7 @@ from uuid import UUID
 from app.application.exceptions import CatalogUnavailableError, ConflictingActiveCartError
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
-from app.domain.models import Booking, BookingStatus, CancellationPolicyType
+from app.domain.models import Booking, BookingStatus, CancellationPolicyType, new_status_history_row
 from app.schemas.booking import CartBookingOut, CreateCartBookingIn
 
 _HOLD_MINUTES = 15
@@ -76,6 +76,15 @@ class CreateCartBookingUseCase:
 
         try:
             saved = await self._repo.create(booking)
+            await self._repo.add_status_history(
+                new_status_history_row(
+                    saved.id,
+                    from_status=None,
+                    to_status=BookingStatus.CART,
+                    reason="cart_created",
+                    changed_by=user_id,
+                )
+            )
         except Exception:
             # Persistence failed after Catalog decrement. Best-effort rollback of the hold
             # so a single unit is not orphaned. The reconciler cannot help here because no

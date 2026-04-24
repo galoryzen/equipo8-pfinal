@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
 
     # Catalog coordination for inventory holds (SCRUM-123 backend foundation)
-    CATALOG_SERVICE_URL: str = "http://thub-catalog:8000"
+    # Default = CloudMap hostname (AWS). Compose overrides to thub-catalog locally.
+    CATALOG_SERVICE_URL: str = "http://catalog.services.local:8000"
     CATALOG_HTTP_TIMEOUT_SECONDS: float = 3.0
 
     # Background worker — expires CART and reconciles unreleased inventory holds.
@@ -22,13 +23,21 @@ class Settings(BaseSettings):
     CONSUMER_ENABLED: bool = False
     WORKER_EXPIRE_INTERVAL_SECONDS: int = 60
 
-    # Event bus (Paso 4: consumer of PaymentAuthorized + PaymentFailed)
-    EVENT_BUS_BACKEND: str = "logging"
+    # Event bus (Paso 4: consumer of PaymentSucceeded + PaymentFailed)
+    # Split in two roles: API publishes, worker consumes. They can use
+    # different transports (e.g. AWS worker = sqs consumer + eventbridge publisher
+    # if booking ever publishes from the worker; today it only consumes).
+    EVENT_PUBLISHER_BACKEND: str = "logging"
+    EVENT_CONSUMER_BACKEND: str = "logging"
     RABBITMQ_URL: str | None = None
     EVENTBRIDGE_BUS_NAME: str | None = None
     EVENTBRIDGE_REGION: str | None = None
 
     PAYMENT_RESULT_QUEUE: str = "booking.payment-result"
+
+    # AWS SQS worker inbox (used when EVENT_CONSUMER_BACKEND=sqs).
+    AWS_REGION: str | None = None
+    EVENT_QUEUE_URL: str | None = None
 
     model_config = {"env_prefix": "BOOKING_", "env_file": ".env", "extra": "ignore"}
 

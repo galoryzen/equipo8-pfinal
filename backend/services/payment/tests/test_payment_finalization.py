@@ -5,7 +5,7 @@ import pytest
 from app.adapters.outbound.mock.mock_payment_gateway import MockPaymentGateway
 from app.application.exceptions import PaymentIntentNotFoundError
 from app.application.use_cases.payment_finalization import PaymentFinalizationService
-from app.domain.event_names import PAYMENT_AUTHORIZED, PAYMENT_FAILED
+from app.domain.event_names import PAYMENT_SUCCEEDED, PAYMENT_FAILED
 from app.domain.models import PaymentIntentStatus
 from tests.conftest import make_payment_intent
 
@@ -27,7 +27,7 @@ async def test_finalize_from_event_pending_ok_token():
     await svc.finalize_from_event(intent)
 
     repo.persist_success.assert_awaited_once()
-    assert events.publish.call_args[0][0].event_type == PAYMENT_AUTHORIZED
+    assert events.publish.call_args[0][0].event_type == PAYMENT_SUCCEEDED
 
 
 @pytest.mark.asyncio

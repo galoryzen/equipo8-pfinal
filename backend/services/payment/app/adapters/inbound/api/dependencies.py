@@ -34,10 +34,11 @@ def _http_client() -> httpx.AsyncClient:
 
 
 _publisher: DomainEventPublisher = build_event_publisher(
-    settings.EVENT_BUS_BACKEND,
+    settings.EVENT_PUBLISHER_BACKEND,
     rabbitmq_url=settings.RABBITMQ_URL,
     eventbridge_bus_name=settings.EVENTBRIDGE_BUS_NAME,
     eventbridge_region=settings.EVENTBRIDGE_REGION,
+    eventbridge_source=f"travelhub.{settings.SERVICE_NAME}",
 )
 _mock_payment_gateway = MockPaymentGateway()
 
