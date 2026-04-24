@@ -5,7 +5,7 @@ from uuid import UUID
 
 from app.application.exceptions import BookingNotFoundError, InvalidBookingStateError
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import BookingStatus
+from app.domain.models import BookingStatus, new_status_history_row
 
 
 class MarkBookingPendingConfirmationUseCase:
@@ -39,3 +39,11 @@ class MarkBookingPendingConfirmationUseCase:
         booking.confirmation_payment_intent_id = payment_intent_id
         booking.updated_at = now
         await self._repo.save(booking)
+        await self._repo.add_status_history(
+            new_status_history_row(
+                booking.id,
+                from_status=BookingStatus.PENDING_PAYMENT,
+                to_status=BookingStatus.PENDING_CONFIRMATION,
+                reason=f"payment_succeeded:{payment_intent_id}",
+            )
+        )

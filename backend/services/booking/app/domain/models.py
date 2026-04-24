@@ -1,6 +1,6 @@
 import enum
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -103,6 +103,26 @@ class BookingStatusHistory(Base):
     reason: Mapped[str | None] = mapped_column(String, nullable=True)
     changed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     changed_at: Mapped[datetime] = mapped_column(nullable=False)
+
+
+def new_status_history_row(
+    booking_id: uuid.UUID,
+    *,
+    from_status: BookingStatus | None,
+    to_status: BookingStatus,
+    reason: str | None = None,
+    changed_by: uuid.UUID | None = None,
+) -> BookingStatusHistory:
+    """Construct a history row with id + naive UTC timestamp filled in."""
+    return BookingStatusHistory(
+        id=uuid.uuid4(),
+        booking_id=booking_id,
+        from_status=from_status,
+        to_status=to_status,
+        reason=reason,
+        changed_by=changed_by,
+        changed_at=datetime.now(UTC).replace(tzinfo=None),
+    )
 
 
 class Guest(Base):

@@ -9,19 +9,23 @@ from app.application.exceptions import (
 )
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
-from app.domain.models import Booking, BookingStatus
+from app.domain.models import Booking, BookingStatus, new_status_history_row
 from app.schemas.booking import BookingDetailOut
 
 logger = logging.getLogger(__name__)
 
 
 class CancelCartBookingUseCase:
-    """Cancel a CART booking and release its inventory hold.
+    """Abandon a CART booking and release its inventory hold.
 
-    State transition (CART -> CANCELLED) is persisted first; the Catalog release
+    State transition (CART -> EXPIRED) is persisted first; the Catalog release
     is attempted inline as a best-effort to free inventory immediately. If the
     release fails, the reconcile job picks it up later. This means the user
     never sees a 503 because Catalog is temporarily unavailable.
+
+    EXPIRED (not CANCELLED) is the correct terminal for an abandoned cart —
+    CANCELLED is reserved for post-confirmation cancellations that require a
+    refund flow (not implemented in MVP).
     """
 
     def __init__(self, repo: BookingRepository, catalog: CatalogInventoryPort):
@@ -36,10 +40,19 @@ class CancelCartBookingUseCase:
             raise InvalidBookingStateError(f"Cannot cancel booking in state {booking.status.value}")
 
         now = datetime.now(UTC).replace(tzinfo=None)
-        booking.status = BookingStatus.CANCELLED
+        booking.status = BookingStatus.EXPIRED
         booking.inventory_released = False
         booking.updated_at = now
         await self._repo.save(booking)
+        await self._repo.add_status_history(
+            new_status_history_row(
+                booking.id,
+                from_status=BookingStatus.CART,
+                to_status=BookingStatus.EXPIRED,
+                reason="user_cancelled_cart",
+                changed_by=user_id,
+            )
+        )
 
         try:
             await self._catalog.release_hold(

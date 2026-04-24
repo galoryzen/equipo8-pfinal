@@ -62,3 +62,30 @@ output "github_actions_role_arn" {
   description = "IAM Role ARN for GitHub Actions OIDC"
   value       = aws_iam_role.github_actions.arn
 }
+
+# --- Event bus + worker queues ---
+
+output "event_bus_name" {
+  description = "Custom EventBridge bus for domain events"
+  value       = aws_cloudwatch_event_bus.main.name
+}
+
+output "event_bus_arn" {
+  description = "ARN of the custom EventBridge bus"
+  value       = aws_cloudwatch_event_bus.main.arn
+}
+
+output "worker_queue_urls" {
+  description = "SQS queue URLs per worker (consumed by worker ECS task defs)"
+  value       = { for k, v in aws_sqs_queue.worker : k => v.url }
+}
+
+output "worker_queue_arns" {
+  description = "SQS queue ARNs per worker"
+  value       = { for k, v in aws_sqs_queue.worker : k => v.arn }
+}
+
+output "worker_dlq_urls" {
+  description = "SQS DLQ URLs per worker (ops visibility)"
+  value       = { for k, v in aws_sqs_queue.worker_dlq : k => v.url }
+}
