@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     DB_SCHEMA: str = "catalog"
     REDIS_URL: str = "redis://redis:6379/0"
     DEBUG: bool = False
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    BOOKING_SERVICE_URL: str = "http://thub-booking:8000"
 
     model_config = {"env_prefix": "CATALOG_", "env_file": ".env", "extra": "ignore"}
 

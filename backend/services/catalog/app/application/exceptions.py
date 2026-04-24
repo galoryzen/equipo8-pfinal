@@ -17,3 +17,19 @@ class InsufficientInventoryError(Exception):
             if room_type_id is not None
             else "Insufficient inventory"
         )
+
+
+class PromotionError(Exception):
+    """Raised when promotion creation fails (e.g. rate_plan not found for property)."""
+
+    def __init__(self, detail: str = "Promotion creation failed"):
+        self.detail = detail
+        super().__init__(detail)
+
+
+class UnauthorizedError(Exception):
+    """Raised when the requester does not have the required role or claim."""
+
+    def __init__(self, detail: str = "Unauthorized"):
+        self.detail = detail
+        super().__init__(detail)
