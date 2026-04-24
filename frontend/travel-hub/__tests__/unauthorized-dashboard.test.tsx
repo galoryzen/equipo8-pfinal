@@ -7,10 +7,10 @@ vi.mock('react-i18next', () => ({
     t: (key: string) =>
       (
         ({
-          'manager.dashboard.errors.unauthorizedTitle': 'Acceso restringido',
-          'manager.dashboard.errors.unauthorized':
+          'manager.hotels.roomTypeManage.dashboard.errors.unauthorizedTitle': 'Acceso restringido',
+          'manager.hotels.roomTypeManage.dashboard.errors.unauthorized':
             'No tienes permisos para consultar este dashboard.',
-          'manager.dashboard.actions.goToBookings': 'Ir a reservas',
+          'manager.hotels.roomTypeManage.dashboard.actions.goToBookings': 'Ir a reservas',
         }) as Record<string, string>
       )[key] ?? key,
   }),

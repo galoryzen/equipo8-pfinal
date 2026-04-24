@@ -365,6 +365,7 @@
             "upcomingCheckins": "Próximos check-ins"
           },
           "filters": {
+            "dateRange": "Rango de fechas",
             "last7days": "Últimos 7 días",
             "last30days": "Últimos 30 días",
             "currentMonth": "Mes actual"

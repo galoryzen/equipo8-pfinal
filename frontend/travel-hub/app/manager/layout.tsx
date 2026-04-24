@@ -44,31 +44,31 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
   const MENU_ITEMS = [
     {
-      key: 'admin.navbar.dashboard',
+      key: 'manager.hotels.admin.navbar.dashboard',
       icon: <DashboardCustomizeOutlinedIcon />,
       activeIcon: <DashboardCustomizeIcon />,
       href: '/manager',
     },
     {
-      key: 'admin.navbar.bookings',
+      key: 'manager.hotels.admin.navbar.bookings',
       icon: <CalendarTodayOutlinedIcon />,
       activeIcon: <CalendarTodayIcon />,
       href: '/manager/bookings',
     },
     {
-      key: 'admin.navbar.hotels',
+      key: 'manager.hotels.admin.navbar.hotels',
       icon: <DashboardCustomizeOutlinedIcon />,
       activeIcon: <DashboardCustomizeIcon />,
       href: '/manager/hotels',
     },
     {
-      key: 'admin.navbar.notifications',
+      key: 'manager.hotels.admin.navbar.notifications',
       icon: <NotificationsNoneOutlinedIcon />,
       activeIcon: <NotificationsIcon />,
       href: '/manager/notifications',
     },
     {
-      key: 'admin.navbar.reports',
+      key: 'manager.hotels.admin.navbar.reports',
       icon: <BarChartOutlinedIcon />,
       activeIcon: <BarChartIcon />,
       href: '/manager/reports',
@@ -76,10 +76,12 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   ];
 
   function isActive(href: string) {
-    if (href === '/manager') {
-      return pathname === '/manager';
+    const p = pathname.replace(/\/$/, '') || '/';
+    const h = href.replace(/\/$/, '') || '/';
+    if (h === '/manager') {
+      return p === '/manager';
     }
-    return pathname.startsWith(href);
+    return p === h || p.startsWith(`${h}/`);
   }
 
   function formatDisplayName(email: string) {
@@ -137,7 +139,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                     lineHeight: 1.2,
                   }}
                 >
-                  {t('admin.navbar.title')}
+                  {t('manager.hotels.admin.navbar.title')}
                 </Typography>
                 <Typography
                   variant="subtitle2"
@@ -147,7 +149,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                     lineHeight: 1.25,
                   }}
                 >
-                  {t('admin.navbar.subtitle')}
+                  {t('manager.hotels.admin.navbar.subtitle')}
                 </Typography>
               </Box>
             </Box>
