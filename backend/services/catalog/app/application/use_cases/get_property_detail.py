@@ -57,7 +57,7 @@ class GetPropertyDetailUseCase:
         if cached:
             return json.loads(cached)
 
-        prop = await self._repo.get_by_id(property_id)
+        prop = await self._repo.get_by_id(property_id, checkin=checkin, checkout=checkout)
         if not prop:
             raise PropertyNotFoundError(property_id)
 

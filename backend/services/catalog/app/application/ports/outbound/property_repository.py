@@ -32,8 +32,19 @@ class PropertyRepository(ABC):
         """Return (items_as_dicts, total_count) for paginated search by stay dates; optional city filter."""
 
     @abstractmethod
-    async def get_by_id(self, property_id: UUID) -> Property | None:
-        """Full property with eager-loaded relations."""
+    async def get_by_id(
+        self,
+        property_id: UUID,
+        *,
+        checkin: date | None = None,
+        checkout: date | None = None,
+    ) -> Property | None:
+        """Full property with eager-loaded relations.
+
+        When ``checkin`` and ``checkout`` are provided, rate_calendar rows are
+        restricted to that date window at the SQL level, avoiding hydration of
+        the full calendar history.
+        """
 
     @abstractmethod
     async def get_reviews(self, property_id: UUID, page: int = 1, page_size: int = 10) -> tuple[list[Review], int]:

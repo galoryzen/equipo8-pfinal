@@ -273,7 +273,7 @@ class TestGetPropertyDetail:
         assert result["reviews"]["total"] == 1
         assert len(result["reviews"]["items"]) == 1
         assert result["reviews"]["items"][0]["rating"] == 5
-        mock_property_repo.get_by_id.assert_called_once_with(prop_id)
+        mock_property_repo.get_by_id.assert_called_once_with(prop_id, checkin=None, checkout=None)
         mock_property_repo.get_review_stats.assert_called_once_with(prop_id)
         mock_property_repo.get_reviews.assert_called_once_with(prop_id, 1, 10)
 
