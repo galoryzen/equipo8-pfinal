@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   CartConflictError,
+  cancelCartBooking,
   checkoutBooking,
   createCartBooking,
   getBookingDetail,
@@ -258,17 +259,33 @@ function PaymentPageContent() {
         return;
       }
 
+      const createPayload = {
+        checkin,
+        checkout,
+        currency_code: currency,
+        property_id: propertyId,
+        room_type_id: roomTypeId,
+        rate_plan_id: ratePlanId,
+        unit_price: unitPrice,
+        guests_count: guests,
+      };
+
       try {
-        const newBooking: CartBooking = await createCartBooking({
-          checkin,
-          checkout,
-          currency_code: currency,
-          property_id: propertyId,
-          room_type_id: roomTypeId,
-          rate_plan_id: ratePlanId,
-          unit_price: unitPrice,
-          guests_count: guests,
-        });
+        let newBooking: CartBooking;
+        try {
+          newBooking = await createCartBooking(createPayload);
+        } catch (e) {
+          if (!(e instanceof CartConflictError)) throw e;
+          setConflictBookingId(e.existingBookingId);
+          // If another cart exists, attempt to replace it automatically.
+          try {
+            await cancelCartBooking(e.existingBookingId);
+          } catch {
+            // Best effort: retry create anyway in case the server already expired it.
+          }
+          newBooking = await createCartBooking(createPayload);
+        }
+
         if (!mountedRef.current) return;
         localStorage.setItem(key, newBooking.id);
         setIsResumed(false);
