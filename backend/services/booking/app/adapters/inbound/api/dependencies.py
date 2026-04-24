@@ -7,6 +7,7 @@ from shared.events import DomainEventPublisher, build_event_publisher
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.db.booking_repository import SqlAlchemyBookingRepository
+from app.adapters.outbound.db.dashboard_metrics_repository import SqlAlchemyDashboardMetricsRepository
 from app.adapters.outbound.db.guest_repository import SqlAlchemyGuestRepository
 from app.adapters.outbound.db.session import async_session
 from app.adapters.outbound.http.catalog_client import HttpCatalogClient
@@ -20,6 +21,7 @@ from app.application.use_cases.checkout_booking import CheckoutBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
+from app.application.use_cases.get_hotel_dashboard_metrics import GetHotelDashboardMetricsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
 from app.application.use_cases.reject_booking import RejectBookingUseCase
 from app.application.use_cases.save_booking_guests import SaveBookingGuestsUseCase
@@ -46,10 +48,11 @@ def _get_catalog_http_client() -> httpx.AsyncClient:
 # ── Shared domain event publisher for the API process. Built once from
 # settings at import-time. Closed cleanly from main.py lifespan.
 _publisher: DomainEventPublisher = build_event_publisher(
-    settings.EVENT_BUS_BACKEND,
+    settings.EVENT_PUBLISHER_BACKEND,
     rabbitmq_url=settings.RABBITMQ_URL,
     eventbridge_bus_name=settings.EVENTBRIDGE_BUS_NAME,
     eventbridge_region=settings.EVENTBRIDGE_REGION,
+    eventbridge_source=f"travelhub.{settings.SERVICE_NAME}",
 )
 
 
@@ -146,16 +149,19 @@ def get_list_booking_guests_use_case(
 
 def get_confirm_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
+    events: DomainEventPublisher = Depends(get_event_publisher),
 ) -> ConfirmBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return ConfirmBookingUseCase(repo)
+    return ConfirmBookingUseCase(repo, events)
 
 
 def get_reject_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
+    events: DomainEventPublisher = Depends(get_event_publisher),
+    catalog: CatalogInventoryPort = Depends(get_catalog_client),
 ) -> RejectBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return RejectBookingUseCase(repo)
+    return RejectBookingUseCase(repo, events, catalog)
 
 # Devuelve un dict con el role y user_id extraídos del token JWT
 def get_current_user_info(
@@ -194,5 +200,12 @@ def get_checkout_booking_use_case(
     booking_repo = SqlAlchemyBookingRepository(session)
     guest_repo = SqlAlchemyGuestRepository(session)
     return CheckoutBookingUseCase(booking_repo, guest_repo, events)
+
+
+def get_hotel_dashboard_metrics_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetHotelDashboardMetricsUseCase:
+    repo = SqlAlchemyDashboardMetricsRepository(session)
+    return GetHotelDashboardMetricsUseCase(repo)
 
 

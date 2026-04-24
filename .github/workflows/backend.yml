@@ -144,6 +144,33 @@ jobs:
               --task-definition "$NEW_TASK_DEF" \
               --force-new-deployment
 
+            # For booking/payment, roll the matching worker service with the
+            # same image. Worker env vars are owned by Terraform and
+            # preserved via describe-task-definition.
+            if [[ "$svc" == "booking" || "$svc" == "payment" ]]; then
+              WORKER_FAMILY="thub-$svc-worker"
+              aws ecs describe-task-definition \
+                --task-definition "$WORKER_FAMILY" \
+                --query taskDefinition \
+                > worker-task-def.json
+
+              jq --arg img "$NEW_IMAGE" --arg name "$svc-worker" \
+                '.containerDefinitions |= map(if .name == $name then .image = $img else . end) |
+                 del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+                worker-task-def.json > worker-task-def-updated.json
+
+              NEW_WORKER_TASK_DEF=$(aws ecs register-task-definition \
+                --cli-input-json file://worker-task-def-updated.json \
+                --query taskDefinition.taskDefinitionArn \
+                --output text)
+
+              aws ecs update-service \
+                --cluster travelhub \
+                --service "$WORKER_FAMILY" \
+                --task-definition "$NEW_WORKER_TASK_DEF" \
+                --force-new-deployment
+            fi
+
             echo "::endgroup::"
           done
 

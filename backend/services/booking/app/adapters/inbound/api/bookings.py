@@ -32,6 +32,7 @@ from app.schemas.booking import (
     CreateCartBookingIn,
     GuestOut,
     PaginatedBookingListOut,
+    RejectBookingIn,
     SaveGuestsIn,
 )
 
@@ -107,6 +108,7 @@ async def confirm_booking(
 @router.patch("/bookings/{booking_id}/reject", response_model=BookingDetailOut)
 async def reject_booking(
     booking_id: UUID,
+    body: RejectBookingIn | None = None,
     user_info: dict = Depends(get_current_user_info),
     use_case: RejectBookingUseCase = Depends(get_reject_booking_use_case),
 ):
@@ -114,7 +116,8 @@ async def reject_booking(
     if role not in ("ADMIN", "HOTEL", "MANAGER"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No autorizado para rechazar esta reserva.")
     try:
-        return await use_case.execute(booking_id=booking_id)
+        reason = body.reason if body is not None else None
+        return await use_case.execute(booking_id=booking_id, reason=reason)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 

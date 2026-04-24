@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.adapters.inbound.api.bookings import router as bookings_router
+from app.adapters.inbound.api.dashboard import router as dashboard_router
 from app.adapters.inbound.api.dependencies import (
     get_configured_event_publisher,
     set_catalog_http_client,
@@ -42,3 +43,4 @@ register_error_handlers(app)
 app.include_router(health_router, prefix="/api/v1/booking")
 app.include_router(bookings_router, prefix="/api/v1/booking")
 app.include_router(internal_router, prefix="/api/v1/booking")
+app.include_router(dashboard_router, prefix="/api/v1/dashboard")

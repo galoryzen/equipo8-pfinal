@@ -22,31 +22,32 @@ def test_factory_rabbitmq_requires_url():
         build_event_publisher("rabbitmq")
 
 
-def test_factory_returns_eventbridge_stub():
+def test_factory_returns_eventbridge_publisher():
     pub = build_event_publisher(
         "eventbridge",
         eventbridge_bus_name="thub-domain-events",
         eventbridge_region="us-east-1",
+        eventbridge_source="travelhub.payment",
     )
     assert isinstance(pub, EventBridgeEventPublisher)
+
+
+def test_factory_eventbridge_requires_source():
+    with pytest.raises(ValueError, match="eventbridge_source"):
+        build_event_publisher(
+            "eventbridge",
+            eventbridge_bus_name="thub-domain-events",
+        )
+
+
+def test_factory_eventbridge_requires_bus_name():
+    with pytest.raises(ValueError, match="eventbridge_bus_name"):
+        build_event_publisher("eventbridge", eventbridge_source="travelhub.payment")
 
 
 def test_factory_rejects_unknown_backend():
     with pytest.raises(ValueError, match="Unknown event bus backend"):
         build_event_publisher("kafka")
-
-
-@pytest.mark.asyncio
-async def test_eventbridge_publish_raises_not_implemented():
-    from contracts.events.base import DomainEventEnvelope
-
-    pub = build_event_publisher(
-        "eventbridge",
-        eventbridge_bus_name="thub-domain-events",
-    )
-    envelope = DomainEventEnvelope(event_type="Test", payload={})
-    with pytest.raises(NotImplementedError, match="wire boto3"):
-        await pub.publish(envelope)
 
 
 def test_consumer_factory_returns_rabbitmq_consumer_without_connecting():
@@ -83,12 +84,12 @@ def test_consumer_factory_sqs_requires_queue_url():
 
 
 @pytest.mark.asyncio
-async def test_sqs_consumer_run_raises_not_implemented():
+async def test_sqs_consumer_run_without_handlers_raises():
     c = build_event_consumer(
         "sqs",
         sqs_queue_url="https://sqs.us-east-1.amazonaws.com/123/queue",
     )
-    with pytest.raises(NotImplementedError, match="wire boto3"):
+    with pytest.raises(RuntimeError, match="No handlers"):
         await c.run()
 
 

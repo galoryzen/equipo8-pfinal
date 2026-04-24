@@ -1,8 +1,11 @@
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+
+from contracts.events.booking import BOOKING_CONFIRMED
 
 from app.application.use_cases.confirm_booking import (
     ConfirmBookingUseCase,
@@ -17,6 +20,7 @@ class DummyRepo:
         self.inventory_ok = inventory_ok
         self.updated = False
         self.decremented = False
+        self.history_rows = []
 
     async def get_by_id_for_user(self, booking_id, user_id):  # noqa: ARG002
         return self.booking
@@ -29,6 +33,9 @@ class DummyRepo:
 
     async def decrement_inventory(self, booking):  # noqa: ARG002
         self.decremented = True
+
+    async def add_status_history(self, row):
+        self.history_rows.append(row)
 
 
 def _make_booking(status: BookingStatus = BookingStatus.PENDING_CONFIRMATION) -> Booking:
@@ -60,12 +67,20 @@ async def test_confirm_booking_success():
     booking = _make_booking()
     repo = DummyRepo(booking)
 
-    use_case = ConfirmBookingUseCase(repo)
+    events = AsyncMock()
+    use_case = ConfirmBookingUseCase(repo, events)
     result = await use_case.execute(booking.id, booking.user_id)
 
     assert repo.updated
     assert repo.decremented
     assert result.status == BookingStatus.CONFIRMED.value
+
+    # BookingConfirmed event published with booking_id + user_id (the traveler).
+    events.publish.assert_awaited_once()
+    envelope = events.publish.await_args.args[0]
+    assert envelope.event_type == BOOKING_CONFIRMED
+    assert envelope.payload["booking_id"] == str(booking.id)
+    assert envelope.payload["user_id"] == str(booking.user_id)
 
 
 @pytest.mark.asyncio
@@ -73,7 +88,8 @@ async def test_confirm_booking_inventory_conflict():
     booking = _make_booking()
     repo = DummyRepo(booking, inventory_ok=False)
 
-    use_case = ConfirmBookingUseCase(repo)
+    events = AsyncMock()
+    use_case = ConfirmBookingUseCase(repo, events)
     with pytest.raises(InventoryConflictError):
         await use_case.execute(booking.id, booking.user_id)
 
@@ -86,7 +102,8 @@ async def test_confirm_booking_wrong_status():
     booking = _make_booking(status=BookingStatus.CONFIRMED)
     repo = DummyRepo(booking)
 
-    use_case = ConfirmBookingUseCase(repo)
+    events = AsyncMock()
+    use_case = ConfirmBookingUseCase(repo, events)
     with pytest.raises(ValueError, match="pendiente de confirmación"):
         await use_case.execute(booking.id, booking.user_id)
 

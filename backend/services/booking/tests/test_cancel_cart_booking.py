@@ -57,8 +57,8 @@ class TestCancelCartBookingUseCase:
         uc = CancelCartBookingUseCase(repo, catalog)
         out = await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
-        assert out.status == "CANCELLED"
-        assert booking.status == BookingStatus.CANCELLED
+        assert out.status == "EXPIRED"
+        assert booking.status == BookingStatus.EXPIRED
         assert booking.inventory_released is True
         catalog.release_hold.assert_awaited_once_with(
             room_type_id=ROOM_TYPE_ID,
@@ -67,6 +67,13 @@ class TestCancelCartBookingUseCase:
         )
         # Two saves: one state-only, one flipping inventory_released.
         assert repo.save.await_count == 2
+        # History row recorded for the CART -> EXPIRED transition.
+        repo.add_status_history.assert_awaited_once()
+        history_row = repo.add_status_history.await_args.args[0]
+        assert history_row.from_status == BookingStatus.CART
+        assert history_row.to_status == BookingStatus.EXPIRED
+        assert history_row.reason == "user_cancelled_cart"
+        assert history_row.changed_by == USER_ID
 
     async def test_raises_when_booking_not_found(self):
         repo = AsyncMock()
@@ -104,7 +111,7 @@ class TestCancelCartBookingUseCase:
         uc = CancelCartBookingUseCase(repo, catalog)
         out = await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
-        assert out.status == "CANCELLED"
+        assert out.status == "EXPIRED"
         assert booking.inventory_released is False
         # Only the pre-release save happened; the post-release save was skipped.
         assert repo.save.await_count == 1

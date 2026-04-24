@@ -4,7 +4,7 @@ from uuid import UUID
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
-from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest
+from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest, new_status_history_row
 from app.schemas.booking import BookingDetailOut, GuestOut
 
 
@@ -36,6 +36,14 @@ class GetBookingDetailUseCase:
             booking.status = BookingStatus.EXPIRED
             booking.updated_at = now_naive
             await self._repo.save(booking)
+            await self._repo.add_status_history(
+                new_status_history_row(
+                    booking.id,
+                    from_status=BookingStatus.CART,
+                    to_status=BookingStatus.EXPIRED,
+                    reason="hold_expired_on_read",
+                )
+            )
 
         guests: list[Guest] = []
         if self._guest_repo is not None:

@@ -56,6 +56,17 @@ export const tokens = {
     successBg: '#F0FDF4',
     successBorder: '#BBF7D0',
     /**
+     * Red 600 — negative deltas / error text on white and warm off-whites
+     * (≥4.5:1 for 14px body). Use `error` for soft fills; use this for icons/labels.
+     */
+    errorFg: '#DC2626',
+    success: '#16A34A',
+    /**
+     * Green 800 — positive deltas / success text on white and light surfaces
+     * (>=4.5:1 for normal-size text).
+     */
+    successFg: '#166534',
+    /**
      * Warning palette tuned for WCAG AA contrast on light surfaces:
      * - Use `warningFg` for text/icons on white and warm off-whites.
      * - Use `warningBg` behind `warningFg` text for chips/badges.
@@ -63,6 +74,47 @@ export const tokens = {
     warningFg: '#9A3412',
     warningBg: '#FFF7ED',
     warningBorder: '#FDBA74',
+  },
+  dashboard: {
+    heading: '#0F172A',
+    mutedText: '#64748B',
+    chart: {
+      line: '#2563EB',
+    },
+    activity: {
+      confirmed: '#16A34A',
+      cancelled: '#DC2626',
+      pendingConfirmation: '#F59E0B',
+      pendingPayment: '#3B82F6',
+      reviewCreated: '#A855F7',
+      default: '#6B7280',
+    },
+    alert: {
+      errorBg: '#FECACA',
+      errorText: '#B91C1C',
+    },
+    statusChip: {
+      confirmed: {
+        bg: '#DCFCE7',
+        fg: '#166534',
+        border: '#86EFAC',
+      },
+      pendingPayment: {
+        bg: '#DBEAFE',
+        fg: '#1E3A8A',
+        border: '#93C5FD',
+      },
+      pendingConfirmation: {
+        bg: '#FEF3C7',
+        fg: '#92400E',
+        border: '#FCD34D',
+      },
+      fallback: {
+        bg: '#E2E8F0',
+        fg: '#334155',
+        border: '#CBD5E1',
+      },
+    },
   },
 } as const;
 
