@@ -231,7 +231,61 @@
     "notifications": "Notifications",
     "pendingBookingsToday": "You have {{count}} bookings pending confirmation today.",
     "noPendingBookings": "No pending bookings.",
-    "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking."
+    "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking.",
+    "dashboard": {
+      "title": "Dashboard Overview",
+      "subtitle": "Snapshot of your hotel performance for the selected period.",
+      "metrics": {
+        "totalBookings": "Total Bookings",
+        "revenue": "Revenue",
+        "occupancyRate": "Occupancy Rate",
+        "averageRating": "Average Rating"
+      },
+      "sections": {
+        "bookingTrends": "Booking Trends",
+        "recentActivity": "Recent Activity",
+        "upcomingCheckins": "Upcoming Check-ins"
+      },
+      "filters": {
+        "last7days": "Last 7 days",
+        "last30days": "Last 30 days",
+        "currentMonth": "Current month"
+      },
+      "empty": {
+        "noData": "No data available",
+        "noUpcomingCheckins": "No upcoming check-ins"
+      },
+      "errors": {
+        "loading": "Error loading dashboard",
+        "unauthorizedTitle": "Restricted access",
+        "unauthorized": "Agency partner is not authorized to view hotel metrics."
+      },
+      "actions": {
+        "goToBookings": "Go to bookings"
+      },
+      "table": {
+        "guest": "Guest",
+        "roomType": "Room Type",
+        "checkIn": "Check In",
+        "checkOut": "Check Out",
+        "status": "Status",
+        "amount": "Amount"
+      },
+      "status": {
+        "confirmed": "Confirmed",
+        "pending_payment": "Pending payment",
+        "pending_confirmation": "Pending confirmation",
+        "cancelled": "Cancelled"
+      },
+      "activity": {
+        "booking_confirmed": "Booking confirmed",
+        "booking_cancelled": "Booking cancelled",
+        "booking_pending_confirmation": "Booking pending confirmation",
+        "booking_pending_payment": "Booking pending payment",
+        "payment_captured": "Payment captured",
+        "review_created": "Review created"
+      }
+    }
   },
   "admin": {
     "navbar": {

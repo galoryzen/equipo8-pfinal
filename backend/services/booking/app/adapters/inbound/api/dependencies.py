@@ -7,6 +7,7 @@ from shared.events import DomainEventPublisher, build_event_publisher
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.db.booking_repository import SqlAlchemyBookingRepository
+from app.adapters.outbound.db.dashboard_metrics_repository import SqlAlchemyDashboardMetricsRepository
 from app.adapters.outbound.db.guest_repository import SqlAlchemyGuestRepository
 from app.adapters.outbound.db.session import async_session
 from app.adapters.outbound.http.catalog_client import HttpCatalogClient
@@ -20,6 +21,7 @@ from app.application.use_cases.checkout_booking import CheckoutBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
+from app.application.use_cases.get_hotel_dashboard_metrics import GetHotelDashboardMetricsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
 from app.application.use_cases.reject_booking import RejectBookingUseCase
 from app.application.use_cases.save_booking_guests import SaveBookingGuestsUseCase
@@ -196,5 +198,12 @@ def get_checkout_booking_use_case(
     booking_repo = SqlAlchemyBookingRepository(session)
     guest_repo = SqlAlchemyGuestRepository(session)
     return CheckoutBookingUseCase(booking_repo, guest_repo, events)
+
+
+def get_hotel_dashboard_metrics_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetHotelDashboardMetricsUseCase:
+    repo = SqlAlchemyDashboardMetricsRepository(session)
+    return GetHotelDashboardMetricsUseCase(repo)
 
 
