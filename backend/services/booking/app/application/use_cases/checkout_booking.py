@@ -16,7 +16,7 @@ from app.application.exceptions import (
 )
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
-from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest
+from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest, new_status_history_row
 from app.schemas.booking import BookingDetailOut, GuestOut
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,15 @@ class CheckoutBookingUseCase:
         booking.status = BookingStatus.PENDING_PAYMENT
         booking.updated_at = now
         await self._booking_repo.save(booking)
+        await self._booking_repo.add_status_history(
+            new_status_history_row(
+                booking.id,
+                from_status=BookingStatus.CART,
+                to_status=BookingStatus.PENDING_PAYMENT,
+                reason="checkout",
+                changed_by=user_id,
+            )
+        )
 
         envelope = DomainEventEnvelope(
             event_type=PAYMENT_REQUESTED,

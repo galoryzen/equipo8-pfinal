@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from contracts.events.base import DomainEventEnvelope
-from contracts.events.payment import PAYMENT_AUTHORIZED, PAYMENT_FAILED
+from contracts.events.payment import PAYMENT_SUCCEEDED, PAYMENT_FAILED
 
 from app.application.use_cases.handle_payment_result import HandlePaymentResultUseCase
 from app.domain.models import Booking, BookingStatus, BookingStatusHistory, CancellationPolicyType
@@ -37,9 +37,9 @@ def _booking(bid: UUID, status: BookingStatus, *, hold_expires_at=None, confirma
     )
 
 
-def _authorized_envelope(booking_id: UUID, intent_id: UUID) -> DomainEventEnvelope:
+def _succeeded_envelope(booking_id: UUID, intent_id: UUID) -> DomainEventEnvelope:
     return DomainEventEnvelope(
-        event_type=PAYMENT_AUTHORIZED,
+        event_type=PAYMENT_SUCCEEDED,
         payload={
             "payment_intent_id": str(intent_id),
             "booking_id": str(booking_id),
@@ -62,7 +62,7 @@ def _failed_envelope(booking_id: UUID, intent_id: UUID, reason: str = "card_decl
 
 
 @pytest.mark.asyncio
-async def test_payment_authorized_delegates_to_mark_use_case():
+async def test_payment_succeeded_delegates_to_mark_use_case():
     bid = uuid4()
     intent_id = uuid4()
     future = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)
@@ -72,7 +72,7 @@ async def test_payment_authorized_delegates_to_mark_use_case():
     repo.get_by_id = AsyncMock(return_value=b)
 
     uc = HandlePaymentResultUseCase(repo)
-    await uc.execute(_authorized_envelope(bid, intent_id))
+    await uc.execute(_succeeded_envelope(bid, intent_id))
 
     assert b.status == BookingStatus.PENDING_CONFIRMATION
     assert b.confirmation_payment_intent_id == intent_id

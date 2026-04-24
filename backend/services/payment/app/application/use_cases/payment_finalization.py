@@ -3,13 +3,13 @@ import uuid
 from datetime import UTC, datetime
 
 from contracts.events.base import DomainEventEnvelope
-from contracts.events.payment import PaymentAuthorizedPayload, PaymentFailedPayload
+from contracts.events.payment import PaymentFailedPayload, PaymentSucceededPayload
 from shared.events import DomainEventPublisher
 
 from app.application.exceptions import PaymentIntentNotFoundError
 from app.application.ports.outbound.payment_gateway_port import PaymentGatewayPort
 from app.application.ports.outbound.payment_repository import PaymentRepository
-from app.domain.event_names import PAYMENT_AUTHORIZED, PAYMENT_FAILED
+from app.domain.event_names import PAYMENT_FAILED, PAYMENT_SUCCEEDED
 from app.domain.models import (
     Payment,
     PaymentAttempt,
@@ -67,8 +67,8 @@ class PaymentFinalizationService:
             )
             await self._repo.persist_success(intent, charge)
             envelope = DomainEventEnvelope(
-                event_type=PAYMENT_AUTHORIZED,
-                payload=PaymentAuthorizedPayload(
+                event_type=PAYMENT_SUCCEEDED,
+                payload=PaymentSucceededPayload(
                     payment_intent_id=intent.id,
                     booking_id=intent.booking_id,
                     payment_id=charge.id,

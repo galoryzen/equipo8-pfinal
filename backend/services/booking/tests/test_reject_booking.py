@@ -5,34 +5,24 @@ from uuid import uuid4
 
 import pytest
 
-from contracts.events.booking import BOOKING_CONFIRMED
+from contracts.events.booking import BOOKING_REJECTED
 
-from app.application.use_cases.confirm_booking import (
-    ConfirmBookingUseCase,
-    InventoryConflictError,
-)
+from app.application.exceptions import BookingNotFoundError
+from app.application.use_cases.reject_booking import RejectBookingUseCase
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType
 
 
 class DummyRepo:
-    def __init__(self, booking: Booking, inventory_ok: bool = True):
+    def __init__(self, booking: Booking | None):
         self.booking = booking
-        self.inventory_ok = inventory_ok
         self.updated = False
-        self.decremented = False
         self.history_rows = []
 
-    async def get_by_id_for_user(self, booking_id, user_id):  # noqa: ARG002
+    async def get_by_id(self, booking_id):  # noqa: ARG002
         return self.booking
-
-    async def check_inventory(self, booking):  # noqa: ARG002
-        return self.inventory_ok
 
     async def update(self, booking):  # noqa: ARG002
         self.updated = True
-
-    async def decrement_inventory(self, booking):  # noqa: ARG002
-        self.decremented = True
 
     async def add_status_history(self, row):
         self.history_rows.append(row)
@@ -63,48 +53,72 @@ def _make_booking(status: BookingStatus = BookingStatus.PENDING_CONFIRMATION) ->
 
 
 @pytest.mark.asyncio
-async def test_confirm_booking_success():
+async def test_reject_booking_success_publishes_event_without_reason():
     booking = _make_booking()
     repo = DummyRepo(booking)
-
     events = AsyncMock()
-    use_case = ConfirmBookingUseCase(repo, events)
-    result = await use_case.execute(booking.id, booking.user_id)
+
+    uc = RejectBookingUseCase(repo, events)
+    result = await uc.execute(booking.id)
 
     assert repo.updated
-    assert repo.decremented
-    assert result.status == BookingStatus.CONFIRMED.value
+    assert result.status == BookingStatus.REJECTED.value
 
-    # BookingConfirmed event published with booking_id + user_id (the traveler).
+    # History row recorded.
+    assert len(repo.history_rows) == 1
+    row = repo.history_rows[0]
+    assert row.from_status == BookingStatus.PENDING_CONFIRMATION
+    assert row.to_status == BookingStatus.REJECTED
+    assert row.reason == "hotel_rejected"
+
+    # BookingRejected event published.
     events.publish.assert_awaited_once()
     envelope = events.publish.await_args.args[0]
-    assert envelope.event_type == BOOKING_CONFIRMED
+    assert envelope.event_type == BOOKING_REJECTED
     assert envelope.payload["booking_id"] == str(booking.id)
     assert envelope.payload["user_id"] == str(booking.user_id)
+    assert envelope.payload["reason"] is None
 
 
 @pytest.mark.asyncio
-async def test_confirm_booking_inventory_conflict():
+async def test_reject_booking_forwards_reason_to_event_and_history():
     booking = _make_booking()
-    repo = DummyRepo(booking, inventory_ok=False)
-
+    repo = DummyRepo(booking)
     events = AsyncMock()
-    use_case = ConfirmBookingUseCase(repo, events)
-    with pytest.raises(InventoryConflictError):
-        await use_case.execute(booking.id, booking.user_id)
+
+    uc = RejectBookingUseCase(repo, events)
+    await uc.execute(booking.id, reason="overbooked")
+
+    # Reason suffixed into the history row.
+    assert repo.history_rows[0].reason == "hotel_rejected:overbooked"
+
+    # Reason included in the event payload.
+    envelope = events.publish.await_args.args[0]
+    assert envelope.payload["reason"] == "overbooked"
+
+
+@pytest.mark.asyncio
+async def test_reject_booking_not_found():
+    repo = DummyRepo(None)
+    events = AsyncMock()
+
+    uc = RejectBookingUseCase(repo, events)
+    with pytest.raises(BookingNotFoundError):
+        await uc.execute(uuid4())
 
     assert not repo.updated
-    assert not repo.decremented
+    events.publish.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_confirm_booking_wrong_status():
+async def test_reject_booking_wrong_status():
     booking = _make_booking(status=BookingStatus.CONFIRMED)
     repo = DummyRepo(booking)
-
     events = AsyncMock()
-    use_case = ConfirmBookingUseCase(repo, events)
+
+    uc = RejectBookingUseCase(repo, events)
     with pytest.raises(ValueError, match="pendiente de confirmación"):
-        await use_case.execute(booking.id, booking.user_id)
+        await uc.execute(booking.id)
 
     assert not repo.updated
+    events.publish.assert_not_awaited()

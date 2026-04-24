@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     CONSUMER_ENABLED: bool = False
     WORKER_EXPIRE_INTERVAL_SECONDS: int = 60
 
-    # Event bus (Paso 4: consumer of PaymentAuthorized + PaymentFailed)
+    # Event bus (Paso 4: consumer of PaymentSucceeded + PaymentFailed)
     EVENT_BUS_BACKEND: str = "logging"
     RABBITMQ_URL: str | None = None
     EVENTBRIDGE_BUS_NAME: str | None = None

@@ -1,17 +1,22 @@
 from datetime import datetime
 from uuid import UUID
 
+from contracts.events.base import DomainEventEnvelope
+from contracts.events.booking import BOOKING_REJECTED, BookingRejectedPayload
+from shared.events import DomainEventPublisher
+
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingStatus
+from app.domain.models import Booking, BookingStatus, new_status_history_row
 from app.schemas.booking import BookingDetailOut
 
 
 class RejectBookingUseCase:
-    def __init__(self, repo: BookingRepository):
+    def __init__(self, repo: BookingRepository, events: DomainEventPublisher):
         self._repo = repo
+        self._events = events
 
-    async def execute(self, booking_id: UUID) -> BookingDetailOut:
+    async def execute(self, booking_id: UUID, reason: str | None = None) -> BookingDetailOut:
         booking = await self._repo.get_by_id(booking_id)
         if booking is None:
             raise BookingNotFoundError()
@@ -21,6 +26,25 @@ class RejectBookingUseCase:
         booking.status = BookingStatus.REJECTED
         booking.updated_at = datetime.utcnow()
         await self._repo.update(booking)
+        history_reason = f"hotel_rejected:{reason}" if reason else "hotel_rejected"
+        await self._repo.add_status_history(
+            new_status_history_row(
+                booking.id,
+                from_status=BookingStatus.PENDING_CONFIRMATION,
+                to_status=BookingStatus.REJECTED,
+                reason=history_reason,
+            )
+        )
+        await self._events.publish(
+            DomainEventEnvelope(
+                event_type=BOOKING_REJECTED,
+                payload=BookingRejectedPayload(
+                    booking_id=booking.id,
+                    user_id=booking.user_id,
+                    reason=reason,
+                ).model_dump(mode="json"),
+            )
+        )
         return _to_detail(booking)
 
 

@@ -9,7 +9,7 @@ from contracts.events.payment import PAYMENT_REQUESTED
 
 from app.adapters.outbound.mock.mock_payment_gateway import MockPaymentGateway
 from app.application.use_cases.process_payment_requested import ProcessPaymentRequestedUseCase
-from app.domain.event_names import PAYMENT_AUTHORIZED, PAYMENT_FAILED
+from app.domain.event_names import PAYMENT_SUCCEEDED, PAYMENT_FAILED
 from app.domain.models import PaymentIntentStatus
 from tests.conftest import make_payment_intent
 
@@ -63,7 +63,7 @@ async def test_creates_intent_with_ok_token_and_finalizes():
     assert created.status == PaymentIntentStatus.PENDING
 
     repo.persist_success.assert_awaited_once()
-    assert events.publish.call_args[0][0].event_type == PAYMENT_AUTHORIZED
+    assert events.publish.call_args[0][0].event_type == PAYMENT_SUCCEEDED
 
 
 @pytest.mark.asyncio
@@ -139,7 +139,7 @@ async def test_reuses_existing_pending_intent_by_idempotency_key():
     # Did not create; did finalize.
     repo.add_intent.assert_not_awaited()
     repo.persist_success.assert_awaited_once()
-    assert events.publish.call_args[0][0].event_type == PAYMENT_AUTHORIZED
+    assert events.publish.call_args[0][0].event_type == PAYMENT_SUCCEEDED
 
 
 @pytest.mark.asyncio
