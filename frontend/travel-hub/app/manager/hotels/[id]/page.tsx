@@ -2,7 +2,7 @@ import HotelDetailView from './HotelDetailView';
 
 // Required by output: 'export'. Data is fetched client-side by HotelDetailView.
 export function generateStaticParams() {
-  return [];
+  return [{ id: 'placeholder' }];
 }
 
 interface Props {
