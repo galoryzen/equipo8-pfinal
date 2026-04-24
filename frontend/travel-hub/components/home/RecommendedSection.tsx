@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { type ImgHTMLAttributes, useEffect, useState } from 'react';
 
 import NextLink from 'next/link';
 
@@ -53,7 +53,10 @@ function PropertyCard({
           width={400}
           height={267}
           {...(priority
-            ? ({ fetchpriority: FETCH_HIGH, loading: FETCH_EAGER } as unknown as ImageProps)
+            ? ({
+                fetchPriority: FETCH_HIGH,
+                loading: FETCH_EAGER,
+              } satisfies ImgHTMLAttributes<HTMLImageElement>)
             : { loading: FETCH_LAZY })}
           sx={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block' }}
         />
