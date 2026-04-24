@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useState } from 'react';
 
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -18,7 +19,16 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import HotelDetailView from './[id]/HotelDetailView';
+const HotelDetailView = dynamic(() => import('./[id]/HotelDetailView'), {
+  ssr: false,
+  loading: () => (
+    <Box
+      sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
+    >
+      <CircularProgress sx={{ color: tokens.brand.accentOrange }} />
+    </Box>
+  ),
+});
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 

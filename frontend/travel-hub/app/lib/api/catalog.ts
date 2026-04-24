@@ -69,7 +69,7 @@ export async function getFeaturedDestinations(limit = 4): Promise<FeaturedDestin
   return res.json();
 }
 
-export async function getFeaturedProperties(limit = 50): Promise<PropertySummary[]> {
+export async function getFeaturedProperties(limit = 12): Promise<PropertySummary[]> {
   const res = await fetch(`${API_URL}/api/v1/catalog/properties/featured?limit=${limit}`);
   if (!res.ok) {
     const body = await res.json().catch(() => null);

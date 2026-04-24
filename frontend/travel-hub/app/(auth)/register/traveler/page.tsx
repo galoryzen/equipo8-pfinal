@@ -219,7 +219,9 @@ export default function TravelerRegisterPage() {
         password: values.password,
       });
       showSnackbar('Account created successfully! Welcome to TravelHub 🎉', 'success');
-      setTimeout(() => router.push('/'), 1500);
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Something went wrong. Please try again.';

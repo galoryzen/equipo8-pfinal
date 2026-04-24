@@ -33,6 +33,11 @@ export interface BookingListItem {
   property_id: string;
   room_type_id: string;
   created_at: string;
+  /** Enriched by the booking service from the catalog on list requests. */
+  property_name?: string | null;
+  image_url?: string | null;
+  nights?: number | null;
+  guests_count?: number | null;
 }
 
 export interface PendingConfirmationBookingItem extends BookingListItem {

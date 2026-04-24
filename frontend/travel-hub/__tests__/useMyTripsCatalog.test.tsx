@@ -84,7 +84,7 @@ describe('useMyTripsCatalog', () => {
     expect(result.current.bookings).toEqual(bookings);
     expect(result.current.propertyById).toEqual(map);
     expect(result.current.error).toBeNull();
-    expect(fetchPropertyDetailsMap).toHaveBeenCalledWith(['p1']);
+    expect(fetchPropertyDetailsMap).toHaveBeenCalledWith(['p1'], bookings);
   });
 
   it('deduplicates property_id across bookings and items', async () => {
@@ -96,7 +96,7 @@ describe('useMyTripsCatalog', () => {
     const { result } = renderHook(() => useMyTripsCatalog());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(fetchPropertyDetailsMap).toHaveBeenCalledWith([pid]);
+    expect(fetchPropertyDetailsMap).toHaveBeenCalledWith([pid], bookings);
     expect(result.current.bookings).toHaveLength(2);
   });
 
@@ -110,7 +110,7 @@ describe('useMyTripsCatalog', () => {
     expect(result.current.bookings).toEqual([]);
     expect(result.current.propertyById).toEqual({});
     expect(result.current.error).toBeNull();
-    expect(fetchPropertyDetailsMap).toHaveBeenCalledWith([]);
+    expect(fetchPropertyDetailsMap).toHaveBeenCalledWith([], []);
   });
 
   it('sets error and clears data when getMyBookings fails', async () => {

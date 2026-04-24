@@ -13,7 +13,18 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-function PropertyCard({ property }: { property: PropertySummary }) {
+// Attribute value constants are intentionally not translated.
+const FETCH_EAGER = 'eager' as const;
+const FETCH_LAZY = 'lazy' as const;
+const FETCH_HIGH = 'high' as const;
+
+function PropertyCard({
+  property,
+  priority = false,
+}: {
+  property: PropertySummary;
+  priority?: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <Box
@@ -39,6 +50,11 @@ function PropertyCard({ property }: { property: PropertySummary }) {
           component="img"
           src={property.image.url}
           alt={property.name}
+          width={400}
+          height={267}
+          {...(priority
+            ? ({ fetchpriority: FETCH_HIGH, loading: FETCH_EAGER } as unknown as ImageProps)
+            : { loading: FETCH_LAZY })}
           sx={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block' }}
         />
       ) : (
@@ -192,8 +208,8 @@ export default function RecommendedSection() {
             gap: 3,
           }}
         >
-          {properties.map((p) => (
-            <PropertyCard key={p.id} property={p} />
+          {properties.map((p, idx) => (
+            <PropertyCard key={p.id} property={p} priority={idx === 0} />
           ))}
         </Box>
       )}

@@ -115,7 +115,10 @@ function ManagerLoginForm() {
     try {
       await loginUser(values.email, values.password);
       setSnackbar({ open: true, message: 'Welcome back! Redirecting…', severity: 'success' });
-      setTimeout(() => router.push(redirectTo), 1200);
+      // Use a full navigation so all components remount and re-read the session cookie.
+      setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 1200);
     } catch {
       setSnackbar({
         open: true,
