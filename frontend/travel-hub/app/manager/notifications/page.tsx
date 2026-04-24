@@ -12,7 +12,6 @@ import { tokens } from '@/lib/theme/tokens';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
@@ -161,188 +160,186 @@ export default function ManagerNotificationsPage(): React.ReactNode {
     <Box
       sx={{
         minHeight: 'calc(100vh - 6rem)',
-        borderRadius: 6,
-        p: { xs: 3, md: 4 },
+        width: '100%',
+        pb: 3,
         backgroundColor: tokens.surface.pageWarm,
       }}
     >
-      <Container maxWidth="lg" disableGutters sx={{ px: 0 }}>
-        <Box component="header" sx={{ mb: 3 }}>
-          <Typography
-            component="h1"
-            sx={{
-              fontSize: '2.25rem',
-              lineHeight: 1.1,
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              color: tokens.text.primary,
-            }}
-          >
-            {t('manager.notifications')}
-          </Typography>
-          <Typography
-            component="p"
-            sx={{ mt: 0.5, fontSize: '0.875rem', fontWeight: 600, color: tokens.text.secondary }}
-          >
-            {t('manager.pendingBookingsToday', { count: total })}
-          </Typography>
-        </Box>
-
-        <Box component="section" aria-labelledby="pending-requests-heading">
-          <Box sx={{ mb: 3, pb: 1.5 }}>
-            <Divider sx={{ borderColor: tokens.border.subtle }} />
-            <Stack
-              direction="row"
-              alignItems="flex-end"
-              justifyContent="space-between"
-              sx={{ mt: 2 }}
-            >
-              <Stack spacing={1}>
-                <Typography
-                  id="pending-requests-heading"
-                  component="h2"
-                  sx={{
-                    fontSize: '0.875rem',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    color: tokens.brand.accentOrangeFg,
-                  }}
-                >
-                  Pending Requests
-                </Typography>
-                <Box
-                  aria-hidden="true"
-                  sx={{
-                    height: 3,
-                    width: 128,
-                    borderRadius: 999,
-                    backgroundColor: tokens.brand.accentOrange,
-                  }}
-                />
-              </Stack>
-            </Stack>
-          </Box>
-
-          <Box aria-live="polite" aria-busy={loading ? 'true' : 'false'}>
-            {loading && (
-              <Typography
-                component="p"
-                sx={{ fontSize: '0.875rem', fontWeight: 600, color: tokens.text.muted }}
-              >
-                Cargando...
-              </Typography>
-            )}
-            {error && (
-              <Box
-                role="alert"
-                sx={{
-                  borderRadius: 2,
-                  border: '1px solid',
-                  p: 1.5,
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  backgroundColor: tokens.state.warningBg,
-                  borderColor: tokens.state.warningBorder,
-                  color: tokens.state.warningFg,
-                }}
-              >
-                {error}
-              </Box>
-            )}
-          </Box>
-
-          <Stack spacing={2} sx={{ mt: 2.5 }}>
-            {!loading && bookings.length === 0 && !error && (
-              <Box
-                sx={{
-                  borderRadius: 4,
-                  border: '1px solid',
-                  p: 3,
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  borderColor: tokens.border.default,
-                  backgroundColor: tokens.surface.paper,
-                  color: tokens.text.secondary,
-                }}
-              >
-                {t('manager.noPendingBookings')}
-              </Box>
-            )}
-
-            {bookings.map((booking) => (
-              <BookingRequestCard
-                key={booking.id}
-                booking={booking}
-                onConfirm={handleConfirmClick}
-                onDecline={handleDecline}
-              />
-            ))}
-          </Stack>
-        </Box>
-
-        <Box
-          component="footer"
+      <Box component="header" sx={{ mb: 3 }}>
+        <Typography
+          component="h1"
           sx={{
-            mt: 3.5,
-            pt: 2,
-            borderTop: '1px solid',
-            borderTopColor: tokens.border.subtle,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            fontSize: '0.875rem',
+            fontSize: '2.25rem',
+            lineHeight: 1.1,
+            fontWeight: 900,
+            letterSpacing: '-0.02em',
+            color: tokens.text.primary,
           }}
         >
-          <Typography component="span" sx={{ color: tokens.text.secondary, fontWeight: 500 }}>
-            {total > 0
-              ? `Showing ${start}–${end} of ${total} pending requests`
-              : 'No pending requests'}
-          </Typography>
+          {t('manager.notifications')}
+        </Typography>
+        <Typography
+          component="p"
+          sx={{ mt: 0.5, fontSize: '0.875rem', fontWeight: 600, color: tokens.text.secondary }}
+        >
+          {t('manager.pendingBookingsToday', { count: total })}
+        </Typography>
+      </Box>
 
-          <Stack direction="row" spacing={1.5}>
-            <Button
-              type="button"
-              variant="text"
-              disabled={page <= 1 || loading}
-              onClick={() => loadPage(page - 1)}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 700,
-                color: tokens.text.secondary,
-                borderRadius: 2,
-                '&:hover': { backgroundColor: tokens.surface.subtle, color: tokens.text.primary },
-                '&.Mui-focusVisible': {
-                  outline: `2px solid ${tokens.brand.primary}`,
-                  outlineOffset: 2,
-                },
-              }}
-            >
-              Previous
-            </Button>
-            <Button
-              type="button"
-              variant="text"
-              disabled={page >= totalPages || loading}
-              onClick={() => loadPage(page + 1)}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 700,
-                color: tokens.text.secondary,
-                borderRadius: 2,
-                '&:hover': { backgroundColor: tokens.surface.subtle, color: tokens.text.primary },
-                '&.Mui-focusVisible': {
-                  outline: `2px solid ${tokens.brand.primary}`,
-                  outlineOffset: 2,
-                },
-              }}
-            >
-              Next
-            </Button>
+      <Box component="section" aria-labelledby="pending-requests-heading">
+        <Box sx={{ mb: 3, pb: 1.5 }}>
+          <Divider sx={{ borderColor: tokens.border.subtle }} />
+          <Stack
+            direction="row"
+            alignItems="flex-end"
+            justifyContent="space-between"
+            sx={{ mt: 2 }}
+          >
+            <Stack spacing={1}>
+              <Typography
+                id="pending-requests-heading"
+                component="h2"
+                sx={{
+                  fontSize: '0.875rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: tokens.brand.accentOrangeFg,
+                }}
+              >
+                Pending Requests
+              </Typography>
+              <Box
+                aria-hidden="true"
+                sx={{
+                  height: 3,
+                  width: 128,
+                  borderRadius: 999,
+                  backgroundColor: tokens.brand.accentOrange,
+                }}
+              />
+            </Stack>
           </Stack>
         </Box>
-      </Container>
+
+        <Box aria-live="polite" aria-busy={loading ? 'true' : 'false'}>
+          {loading && (
+            <Typography
+              component="p"
+              sx={{ fontSize: '0.875rem', fontWeight: 600, color: tokens.text.muted }}
+            >
+              Cargando...
+            </Typography>
+          )}
+          {error && (
+            <Box
+              role="alert"
+              sx={{
+                borderRadius: 2,
+                border: '1px solid',
+                p: 1.5,
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                backgroundColor: tokens.state.warningBg,
+                borderColor: tokens.state.warningBorder,
+                color: tokens.state.warningFg,
+              }}
+            >
+              {error}
+            </Box>
+          )}
+        </Box>
+
+        <Stack spacing={2} sx={{ mt: 2.5 }}>
+          {!loading && bookings.length === 0 && !error && (
+            <Box
+              sx={{
+                borderRadius: 4,
+                border: '1px solid',
+                p: 3,
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                borderColor: tokens.border.default,
+                backgroundColor: tokens.surface.paper,
+                color: tokens.text.secondary,
+              }}
+            >
+              {t('manager.noPendingBookings')}
+            </Box>
+          )}
+
+          {bookings.map((booking) => (
+            <BookingRequestCard
+              key={booking.id}
+              booking={booking}
+              onConfirm={handleConfirmClick}
+              onDecline={handleDecline}
+            />
+          ))}
+        </Stack>
+      </Box>
+
+      <Box
+        component="footer"
+        sx={{
+          mt: 3.5,
+          pt: 2,
+          borderTop: '1px solid',
+          borderTopColor: tokens.border.subtle,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          fontSize: '0.875rem',
+        }}
+      >
+        <Typography component="span" sx={{ color: tokens.text.secondary, fontWeight: 500 }}>
+          {total > 0
+            ? `Showing ${start}–${end} of ${total} pending requests`
+            : 'No pending requests'}
+        </Typography>
+
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            type="button"
+            variant="text"
+            disabled={page <= 1 || loading}
+            onClick={() => loadPage(page - 1)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              color: tokens.text.secondary,
+              borderRadius: 2,
+              '&:hover': { backgroundColor: tokens.surface.subtle, color: tokens.text.primary },
+              '&.Mui-focusVisible': {
+                outline: `2px solid ${tokens.brand.primary}`,
+                outlineOffset: 2,
+              },
+            }}
+          >
+            Previous
+          </Button>
+          <Button
+            type="button"
+            variant="text"
+            disabled={page >= totalPages || loading}
+            onClick={() => loadPage(page + 1)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              color: tokens.text.secondary,
+              borderRadius: 2,
+              '&:hover': { backgroundColor: tokens.surface.subtle, color: tokens.text.primary },
+              '&.Mui-focusVisible': {
+                outline: `2px solid ${tokens.brand.primary}`,
+                outlineOffset: 2,
+              },
+            }}
+          >
+            Next
+          </Button>
+        </Stack>
+      </Box>
 
       <Snackbar
         open={snack.open}

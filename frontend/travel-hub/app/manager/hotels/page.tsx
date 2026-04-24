@@ -12,8 +12,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import Container from '@mui/material/Container';
-import Divider from '@mui/material/Divider';
 import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -28,12 +26,13 @@ function HotelStatusBadge({ status }: { status: ManagerHotelItem['status'] }) {
   const { t } = useTranslation();
   const isActive = status === 'ACTIVE';
 
+  const statusLabel = isActive
+    ? t('manager.hotels.statusActive')
+    : t('manager.hotels.statusPendingReview');
+
   return (
     <Box
-      role="status"
-      aria-label={
-        isActive ? t('manager.hotels.statusActive') : t('manager.hotels.statusPendingReview')
-      }
+      aria-label={statusLabel}
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -64,7 +63,7 @@ function HotelStatusBadge({ status }: { status: ManagerHotelItem['status'] }) {
           lineHeight: 1,
         }}
       >
-        {isActive ? t('manager.hotels.statusActive') : t('manager.hotels.statusPendingReview')}
+        {statusLabel}
       </Typography>
     </Box>
   );
@@ -174,111 +173,114 @@ export default function ManagerHotelsPage() {
     <Box
       sx={{
         minHeight: 'calc(100vh - 6rem)',
-        borderRadius: 6,
-        p: { xs: 3, md: 4 },
+        width: '100%',
+        pb: 3,
         backgroundColor: tokens.surface.pageWarm,
       }}
     >
-      <Container maxWidth="lg" disableGutters sx={{ px: 0 }}>
-        {/* ── Page header ── */}
-        <Box component="header" sx={{ mb: 3.5 }}>
-          <Typography
-            component="h1"
-            sx={{
-              fontSize: '2.25rem',
-              lineHeight: 1.1,
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              color: tokens.text.primary,
-            }}
-          >
-            {t('manager.hotels.title')}
-          </Typography>
-          <Typography
-            component="p"
-            sx={{ mt: 0.5, fontSize: '1rem', fontWeight: 500, color: tokens.text.secondary }}
-          >
-            {t('manager.hotels.subtitle')}
-          </Typography>
-        </Box>
-
-        {/* ── Search + filter bar ── */}
-        <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
-          <OutlinedInput
-            id={hotelSearchId}
-            value={hotelSearch}
-            onChange={(e) => setHotelSearch(e.target.value)}
-            placeholder={t('manager.hotels.searchPlaceholder')}
-            inputProps={{ 'aria-label': t('manager.hotels.searchPlaceholder') }}
-            startAdornment={
-              <InputAdornment position="start">
-                <SearchIcon aria-hidden="true" sx={{ color: tokens.text.muted, fontSize: 22 }} />
-              </InputAdornment>
-            }
-            sx={{
-              flex: 1,
-              bgcolor: tokens.surface.paper,
-              borderRadius: 2,
-              fontSize: '1rem',
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: tokens.border.default },
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: tokens.border.subtleHover,
-              },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: tokens.brand.accentOrange,
-              },
-              '& input': { py: 1.5 },
-            }}
-          />
-          <Button
-            variant="outlined"
-            startIcon={<FilterListIcon aria-hidden="true" />}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.9375rem',
-              borderColor: tokens.border.default,
-              color: tokens.text.secondary,
-              bgcolor: tokens.surface.paper,
-              borderRadius: 2,
-              px: 2.5,
-              '&:hover': {
-                borderColor: tokens.border.subtleHover,
-                bgcolor: tokens.surface.subtle,
-              },
-              '&:focus-visible': {
-                outline: `2px solid ${tokens.brand.accentOrange}`,
-                outlineOffset: 2,
-              },
-            }}
-          >
-            {t('manager.hotels.filters')}
-          </Button>
-        </Box>
-
-        {/* ── Hotels table ── */}
-        <Box
-          role="table"
-          aria-label={t('manager.hotels.title')}
+      {/* ── Page header ── */}
+      <Box component="header" sx={{ mb: 3.5 }}>
+        <Typography
+          component="h1"
           sx={{
-            bgcolor: tokens.surface.paper,
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: tokens.border.subtle,
-            overflow: 'hidden',
+            fontSize: '2.25rem',
+            lineHeight: 1.1,
+            fontWeight: 900,
+            letterSpacing: '-0.02em',
+            color: tokens.text.primary,
           }}
         >
-          {/* Header row */}
+          {t('manager.hotels.title')}
+        </Typography>
+        <Typography
+          component="p"
+          sx={{ mt: 0.5, fontSize: '1rem', fontWeight: 500, color: tokens.text.secondary }}
+        >
+          {t('manager.hotels.subtitle')}
+        </Typography>
+      </Box>
+
+      {/* ── Search + filter bar ── */}
+      <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
+        <OutlinedInput
+          id={hotelSearchId}
+          value={hotelSearch}
+          onChange={(e) => setHotelSearch(e.target.value)}
+          placeholder={t('manager.hotels.searchPlaceholder')}
+          inputProps={{ 'aria-label': t('manager.hotels.searchPlaceholder') }}
+          startAdornment={
+            <InputAdornment position="start">
+              <SearchIcon aria-hidden="true" sx={{ color: tokens.text.muted, fontSize: 22 }} />
+            </InputAdornment>
+          }
+          sx={{
+            flex: 1,
+            bgcolor: tokens.surface.paper,
+            borderRadius: 2,
+            fontSize: '1rem',
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: tokens.border.default },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: tokens.border.subtleHover,
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: tokens.brand.accentOrange,
+            },
+            '& input': { py: 1.5 },
+          }}
+        />
+        <Button
+          variant="outlined"
+          startIcon={<FilterListIcon aria-hidden="true" />}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 700,
+            fontSize: '0.9375rem',
+            borderColor: tokens.border.default,
+            color: tokens.text.secondary,
+            bgcolor: tokens.surface.paper,
+            borderRadius: 2,
+            px: 2.5,
+            '&:hover': {
+              borderColor: tokens.border.subtleHover,
+              bgcolor: tokens.surface.subtle,
+            },
+            '&:focus-visible': {
+              outline: `2px solid ${tokens.brand.accentOrange}`,
+              outlineOffset: 2,
+            },
+          }}
+        >
+          {t('manager.hotels.filters')}
+        </Button>
+      </Box>
+
+      {/* ── Hotels table ── */}
+      <Box
+        role="table"
+        aria-label={t('manager.hotels.title')}
+        sx={{
+          bgcolor: tokens.surface.paper,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: tokens.border.subtle,
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          role="rowgroup"
+          sx={{
+            bgcolor: tokens.surface.muted,
+            borderBottom: '1px solid',
+            borderColor: tokens.border.subtle,
+            px: 3.5,
+            py: 2,
+          }}
+        >
           <Box
-            role="rowgroup"
+            role="row"
             sx={{
               display: 'grid',
               gridTemplateColumns: '2.5fr 1.5fr 1.6fr 1.3fr 1.3fr',
-              px: 3.5,
-              py: 2,
-              bgcolor: tokens.surface.muted,
-              borderBottom: '1px solid',
-              borderColor: tokens.border.subtle,
             }}
           >
             {[
@@ -288,173 +290,177 @@ export default function ManagerHotelsPage() {
               { key: 'status', align: 'left' },
               { key: 'actions', align: 'right' },
             ].map(({ key, align }) => (
-              <Typography
+              <Box
                 key={key}
                 role="columnheader"
                 aria-sort="none"
                 sx={{ ...TABLE_HEAD_SX, textAlign: align as 'left' | 'right' }}
               >
                 {t(`manager.hotels.tableHeaders.${key}`)}
-              </Typography>
+              </Box>
             ))}
           </Box>
+        </Box>
 
-          {/* Body */}
-          <Box role="rowgroup">
-            {loading ? (
-              <Box role="row" sx={{ px: 3.5, py: 5, display: 'flex', justifyContent: 'center' }}>
+        {/* Body */}
+        <Box role="rowgroup">
+          {loading ? (
+            <Box role="row" sx={{ display: 'grid', gridTemplateColumns: '1fr', px: 3.5, py: 5 }}>
+              <Box role="cell" sx={{ display: 'flex', justifyContent: 'center' }}>
                 <CircularProgress size={32} sx={{ color: tokens.brand.accentOrange }} />
               </Box>
-            ) : error ? (
-              <Box role="row" sx={{ px: 3.5, py: 5, textAlign: 'center' }}>
+            </Box>
+          ) : error ? (
+            <Box role="row" sx={{ display: 'grid', gridTemplateColumns: '1fr', px: 3.5, py: 5 }}>
+              <Box role="cell" sx={{ textAlign: 'center' }}>
                 <Typography
-                  role="cell"
                   sx={{ fontSize: '1rem', color: tokens.state.warningFg, fontWeight: 500 }}
                 >
                   {error}
                 </Typography>
               </Box>
-            ) : filteredHotels.length === 0 ? (
-              <Box role="row" sx={{ px: 3.5, py: 5, textAlign: 'center' }}>
+            </Box>
+          ) : filteredHotels.length === 0 ? (
+            <Box role="row" sx={{ display: 'grid', gridTemplateColumns: '1fr', px: 3.5, py: 5 }}>
+              <Box role="cell" sx={{ textAlign: 'center' }}>
                 <Typography
-                  role="cell"
                   sx={{ fontSize: '1rem', color: tokens.text.secondary, fontWeight: 500 }}
                 >
                   {t('manager.hotels.noResults')}
                 </Typography>
               </Box>
-            ) : (
-              filteredHotels.map((hotel, idx) => (
-                <Box key={hotel.id} role="row">
-                  {idx > 0 && <Divider sx={{ borderColor: tokens.border.subtle }} />}
+            </Box>
+          ) : (
+            filteredHotels.map((hotel, idx) => (
+              <Box
+                key={hotel.id}
+                role="row"
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '2.5fr 1.5fr 1.6fr 1.3fr 1.3fr',
+                  alignItems: 'center',
+                  px: 3.5,
+                  py: 2.5,
+                  borderTop: idx > 0 ? `1px solid ${tokens.border.subtle}` : 'none',
+                  transition: 'background 0.15s',
+                  '&:hover': { bgcolor: tokens.surface.subtle },
+                }}
+              >
+                {/* Hotel details */}
+                <Box
+                  role="cell"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}
+                >
                   <Box
                     sx={{
-                      display: 'grid',
-                      gridTemplateColumns: '2.5fr 1.5fr 1.6fr 1.3fr 1.3fr',
+                      width: 64,
+                      height: 64,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      border: '1px solid',
+                      borderColor: tokens.border.subtle,
+                      bgcolor: tokens.surface.muted,
+                      display: 'flex',
                       alignItems: 'center',
-                      px: 3.5,
-                      py: 2.5,
-                      transition: 'background 0.15s',
-                      '&:hover': { bgcolor: tokens.surface.subtle },
+                      justifyContent: 'center',
                     }}
                   >
-                    {/* Hotel details */}
-                    <Box
-                      role="cell"
-                      sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}
-                    >
-                      <Box
-                        sx={{
-                          width: 64,
-                          height: 64,
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                          border: '1px solid',
-                          borderColor: tokens.border.subtle,
-                          bgcolor: tokens.surface.muted,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {hotel.imageUrl ? (
-                          <Image
-                            src={hotel.imageUrl}
-                            alt={hotel.name}
-                            width={64}
-                            height={64}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : null}
-                      </Box>
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography
-                          sx={{
-                            fontWeight: 800,
-                            color: tokens.text.primary,
-                            fontSize: '1rem',
-                            lineHeight: 1.25,
-                          }}
-                        >
-                          {hotel.name}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: '0.8125rem',
-                            color: tokens.text.secondary,
-                            fontWeight: 500,
-                            mt: 0.25,
-                          }}
-                        >
-                          {t('manager.hotels.hotelIdPrefix')} {hotel.id}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Location */}
-                    <Box role="cell">
-                      <Typography
-                        sx={{
-                          fontSize: '0.9375rem',
-                          color: tokens.text.secondary,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {hotel.location}
-                      </Typography>
-                    </Box>
-
-                    {/* Inventory */}
-                    <Box role="cell">
-                      <OccupancyBar
-                        occupied={hotel.occupiedRooms}
-                        total={hotel.totalRooms}
-                        hotelName={hotel.name}
+                    {hotel.imageUrl ? (
+                      <Image
+                        src={hotel.imageUrl}
+                        alt={hotel.name}
+                        width={64}
+                        height={64}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
-                    </Box>
-
-                    {/* Status */}
-                    <Box role="cell">
-                      <HotelStatusBadge status={hotel.status} />
-                    </Box>
-
-                    {/* Actions */}
-                    <Box role="cell" sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <Button
-                        variant="contained"
-                        onClick={() => router.push(`/manager/hotels?id=${hotel.id}`)}
-                        aria-label={t('manager.hotels.manageRoomsFor', {
-                          hotelName: hotel.name,
-                        })}
-                        sx={{
-                          bgcolor: tokens.ink.charcoal,
-                          color: tokens.surface.paper,
-                          textTransform: 'none',
-                          fontWeight: 700,
-                          fontSize: '0.875rem',
-                          borderRadius: '10px',
-                          px: 2.5,
-                          py: 1.125,
-                          boxShadow: 'none',
-                          whiteSpace: 'nowrap',
-                          '&:hover': { bgcolor: tokens.text.primary, boxShadow: 'none' },
-                          '&:focus-visible': {
-                            outline: `2px solid ${tokens.brand.accentOrange}`,
-                            outlineOffset: 2,
-                          },
-                        }}
-                      >
-                        {t('manager.hotels.manageRooms')}
-                      </Button>
-                    </Box>
+                    ) : null}
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 800,
+                        color: tokens.text.primary,
+                        fontSize: '1rem',
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {hotel.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.8125rem',
+                        color: tokens.text.secondary,
+                        fontWeight: 500,
+                        mt: 0.25,
+                      }}
+                    >
+                      {t('manager.hotels.hotelIdPrefix')} {hotel.id}
+                    </Typography>
                   </Box>
                 </Box>
-              ))
-            )}
-          </Box>
+
+                {/* Location */}
+                <Box role="cell">
+                  <Typography
+                    sx={{
+                      fontSize: '0.9375rem',
+                      color: tokens.text.secondary,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {hotel.location}
+                  </Typography>
+                </Box>
+
+                {/* Inventory */}
+                <Box role="cell">
+                  <OccupancyBar
+                    occupied={hotel.occupiedRooms}
+                    total={hotel.totalRooms}
+                    hotelName={hotel.name}
+                  />
+                </Box>
+
+                {/* Status */}
+                <Box role="cell">
+                  <HotelStatusBadge status={hotel.status} />
+                </Box>
+
+                {/* Actions */}
+                <Box role="cell" sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    onClick={() => router.push(`/manager/hotels?id=${hotel.id}`)}
+                    aria-label={t('manager.hotels.manageRoomsFor', {
+                      hotelName: hotel.name,
+                    })}
+                    sx={{
+                      bgcolor: tokens.brand.accentOrangeSoft,
+                      color: tokens.brand.accentOrangeFg,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                      borderRadius: '10px',
+                      px: 2.5,
+                      py: 1.125,
+                      boxShadow: 'none',
+                      whiteSpace: 'nowrap',
+                      '&:hover': { bgcolor: `${tokens.brand.accentOrange}26`, boxShadow: 'none' },
+                      '&:focus-visible': {
+                        outline: `2px solid ${tokens.brand.accentOrange}`,
+                        outlineOffset: 2,
+                      },
+                    }}
+                  >
+                    {t('manager.hotels.manageRooms')}
+                  </Button>
+                </Box>
+              </Box>
+            ))
+          )}
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 }

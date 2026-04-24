@@ -26,7 +26,6 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import Container from '@mui/material/Container';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Radio from '@mui/material/Radio';
@@ -155,6 +154,8 @@ export default function RoomTypeManageView({
   const discountId = useId();
   const promoNameId = useId();
   const refundPctId = useId();
+  const policyGroupLabelId = useId();
+  const cancellationApplyHelperId = useId();
 
   // ── Promotion & policy state ─────────────────────────────────────────────────
   const [existingPromotion, setExistingPromotion] = useState<RoomTypePromotionOut | null>(null);
@@ -374,329 +375,497 @@ export default function RoomTypeManageView({
       <Box
         sx={{
           minHeight: 'calc(100vh - 6rem)',
-          borderRadius: 6,
-          p: { xs: 3, md: 4 },
+          width: '100%',
+          pb: 3,
           backgroundColor: tokens.surface.pageWarm,
         }}
       >
-        <Container maxWidth="lg" disableGutters sx={{ px: 0 }}>
-          {/* ── Breadcrumb ── */}
-          <Box
-            component="nav"
-            aria-label={t('manager.hotels.hotelDetail.breadcrumbNav')}
-            sx={{ display: 'flex', alignItems: 'center', mb: 2.5, flexWrap: 'wrap' }}
+        {/* ── Breadcrumb ── */}
+        <Box
+          component="nav"
+          aria-label={t('manager.hotels.hotelDetail.breadcrumbNav')}
+          sx={{ display: 'flex', alignItems: 'center', mb: 2.5, flexWrap: 'wrap' }}
+        >
+          <Button
+            onClick={onBack}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.9375rem',
+              color: tokens.text.secondary,
+              p: 0,
+              minWidth: 'auto',
+              '&:hover': { bgcolor: 'transparent', color: tokens.text.primary },
+              '&:focus-visible': {
+                outline: `2px solid ${tokens.brand.accentOrange}`,
+                outlineOffset: 2,
+                borderRadius: 1,
+              },
+            }}
           >
-            <Button
-              onClick={onBack}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.9375rem',
-                color: tokens.text.secondary,
-                p: 0,
-                minWidth: 'auto',
-                '&:hover': { bgcolor: 'transparent', color: tokens.text.primary },
-                '&:focus-visible': {
-                  outline: `2px solid ${tokens.brand.accentOrange}`,
-                  outlineOffset: 2,
-                  borderRadius: 1,
-                },
-              }}
-            >
-              {t('manager.hotels.hotelDetail.breadcrumbLabel')}
-            </Button>
-            <NavigateNextIcon
-              aria-hidden="true"
-              sx={{ fontSize: 18, color: tokens.text.muted, mx: 0.25 }}
-            />
-            <Button
-              onClick={onBack}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.9375rem',
-                color: tokens.text.secondary,
-                p: 0,
-                minWidth: 'auto',
-                '&:hover': { bgcolor: 'transparent', color: tokens.text.primary },
-                '&:focus-visible': {
-                  outline: `2px solid ${tokens.brand.accentOrange}`,
-                  outlineOffset: 2,
-                  borderRadius: 1,
-                },
-              }}
-            >
-              {hotelName}
-            </Button>
-            <NavigateNextIcon
-              aria-hidden="true"
-              sx={{ fontSize: 18, color: tokens.text.muted, mx: 0.25 }}
-            />
+            {t('manager.hotels.hotelDetail.breadcrumbLabel')}
+          </Button>
+          <NavigateNextIcon
+            aria-hidden="true"
+            sx={{ fontSize: 18, color: tokens.text.muted, mx: 0.25 }}
+          />
+          <Button
+            onClick={onBack}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.9375rem',
+              color: tokens.text.secondary,
+              p: 0,
+              minWidth: 'auto',
+              '&:hover': { bgcolor: 'transparent', color: tokens.text.primary },
+              '&:focus-visible': {
+                outline: `2px solid ${tokens.brand.accentOrange}`,
+                outlineOffset: 2,
+                borderRadius: 1,
+              },
+            }}
+          >
+            {hotelName}
+          </Button>
+          <NavigateNextIcon
+            aria-hidden="true"
+            sx={{ fontSize: 18, color: tokens.text.muted, mx: 0.25 }}
+          />
+          <Typography
+            component="span"
+            aria-current="page"
+            sx={{ fontSize: '0.9375rem', fontWeight: 600, color: tokens.text.primary }}
+          >
+            {t('manager.hotels.roomTypeManage.breadcrumbManage', { name: roomType.name })}
+          </Typography>
+        </Box>
+
+        {/* ── Page header ── */}
+        <Box
+          component="header"
+          sx={{
+            display: 'flex',
+            alignItems: { sm: 'center' },
+            justifyContent: 'space-between',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2,
+            mb: saveError ? 2 : 4,
+          }}
+        >
+          <Box>
             <Typography
-              aria-current="page"
-              sx={{ fontSize: '0.9375rem', fontWeight: 600, color: tokens.text.primary }}
+              component="h1"
+              sx={{
+                fontSize: '2rem',
+                fontWeight: 900,
+                letterSpacing: '-0.02em',
+                color: tokens.text.primary,
+                lineHeight: 1.1,
+                mb: 0.5,
+              }}
             >
-              {t('manager.hotels.roomTypeManage.breadcrumbManage', { name: roomType.name })}
+              {t('manager.hotels.roomTypeManage.title', { name: roomType.name })}
+            </Typography>
+            <Typography
+              sx={{ fontSize: '0.9375rem', fontWeight: 500, color: tokens.text.secondary }}
+            >
+              {t('manager.hotels.roomTypeManage.subtitle')}
             </Typography>
           </Box>
 
-          {/* ── Page header ── */}
-          <Box
-            component="header"
-            sx={{
-              display: 'flex',
-              alignItems: { sm: 'center' },
-              justifyContent: 'space-between',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: 2,
-              mb: saveError ? 2 : 4,
-            }}
-          >
-            <Box>
-              <Typography
-                component="h1"
-                sx={{
-                  fontSize: '2rem',
-                  fontWeight: 900,
-                  letterSpacing: '-0.02em',
-                  color: tokens.text.primary,
-                  lineHeight: 1.1,
-                  mb: 0.5,
-                }}
-              >
-                {t('manager.hotels.roomTypeManage.title', { name: roomType.name })}
-              </Typography>
-              <Typography
-                sx={{ fontSize: '0.9375rem', fontWeight: 500, color: tokens.text.secondary }}
-              >
-                {t('manager.hotels.roomTypeManage.subtitle')}
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
-              {/* Delete button — only shown when a promotion exists */}
-              {existingPromotion && (
-                <Button
-                  variant="outlined"
-                  startIcon={
-                    deleting ? (
-                      <CircularProgress size={16} sx={{ color: '#DC2626' }} />
-                    ) : (
-                      <DeleteOutlineIcon />
-                    )
-                  }
-                  onClick={handleDelete}
-                  disabled={deleting || saving}
-                  aria-label={t('manager.hotels.promotion.deleteButton')}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    fontSize: '0.9375rem',
-                    borderColor: '#DC2626',
-                    color: '#DC2626',
-                    borderRadius: 2.5,
-                    px: 2.5,
-                    py: 1.25,
-                    '&:hover': { bgcolor: '#FEF2F2', borderColor: '#B91C1C' },
-                    '&:disabled': { opacity: 0.6 },
-                    '&:focus-visible': {
-                      outline: '2px solid #DC2626',
-                      outlineOffset: 3,
-                    },
-                  }}
-                >
-                  {t('manager.hotels.promotion.deleteButton')}
-                </Button>
-              )}
-
-              {/* Save button */}
+          <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
+            {/* Delete button — only shown when a promotion exists */}
+            {existingPromotion && (
               <Button
-                variant="contained"
+                variant="outlined"
                 startIcon={
-                  saving ? (
-                    <CircularProgress size={16} sx={{ color: '#fff' }} />
+                  deleting ? (
+                    <CircularProgress size={16} sx={{ color: '#DC2626' }} />
                   ) : (
-                    <SaveOutlinedIcon />
+                    <DeleteOutlineIcon />
                   )
                 }
-                onClick={handleSave}
-                disabled={saving || deleting || !canSave || promoLoading}
-                aria-label={t('manager.hotels.roomTypeManage.saveChanges')}
-                title={!canSave ? t('manager.hotels.roomTypeManage.noRatePlan') : undefined}
+                onClick={handleDelete}
+                disabled={deleting || saving}
                 sx={{
                   textTransform: 'none',
                   fontWeight: 700,
                   fontSize: '0.9375rem',
-                  bgcolor: tokens.brand.accentOrange,
-                  color: '#fff',
+                  borderColor: '#DC2626',
+                  color: '#DC2626',
                   borderRadius: 2.5,
-                  px: 3,
+                  px: 2.5,
                   py: 1.25,
-                  '&:hover': { bgcolor: tokens.brand.accentOrangeFg },
+                  '&:hover': { bgcolor: '#FEF2F2', borderColor: '#B91C1C' },
                   '&:disabled': { opacity: 0.6 },
                   '&:focus-visible': {
-                    outline: `2px solid ${tokens.brand.accentOrange}`,
+                    outline: '2px solid #DC2626',
                     outlineOffset: 3,
                   },
                 }}
               >
-                {t('manager.hotels.roomTypeManage.saveChanges')}
+                {t('manager.hotels.promotion.deleteButton')}
               </Button>
-            </Box>
+            )}
+
+            {/* Save button */}
+            <Button
+              variant="contained"
+              startIcon={
+                saving ? (
+                  <CircularProgress size={16} sx={{ color: tokens.brand.accentOrangeFg }} />
+                ) : (
+                  <SaveOutlinedIcon />
+                )
+              }
+              onClick={handleSave}
+              disabled={saving || deleting || !canSave || promoLoading}
+              title={!canSave ? t('manager.hotels.roomTypeManage.noRatePlan') : undefined}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.9375rem',
+                bgcolor: tokens.brand.accentOrangeSoft,
+                color: tokens.brand.accentOrangeFg,
+                borderRadius: 2.5,
+                px: 3,
+                py: 1.25,
+                '&:hover': { bgcolor: `${tokens.brand.accentOrange}26` },
+                '&:disabled': { opacity: 0.6 },
+                '&:focus-visible': {
+                  outline: `2px solid ${tokens.brand.accentOrange}`,
+                  outlineOffset: 3,
+                },
+              }}
+            >
+              {t('manager.hotels.roomTypeManage.saveChanges')}
+            </Button>
           </Box>
+        </Box>
 
-          {saveError && (
-            <Alert
-              severity="error"
-              sx={{ mb: 3, borderRadius: 2 }}
-              onClose={() => setSaveError(null)}
-            >
-              {saveError}
-            </Alert>
-          )}
+        {saveError && (
+          <Alert
+            severity="error"
+            sx={{ mb: 3, borderRadius: 2 }}
+            onClose={() => setSaveError(null)}
+          >
+            {saveError}
+          </Alert>
+        )}
 
-          {/* ── Sections ── */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* ── Availability Period ── */}
-            <SectionCard
-              icon={<CalendarTodayOutlinedIcon sx={{ fontSize: 20 }} />}
-              titleKey="manager.hotels.roomTypeManage.availabilityPeriod.title"
-              iconColor={tokens.brand.primaryOnLight}
-              iconBg="#EFF6FF"
+        {/* ── Sections ── */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* ── Availability Period ── */}
+          <SectionCard
+            icon={<CalendarTodayOutlinedIcon sx={{ fontSize: 20 }} />}
+            titleKey="manager.hotels.roomTypeManage.availabilityPeriod.title"
+            iconColor={tokens.brand.primaryOnLight}
+            iconBg="#EFF6FF"
+          >
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gap: 3,
+              }}
             >
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                  gap: 3,
+              <DateTimePicker
+                label={t('manager.hotels.roomTypeManage.availabilityPeriod.startLabel')}
+                value={availabilityStart}
+                onChange={setAvailabilityStart}
+                slotProps={{
+                  textField: {
+                    id: 'availability-start',
+                    fullWidth: true,
+                    sx: PICKER_TEXT_FIELD_SX,
+                  },
                 }}
-              >
-                <Box>
-                  <Typography component="label" htmlFor="availability-start" sx={LABEL_SX}>
-                    {t('manager.hotels.roomTypeManage.availabilityPeriod.startLabel')}
-                  </Typography>
-                  <DateTimePicker
-                    value={availabilityStart}
-                    onChange={setAvailabilityStart}
-                    slotProps={{
-                      textField: {
-                        id: 'availability-start',
-                        inputProps: {
-                          'aria-label': t(
-                            'manager.hotels.roomTypeManage.availabilityPeriod.startLabel'
-                          ),
-                        },
-                        sx: PICKER_TEXT_FIELD_SX,
-                      },
-                    }}
-                  />
-                </Box>
+              />
+              <DateTimePicker
+                label={t('manager.hotels.roomTypeManage.availabilityPeriod.endLabel')}
+                value={availabilityEnd}
+                onChange={setAvailabilityEnd}
+                slotProps={{
+                  textField: {
+                    id: 'availability-end',
+                    fullWidth: true,
+                    sx: PICKER_TEXT_FIELD_SX,
+                  },
+                }}
+              />
+            </Box>
+          </SectionCard>
 
-                <Box>
-                  <Typography component="label" htmlFor="availability-end" sx={LABEL_SX}>
-                    {t('manager.hotels.roomTypeManage.availabilityPeriod.endLabel')}
+          {/* ── Pricing & Offers ── */}
+          <SectionCard
+            icon={<LocalOfferOutlinedIcon sx={{ fontSize: 20 }} />}
+            titleKey="manager.hotels.roomTypeManage.pricingOffers.title"
+            iconColor={tokens.brand.accentOrangeFg}
+            iconBg={tokens.state.warningBg}
+          >
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gap: 3,
+              }}
+            >
+              {/* Promotion name */}
+              <Box>
+                <Typography
+                  component="label"
+                  htmlFor={promoNameId}
+                  sx={{ ...LABEL_SX, color: promoNameError ? '#DC2626' : LABEL_SX.color }}
+                >
+                  {t('manager.hotels.promotion.nameLabel')}{' '}
+                  <Typography component="span" sx={{ color: '#DC2626', fontWeight: 700 }}>
+                    *
                   </Typography>
-                  <DateTimePicker
-                    value={availabilityEnd}
-                    onChange={setAvailabilityEnd}
-                    slotProps={{
-                      textField: {
-                        id: 'availability-end',
-                        inputProps: {
-                          'aria-label': t(
-                            'manager.hotels.roomTypeManage.availabilityPeriod.endLabel'
-                          ),
-                        },
-                        sx: PICKER_TEXT_FIELD_SX,
-                      },
-                    }}
-                  />
-                </Box>
+                </Typography>
+                <OutlinedInput
+                  id={promoNameId}
+                  value={promotionName}
+                  onChange={(e) => {
+                    setPromotionName(e.target.value);
+                    if (promoNameError) setPromoNameError(false);
+                  }}
+                  placeholder={roomType.name}
+                  error={promoNameError}
+                  sx={{
+                    ...INPUT_SX,
+                    ...(promoNameError && {
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#DC2626' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#B91C1C' },
+                    }),
+                  }}
+                />
+                {promoNameError && (
+                  <Typography sx={{ fontSize: '0.8125rem', color: '#DC2626', mt: 0.75 }}>
+                    {t('manager.hotels.promotion.errorNameRequired')}
+                  </Typography>
+                )}
               </Box>
-            </SectionCard>
 
-            {/* ── Pricing & Offers ── */}
-            <SectionCard
-              icon={<LocalOfferOutlinedIcon sx={{ fontSize: 20 }} />}
-              titleKey="manager.hotels.roomTypeManage.pricingOffers.title"
-              iconColor={tokens.brand.accentOrangeFg}
-              iconBg={tokens.state.warningBg}
+              {/* Discount */}
+              <Box>
+                <Typography
+                  component="label"
+                  htmlFor={discountId}
+                  sx={{ ...LABEL_SX, color: discountError ? '#DC2626' : LABEL_SX.color }}
+                >
+                  {t('manager.hotels.roomTypeManage.pricingOffers.discountLabel')}{' '}
+                  <Typography component="span" sx={{ color: '#DC2626', fontWeight: 700 }}>
+                    *
+                  </Typography>
+                </Typography>
+                <OutlinedInput
+                  id={discountId}
+                  type="number"
+                  value={discountPct}
+                  onChange={(e) => {
+                    setDiscountPct(e.target.value);
+                    if (discountError) setDiscountError(false);
+                  }}
+                  error={discountError}
+                  inputProps={{
+                    min: 1,
+                    max: 100,
+                  }}
+                  endAdornment={
+                    <InputAdornment position="end">
+                      <Typography
+                        aria-hidden="true"
+                        sx={{ fontWeight: 700, color: tokens.text.muted, fontSize: '0.9375rem' }}
+                      >
+                        %
+                      </Typography>
+                    </InputAdornment>
+                  }
+                  sx={{
+                    ...INPUT_SX,
+                    ...(discountError && {
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#DC2626' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#B91C1C' },
+                    }),
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontSize: '0.8125rem',
+                    color: discountError ? '#DC2626' : tokens.text.muted,
+                    mt: 0.75,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {discountError
+                    ? t('manager.hotels.promotion.errorDiscountRange')
+                    : t('manager.hotels.roomTypeManage.pricingOffers.discountHelper')}
+                </Typography>
+              </Box>
+            </Box>
+          </SectionCard>
+
+          {/* ── Cancellation Policy ── */}
+          <SectionCard
+            icon={<ShieldOutlinedIcon sx={{ fontSize: 20 }} />}
+            titleKey="manager.hotels.roomTypeManage.cancellationPolicy.title"
+            iconColor={tokens.brand.primaryOnLight}
+            iconBg="#EFF6FF"
+          >
+            <Typography
+              id={policyGroupLabelId}
+              sx={{
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                color: tokens.text.secondary,
+                mb: 1.5,
+              }}
             >
+              {t('manager.hotels.roomTypeManage.cancellationPolicy.policyTypeLabel')}
+            </Typography>
+
+            <Box
+              role="radiogroup"
+              aria-labelledby={policyGroupLabelId}
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                gap: 2,
+                mb: 3,
+              }}
+            >
+              {POLICY_OPTIONS.map(({ type, icon, iconColor, iconBg, labelKey, descKey }) => {
+                const selected = cancellationPolicy === type;
+                return (
+                  <Box
+                    key={type}
+                    component="label"
+                    sx={{
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1.5px solid',
+                      borderColor: selected ? tokens.brand.accentOrange : tokens.border.default,
+                      bgcolor: selected ? tokens.state.warningBg : tokens.surface.paper,
+                      transition: 'border-color 0.15s, background-color 0.15s',
+                      '&:hover': {
+                        borderColor: selected
+                          ? tokens.brand.accentOrange
+                          : tokens.border.subtleHover,
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        mb: 1.5,
+                      }}
+                    >
+                      <Box
+                        aria-hidden="true"
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          bgcolor: iconBg,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          color: iconColor,
+                        }}
+                      >
+                        {icon}
+                      </Box>
+                      <Radio
+                        id={`policy-${type}`}
+                        name="cancellation-policy"
+                        value={type}
+                        checked={selected}
+                        onChange={() => setCancellationPolicy(type)}
+                        size="small"
+                        sx={{
+                          p: 0,
+                          color: tokens.border.subtleHover,
+                          '&.Mui-checked': { color: tokens.brand.accentOrange },
+                          '&:focus-visible': {
+                            outline: `2px solid ${tokens.brand.accentOrange}`,
+                            outlineOffset: 2,
+                            borderRadius: '50%',
+                          },
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontSize: '0.9375rem',
+                        fontWeight: 700,
+                        color: tokens.text.primary,
+                        mb: 0.5,
+                      }}
+                    >
+                      {t(labelKey)}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.8125rem',
+                        color: tokens.text.secondary,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {t(descKey)}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+
+            {cancellationPolicy === 'partialRefundable' && (
               <Box
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                   gap: 3,
-                  maxWidth: 680,
                 }}
               >
-                {/* Promotion name */}
                 <Box>
                   <Typography
                     component="label"
-                    htmlFor={promoNameId}
-                    sx={{ ...LABEL_SX, color: promoNameError ? '#DC2626' : LABEL_SX.color }}
+                    htmlFor={refundPctId}
+                    sx={{ ...LABEL_SX, color: refundPctError ? '#DC2626' : LABEL_SX.color }}
                   >
-                    {t('manager.hotels.promotion.nameLabel')}{' '}
+                    {t('manager.hotels.roomTypeManage.cancellationPolicy.refundPctLabel')}{' '}
                     <Typography component="span" sx={{ color: '#DC2626', fontWeight: 700 }}>
                       *
                     </Typography>
                   </Typography>
                   <OutlinedInput
-                    id={promoNameId}
-                    value={promotionName}
-                    onChange={(e) => {
-                      setPromotionName(e.target.value);
-                      if (promoNameError) setPromoNameError(false);
-                    }}
-                    placeholder={roomType.name}
-                    error={promoNameError}
-                    sx={{
-                      ...INPUT_SX,
-                      ...(promoNameError && {
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#DC2626' },
-                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#B91C1C' },
-                      }),
-                    }}
-                  />
-                  {promoNameError && (
-                    <Typography sx={{ fontSize: '0.8125rem', color: '#DC2626', mt: 0.75 }}>
-                      {t('manager.hotels.promotion.errorNameRequired')}
-                    </Typography>
-                  )}
-                </Box>
-
-                {/* Discount */}
-                <Box>
-                  <Typography
-                    component="label"
-                    htmlFor={discountId}
-                    sx={{ ...LABEL_SX, color: discountError ? '#DC2626' : LABEL_SX.color }}
-                  >
-                    {t('manager.hotels.roomTypeManage.pricingOffers.discountLabel')}{' '}
-                    <Typography component="span" sx={{ color: '#DC2626', fontWeight: 700 }}>
-                      *
-                    </Typography>
-                  </Typography>
-                  <OutlinedInput
-                    id={discountId}
+                    id={refundPctId}
                     type="number"
-                    value={discountPct}
+                    value={refundPct}
                     onChange={(e) => {
-                      setDiscountPct(e.target.value);
-                      if (discountError) setDiscountError(false);
+                      setRefundPct(e.target.value);
+                      if (refundPctError) setRefundPctError(false);
                     }}
-                    error={discountError}
+                    error={refundPctError}
                     inputProps={{
                       min: 1,
-                      max: 100,
-                      'aria-label': t('manager.hotels.roomTypeManage.pricingOffers.discountLabel'),
+                      max: 99,
                     }}
                     endAdornment={
                       <InputAdornment position="end">
                         <Typography
                           aria-hidden="true"
-                          sx={{ fontWeight: 700, color: tokens.text.muted, fontSize: '0.9375rem' }}
+                          sx={{
+                            fontWeight: 700,
+                            color: tokens.text.muted,
+                            fontSize: '0.9375rem',
+                          }}
                         >
                           %
                         </Typography>
@@ -704,248 +873,49 @@ export default function RoomTypeManageView({
                     }
                     sx={{
                       ...INPUT_SX,
-                      ...(discountError && {
+                      ...(refundPctError && {
                         '& .MuiOutlinedInput-notchedOutline': { borderColor: '#DC2626' },
                         '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#B91C1C' },
                       }),
                     }}
                   />
+                  {refundPctError && (
+                    <Typography sx={{ fontSize: '0.8125rem', color: '#DC2626', mt: 0.75 }}>
+                      {t('manager.hotels.roomTypeManage.cancellationPolicy.errorRefundPctRange')}
+                    </Typography>
+                  )}
+                </Box>
+
+                <Box>
+                  <DatePicker
+                    label={t('manager.hotels.roomTypeManage.cancellationPolicy.applyDateLabel')}
+                    value={cancellationApplyDate}
+                    onChange={setCancellationApplyDate}
+                    slotProps={{
+                      textField: {
+                        id: 'cancellation-apply-date',
+                        fullWidth: true,
+                        inputProps: { 'aria-describedby': cancellationApplyHelperId },
+                        sx: PICKER_TEXT_FIELD_SX,
+                      },
+                    }}
+                  />
                   <Typography
+                    id={cancellationApplyHelperId}
                     sx={{
                       fontSize: '0.8125rem',
-                      color: discountError ? '#DC2626' : tokens.text.muted,
-                      mt: 0.75,
+                      color: tokens.text.muted,
+                      mt: 1,
                       lineHeight: 1.5,
                     }}
                   >
-                    {discountError
-                      ? t('manager.hotels.promotion.errorDiscountRange')
-                      : t('manager.hotels.roomTypeManage.pricingOffers.discountHelper')}
+                    {t('manager.hotels.roomTypeManage.cancellationPolicy.applyDateHelper')}
                   </Typography>
                 </Box>
               </Box>
-            </SectionCard>
-
-            {/* ── Cancellation Policy ── */}
-            <SectionCard
-              icon={<ShieldOutlinedIcon sx={{ fontSize: 20 }} />}
-              titleKey="manager.hotels.roomTypeManage.cancellationPolicy.title"
-              iconColor={tokens.brand.primaryOnLight}
-              iconBg="#EFF6FF"
-            >
-              <Typography
-                id="policy-type-label"
-                sx={{
-                  fontSize: '0.875rem',
-                  fontWeight: 700,
-                  color: tokens.text.secondary,
-                  mb: 1.5,
-                }}
-              >
-                {t('manager.hotels.roomTypeManage.cancellationPolicy.policyTypeLabel')}
-              </Typography>
-
-              <Box
-                role="radiogroup"
-                aria-labelledby="policy-type-label"
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-                  gap: 2,
-                  mb: 3,
-                }}
-              >
-                {POLICY_OPTIONS.map(({ type, icon, iconColor, iconBg, labelKey, descKey }) => {
-                  const selected = cancellationPolicy === type;
-                  return (
-                    <Box
-                      key={type}
-                      component="label"
-                      htmlFor={`policy-${type}`}
-                      sx={{
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        p: 2,
-                        borderRadius: 2,
-                        border: '1.5px solid',
-                        borderColor: selected ? tokens.brand.accentOrange : tokens.border.default,
-                        bgcolor: selected ? tokens.state.warningBg : tokens.surface.paper,
-                        transition: 'border-color 0.15s, background-color 0.15s',
-                        '&:hover': {
-                          borderColor: selected
-                            ? tokens.brand.accentOrange
-                            : tokens.border.subtleHover,
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Box
-                          aria-hidden="true"
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: '50%',
-                            bgcolor: iconBg,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            color: iconColor,
-                          }}
-                        >
-                          {icon}
-                        </Box>
-                        <Radio
-                          id={`policy-${type}`}
-                          name="cancellation-policy"
-                          value={type}
-                          checked={selected}
-                          onChange={() => setCancellationPolicy(type)}
-                          size="small"
-                          inputProps={{ 'aria-label': t(labelKey) }}
-                          sx={{
-                            p: 0,
-                            color: tokens.border.subtleHover,
-                            '&.Mui-checked': { color: tokens.brand.accentOrange },
-                            '&:focus-visible': {
-                              outline: `2px solid ${tokens.brand.accentOrange}`,
-                              outlineOffset: 2,
-                              borderRadius: '50%',
-                            },
-                          }}
-                        />
-                      </Box>
-                      <Typography
-                        sx={{
-                          fontSize: '0.9375rem',
-                          fontWeight: 700,
-                          color: tokens.text.primary,
-                          mb: 0.5,
-                        }}
-                      >
-                        {t(labelKey)}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: '0.8125rem',
-                          color: tokens.text.secondary,
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        {t(descKey)}
-                      </Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
-
-              {cancellationPolicy === 'partialRefundable' && (
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: 3,
-                  }}
-                >
-                  <Box>
-                    <Typography
-                      component="label"
-                      htmlFor={refundPctId}
-                      sx={{ ...LABEL_SX, color: refundPctError ? '#DC2626' : LABEL_SX.color }}
-                    >
-                      {t('manager.hotels.roomTypeManage.cancellationPolicy.refundPctLabel')}{' '}
-                      <Typography component="span" sx={{ color: '#DC2626', fontWeight: 700 }}>
-                        *
-                      </Typography>
-                    </Typography>
-                    <OutlinedInput
-                      id={refundPctId}
-                      type="number"
-                      value={refundPct}
-                      onChange={(e) => {
-                        setRefundPct(e.target.value);
-                        if (refundPctError) setRefundPctError(false);
-                      }}
-                      error={refundPctError}
-                      inputProps={{
-                        min: 1,
-                        max: 99,
-                        'aria-label': t(
-                          'manager.hotels.roomTypeManage.cancellationPolicy.refundPctLabel'
-                        ),
-                      }}
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <Typography
-                            aria-hidden="true"
-                            sx={{
-                              fontWeight: 700,
-                              color: tokens.text.muted,
-                              fontSize: '0.9375rem',
-                            }}
-                          >
-                            %
-                          </Typography>
-                        </InputAdornment>
-                      }
-                      sx={{
-                        ...INPUT_SX,
-                        ...(refundPctError && {
-                          '& .MuiOutlinedInput-notchedOutline': { borderColor: '#DC2626' },
-                          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#B91C1C' },
-                        }),
-                      }}
-                    />
-                    {refundPctError && (
-                      <Typography sx={{ fontSize: '0.8125rem', color: '#DC2626', mt: 0.75 }}>
-                        {t('manager.hotels.roomTypeManage.cancellationPolicy.errorRefundPctRange')}
-                      </Typography>
-                    )}
-                  </Box>
-
-                  <Box>
-                    <Typography component="label" htmlFor="cancellation-apply-date" sx={LABEL_SX}>
-                      {t('manager.hotels.roomTypeManage.cancellationPolicy.applyDateLabel')}
-                    </Typography>
-                    <DatePicker
-                      value={cancellationApplyDate}
-                      onChange={setCancellationApplyDate}
-                      slotProps={{
-                        textField: {
-                          id: 'cancellation-apply-date',
-                          inputProps: {
-                            'aria-label': t(
-                              'manager.hotels.roomTypeManage.cancellationPolicy.applyDateLabel'
-                            ),
-                          },
-                          sx: PICKER_TEXT_FIELD_SX,
-                        },
-                      }}
-                    />
-                    <Typography
-                      sx={{
-                        fontSize: '0.8125rem',
-                        color: tokens.text.muted,
-                        mt: 1,
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {t('manager.hotels.roomTypeManage.cancellationPolicy.applyDateHelper')}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-            </SectionCard>
-          </Box>
-        </Container>
+            )}
+          </SectionCard>
+        </Box>
 
         {/* ── Snackbar ── */}
         <Snackbar
