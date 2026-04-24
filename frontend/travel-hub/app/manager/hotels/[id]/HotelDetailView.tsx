@@ -1,9 +1,17 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import {
+  type HotelStatsOut,
+  type ManagerHotelItem,
+  type RoomTypeManagerItem,
+  getHotelMetrics,
+  getHotelRoomTypes,
+  getManagerHotels,
+} from '@/app/lib/api/manager';
 import { tokens } from '@/lib/theme/tokens';
 import BedOutlinedIcon from '@mui/icons-material/BedOutlined';
 import BedroomChildOutlinedIcon from '@mui/icons-material/BedroomChildOutlined';
@@ -18,6 +26,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
@@ -30,19 +39,11 @@ import Select from '@mui/material/Select';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import {
-  type Hotel,
-  MOCK_HOTELS,
-  MOCK_HOTEL_STATS,
-  MOCK_ROOM_TYPES,
-  type RoomTypeIcon,
-  type RoomTypeItem,
-} from '../_data';
 import RoomTypeManageView from './RoomTypeManageView';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function HotelStatusBadge({ status }: { status: Hotel['status'] }) {
+function HotelStatusBadge({ status }: { status: ManagerHotelItem['status'] }) {
   const { t } = useTranslation();
   const isActive = status === 'ACTIVE';
 
@@ -88,7 +89,7 @@ function HotelStatusBadge({ status }: { status: Hotel['status'] }) {
   );
 }
 
-function RoomTypeIconComponent({ icon }: { icon: RoomTypeIcon }) {
+function RoomTypeIconComponent({ icon }: { icon: string }) {
   const sx = { fontSize: 22, color: tokens.text.secondary };
   switch (icon) {
     case 'king':
@@ -170,20 +171,46 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
   const router = useRouter();
   const searchId = useId();
 
-  const hotel = MOCK_HOTELS.find((h) => h.id === hotelId);
-  const stats = MOCK_HOTEL_STATS[hotelId] ?? {
-    occupancyRate: 0,
-    activeBookings: 0,
-    monthlyRevenue: 0,
-  };
+  // ── Data state ──────────────────────────────────────────────────────────────
+  const [hotel, setHotel] = useState<ManagerHotelItem | null>(null);
+  const [stats, setStats] = useState<HotelStatsOut | null>(null);
+  const [roomTypes, setRoomTypes] = useState<RoomTypeManagerItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selectedRoomType, setSelectedRoomType] = useState<RoomTypeItem | null>(null);
+  // ── UI state ────────────────────────────────────────────────────────────────
+  const [selectedRoomType, setSelectedRoomType] = useState<RoomTypeManagerItem | null>(null);
   const [roomTypeSearch, setRoomTypeSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'occupied'>('all');
   const [page, setPage] = useState(1);
 
+  // ── Load data ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([getManagerHotels(1, 100), getHotelMetrics(hotelId), getHotelRoomTypes(hotelId)])
+      .then(([hotelsData, metricsData, roomTypesData]) => {
+        if (cancelled) return;
+        const found = hotelsData.items.find((h) => h.id === hotelId) ?? null;
+        setHotel(found);
+        setStats(metricsData);
+        setRoomTypes(roomTypesData.items);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load hotel data');
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hotelId]);
+
+  // ── Filtered + paged room types ─────────────────────────────────────────────
   const filteredRoomTypes = useMemo(() => {
-    const roomTypes = MOCK_ROOM_TYPES[hotelId] ?? [];
     return roomTypes.filter((rt) => {
       const matchesSearch = rt.name.toLowerCase().includes(roomTypeSearch.toLowerCase());
       const matchesStatus =
@@ -192,7 +219,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
         (statusFilter === 'occupied' && rt.available < rt.total);
       return matchesSearch && matchesStatus;
     });
-  }, [hotelId, roomTypeSearch, statusFilter]);
+  }, [roomTypes, roomTypeSearch, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRoomTypes.length / ROOMS_PER_PAGE));
   const pagedRoomTypes = filteredRoomTypes.slice(
@@ -204,7 +231,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
-  }).format(stats.monthlyRevenue);
+  }).format(stats?.monthlyRevenue ?? 0);
 
   const TABLE_HEAD_SX = {
     fontSize: '0.6875rem',
@@ -213,6 +240,36 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
     textTransform: 'uppercase' as const,
     color: tokens.text.secondary,
   };
+
+  // ── Loading / error ─────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: 'calc(100vh - 6rem)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress sx={{ color: tokens.brand.accentOrange }} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 6, textAlign: 'center' }}>
+        <Typography sx={{ color: tokens.state.warningFg, fontWeight: 600 }}>{error}</Typography>
+        <Button
+          onClick={() => router.push('/manager/hotels')}
+          sx={{ mt: 2, textTransform: 'none', fontWeight: 700 }}
+        >
+          {t('manager.hotels.hotelDetail.breadcrumbLabel')}
+        </Button>
+      </Box>
+    );
+  }
 
   if (!hotel) {
     return (
@@ -231,6 +288,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
   if (selectedRoomType) {
     return (
       <RoomTypeManageView
+        hotelId={hotelId}
         hotelName={hotel.name}
         roomType={selectedRoomType}
         onBack={() => setSelectedRoomType(null)}
@@ -322,7 +380,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
           <HotelStatCard
             icon={<LoopOutlinedIcon aria-hidden="true" sx={{ fontSize: 24, color: '#1D4ED8' }} />}
             label={t('manager.hotels.hotelDetail.stats.occupancyRate')}
-            value={`${stats.occupancyRate}%`}
+            value={`${stats?.occupancyRate ?? 0}%`}
             iconBg="#EFF6FF"
           />
           <HotelStatCard
@@ -333,7 +391,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
               />
             }
             label={t('manager.hotels.hotelDetail.stats.activeBookings')}
-            value={String(stats.activeBookings)}
+            value={String(stats?.activeBookings ?? 0)}
             iconBg={tokens.state.warningBg}
           />
           <HotelStatCard

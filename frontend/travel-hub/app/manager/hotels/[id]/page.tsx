@@ -1,8 +1,8 @@
-import { MOCK_HOTELS } from '../_data';
 import HotelDetailView from './HotelDetailView';
 
+// Required by output: 'export'. Data is fetched client-side by HotelDetailView.
 export function generateStaticParams() {
-  return MOCK_HOTELS.map((hotel) => ({ id: hotel.id }));
+  return [];
 }
 
 interface Props {

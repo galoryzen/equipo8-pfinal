@@ -298,13 +298,34 @@
           "paginationLabel": "Paginación de tipos de habitación"
         }
       },
+      "promotion": {
+        "dialogTitle": "Crear Promoción",
+        "ratePlanIdLabel": "ID del Plan Tarifario",
+        "nameLabel": "Nombre de la Promoción",
+        "namePlaceholder": "Ej. Oferta de Verano",
+        "discountTypeLabel": "Tipo de Descuento",
+        "discountTypePercent": "Porcentaje (%)",
+        "discountTypeFixed": "Monto Fijo ($)",
+        "discountValueLabel": "Valor del Descuento",
+        "startDateLabel": "Fecha de Inicio",
+        "endDateLabel": "Fecha de Fin",
+        "createButton": "Crear Promoción",
+        "deleteButton": "Eliminar Promoción",
+        "successMessage": "Promoción creada exitosamente.",
+        "deleteSuccess": "Promoción eliminada exitosamente.",
+        "errorRequired": "Por favor completa todos los campos requeridos.",
+        "errorValue": "El valor del descuento debe ser mayor a 0.",
+        "errorNameRequired": "El nombre de la promoción es requerido.",
+        "errorDiscountRange": "El descuento debe estar entre 1% y 100%."
+      },
       "roomTypeManage": {
         "breadcrumbRoomTypes": "Tipos de habitación",
         "breadcrumbManage": "Gestionar {{name}}",
         "title": "Gestionar habitación: {{name}}",
         "subtitle": "Configura la disponibilidad, precios y políticas de cancelación para esta categoría de habitación.",
         "saveChanges": "Guardar cambios",
-        "savedSuccess": "Cambios guardados correctamente.",
+        "savedSuccess": "Promoción guardada correctamente.",
+        "noRatePlan": "No hay plan tarifario disponible para este tipo de habitación.",
         "availabilityPeriod": {
           "title": "Período de disponibilidad",
           "startLabel": "Fecha y hora de inicio",
@@ -325,6 +346,7 @@
           "nonRefundable": "No reembolsable",
           "nonRefundableDesc": "No se emite reembolso independientemente de cuándo se cancele.",
           "refundPctLabel": "Porcentaje de reembolso (%)",
+          "errorRefundPctRange": "El porcentaje de reembolso debe estar entre 1% y 99%.",
           "applyDateLabel": "Fecha de aplicación de la política",
           "applyDateHelper": "La última fecha en que el huésped puede ejercer esta política."
         }

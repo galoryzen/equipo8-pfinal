@@ -1,15 +1,17 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
+import { type ManagerHotelItem, getManagerHotels } from '@/app/lib/api/manager';
 import { tokens } from '@/lib/theme/tokens';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -18,11 +20,11 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import { type Hotel, MOCK_HOTELS } from './_data';
+import HotelDetailView from './[id]/HotelDetailView';
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
-function HotelStatusBadge({ status }: { status: Hotel['status'] }) {
+function HotelStatusBadge({ status }: { status: ManagerHotelItem['status'] }) {
   const { t } = useTranslation();
   const isActive = status === 'ACTIVE';
 
@@ -114,18 +116,45 @@ function OccupancyBar({
 export default function ManagerHotelsPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const hotelSearchId = useId();
 
+  const selectedHotelId = searchParams.get('id');
+
+  const [hotels, setHotels] = useState<ManagerHotelItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hotelSearch, setHotelSearch] = useState('');
+
+  useEffect(() => {
+    if (selectedHotelId) return; // skip fetch when showing detail view
+    let cancelled = false;
+    getManagerHotels()
+      .then((data) => {
+        if (!cancelled) {
+          setHotels(data.items);
+          setLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load hotels');
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedHotelId]);
 
   const filteredHotels = useMemo(
     () =>
-      MOCK_HOTELS.filter(
+      hotels.filter(
         (h) =>
           h.name.toLowerCase().includes(hotelSearch.toLowerCase()) ||
           h.location.toLowerCase().includes(hotelSearch.toLowerCase())
       ),
-    [hotelSearch]
+    [hotels, hotelSearch]
   );
 
   const TABLE_HEAD_SX = {
@@ -135,6 +164,11 @@ export default function ManagerHotelsPage() {
     textTransform: 'uppercase' as const,
     color: tokens.text.secondary,
   };
+
+  // Render the detail view when a hotel query param is present (after all hooks)
+  if (selectedHotelId) {
+    return <HotelDetailView hotelId={selectedHotelId} />;
+  }
 
   return (
     <Box
@@ -267,7 +301,20 @@ export default function ManagerHotelsPage() {
 
           {/* Body */}
           <Box role="rowgroup">
-            {filteredHotels.length === 0 ? (
+            {loading ? (
+              <Box role="row" sx={{ px: 3.5, py: 5, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress size={32} sx={{ color: tokens.brand.accentOrange }} />
+              </Box>
+            ) : error ? (
+              <Box role="row" sx={{ px: 3.5, py: 5, textAlign: 'center' }}>
+                <Typography
+                  role="cell"
+                  sx={{ fontSize: '1rem', color: tokens.state.warningFg, fontWeight: 500 }}
+                >
+                  {error}
+                </Typography>
+              </Box>
+            ) : filteredHotels.length === 0 ? (
               <Box role="row" sx={{ px: 3.5, py: 5, textAlign: 'center' }}>
                 <Typography
                   role="cell"
@@ -305,15 +352,21 @@ export default function ManagerHotelsPage() {
                           flexShrink: 0,
                           border: '1px solid',
                           borderColor: tokens.border.subtle,
+                          bgcolor: tokens.surface.muted,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                       >
-                        <Image
-                          src={hotel.imageUrl}
-                          alt={hotel.name}
-                          width={64}
-                          height={64}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+                        {hotel.imageUrl ? (
+                          <Image
+                            src={hotel.imageUrl}
+                            alt={hotel.name}
+                            width={64}
+                            height={64}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : null}
                       </Box>
                       <Box sx={{ minWidth: 0 }}>
                         <Typography
@@ -370,7 +423,7 @@ export default function ManagerHotelsPage() {
                     <Box role="cell" sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Button
                         variant="contained"
-                        onClick={() => router.push(`/manager/hotels/${hotel.id}`)}
+                        onClick={() => router.push(`/manager/hotels?id=${hotel.id}`)}
                         aria-label={t('manager.hotels.manageRoomsFor', {
                           hotelName: hotel.name,
                         })}

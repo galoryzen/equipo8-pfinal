@@ -293,13 +293,34 @@
           "paginationLabel": "Room types pagination"
         }
       },
+      "promotion": {
+        "dialogTitle": "Create Promotion",
+        "ratePlanIdLabel": "Rate Plan ID",
+        "nameLabel": "Promotion Name",
+        "namePlaceholder": "e.g. Summer Sale",
+        "discountTypeLabel": "Discount Type",
+        "discountTypePercent": "Percentage (%)",
+        "discountTypeFixed": "Fixed Amount ($)",
+        "discountValueLabel": "Discount Value",
+        "startDateLabel": "Start Date",
+        "endDateLabel": "End Date",
+        "createButton": "Create Promotion",
+        "deleteButton": "Delete Promotion",
+        "successMessage": "Promotion created successfully.",
+        "deleteSuccess": "Promotion deleted successfully.",
+        "errorRequired": "Please fill in all required fields.",
+        "errorValue": "Discount value must be greater than 0.",
+        "errorNameRequired": "Promotion name is required.",
+        "errorDiscountRange": "Discount must be between 1% and 100%."
+      },
       "roomTypeManage": {
         "breadcrumbRoomTypes": "Room Types",
         "breadcrumbManage": "Manage {{name}}",
         "title": "Manage Room: {{name}}",
         "subtitle": "Configure availability, pricing, and cancellation policies for this room category.",
         "saveChanges": "Save Changes",
-        "savedSuccess": "Changes saved successfully.",
+        "savedSuccess": "Promotion saved successfully.",
+        "noRatePlan": "No rate plan available for this room type.",
         "availabilityPeriod": {
           "title": "Availability Period",
           "startLabel": "Start Date & Time",
@@ -320,6 +341,7 @@
           "nonRefundable": "Non-Refundable",
           "nonRefundableDesc": "No refund issued regardless of when cancelled.",
           "refundPctLabel": "Refund Percentage (%)",
+          "errorRefundPctRange": "Refund percentage must be between 1% and 99%.",
           "applyDateLabel": "Cancellation Policy Apply Date",
           "applyDateHelper": "The last date this policy can be exercised by the guest."
         }
