@@ -1,7 +1,8 @@
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, or_, select, text
+from sqlalchemy import and_, func as sa_func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
@@ -186,3 +187,26 @@ class SqlAlchemyBookingRepository(BookingRepository):
         )
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
+
+    async def get_property_stats(self, property_id: UUID) -> dict:
+        today = datetime.now(UTC).date()
+        now = datetime.now(UTC).replace(tzinfo=None)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        active_stmt = select(sa_func.count(Booking.id)).where(
+            Booking.property_id == property_id,
+            Booking.status == BookingStatus.CONFIRMED,
+            Booking.checkout >= today,
+        )
+        active_result = await self._session.execute(active_stmt)
+        active_bookings = active_result.scalar() or 0
+
+        revenue_stmt = select(sa_func.coalesce(sa_func.sum(Booking.total_amount), Decimal("0"))).where(
+            Booking.property_id == property_id,
+            Booking.status == BookingStatus.CONFIRMED,
+            Booking.created_at >= month_start,
+        )
+        revenue_result = await self._session.execute(revenue_stmt)
+        monthly_revenue = float(revenue_result.scalar() or 0)
+
+        return {"active_bookings": active_bookings, "monthly_revenue": monthly_revenue}

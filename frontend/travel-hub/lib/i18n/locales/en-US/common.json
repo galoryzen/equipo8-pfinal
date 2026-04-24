@@ -232,75 +232,191 @@
     "pendingBookingsToday": "You have {{count}} bookings pending confirmation today.",
     "noPendingBookings": "No pending bookings.",
     "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking.",
-    "dashboard": {
-      "title": "Dashboard Overview",
-      "subtitle": "Snapshot of your hotel performance for the selected period.",
-      "metrics": {
-        "totalBookings": "Total Bookings",
-        "revenue": "Revenue",
-        "occupancyRate": "Occupancy Rate",
-        "averageRating": "Average Rating"
-      },
-      "sections": {
-        "bookingTrends": "Booking Trends",
-        "recentActivity": "Recent Activity",
-        "upcomingCheckins": "Upcoming Check-ins"
-      },
-      "filters": {
-        "last7days": "Last 7 days",
-        "last30days": "Last 30 days",
-        "currentMonth": "Current month"
-      },
-      "empty": {
-        "noData": "No data available",
-        "noUpcomingCheckins": "No upcoming check-ins"
-      },
-      "errors": {
-        "loading": "Error loading dashboard",
-        "unauthorizedTitle": "Restricted access",
-        "unauthorized": "Agency partner is not authorized to view hotel metrics."
-      },
-      "actions": {
-        "goToBookings": "Go to bookings"
-      },
-      "table": {
-        "guest": "Guest",
-        "roomType": "Room Type",
-        "checkIn": "Check In",
-        "checkOut": "Check Out",
+    "hotels": {
+      "title": "My Hotels",
+      "subtitle": "Manage and oversee all your listed properties and their room inventory.",
+      "searchPlaceholder": "Find a hotel by name or location...",
+      "filters": "Filters",
+      "noResults": "No hotels match your search.",
+      "hotelIdPrefix": "ID:",
+      "rooms_one": "{{count}} Room",
+      "rooms_other": "{{count}} Rooms",
+      "statusActive": "Active",
+      "statusPendingReview": "Pending Review",
+      "manageRooms": "Manage Rooms",
+      "manageRoomsFor": "Manage rooms for {{hotelName}}",
+      "backToHotels": "Back to hotels",
+      "tableHeaders": {
+        "hotelDetails": "Hotel Details",
+        "location": "Location",
+        "inventory": "Inventory",
         "status": "Status",
-        "amount": "Amount"
+        "actions": "Actions"
       },
-      "status": {
-        "confirmed": "Confirmed",
-        "pending_payment": "Pending payment",
-        "pending_confirmation": "Pending confirmation",
-        "cancelled": "Cancelled"
+      "roomManagement": {
+        "title": "Room Management: {{hotelName}}",
+        "subtitle": "Showing all {{totalRooms}} rooms across {{categories}} categories.",
+        "searchPlaceholder": "Find room by number (e.g. 402) or type...",
+        "noResults": "No rooms match your search or filter.",
+        "filterAllTypes": "All Types",
+        "filterSuites": "Suites",
+        "filterDeluxe": "Deluxe",
+        "statusAvailable": "Available",
+        "statusOccupied": "Occupied",
+        "manageRoom": "Manage room {{number}}",
+        "addNewRoom": "Add New Room"
       },
-      "activity": {
-        "booking_confirmed": "Booking confirmed",
-        "booking_cancelled": "Booking cancelled",
-        "booking_pending_confirmation": "Booking pending confirmation",
-        "booking_pending_payment": "Booking pending payment",
-        "payment_captured": "Payment captured",
-        "review_created": "Review created"
+      "hotelDetail": {
+        "breadcrumbLabel": "My Hotels",
+        "breadcrumbNav": "Page navigation",
+        "idLabel": "ID:",
+        "locationLabel": "Location:",
+        "stats": {
+          "occupancyRate": "Occupancy Rate",
+          "activeBookings": "Active Bookings",
+          "revenue": "Revenue (Month)"
+        },
+        "roomManagement": {
+          "sectionTitle": "Room Management",
+          "searchPlaceholder": "Search by room # or type",
+          "statusFilterLabel": "Filter by status",
+          "allStatuses": "All Statuses",
+          "statusAvailable": "Available",
+          "statusOccupied": "Occupied",
+          "tableRoomType": "Room Type",
+          "tableAvailable": "Available",
+          "tableAction": "Action",
+          "availableCount": "{{available}} / {{total}} Available",
+          "manageRoomType": "Manage {{name}} rooms",
+          "manage": "Manage",
+          "showing": "Showing {{count}} room types",
+          "paginationLabel": "Room types pagination"
+        }
+      },
+      "promotion": {
+        "dialogTitle": "Create Promotion",
+        "ratePlanIdLabel": "Rate Plan ID",
+        "nameLabel": "Promotion Name",
+        "namePlaceholder": "e.g. Summer Sale",
+        "discountTypeLabel": "Discount Type",
+        "discountTypePercent": "Percentage (%)",
+        "discountTypeFixed": "Fixed Amount ($)",
+        "discountValueLabel": "Discount Value",
+        "startDateLabel": "Start Date",
+        "endDateLabel": "End Date",
+        "createButton": "Create Promotion",
+        "deleteButton": "Delete Promotion",
+        "successMessage": "Promotion created successfully.",
+        "deleteSuccess": "Promotion deleted successfully.",
+        "errorRequired": "Please fill in all required fields.",
+        "errorValue": "Discount value must be greater than 0.",
+        "errorNameRequired": "Promotion name is required.",
+        "errorDiscountRange": "Discount must be between 1% and 100%."
+      },
+      "roomTypeManage": {
+        "breadcrumbRoomTypes": "Room Types",
+        "breadcrumbManage": "Manage {{name}}",
+        "title": "Manage Room: {{name}}",
+        "subtitle": "Configure availability, pricing, and cancellation policies for this room category.",
+        "saveChanges": "Save Changes",
+        "savedSuccess": "Promotion saved successfully.",
+        "noRatePlan": "No rate plan available for this room type.",
+        "availabilityPeriod": {
+          "title": "Availability Period",
+          "startLabel": "Start Date & Time",
+          "endLabel": "End Date & Time"
+        },
+        "pricingOffers": {
+          "title": "Pricing & Offers",
+          "discountLabel": "Discount to Apply (%)",
+          "discountHelper": "This discount will be applied to the base rate during the availability period."
+        },
+        "cancellationPolicy": {
+          "title": "Cancellation Policy",
+          "policyTypeLabel": "Policy Type",
+          "totallyRefundable": "Totally Refundable",
+          "totallyRefundableDesc": "Full refund if cancelled before the apply date.",
+          "partialRefundable": "Partial Refundable",
+          "partialRefundableDesc": "Specific percentage refunded upon cancellation.",
+          "nonRefundable": "Non-Refundable",
+          "nonRefundableDesc": "No refund issued regardless of when cancelled.",
+          "refundPctLabel": "Refund Percentage (%)",
+          "errorRefundPctRange": "Refund percentage must be between 1% and 99%.",
+          "applyDateLabel": "Cancellation Policy Apply Date",
+          "applyDateHelper": "The last date this policy can be exercised by the guest."
+        },
+        "dashboard": {
+          "title": "Dashboard Overview",
+          "subtitle": "Snapshot of your hotel performance for the selected period.",
+          "metrics": {
+            "totalBookings": "Total Bookings",
+            "revenue": "Revenue",
+            "occupancyRate": "Occupancy Rate",
+            "averageRating": "Average Rating"
+          },
+          "sections": {
+            "bookingTrends": "Booking Trends",
+            "recentActivity": "Recent Activity",
+            "upcomingCheckins": "Upcoming Check-ins"
+          },
+          "filters": {
+            "dateRange": "Date range",
+            "last7days": "Last 7 days",
+            "last30days": "Last 30 days",
+            "currentMonth": "Current month"
+          },
+          "empty": {
+            "noData": "No data available",
+            "noUpcomingCheckins": "No upcoming check-ins"
+          },
+          "errors": {
+            "loading": "Error loading dashboard",
+            "unauthorizedTitle": "Restricted access",
+            "unauthorized": "Agency partner is not authorized to view hotel metrics."
+          },
+          "actions": {
+            "goToBookings": "Go to bookings"
+          },
+          "table": {
+            "guest": "Guest",
+            "roomType": "Room Type",
+            "checkIn": "Check In",
+            "checkOut": "Check Out",
+            "status": "Status",
+            "amount": "Amount"
+          },
+          "status": {
+            "confirmed": "Confirmed",
+            "pending_payment": "Pending payment",
+            "pending_confirmation": "Pending confirmation",
+            "cancelled": "Cancelled"
+          },
+          "activity": {
+            "booking_confirmed": "Booking confirmed",
+            "booking_cancelled": "Booking cancelled",
+            "booking_pending_confirmation": "Booking pending confirmation",
+            "booking_pending_payment": "Booking pending payment",
+            "payment_captured": "Payment captured",
+            "review_created": "Review created"
+          }
+        }
+      },
+      "admin": {
+        "navbar": {
+          "title": "TravelHub Admin",
+          "dashboard": "Dashboard",
+          "bookings": "Bookings",
+          "hotels": "My Hotels",
+          "notifications": "Notifications",
+          "reports": "Reports",
+          "subtitle": "Super Admin",
+          "logOut": "Log Out"
+        }
+      },
+      "common": {
+        "cancel": "Cancel",
+        "unknownError": "Unknown error"
       }
     }
-  },
-  "admin": {
-    "navbar": {
-      "title": "TravelHub Admin",
-      "dashboard": "Dashboard",
-      "bookings": "Bookings",
-      "hotels": "My Hotels",
-      "notifications": "Notifications",
-      "reports": "Reports",
-      "subtitle": "Super Admin",
-      "logOut": "Log Out"
-    }
-  },
-  "common": {
-    "cancel": "Cancel",
-    "unknownError": "Unknown error"
   }
 }

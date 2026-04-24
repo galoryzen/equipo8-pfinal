@@ -12,6 +12,7 @@ from app.adapters.inbound.api.dependencies import (
 )
 from app.adapters.inbound.api.error_handlers import register_error_handlers
 from app.adapters.inbound.api.health import router as health_router
+from app.adapters.inbound.api.internal import router as internal_router
 from app.adapters.outbound.db.session import engine
 from app.config import settings
 
@@ -41,4 +42,5 @@ app.add_middleware(
 register_error_handlers(app)
 app.include_router(health_router, prefix="/api/v1/booking")
 app.include_router(bookings_router, prefix="/api/v1/booking")
+app.include_router(internal_router, prefix="/api/v1/booking")
 app.include_router(dashboard_router, prefix="/api/v1/dashboard")

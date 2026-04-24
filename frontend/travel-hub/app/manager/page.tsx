@@ -191,7 +191,7 @@ function formatEnumFallback(value: string): string {
 
 function getDashboardStatusLabel(status: string, t: DashboardTranslate): string {
   const normalizedStatus = status.toLowerCase();
-  return t(`manager.dashboard.status.${normalizedStatus}`, {
+  return t(`manager.hotels.roomTypeManage.dashboard.status.${normalizedStatus}`, {
     defaultValue: formatEnumFallback(status),
   });
 }
@@ -202,7 +202,7 @@ function getDashboardActivityLabel(
   t: DashboardTranslate
 ): string {
   const normalizedType = activityType.toLowerCase();
-  return t(`manager.dashboard.activity.${normalizedType}`, {
+  return t(`manager.hotels.roomTypeManage.dashboard.activity.${normalizedType}`, {
     defaultValue: originalDescription || formatEnumFallback(activityType),
   });
 }
@@ -326,8 +326,7 @@ function MetricCardSkeleton(): React.ReactNode {
 export default function ManagerDashboardPage() {
   const { t } = useTranslation();
   const [range, setRange] = useState<DateRangeOption>('last7');
-  const dateRangeLabel =
-    t('manager.dashboard.filters.dateRange', { defaultValue: 'Date range' }) || 'Date range';
+  const dateRangeLabel = t('manager.hotels.roomTypeManage.dashboard.filters.dateRange');
 
   const { from, to } = useMemo(() => calculateDateRange(range), [range]);
   const { data, loading, error } = useDashboardData(from, to);
@@ -339,22 +338,22 @@ export default function ManagerDashboardPage() {
 
   const cards = [
     {
-      label: t('manager.dashboard.metrics.totalBookings'),
+      label: t('manager.hotels.roomTypeManage.dashboard.metrics.totalBookings'),
       value: Math.round(data.metrics.totalBookings.value ?? 0).toLocaleString('en-US'),
       variation: data.metrics.totalBookings.variation,
     },
     {
-      label: t('manager.dashboard.metrics.revenue'),
+      label: t('manager.hotels.roomTypeManage.dashboard.metrics.revenue'),
       value: formatCurrency(data.metrics.revenue.value ?? 0),
       variation: data.metrics.revenue.variation,
     },
     {
-      label: t('manager.dashboard.metrics.occupancyRate'),
+      label: t('manager.hotels.roomTypeManage.dashboard.metrics.occupancyRate'),
       value: `${(data.metrics.occupancyRate.value ?? 0).toFixed(1)}%`,
       variation: data.metrics.occupancyRate.variation,
     },
     {
-      label: t('manager.dashboard.metrics.averageRating'),
+      label: t('manager.hotels.roomTypeManage.dashboard.metrics.averageRating'),
       value: (data.metrics.averageRating.value ?? 0).toFixed(1),
       variation: data.metrics.averageRating.variation,
     },
@@ -374,10 +373,10 @@ export default function ManagerDashboardPage() {
             component="h1"
             sx={{ fontSize: '2rem', fontWeight: 800, color: tokens.dashboard.heading }}
           >
-            {t('manager.dashboard.title')}
+            {t('manager.hotels.roomTypeManage.dashboard.title')}
           </Typography>
           <Typography sx={{ color: tokens.dashboard.mutedText, mt: 0.5 }}>
-            {t('manager.dashboard.subtitle')}
+            {t('manager.hotels.roomTypeManage.dashboard.subtitle')}
           </Typography>
         </Box>
 
@@ -391,9 +390,15 @@ export default function ManagerDashboardPage() {
             onChange={(event) => setRange(event.target.value as DateRangeOption)}
             inputProps={{ 'aria-label': dateRangeLabel }}
           >
-            <MenuItem value="last7">{t('manager.dashboard.filters.last7days')}</MenuItem>
-            <MenuItem value="last30">{t('manager.dashboard.filters.last30days')}</MenuItem>
-            <MenuItem value="currentMonth">{t('manager.dashboard.filters.currentMonth')}</MenuItem>
+            <MenuItem value="last7">
+              {t('manager.hotels.roomTypeManage.dashboard.filters.last7days')}
+            </MenuItem>
+            <MenuItem value="last30">
+              {t('manager.hotels.roomTypeManage.dashboard.filters.last30days')}
+            </MenuItem>
+            <MenuItem value="currentMonth">
+              {t('manager.hotels.roomTypeManage.dashboard.filters.currentMonth')}
+            </MenuItem>
           </Select>
         </FormControl>
       </Stack>
@@ -409,7 +414,7 @@ export default function ManagerDashboardPage() {
         >
           <CardContent>
             <Typography sx={{ color: tokens.dashboard.alert.errorText, fontWeight: 700 }}>
-              {t('manager.dashboard.errors.loading')}
+              {t('manager.hotels.roomTypeManage.dashboard.errors.loading')}
             </Typography>
           </CardContent>
         </Card>
@@ -441,7 +446,7 @@ export default function ManagerDashboardPage() {
           >
             <CardContent>
               <Typography sx={{ fontWeight: 700, color: tokens.dashboard.heading, mb: 2 }}>
-                {t('manager.dashboard.sections.bookingTrends')}
+                {t('manager.hotels.roomTypeManage.dashboard.sections.bookingTrends')}
               </Typography>
               <Box
                 sx={{
@@ -456,8 +461,8 @@ export default function ManagerDashboardPage() {
                 ) : (
                   <BookingTrendChart
                     data={data.bookingTrends}
-                    emptyText={t('manager.dashboard.empty.noData')}
-                    ariaLabel={t('manager.dashboard.sections.bookingTrends')}
+                    emptyText={t('manager.hotels.roomTypeManage.dashboard.empty.noData')}
+                    ariaLabel={t('manager.hotels.roomTypeManage.dashboard.sections.bookingTrends')}
                   />
                 )}
               </Box>
@@ -475,7 +480,7 @@ export default function ManagerDashboardPage() {
           >
             <CardContent>
               <Typography sx={{ fontWeight: 700, color: tokens.dashboard.heading, mb: 2 }}>
-                {t('manager.dashboard.sections.recentActivity')}
+                {t('manager.hotels.roomTypeManage.dashboard.sections.recentActivity')}
               </Typography>
               {loading ? (
                 <Stack spacing={1.25}>
@@ -485,13 +490,13 @@ export default function ManagerDashboardPage() {
                 </Stack>
               ) : data.recentActivity.length === 0 ? (
                 <Typography sx={{ color: tokens.dashboard.mutedText }}>
-                  {t('manager.dashboard.empty.noData')}
+                  {t('manager.hotels.roomTypeManage.dashboard.empty.noData')}
                 </Typography>
               ) : (
                 <List
                   disablePadding
                   tabIndex={0}
-                  aria-label={t('manager.dashboard.sections.recentActivity')}
+                  aria-label={t('manager.hotels.roomTypeManage.dashboard.sections.recentActivity')}
                   sx={{
                     maxHeight: 190,
                     overflowY: 'auto',
@@ -545,17 +550,19 @@ export default function ManagerDashboardPage() {
       >
         <CardContent>
           <Typography sx={{ fontWeight: 700, color: tokens.dashboard.heading, mb: 1.5 }}>
-            {t('manager.dashboard.sections.upcomingCheckins')}
+            {t('manager.hotels.roomTypeManage.dashboard.sections.upcomingCheckins')}
           </Typography>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>{t('manager.dashboard.table.guest')}</TableCell>
-                <TableCell>{t('manager.dashboard.table.roomType')}</TableCell>
-                <TableCell>{t('manager.dashboard.table.checkIn')}</TableCell>
-                <TableCell>{t('manager.dashboard.table.checkOut')}</TableCell>
-                <TableCell>{t('manager.dashboard.table.status')}</TableCell>
-                <TableCell align="right">{t('manager.dashboard.table.amount')}</TableCell>
+                <TableCell>{t('manager.hotels.roomTypeManage.dashboard.table.guest')}</TableCell>
+                <TableCell>{t('manager.hotels.roomTypeManage.dashboard.table.roomType')}</TableCell>
+                <TableCell>{t('manager.hotels.roomTypeManage.dashboard.table.checkIn')}</TableCell>
+                <TableCell>{t('manager.hotels.roomTypeManage.dashboard.table.checkOut')}</TableCell>
+                <TableCell>{t('manager.hotels.roomTypeManage.dashboard.table.status')}</TableCell>
+                <TableCell align="right">
+                  {t('manager.hotels.roomTypeManage.dashboard.table.amount')}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -571,7 +578,7 @@ export default function ManagerDashboardPage() {
                     <Typography
                       sx={{ py: 2, textAlign: 'center', color: tokens.dashboard.mutedText }}
                     >
-                      {t('manager.dashboard.empty.noUpcomingCheckins')}
+                      {t('manager.hotels.roomTypeManage.dashboard.empty.noUpcomingCheckins')}
                     </Typography>
                   </TableCell>
                 </TableRow>

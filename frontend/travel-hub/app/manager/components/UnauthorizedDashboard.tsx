@@ -45,15 +45,15 @@ export default function UnauthorizedDashboard(): React.ReactNode {
             </Box>
 
             <Typography variant="h5" sx={{ fontWeight: 800, color: tokens.text.primary }}>
-              {t('manager.dashboard.errors.unauthorizedTitle')}
+              {t('manager.hotels.roomTypeManage.dashboard.errors.unauthorizedTitle')}
             </Typography>
 
             <Typography sx={{ color: tokens.text.secondary, maxWidth: 420 }}>
-              {t('manager.dashboard.errors.unauthorized')}
+              {t('manager.hotels.roomTypeManage.dashboard.errors.unauthorized')}
             </Typography>
 
             <Button type="button" variant="outlined" sx={{ mt: 1, textTransform: 'none' }}>
-              {t('manager.dashboard.actions.goToBookings')}
+              {t('manager.hotels.roomTypeManage.dashboard.actions.goToBookings')}
             </Button>
           </Stack>
         </CardContent>

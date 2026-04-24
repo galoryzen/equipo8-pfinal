@@ -237,75 +237,191 @@
     "pendingBookingsToday": "Tienes {{count}} reservas pendientes de confirmación hoy.",
     "noPendingBookings": "No hay reservas pendientes.",
     "noAvailability": "No hay disponibilidad suficiente. Puede ofrecer upgrade, cambiar fechas o rechazar la reserva.",
-    "dashboard": {
-      "title": "Resumen del dashboard",
-      "subtitle": "Resumen del rendimiento de tu hotel para el periodo seleccionado.",
-      "metrics": {
-        "totalBookings": "Reservas totales",
-        "revenue": "Ingresos",
-        "occupancyRate": "Tasa de ocupación",
-        "averageRating": "Calificación promedio"
-      },
-      "sections": {
-        "bookingTrends": "Tendencias de reservas",
-        "recentActivity": "Actividad reciente",
-        "upcomingCheckins": "Próximos check-ins"
-      },
-      "filters": {
-        "last7days": "Últimos 7 días",
-        "last30days": "Últimos 30 días",
-        "currentMonth": "Mes actual"
-      },
-      "empty": {
-        "noData": "No hay datos disponibles",
-        "noUpcomingCheckins": "No hay próximos check-ins"
-      },
-      "errors": {
-        "loading": "Error al cargar el dashboard",
-        "unauthorizedTitle": "Acceso restringido",
-        "unauthorized": "El socio de agencia no está autorizado para consultar métricas del hotel."
-      },
-      "actions": {
-        "goToBookings": "Ir a reservas"
-      },
-      "table": {
-        "guest": "Huésped",
-        "roomType": "Tipo de habitación",
-        "checkIn": "Check-in",
-        "checkOut": "Check-out",
+    "hotels": {
+      "title": "Mis Hoteles",
+      "subtitle": "Administra y supervisa todas tus propiedades y su inventario de habitaciones.",
+      "searchPlaceholder": "Buscar hotel por nombre o ubicación...",
+      "filters": "Filtros",
+      "noResults": "Ningún hotel coincide con tu búsqueda.",
+      "hotelIdPrefix": "ID:",
+      "rooms_one": "{{count}} Habitación",
+      "rooms_other": "{{count}} Habitaciones",
+      "statusActive": "Activo",
+      "statusPendingReview": "En revisión",
+      "manageRooms": "Gestionar habitaciones",
+      "manageRoomsFor": "Gestionar habitaciones de {{hotelName}}",
+      "backToHotels": "Volver a hoteles",
+      "tableHeaders": {
+        "hotelDetails": "Detalles del hotel",
+        "location": "Ubicación",
+        "inventory": "Inventario",
         "status": "Estado",
-        "amount": "Monto"
+        "actions": "Acciones"
       },
-      "status": {
-        "confirmed": "Confirmada",
-        "pending_payment": "Pago pendiente",
-        "pending_confirmation": "Confirmación pendiente",
-        "cancelled": "Cancelada"
+      "roomManagement": {
+        "title": "Gestión de habitaciones: {{hotelName}}",
+        "subtitle": "Mostrando {{totalRooms}} habitaciones en {{categories}} categorías.",
+        "searchPlaceholder": "Buscar por número (ej. 402) o tipo...",
+        "noResults": "Ninguna habitación coincide con tu búsqueda o filtro.",
+        "filterAllTypes": "Todos los tipos",
+        "filterSuites": "Suites",
+        "filterDeluxe": "Deluxe",
+        "statusAvailable": "Disponible",
+        "statusOccupied": "Ocupada",
+        "manageRoom": "Gestionar habitación {{number}}",
+        "addNewRoom": "Agregar habitación"
       },
-      "activity": {
-        "booking_confirmed": "Reserva confirmada",
-        "booking_cancelled": "Reserva cancelada",
-        "booking_pending_confirmation": "Reserva pendiente de confirmación",
-        "booking_pending_payment": "Reserva pendiente de pago",
-        "payment_captured": "Pago capturado",
-        "review_created": "Reseña creada"
+      "hotelDetail": {
+        "breadcrumbLabel": "Mis Hoteles",
+        "breadcrumbNav": "Navegación de página",
+        "idLabel": "ID:",
+        "locationLabel": "Ubicación:",
+        "stats": {
+          "occupancyRate": "Tasa de ocupación",
+          "activeBookings": "Reservas activas",
+          "revenue": "Ingresos (mes)"
+        },
+        "roomManagement": {
+          "sectionTitle": "Gestión de habitaciones",
+          "searchPlaceholder": "Buscar por número o tipo de habitación",
+          "statusFilterLabel": "Filtrar por estado",
+          "allStatuses": "Todos los estados",
+          "statusAvailable": "Disponible",
+          "statusOccupied": "Ocupada",
+          "tableRoomType": "Tipo de habitación",
+          "tableAvailable": "Disponible",
+          "tableAction": "Acción",
+          "availableCount": "{{available}} / {{total}} Disponibles",
+          "manageRoomType": "Gestionar habitaciones de tipo {{name}}",
+          "manage": "Gestionar",
+          "showing": "Mostrando {{count}} tipos de habitación",
+          "paginationLabel": "Paginación de tipos de habitación"
+        }
+      },
+      "promotion": {
+        "dialogTitle": "Crear Promoción",
+        "ratePlanIdLabel": "ID del Plan Tarifario",
+        "nameLabel": "Nombre de la Promoción",
+        "namePlaceholder": "Ej. Oferta de Verano",
+        "discountTypeLabel": "Tipo de Descuento",
+        "discountTypePercent": "Porcentaje (%)",
+        "discountTypeFixed": "Monto Fijo ($)",
+        "discountValueLabel": "Valor del Descuento",
+        "startDateLabel": "Fecha de Inicio",
+        "endDateLabel": "Fecha de Fin",
+        "createButton": "Crear Promoción",
+        "deleteButton": "Eliminar Promoción",
+        "successMessage": "Promoción creada exitosamente.",
+        "deleteSuccess": "Promoción eliminada exitosamente.",
+        "errorRequired": "Por favor completa todos los campos requeridos.",
+        "errorValue": "El valor del descuento debe ser mayor a 0.",
+        "errorNameRequired": "El nombre de la promoción es requerido.",
+        "errorDiscountRange": "El descuento debe estar entre 1% y 100%."
+      },
+      "roomTypeManage": {
+        "breadcrumbRoomTypes": "Tipos de habitación",
+        "breadcrumbManage": "Gestionar {{name}}",
+        "title": "Gestionar habitación: {{name}}",
+        "subtitle": "Configura la disponibilidad, precios y políticas de cancelación para esta categoría de habitación.",
+        "saveChanges": "Guardar cambios",
+        "savedSuccess": "Promoción guardada correctamente.",
+        "noRatePlan": "No hay plan tarifario disponible para este tipo de habitación.",
+        "availabilityPeriod": {
+          "title": "Período de disponibilidad",
+          "startLabel": "Fecha y hora de inicio",
+          "endLabel": "Fecha y hora de fin"
+        },
+        "pricingOffers": {
+          "title": "Precios y ofertas",
+          "discountLabel": "Descuento a aplicar (%)",
+          "discountHelper": "Este descuento se aplicará a la tarifa base durante el período de disponibilidad."
+        },
+        "cancellationPolicy": {
+          "title": "Política de cancelación",
+          "policyTypeLabel": "Tipo de política",
+          "totallyRefundable": "Totalmente reembolsable",
+          "totallyRefundableDesc": "Reembolso completo si se cancela antes de la fecha de aplicación.",
+          "partialRefundable": "Reembolso parcial",
+          "partialRefundableDesc": "Se reembolsa un porcentaje específico al cancelar.",
+          "nonRefundable": "No reembolsable",
+          "nonRefundableDesc": "No se emite reembolso independientemente de cuándo se cancele.",
+          "refundPctLabel": "Porcentaje de reembolso (%)",
+          "errorRefundPctRange": "El porcentaje de reembolso debe estar entre 1% y 99%.",
+          "applyDateLabel": "Fecha de aplicación de la política",
+          "applyDateHelper": "La última fecha en que el huésped puede ejercer esta política."
+        },
+        "dashboard": {
+          "title": "Resumen del dashboard",
+          "subtitle": "Resumen del rendimiento de tu hotel para el periodo seleccionado.",
+          "metrics": {
+            "totalBookings": "Reservas totales",
+            "revenue": "Ingresos",
+            "occupancyRate": "Tasa de ocupación",
+            "averageRating": "Calificación promedio"
+          },
+          "sections": {
+            "bookingTrends": "Tendencias de reservas",
+            "recentActivity": "Actividad reciente",
+            "upcomingCheckins": "Próximos check-ins"
+          },
+          "filters": {
+            "dateRange": "Rango de fechas",
+            "last7days": "Últimos 7 días",
+            "last30days": "Últimos 30 días",
+            "currentMonth": "Mes actual"
+          },
+          "empty": {
+            "noData": "No hay datos disponibles",
+            "noUpcomingCheckins": "No hay próximos check-ins"
+          },
+          "errors": {
+            "loading": "Error al cargar el dashboard",
+            "unauthorizedTitle": "Acceso restringido",
+            "unauthorized": "El socio de agencia no está autorizado para consultar métricas del hotel."
+          },
+          "actions": {
+            "goToBookings": "Ir a reservas"
+          },
+          "table": {
+            "guest": "Huésped",
+            "roomType": "Tipo de habitación",
+            "checkIn": "Check-in",
+            "checkOut": "Check-out",
+            "status": "Estado",
+            "amount": "Monto"
+          },
+          "status": {
+            "confirmed": "Confirmada",
+            "pending_payment": "Pago pendiente",
+            "pending_confirmation": "Confirmación pendiente",
+            "cancelled": "Cancelada"
+          },
+          "activity": {
+            "booking_confirmed": "Reserva confirmada",
+            "booking_cancelled": "Reserva cancelada",
+            "booking_pending_confirmation": "Reserva pendiente de confirmación",
+            "booking_pending_payment": "Reserva pendiente de pago",
+            "payment_captured": "Pago capturado",
+            "review_created": "Reseña creada"
+          }
+        }
+      },
+      "admin": {
+        "navbar": {
+          "title": "TravelHub Admin",
+          "dashboard": "Dashboard",
+          "bookings": "Reservas",
+          "hotels": "Mis Hoteles",
+          "notifications": "Notificaciones",
+          "reports": "Reportes",
+          "subtitle": "Super Admin",
+          "logOut": "Cerrar sesión"
+        }
+      },
+      "common": {
+        "cancel": "Cancelar",
+        "unknownError": "Error desconocido"
       }
     }
-  },
-  "admin": {
-    "navbar": {
-      "title": "TravelHub Admin",
-      "dashboard": "Dashboard",
-      "bookings": "Reservas",
-      "hotels": "Mis Hoteles",
-      "notifications": "Notificaciones",
-      "reports": "Reportes",
-      "subtitle": "Super Admin",
-      "logOut": "Cerrar sesión"
-    }
-  },
-  "common": {
-    "cancel": "Cancelar",
-    "unknownError": "Error desconocido"
   }
 }

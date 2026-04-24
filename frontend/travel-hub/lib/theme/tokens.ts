@@ -45,17 +45,21 @@ export const tokens = {
   },
   state: {
     error: '#F87171',
+    /** Green-600 — icons / fills on white */
+    success: '#16A34A',
+    /**
+     * Success palette tuned for WCAG AA contrast on light surfaces:
+     * - Use `successFg` for text/icons on white and warm off-whites.
+     * - Use `successBg` behind `successFg` text for chips/badges.
+     */
+    successFg: '#15803D',
+    successBg: '#F0FDF4',
+    successBorder: '#BBF7D0',
     /**
      * Red 600 — negative deltas / error text on white and warm off-whites
      * (≥4.5:1 for 14px body). Use `error` for soft fills; use this for icons/labels.
      */
     errorFg: '#DC2626',
-    success: '#16A34A',
-    /**
-     * Green 800 — positive deltas / success text on white and light surfaces
-     * (>=4.5:1 for normal-size text).
-     */
-    successFg: '#166534',
     /**
      * Warning palette tuned for WCAG AA contrast on light surfaces:
      * - Use `warningFg` for text/icons on white and warm off-whites.
