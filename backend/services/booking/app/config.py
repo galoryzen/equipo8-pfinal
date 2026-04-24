@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
 
     # Catalog coordination for inventory holds (SCRUM-123 backend foundation)
-    CATALOG_SERVICE_URL: str = "http://thub-catalog:8000"
+    # Default = CloudMap hostname (AWS). Compose overrides to thub-catalog locally.
+    CATALOG_SERVICE_URL: str = "http://catalog.services.local:8000"
     CATALOG_HTTP_TIMEOUT_SECONDS: float = 3.0
 
     # Background worker — expires CART and reconciles unreleased inventory holds.
