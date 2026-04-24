@@ -1078,6 +1078,9 @@ INSERT INTO payments.payment (
   id, booking_id, provider, status, authorized_amount, captured_amount, currency_code,
   payment_token, provider_reference, processed_at
 ) VALUES
+  -- período anterior equivalente (mes previo): habilita variaciones != 0 en revenue report
+  ('a10e0000-0000-4000-8000-000000000000', 'b8e00000-0000-4000-8000-000000000007',
+   'mock', 'CAPTURED', 240.00, 240.00, 'USD', 'tok_dash_dyn_prev_000', 'pi_dash_dyn_prev_000', now() - INTERVAL '35 days'),
   ('a10e0000-0000-4000-8000-000000000001', 'b8e00000-0000-4000-8000-000000000001',
    'mock', 'CAPTURED', 100.00, 100.00, 'USD', 'tok_dash_dyn_001', 'pi_dash_dyn_001', now() - INTERVAL '6 days'),
   ('a10e0000-0000-4000-8000-000000000002', 'b8e00000-0000-4000-8000-000000000002',

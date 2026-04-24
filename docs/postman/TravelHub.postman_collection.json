@@ -26,6 +26,21 @@
       "type": "string"
     },
     {
+      "key": "hotelId",
+      "value": "e0000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "reportFrom",
+      "value": "2026-10-01",
+      "type": "string"
+    },
+    {
+      "key": "reportTo",
+      "value": "2026-10-31",
+      "type": "string"
+    },
+    {
       "key": "partnerAdminSecret",
       "value": "dev-partner-admin-secret",
       "type": "string"
@@ -408,6 +423,75 @@
               "_postman_previewlanguage": "json",
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"detail\": \"Las métricas de hotel requieren una cuenta vinculada a un hotel.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Revenue report by period",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id={{hotelId}}&from={{reportFrom}}&to={{reportTo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dashboard", "revenue-report"],
+              "query": [
+                { "key": "hotel_id", "value": "{{hotelId}}" },
+                { "key": "from", "value": "{{reportFrom}}" },
+                { "key": "to", "value": "{{reportTo}}" }
+              ]
+            },
+            "description": "Genera reporte de ingresos para un hotel y rango de fechas.\n\n**Parámetros:** `hotel_id`, `from`, `to`.\n\n**Auth:** roles `HOTEL` o `MANAGER` con token Bearer (`{{accessToken}}`).\n\n**Notas de negocio:**\n- `totalRevenue` usa pagos con estado `CAPTURED`.\n- `adr = totalRevenue / sold_room_nights`.\n- `occupancyRate` se calcula con noches ocupadas sobre capacidad del período.\n- `variation` compara contra período anterior equivalente (misma duración, inmediatamente anterior).\n"
+          },
+          "response": [
+            {
+              "name": "200 — ejemplo",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id={{hotelId}}&from={{reportFrom}}&to={{reportTo}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"kpis\": {\n    \"totalRevenue\": { \"value\": 124530.0, \"variation\": 12.5 },\n    \"adr\": { \"value\": 345.0, \"variation\": 4.2 },\n    \"occupancyRate\": { \"value\": 82.4, \"variation\": -1.8 }\n  },\n  \"trends\": [\n    { \"date\": \"2026-10-01\", \"revenue\": 4500.0, \"occupancyRate\": 78.0 },\n    { \"date\": \"2026-10-02\", \"revenue\": 5200.0, \"occupancyRate\": 80.5 }\n  ],\n  \"revenueByRoomType\": [\n    { \"roomType\": \"Deluxe Suite\", \"unitsSold\": 145, \"avgRate\": 320.0, \"totalRevenue\": 46400.0 },\n    { \"roomType\": \"Standard Double\", \"unitsSold\": 312, \"avgRate\": 185.0, \"totalRevenue\": 57720.0 }\n  ],\n  \"totalAggregatedRevenue\": 104120.0,\n  \"metadata\": {\n    \"from\": \"2026-10-01\",\n    \"to\": \"2026-10-31\",\n    \"currency\": \"USD\"\n  }\n}"
+            },
+            {
+              "name": "403 — hotel_id no autorizado",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id=ffffffff-ffff-ffff-ffff-ffffffffffff&from={{reportFrom}}&to={{reportTo}}"
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"detail\": \"No autorizado para consultar reportes de este hotel.\"\n}"
+            },
+            {
+              "name": "400 — rango inválido",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id={{hotelId}}&from=2026-10-31&to=2026-10-01"
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"detail\": \"Rango de fechas inválido: 'to' debe ser >= 'from'\"\n}"
             }
           ]
         }
