@@ -23,12 +23,20 @@ class Settings(BaseSettings):
     WORKER_EXPIRE_INTERVAL_SECONDS: int = 60
 
     # Event bus (Paso 4: consumer of PaymentSucceeded + PaymentFailed)
-    EVENT_BUS_BACKEND: str = "logging"
+    # Split in two roles: API publishes, worker consumes. They can use
+    # different transports (e.g. AWS worker = sqs consumer + eventbridge publisher
+    # if booking ever publishes from the worker; today it only consumes).
+    EVENT_PUBLISHER_BACKEND: str = "logging"
+    EVENT_CONSUMER_BACKEND: str = "logging"
     RABBITMQ_URL: str | None = None
     EVENTBRIDGE_BUS_NAME: str | None = None
     EVENTBRIDGE_REGION: str | None = None
 
     PAYMENT_RESULT_QUEUE: str = "booking.payment-result"
+
+    # AWS SQS worker inbox (used when EVENT_CONSUMER_BACKEND=sqs).
+    AWS_REGION: str | None = None
+    EVENT_QUEUE_URL: str | None = None
 
     model_config = {"env_prefix": "BOOKING_", "env_file": ".env", "extra": "ignore"}
 
