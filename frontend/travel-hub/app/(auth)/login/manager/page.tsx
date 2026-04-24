@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 
 import NextLink from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import { loginUser } from '@/app/lib/api/auth';
 import { tokens as th } from '@/lib/theme/tokens';
@@ -75,7 +75,6 @@ function inputSx(hasError: boolean) {
 }
 
 function ManagerLoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/manager';
   const { t } = useTranslation();

@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 import Image from 'next/image';
 import NextLink from 'next/link';
-import { useRouter } from 'next/navigation';
 
 import { registerUser } from '@/app/lib/api/auth';
 import { tokens as th } from '@/lib/theme/tokens';
@@ -159,7 +158,6 @@ function fieldSx(isValid: boolean) {
 }
 
 export default function TravelerRegisterPage() {
-  const router = useRouter();
   const { t } = useTranslation();
 
   const [values, setValues] = useState<FormValues>({
