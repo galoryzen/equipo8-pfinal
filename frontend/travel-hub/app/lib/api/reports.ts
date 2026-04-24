@@ -1,10 +1,11 @@
-import { getPublicApiBaseUrl } from '@/app/lib/api/publicApiUrl';
 import type {
   ReportMetric,
   RevenueByRoomType,
   RevenueReportData,
   RevenueTrend,
 } from '@/app/lib/types/reports';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
 export const EMPTY_REVENUE_REPORT_DATA: RevenueReportData = {
   kpis: {
@@ -147,12 +148,9 @@ export async function getRevenueReport(params: {
 
   let response: Response;
   try {
-    response = await fetch(
-      `${getPublicApiBaseUrl()}/api/v1/dashboard/revenue-report?${query.toString()}`,
-      {
-        credentials: 'include',
-      }
-    );
+    response = await fetch(`${API_URL}/api/v1/dashboard/revenue-report?${query.toString()}`, {
+      credentials: 'include',
+    });
   } catch {
     throw new RevenueReportFetchError('Error loading revenue report', { kind: 'network' });
   }
