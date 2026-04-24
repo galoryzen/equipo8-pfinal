@@ -7,7 +7,8 @@ import pytest
 
 from contracts.events.booking import BOOKING_REJECTED
 
-from app.application.exceptions import BookingNotFoundError
+from app.application.exceptions import BookingNotFoundError, CatalogUnavailableError
+from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
 from app.application.use_cases.reject_booking import RejectBookingUseCase
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType
 
@@ -15,17 +16,21 @@ from app.domain.models import Booking, BookingStatus, CancellationPolicyType
 class DummyRepo:
     def __init__(self, booking: Booking | None):
         self.booking = booking
-        self.updated = False
+        self.update_calls = 0
         self.history_rows = []
 
     async def get_by_id(self, booking_id):  # noqa: ARG002
         return self.booking
 
     async def update(self, booking):  # noqa: ARG002
-        self.updated = True
+        self.update_calls += 1
 
     async def add_status_history(self, row):
         self.history_rows.append(row)
+
+    @property
+    def updated(self) -> bool:
+        return self.update_calls > 0
 
 
 def _make_booking(status: BookingStatus = BookingStatus.PENDING_CONFIRMATION) -> Booking:
@@ -53,15 +58,15 @@ def _make_booking(status: BookingStatus = BookingStatus.PENDING_CONFIRMATION) ->
 
 
 @pytest.mark.asyncio
-async def test_reject_booking_success_publishes_event_without_reason():
+async def test_reject_booking_success_publishes_event_without_reason_and_releases_hold():
     booking = _make_booking()
     repo = DummyRepo(booking)
     events = AsyncMock()
+    catalog = AsyncMock(spec=CatalogInventoryPort)
 
-    uc = RejectBookingUseCase(repo, events)
+    uc = RejectBookingUseCase(repo, events, catalog)
     result = await uc.execute(booking.id)
 
-    assert repo.updated
     assert result.status == BookingStatus.REJECTED.value
 
     # History row recorded.
@@ -79,14 +84,25 @@ async def test_reject_booking_success_publishes_event_without_reason():
     assert envelope.payload["user_id"] == str(booking.user_id)
     assert envelope.payload["reason"] is None
 
+    # Inline catalog release happened; flag flipped on the booking.
+    catalog.release_hold.assert_awaited_once_with(
+        room_type_id=booking.room_type_id,
+        checkin=booking.checkin,
+        checkout=booking.checkout,
+    )
+    assert booking.inventory_released is True
+    # Two updates: the state transition, then the flag flip after release.
+    assert repo.update_calls == 2
+
 
 @pytest.mark.asyncio
 async def test_reject_booking_forwards_reason_to_event_and_history():
     booking = _make_booking()
     repo = DummyRepo(booking)
     events = AsyncMock()
+    catalog = AsyncMock(spec=CatalogInventoryPort)
 
-    uc = RejectBookingUseCase(repo, events)
+    uc = RejectBookingUseCase(repo, events, catalog)
     await uc.execute(booking.id, reason="overbooked")
 
     # Reason suffixed into the history row.
@@ -98,16 +114,38 @@ async def test_reject_booking_forwards_reason_to_event_and_history():
 
 
 @pytest.mark.asyncio
+async def test_reject_booking_swallows_catalog_failure_leaves_flag_false():
+    """State transition must still succeed when Catalog is down — reconciler retries later."""
+    booking = _make_booking()
+    repo = DummyRepo(booking)
+    events = AsyncMock()
+    catalog = AsyncMock(spec=CatalogInventoryPort)
+    catalog.release_hold.side_effect = CatalogUnavailableError("down")
+
+    uc = RejectBookingUseCase(repo, events, catalog)
+    result = await uc.execute(booking.id)
+
+    assert result.status == BookingStatus.REJECTED.value
+    # State transition persisted; release was attempted but failed.
+    assert booking.inventory_released is False
+    # Only the pre-release update happened; the post-release flip was skipped.
+    assert repo.update_calls == 1
+    events.publish.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_reject_booking_not_found():
     repo = DummyRepo(None)
     events = AsyncMock()
+    catalog = AsyncMock(spec=CatalogInventoryPort)
 
-    uc = RejectBookingUseCase(repo, events)
+    uc = RejectBookingUseCase(repo, events, catalog)
     with pytest.raises(BookingNotFoundError):
         await uc.execute(uuid4())
 
     assert not repo.updated
     events.publish.assert_not_awaited()
+    catalog.release_hold.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -115,10 +153,12 @@ async def test_reject_booking_wrong_status():
     booking = _make_booking(status=BookingStatus.CONFIRMED)
     repo = DummyRepo(booking)
     events = AsyncMock()
+    catalog = AsyncMock(spec=CatalogInventoryPort)
 
-    uc = RejectBookingUseCase(repo, events)
+    uc = RejectBookingUseCase(repo, events, catalog)
     with pytest.raises(ValueError, match="pendiente de confirmación"):
         await uc.execute(booking.id)
 
     assert not repo.updated
     events.publish.assert_not_awaited()
+    catalog.release_hold.assert_not_awaited()

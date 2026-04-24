@@ -157,9 +157,10 @@ def get_confirm_booking_use_case(
 def get_reject_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
     events: DomainEventPublisher = Depends(get_event_publisher),
+    catalog: CatalogInventoryPort = Depends(get_catalog_client),
 ) -> RejectBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return RejectBookingUseCase(repo, events)
+    return RejectBookingUseCase(repo, events, catalog)
 
 # Devuelve un dict con el role y user_id extraídos del token JWT
 def get_current_user_info(

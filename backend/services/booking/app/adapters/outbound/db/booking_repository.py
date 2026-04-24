@@ -160,7 +160,9 @@ class SqlAlchemyBookingRepository(BookingRepository):
 
     async def find_unreleased_terminal_bookings(self) -> list[Booking]:
         stmt = select(Booking).where(
-            Booking.status.in_((BookingStatus.CANCELLED, BookingStatus.EXPIRED)),
+            Booking.status.in_(
+                (BookingStatus.CANCELLED, BookingStatus.EXPIRED, BookingStatus.REJECTED)
+            ),
             Booking.inventory_released.is_(False),
         )
         result = await self._session.execute(stmt)
