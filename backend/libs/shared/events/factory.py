@@ -9,6 +9,7 @@ def build_event_publisher(
     rabbitmq_url: str | None = None,
     eventbridge_bus_name: str | None = None,
     eventbridge_region: str | None = None,
+    eventbridge_source: str | None = None,
 ) -> DomainEventPublisher:
     key = backend.lower()
     if key == "logging":
@@ -22,10 +23,13 @@ def build_event_publisher(
     if key == "eventbridge":
         if not eventbridge_bus_name:
             raise ValueError("eventbridge_bus_name is required when backend='eventbridge'")
+        if not eventbridge_source:
+            raise ValueError("eventbridge_source is required when backend='eventbridge'")
         from shared.events.eventbridge import EventBridgeEventPublisher
 
         return EventBridgeEventPublisher(
             bus_name=eventbridge_bus_name,
+            source=eventbridge_source,
             region=eventbridge_region,
         )
     raise ValueError(f"Unknown event bus backend: {backend!r}")

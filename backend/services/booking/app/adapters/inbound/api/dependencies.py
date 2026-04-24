@@ -48,10 +48,11 @@ def _get_catalog_http_client() -> httpx.AsyncClient:
 # ── Shared domain event publisher for the API process. Built once from
 # settings at import-time. Closed cleanly from main.py lifespan.
 _publisher: DomainEventPublisher = build_event_publisher(
-    settings.EVENT_BUS_BACKEND,
+    settings.EVENT_PUBLISHER_BACKEND,
     rabbitmq_url=settings.RABBITMQ_URL,
     eventbridge_bus_name=settings.EVENTBRIDGE_BUS_NAME,
     eventbridge_region=settings.EVENTBRIDGE_REGION,
+    eventbridge_source=f"travelhub.{settings.SERVICE_NAME}",
 )
 
 

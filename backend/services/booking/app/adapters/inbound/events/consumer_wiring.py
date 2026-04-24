@@ -9,19 +9,21 @@ _SUPPORTED_WORKER_BACKENDS = {"rabbitmq", "sqs"}
 
 
 def build_worker_consumer() -> DomainEventConsumer:
-    backend = settings.EVENT_BUS_BACKEND.lower()
+    backend = settings.EVENT_CONSUMER_BACKEND.lower()
     if backend not in _SUPPORTED_WORKER_BACKENDS:
         raise ValueError(
-            f"booking worker requires EVENT_BUS_BACKEND in {sorted(_SUPPORTED_WORKER_BACKENDS)}, "
-            f"got {settings.EVENT_BUS_BACKEND!r}"
+            f"booking worker requires EVENT_CONSUMER_BACKEND in {sorted(_SUPPORTED_WORKER_BACKENDS)}, "
+            f"got {settings.EVENT_CONSUMER_BACKEND!r}"
         )
 
     handler = make_payment_result_handler(async_session)
 
     consumer = build_event_consumer(
-        settings.EVENT_BUS_BACKEND,
+        settings.EVENT_CONSUMER_BACKEND,
         rabbitmq_url=settings.RABBITMQ_URL,
         queue_name=settings.PAYMENT_RESULT_QUEUE,
+        sqs_queue_url=settings.EVENT_QUEUE_URL,
+        sqs_region=settings.AWS_REGION,
     )
     consumer.subscribe(PAYMENT_SUCCEEDED, handler)
     consumer.subscribe(PAYMENT_FAILED, handler)
