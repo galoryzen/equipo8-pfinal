@@ -285,6 +285,46 @@
         "payment_captured": "Payment captured",
         "review_created": "Review created"
       }
+    },
+    "reports": {
+      "title": "Revenue Reports",
+      "subtitle": "Generate revenue performance reports by period.",
+      "filters": {
+        "hotel": "Hotel",
+        "myHotel": "My hotel",
+        "from": "From",
+        "to": "To"
+      },
+      "kpis": {
+        "totalRevenue": "Total Revenue",
+        "adr": "ADR",
+        "occupancyRate": "Occupancy Rate"
+      },
+      "sections": {
+        "trends": "Revenue trends",
+        "byRoomType": "Revenue by room type"
+      },
+      "chart": {
+        "revenue": "Revenue",
+        "occupancy": "Occupancy"
+      },
+      "table": {
+        "roomType": "Room Type",
+        "unitsSold": "Units Sold",
+        "avgRate": "Avg Rate",
+        "totalRevenue": "Total Revenue",
+        "totalAggregatedRevenue": "Total Aggregated Revenue"
+      },
+      "actions": {
+        "generate": "Generate report",
+        "download": "Download report"
+      },
+      "states": {
+        "initial": "Select a hotel and date range, then click Generate report.",
+        "empty": "No report data available for the selected period.",
+        "error": "We could not load the report. Please try again.",
+        "hotelNotResolved": "We could not resolve your hotel profile. Please sign in again."
+      }
     }
   },
   "admin": {

@@ -12,6 +12,17 @@ export interface AuthResponse {
   id: string;
   email: string;
   role: string;
+  hotel_id?: string | null;
+}
+
+export interface UserProfileResponse {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  country_code?: string | null;
+  hotel_id?: string | null;
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<AuthResponse> {
@@ -56,6 +67,17 @@ export async function getMe(): Promise<AuthResponse | null> {
   } catch {
     return null;
   }
+}
+
+export async function getUserById(userId: string): Promise<UserProfileResponse> {
+  const res = await fetch(`${API_URL}/api/v1/auth/users/${encodeURIComponent(userId)}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Error ${res.status}`);
+  }
+  return res.json();
 }
 
 export async function logoutUser(): Promise<void> {
