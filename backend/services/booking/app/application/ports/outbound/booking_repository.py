@@ -94,3 +94,12 @@ class BookingRepository(ABC):
         self, booking_id: UUID, reason: str
     ) -> BookingStatusHistory | None:
         """Return the most recent history row for this booking matching reason exactly, or None."""
+
+    @abstractmethod
+    async def get_property_stats(self, property_id: UUID) -> dict:
+        """Return active booking count and current-month revenue for a property.
+
+        Returns a dict with keys: active_bookings (int), monthly_revenue (float).
+        Active bookings = CONFIRMED bookings where checkout >= today.
+        Monthly revenue = sum of total_amount for CONFIRMED bookings created this month.
+        """
