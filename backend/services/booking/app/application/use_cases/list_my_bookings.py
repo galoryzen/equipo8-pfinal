@@ -70,7 +70,7 @@ class ListMyBookingsUseCase:
     def __init__(
         self,
         repo: BookingRepository,
-        guest_repo: GuestRepository,
+        guest_repo: GuestRepository | None = None,
         clock: Callable[[], date] = _default_today,
         catalog_http_client: httpx.AsyncClient | None = None,
     ):
@@ -91,7 +91,9 @@ class ListMyBookingsUseCase:
         try:
             results, guest_map = await asyncio.gather(
                 asyncio.gather(*[_fetch_property_info(client, pid) for pid in unique_pids]),
-                self._guest_repo.get_primary_names_for_bookings(booking_ids),
+                self._guest_repo.get_primary_names_for_bookings(booking_ids)
+                if self._guest_repo is not None
+                else asyncio.sleep(0, result={}),
             )
         finally:
             if owned:
