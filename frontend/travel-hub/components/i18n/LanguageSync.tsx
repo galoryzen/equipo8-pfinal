@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
-import i18n from '@/lib/i18n/client';
+import i18n, { loadLocale } from '@/lib/i18n/client';
 import { defaultLocale } from '@/lib/i18n/settings';
 
 const STORAGE_KEY = 'i18nextLng';
@@ -29,7 +29,7 @@ export function LanguageSync() {
       const raw = localStorage.getItem(STORAGE_KEY);
       const stored = normalizeStored(raw);
       if (stored && stored !== i18n.language) {
-        void i18n.changeLanguage(stored);
+        void loadLocale(stored).then(() => i18n.changeLanguage(stored));
         return;
       }
       if (
@@ -37,7 +37,7 @@ export function LanguageSync() {
         typeof navigator !== 'undefined' &&
         navigator.language.toLowerCase().startsWith('es')
       ) {
-        void i18n.changeLanguage('es-CO');
+        void loadLocale('es-CO').then(() => i18n.changeLanguage('es-CO'));
       }
     } catch {
       /* ignore */

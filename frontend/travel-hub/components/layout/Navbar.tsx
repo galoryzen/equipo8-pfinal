@@ -6,6 +6,7 @@ import NextLink from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { getMe, logoutUser } from '@/app/lib/api/auth';
+import { loadLocale } from '@/lib/i18n/client';
 import { defaultLocale } from '@/lib/i18n/settings';
 import { tokens as th } from '@/lib/theme/tokens';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
@@ -122,9 +123,10 @@ export default function Navbar() {
         {/* Right section */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <IconButton
-            onClick={() =>
-              void i18n.changeLanguage(i18n.language.startsWith('es') ? defaultLocale : 'es-CO')
-            }
+            onClick={() => {
+              const next = i18n.language.startsWith('es') ? defaultLocale : 'es-CO';
+              void loadLocale(next).then(() => i18n.changeLanguage(next));
+            }}
             sx={{ color: 'text.secondary', borderRadius: '8px', gap: 0.5, fontSize: '0.8rem' }}
           >
             <LanguageIcon sx={{ fontSize: 20 }} />

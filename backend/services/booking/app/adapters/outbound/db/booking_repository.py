@@ -1,7 +1,8 @@
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, or_, select, text
+from sqlalchemy import and_, func as sa_func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
@@ -25,60 +26,91 @@ class SqlAlchemyBookingRepository(BookingRepository):
         *,
         scope: BookingScope = BookingScope.ALL,
         today: date | None = None,
-    ) -> list[Booking]:
+        page: int = 1,
+        page_size: int = 10,
+    ) -> tuple[list[Booking], int]:
         today = today or datetime.now(UTC).date()
-        stmt = select(Booking).where(Booking.user_id == user_id)
+        base_where = [Booking.user_id == user_id]
 
         if scope is BookingScope.ACTIVE:
-            stmt = stmt.where(
-                Booking.status.in_(_ACTIVE_STATUSES),
-                Booking.checkout >= today,
-            ).order_by(Booking.checkin.asc())
+            base_where += [Booking.status.in_(_ACTIVE_STATUSES), Booking.checkout >= today]
+            order = Booking.checkin.asc()
         elif scope is BookingScope.PAST:
-            stmt = stmt.where(
+            base_where += [
                 or_(
-                    and_(
-                        Booking.status == BookingStatus.CONFIRMED,
-                        Booking.checkout < today,
-                    ),
+                    and_(Booking.status == BookingStatus.CONFIRMED, Booking.checkout < today),
                     Booking.status.in_(_PAST_TERMINAL_STATUSES),
                 )
-            ).order_by(Booking.checkout.desc())
+            ]
+            order = Booking.checkout.desc()
         else:
-            stmt = stmt.where(Booking.status.not_in(_EXCLUDED_FROM_ALL)).order_by(Booking.checkin.desc())
+            base_where += [Booking.status.not_in(_EXCLUDED_FROM_ALL)]
+            order = Booking.checkin.desc()
 
+        count_stmt = select(sa_func.count(Booking.id)).where(*base_where)
+        total: int = (await self._session.execute(count_stmt)).scalar() or 0
+
+        stmt = (
+            select(Booking)
+            .where(*base_where)
+            .order_by(order)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
         result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.scalars().all()), total
 
     async def get_by_id(self, booking_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id)
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
-    async def list_all(self, status: str | None = None) -> list[Booking]:
-        stmt = select(Booking)
+    async def list_all(
+        self, status: str | None = None, page: int = 1, page_size: int = 10
+    ) -> tuple[list[Booking], int]:
+        conditions = []
         if status:
-            stmt = stmt.where(Booking.status == status)
-        stmt = stmt.order_by(Booking.checkin.desc())
-        result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+            conditions.append(Booking.status == status)
 
-    async def list_by_hotel(self, hotel_id: UUID, status: str | None = None) -> list[Booking]:
+        count_stmt = select(sa_func.count(Booking.id))
+        if conditions:
+            count_stmt = count_stmt.where(*conditions)
+        total: int = (await self._session.execute(count_stmt)).scalar() or 0
+
+        stmt = select(Booking)
+        if conditions:
+            stmt = stmt.where(*conditions)
+        stmt = stmt.order_by(Booking.checkin.desc()).offset((page - 1) * page_size).limit(page_size)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all()), total
+
+    async def list_by_hotel(
+        self, hotel_id: UUID, status: str | None = None, page: int = 1, page_size: int = 10
+    ) -> tuple[list[Booking], int]:
+        hotel_filter = text(
+            "booking.booking.property_id IN "
+            "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
+        )
+
+        count_stmt = (
+            select(sa_func.count(Booking.id))
+            .where(hotel_filter)
+            .params(hotel_id=str(hotel_id))
+        )
+        if status:
+            count_stmt = count_stmt.where(Booking.status == status)
+        total: int = (await self._session.execute(count_stmt)).scalar() or 0
+
         stmt = (
             select(Booking)
-            .where(
-                text(
-                    "booking.booking.property_id IN "
-                    "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
-                )
-            )
+            .where(hotel_filter)
             .params(hotel_id=str(hotel_id))
         )
         if status:
             stmt = stmt.where(Booking.status == status)
-        stmt = stmt.order_by(Booking.checkin.desc())
+        stmt = stmt.order_by(Booking.checkin.desc()).offset((page - 1) * page_size).limit(page_size)
         result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.scalars().all()), total
 
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)
@@ -172,6 +204,13 @@ class SqlAlchemyBookingRepository(BookingRepository):
         self._session.add(row)
         await self._session.commit()
 
+    async def save_and_record_status_history(
+        self, booking: Booking, row: BookingStatusHistory
+    ) -> None:
+        await self._session.merge(booking)
+        self._session.add(row)
+        await self._session.commit()
+
     async def find_last_status_history_by_reason(
         self, booking_id: UUID, reason: str
     ) -> BookingStatusHistory | None:
@@ -186,3 +225,26 @@ class SqlAlchemyBookingRepository(BookingRepository):
         )
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
+
+    async def get_property_stats(self, property_id: UUID) -> dict:
+        today = datetime.now(UTC).date()
+        now = datetime.now(UTC).replace(tzinfo=None)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        active_stmt = select(sa_func.count(Booking.id)).where(
+            Booking.property_id == property_id,
+            Booking.status == BookingStatus.CONFIRMED,
+            Booking.checkout >= today,
+        )
+        active_result = await self._session.execute(active_stmt)
+        active_bookings = active_result.scalar() or 0
+
+        revenue_stmt = select(sa_func.coalesce(sa_func.sum(Booking.total_amount), Decimal("0"))).where(
+            Booking.property_id == property_id,
+            Booking.status == BookingStatus.CONFIRMED,
+            Booking.created_at >= month_start,
+        )
+        revenue_result = await self._session.execute(revenue_stmt)
+        monthly_revenue = float(revenue_result.scalar() or 0)
+
+        return {"active_bookings": active_bookings, "monthly_revenue": monthly_revenue}

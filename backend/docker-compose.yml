@@ -83,6 +83,7 @@ services:
       JWT_ALGORITHM: "HS256"
       JWT_EXPIRE_MINUTES: "60"
       AUTH_PARTNER_ADMIN_SECRET: "dev-partner-admin-secret"
+      AUTH_INTERNAL_SERVICE_TOKEN: "local-dev-internal-token"
       PYTHONPATH: "/app"
     depends_on:
       thub-postgres:
@@ -107,6 +108,7 @@ services:
       CATALOG_DB_SCHEMA: "catalog"
       CATALOG_REDIS_URL: "redis://thub-redis:6379/0"
       CATALOG_DEBUG: "true"
+      CATALOG_INTERNAL_SERVICE_TOKEN: "local-dev-internal-token"
       JWT_SECRET: "change-me-in-production"
       JWT_ALGORITHM: "HS256"
       PYTHONPATH: "/app"
@@ -259,6 +261,35 @@ services:
       thub-postgres:
         condition: service_healthy
       thub-redis:
+        condition: service_healthy
+
+  thub-notification-worker:
+    build:
+      context: .
+      dockerfile: services/notification/Dockerfile
+    container_name: thub-notification-worker
+    volumes:
+      - ./services/notification/app:/app/app
+      - ./libs/shared:/app/shared
+      - ./libs/contracts:/app/contracts
+    command: ["python", "-m", "app.worker"]
+    restart: on-failure
+    environment:
+      NOTIFICATION_DATABASE_URL: "postgresql+asyncpg://travelhub:travelhub_dev@thub-postgres:5432/travelhub"
+      NOTIFICATION_DB_SCHEMA: "notifications"
+      NOTIFICATION_DEBUG: "true"
+      NOTIFICATION_EVENT_CONSUMER_BACKEND: "rabbitmq"
+      NOTIFICATION_RABBITMQ_URL: "amqp://travelhub:travelhub_dev@thub-rabbitmq:5672/"
+      NOTIFICATION_BOOKING_CONFIRMED_QUEUE: "notification.booking-confirmed"
+      NOTIFICATION_EMAIL_SENDER_BACKEND: "logging"
+      NOTIFICATION_AUTH_SERVICE_URL: "http://thub-auth:8000"
+      NOTIFICATION_CATALOG_SERVICE_URL: "http://thub-catalog:8000"
+      NOTIFICATION_INTERNAL_SERVICE_TOKEN: "local-dev-internal-token"
+      PYTHONPATH: "/app"
+    depends_on:
+      thub-postgres:
+        condition: service_healthy
+      thub-rabbitmq:
         condition: service_healthy
 
 volumes:

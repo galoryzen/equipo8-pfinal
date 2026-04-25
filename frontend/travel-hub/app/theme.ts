@@ -6,7 +6,7 @@ import { tokens as th } from '@/lib/theme/tokens';
 import { createTheme } from '@mui/material/styles';
 
 export const roboto = Roboto({
-  weight: ['300', '400', '500', '700'],
+  weight: ['400', '500', '700'],
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-roboto',

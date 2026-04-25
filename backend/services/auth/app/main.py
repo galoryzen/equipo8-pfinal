@@ -7,6 +7,7 @@ from app.adapters.inbound.api.admin_partner import router as admin_partner_route
 from app.adapters.inbound.api.dependencies import init_token_adapter
 from app.adapters.inbound.api.error_handlers import register_error_handlers
 from app.adapters.inbound.api.health import router as health_router
+from app.adapters.inbound.api.internal_users import router as internal_users_router
 from app.adapters.inbound.api.login import router as login_router
 from app.adapters.inbound.api.users import router as users_router
 from app.adapters.outbound.db.session import engine
@@ -34,3 +35,6 @@ app.include_router(health_router, prefix="/api/v1/auth")
 app.include_router(login_router, prefix="/api/v1/auth")
 app.include_router(admin_partner_router, prefix="/api/v1/auth")
 app.include_router(users_router, prefix="/api/v1/auth")
+# Internal router is NOT under /api/v1/* — nginx/ALB do not route /internal/* to the
+# public gateway, so this endpoint is only reachable via service discovery.
+app.include_router(internal_users_router, prefix="/internal")

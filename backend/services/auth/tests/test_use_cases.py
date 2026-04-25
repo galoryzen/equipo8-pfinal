@@ -83,6 +83,7 @@ class TestLoginUserUseCase:
             subject=str(sample_user.id),
             email="user@example.com",
             role="TRAVELER",
+            hotel_id=None,
         )
 
     async def test_raises_when_user_not_found(self, mock_repo, mock_token):

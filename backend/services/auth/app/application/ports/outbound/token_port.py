@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class TokenPort(ABC):
     @abstractmethod
-    def create_access_token(self, subject: str, email: str, role: str) -> str:
+    def create_access_token(self, subject: str, email: str, role: str, hotel_id: str | None = None) -> str:
         """Create a signed access token."""
 
     @abstractmethod

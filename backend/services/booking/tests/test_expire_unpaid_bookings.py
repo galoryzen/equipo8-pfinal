@@ -64,7 +64,8 @@ class TestExpireUnpaidBookingsUseCase:
         assert booking.status == BookingStatus.EXPIRED
         assert booking.inventory_released is True
         catalog.release_hold.assert_awaited_once()
-        assert repo.save.await_count == 2
+        repo.save_and_record_status_history.assert_awaited_once()
+        assert repo.save.await_count == 1
 
     async def test_transitions_pending_payment_same_way(self):
         booking = _booking(
@@ -96,7 +97,8 @@ class TestExpireUnpaidBookingsUseCase:
         assert result == 1
         assert booking.status == BookingStatus.EXPIRED
         assert booking.inventory_released is False
-        assert repo.save.await_count == 1
+        repo.save_and_record_status_history.assert_awaited_once()
+        assert repo.save.await_count == 0
 
     async def test_processes_mixed_statuses_independently(self):
         b1 = _booking(UUID("90000000-0000-0000-0000-000000000001"))

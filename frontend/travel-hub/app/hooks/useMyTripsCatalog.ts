@@ -49,7 +49,7 @@ export function useMyTripsCatalog(): UseMyTripsCatalogState {
         if (cancelled) return;
         setBookings(list);
         const ids = uniquePropertyIds(list);
-        const map = await fetchPropertyDetailsMap(ids);
+        const map = await fetchPropertyDetailsMap(ids, list);
         if (cancelled) return;
         setPropertyById(map);
       } catch (e) {

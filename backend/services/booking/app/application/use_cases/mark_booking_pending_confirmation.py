@@ -38,12 +38,12 @@ class MarkBookingPendingConfirmationUseCase:
         booking.status = BookingStatus.PENDING_CONFIRMATION
         booking.confirmation_payment_intent_id = payment_intent_id
         booking.updated_at = now
-        await self._repo.save(booking)
-        await self._repo.add_status_history(
+        await self._repo.save_and_record_status_history(
+            booking,
             new_status_history_row(
                 booking.id,
                 from_status=BookingStatus.PENDING_PAYMENT,
                 to_status=BookingStatus.PENDING_CONFIRMATION,
                 reason=f"payment_succeeded:{payment_intent_id}",
-            )
+            ),
         )

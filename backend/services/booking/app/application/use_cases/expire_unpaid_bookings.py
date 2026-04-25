@@ -32,14 +32,14 @@ class ExpireUnpaidBookingsUseCase:
             booking.status = BookingStatus.EXPIRED
             booking.inventory_released = False
             booking.updated_at = now
-            await self._repo.save(booking)
-            await self._repo.add_status_history(
+            await self._repo.save_and_record_status_history(
+                booking,
                 new_status_history_row(
                     booking.id,
                     from_status=previous_status,
                     to_status=BookingStatus.EXPIRED,
                     reason="hold_expired",
-                )
+                ),
             )
 
             try:

@@ -16,6 +16,9 @@ locals {
     payment = {
       events = ["PaymentRequested", "BookingRejected"]
     }
+    notification = {
+      events = ["BookingConfirmed"]
+    }
   }
 }
 

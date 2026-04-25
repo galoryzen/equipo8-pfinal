@@ -12,6 +12,7 @@
     "test:coverage": "vitest run --coverage",
     "test:a11y": "vitest run __tests__/a11y-home.test.tsx",
     "format": "prettier --write .",
+    "analyze": "cross-env ANALYZE=true next build",
     "format:check": "prettier --check .",
     "prepare": "cd ../.. && git config core.hooksPath frontend/travel-hub/.husky"
   },
@@ -31,6 +32,7 @@
     "react-i18next": "^15.0.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.4",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",

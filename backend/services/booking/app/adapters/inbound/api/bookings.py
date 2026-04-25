@@ -62,7 +62,12 @@ async def list_bookings(
     if role == "ADMIN":
         return await use_case.execute_admin(status=status, page=page, page_size=page_size)
     elif role in ("HOTEL", "MANAGER"):
-        return await use_case.execute_hotel(user_id=user_id, status=status, page=page, page_size=page_size)
+        hotel_id_str = user_info.get("hotel_id")
+        if not hotel_id_str:
+            raise HTTPException(status_code=400, detail="hotel_id es requerido para este rol")
+        return await use_case.execute_hotel(
+            hotel_id=UUID(hotel_id_str), status=status, page=page, page_size=page_size
+        )
     else:
         if not user_id:
             raise HTTPException(status_code=400, detail="user_id es requerido")

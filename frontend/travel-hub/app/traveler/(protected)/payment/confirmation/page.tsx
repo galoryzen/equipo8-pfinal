@@ -34,16 +34,9 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function formatDateShort(dateStr: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
 function ConfirmationPageContent() {
   const searchParams = useSearchParams();
 
-  const bookingId = searchParams.get('booking_id') ?? '';
   const propertyName = searchParams.get('property_name') ?? 'Your Hotel';
   const roomName = searchParams.get('room_name') ?? 'Room';
   const imageUrl = searchParams.get('image_url') ?? '';

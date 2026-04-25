@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -21,8 +21,14 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
   const [checked, setChecked] = useState(false);
+  // Prevent re-running the auth check on every client-side navigation within
+  // the protected area. getMe() is already cached, but this avoids even the
+  // state update overhead on each pathname change.
+  const hasChecked = useRef(false);
 
   useEffect(() => {
+    if (hasChecked.current) return;
+
     getMe().then((user) => {
       if (!user) {
         const isTravelerRoute = pathname.startsWith('/traveler');
@@ -44,6 +50,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
+      hasChecked.current = true;
       setChecked(true);
     });
   }, [pathname, router]);
