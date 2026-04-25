@@ -79,7 +79,10 @@ function formatCurrency(value: number): string {
 }
 
 function formatShortDate(value: string): string {
-  const date = new Date(value);
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
 }
@@ -87,11 +90,13 @@ function formatShortDate(value: string): string {
 function formatDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
+  const hasExplicitTz = /z$/i.test(value) || /[+-]\d{2}:\d{2}$/.test(value);
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    ...(hasExplicitTz ? { timeZone: 'UTC' as const } : null),
   }).format(date);
 }
 
