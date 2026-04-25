@@ -38,8 +38,6 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-const SERVICE_FEE = 35;
-const TAX_RATE = 0.12;
 const LS_PREFIX = 'travelhub_cart_';
 
 function lsKey(propertyId: string, roomTypeId: string, checkin: string, checkout: string): string {
@@ -94,6 +92,31 @@ interface AdditionalGuest {
   lastName: string;
 }
 
+/**
+ * Snapshot the cart's authoritative pricing for the panel. Every field comes
+ * from the booking response so the payment page renders the same numbers the
+ * server will charge — no client-side fee math.
+ */
+function pricingFromBooking(
+  b: {
+    nights_breakdown?: { day: string; price: string; original_price?: string | null }[] | null;
+    total_amount?: string;
+    taxes?: string;
+    service_fee?: string;
+    grand_total?: string;
+  }
+): { subtotal: number; taxes: number; serviceFee: number; total: number } | null {
+  if (!b.nights_breakdown || b.nights_breakdown.length === 0) {
+    return null;
+  }
+  const subtotal = Number(b.total_amount ?? 0)
+    || b.nights_breakdown.reduce((acc, n) => acc + Number(n.price), 0);
+  const taxes = Number(b.taxes ?? 0);
+  const serviceFee = Number(b.service_fee ?? 0);
+  const total = Number(b.grand_total ?? 0) || subtotal + taxes + serviceFee;
+  return { subtotal, taxes, serviceFee, total };
+}
+
 function PaymentPageContent() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -105,7 +128,6 @@ function PaymentPageContent() {
   const checkin = searchParams.get('checkin') ?? '';
   const checkout = searchParams.get('checkout') ?? '';
   const guests = Number(searchParams.get('guests') ?? '1');
-  const unitPrice = searchParams.get('unit_price') ?? '0';
   const currency = searchParams.get('currency') ?? 'USD';
   const propertyName = searchParams.get('property_name') ?? 'Your Hotel';
   const roomName = searchParams.get('room_name') ?? 'Room';
@@ -119,6 +141,16 @@ function PaymentPageContent() {
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [expired, setExpired] = useState(false);
   const [isResumed, setIsResumed] = useState(false);
+  // Authoritative pricing snapshot from the cart booking. Drives the price
+  // panel: subtotal, server-computed taxes, service fee, and total all derive
+  // from the same numbers the catalog already advertised, so the user sees a
+  // consistent total from search → detail → payment.
+  const [cartPricing, setCartPricing] = useState<{
+    subtotal: number;
+    taxes: number;
+    serviceFee: number;
+    total: number;
+  } | null>(null);
 
   // Guest details form
   const [firstName, setFirstName] = useState('');
@@ -167,15 +199,22 @@ function PaymentPageContent() {
     [firstName, lastName, email, phone]
   );
 
-  const basePrice = useMemo(() => parseFloat(unitPrice) * nights, [unitPrice, nights]);
-  const taxes = useMemo(() => parseFloat((basePrice * TAX_RATE).toFixed(2)), [basePrice]);
-  const displayTotal = useMemo(
-    () => parseFloat((basePrice + taxes + SERVICE_FEE).toFixed(2)),
-    [basePrice, taxes]
-  );
+  const basePrice = cartPricing?.subtotal ?? 0;
+  const taxes = cartPricing?.taxes ?? 0;
+  const serverServiceFee = cartPricing?.serviceFee ?? 0;
+  const displayTotal = cartPricing?.total ?? 0;
+  const avgUnitPrice = useMemo(() => {
+    if (!cartPricing || nights <= 0) return 0;
+    return cartPricing.subtotal / nights;
+  }, [cartPricing, nights]);
 
   const handleBookingResolved = useCallback(
-    (id: string, expAt: string, status: string) => {
+    (
+      id: string,
+      expAt: string,
+      status: string,
+      pricing?: { subtotal: number; taxes: number; serviceFee: number; total: number } | null
+    ) => {
       if (status === 'EXPIRED') {
         setExpired(true);
         setLoading(false);
@@ -185,6 +224,7 @@ function PaymentPageContent() {
       }
       setBookingId(id);
       setExpiresAt(expAt);
+      if (pricing !== undefined) setCartPricing(pricing);
       setLoading(false);
     },
     [propertyId, roomTypeId, checkin, checkout]
@@ -223,7 +263,12 @@ function PaymentPageContent() {
           const b = await getBookingDetail(urlBookingId);
           if (!mountedRef.current) return;
           setIsResumed(true);
-          handleBookingResolved(b.id, b.hold_expires_at ?? '', b.status);
+          handleBookingResolved(
+            b.id,
+            b.hold_expires_at ?? '',
+            b.status,
+            pricingFromBooking(b)
+          );
           return;
         } catch {
           // fall through
@@ -238,7 +283,12 @@ function PaymentPageContent() {
           if (!mountedRef.current) return;
           if (b.status !== 'EXPIRED' && b.hold_expires_at) {
             setIsResumed(true);
-            handleBookingResolved(b.id, b.hold_expires_at, b.status);
+            handleBookingResolved(
+              b.id,
+              b.hold_expires_at,
+              b.status,
+              pricingFromBooking(b)
+            );
             const params = new URLSearchParams(searchParams.toString());
             params.set('booking_id', stored);
             router.replace(`/traveler/payment?${params.toString()}`);
@@ -266,7 +316,6 @@ function PaymentPageContent() {
         property_id: propertyId,
         room_type_id: roomTypeId,
         rate_plan_id: ratePlanId,
-        unit_price: unitPrice,
         guests_count: guests,
       };
 
@@ -289,7 +338,12 @@ function PaymentPageContent() {
         if (!mountedRef.current) return;
         localStorage.setItem(key, newBooking.id);
         setIsResumed(false);
-        handleBookingResolved(newBooking.id, newBooking.hold_expires_at, newBooking.status);
+        handleBookingResolved(
+          newBooking.id,
+          newBooking.hold_expires_at,
+          newBooking.status,
+          pricingFromBooking(newBooking)
+        );
         const params = new URLSearchParams(searchParams.toString());
         params.set('booking_id', newBooking.id);
         router.replace(`/traveler/payment?${params.toString()}`);
@@ -321,7 +375,12 @@ function PaymentPageContent() {
       try {
         const b = await getBookingDetail(bookingId);
         if (mountedRef.current) {
-          handleBookingResolved(b.id, b.hold_expires_at ?? '', b.status);
+          handleBookingResolved(
+            b.id,
+            b.hold_expires_at ?? '',
+            b.status,
+            pricingFromBooking(b)
+          );
         }
       } catch {
         if (mountedRef.current) {
@@ -399,7 +458,7 @@ function PaymentPageContent() {
             checkin,
             checkout,
             guests: String(guests),
-            unit_price: unitPrice,
+            unit_price: avgUnitPrice.toFixed(2),
             currency,
             guest_name: `${firstName.trim()} ${lastName.trim()}`,
             guest_email: email.trim(),
@@ -441,7 +500,7 @@ function PaymentPageContent() {
     imageUrl,
     propertyName,
     roomName,
-    unitPrice,
+    avgUnitPrice,
   ]);
 
   const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
@@ -467,7 +526,6 @@ function PaymentPageContent() {
           checkin,
           checkout,
           guests: String(guests),
-          unit_price: unitPrice,
           currency,
           property_name: propertyName,
           room_name: roomName,
@@ -1143,9 +1201,7 @@ function PaymentPageContent() {
                     <Typography variant="body2" color="text.secondary">
                       {t('payment.basePrice', { count: nights })}
                     </Typography>
-                    <Typography variant="body2">
-                      ${parseFloat(unitPrice).toFixed(2)} × {nights}
-                    </Typography>
+                    <Typography variant="body2">${basePrice.toFixed(2)}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2" color="text.secondary">
@@ -1157,7 +1213,7 @@ function PaymentPageContent() {
                     <Typography variant="body2" color="text.secondary">
                       {t('payment.serviceFee')}
                     </Typography>
-                    <Typography variant="body2">${SERVICE_FEE.toFixed(2)}</Typography>
+                    <Typography variant="body2">${serverServiceFee.toFixed(2)}</Typography>
                   </Box>
                 </Stack>
 

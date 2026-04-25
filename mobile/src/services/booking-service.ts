@@ -23,6 +23,17 @@ export class InventoryUnavailableError extends Error {
 }
 
 /**
+ * Raised when the rate plan is missing pricing for one or more nights in the
+ * selected range. The user must pick different dates.
+ */
+export class RateUnavailableError extends Error {
+  constructor(message = 'Rates not available for the selected dates') {
+    super(message);
+    this.name = 'RateUnavailableError';
+  }
+}
+
+/**
  * Raised when the backend rejects creation because the user already has another
  * active cart (one-cart-at-a-time rule). Carries the existing booking_id so the
  * client can offer the user to resume or cancel it before retrying.
@@ -45,6 +56,9 @@ export async function createCartBooking(
       const body = err.response?.data as { code?: string; existing_booking_id?: string } | undefined;
       if (body?.code === 'CART_ALREADY_EXISTS' && body.existing_booking_id) {
         throw new ActiveCartConflictError(body.existing_booking_id);
+      }
+      if (body?.code === 'RATE_UNAVAILABLE') {
+        throw new RateUnavailableError();
       }
       throw new InventoryUnavailableError();
     }

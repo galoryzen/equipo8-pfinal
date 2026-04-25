@@ -4,6 +4,7 @@ import type {
   PaginatedResponse,
   PropertyDetailResponse,
   PropertySummary,
+  RatePlanPricing,
   SearchFilters,
 } from '@/app/lib/types/catalog';
 
@@ -122,6 +123,32 @@ export async function getPropertyDetail(
   if (!res.ok) {
     if (res.status === 404) {
       throw new CatalogNotFoundError();
+    }
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export class RateUnavailableError extends Error {
+  readonly statusCode = 409 as const;
+  constructor(message = 'Rates are not available for the selected dates.') {
+    super(message);
+    this.name = 'RateUnavailableError';
+  }
+}
+
+export async function getRatePlanPricing(
+  ratePlanId: string,
+  checkin: string,
+  checkout: string
+): Promise<RatePlanPricing> {
+  const params = new URLSearchParams({ checkin, checkout });
+  const url = `${API_URL}/api/v1/catalog/rate-plans/${encodeURIComponent(ratePlanId)}/pricing?${params}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    if (res.status === 409) {
+      throw new RateUnavailableError();
     }
     const body = await res.json().catch(() => null);
     throw new Error(formatApiErrorBody(body, res.status));

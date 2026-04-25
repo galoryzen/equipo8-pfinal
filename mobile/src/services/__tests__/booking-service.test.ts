@@ -4,6 +4,7 @@ import { api } from '@src/services/api';
 import {
   ActiveCartConflictError,
   InventoryUnavailableError,
+  RateUnavailableError,
   cancelCartBooking,
   createCartBooking,
   getBookingDetail,
@@ -22,7 +23,6 @@ const PAYLOAD: CreateCartBookingPayload = {
   property_id: 'p1',
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
-  unit_price: '120.00',
   guests_count: 1,
 };
 
@@ -37,8 +37,16 @@ const CART: CartBooking = {
   property_id: PAYLOAD.property_id,
   room_type_id: PAYLOAD.room_type_id,
   rate_plan_id: PAYLOAD.rate_plan_id,
-  unit_price: PAYLOAD.unit_price,
+  unit_price: '120.00',
   guests_count: 1,
+  nights_breakdown: [
+    { day: '2026-05-01', price: '120.00', original_price: null },
+    { day: '2026-05-02', price: '120.00', original_price: null },
+    { day: '2026-05-03', price: '120.00', original_price: null },
+  ],
+  taxes: '36.00',
+  service_fee: '18.00',
+  grand_total: '414.00',
 };
 
 const DETAIL: BookingDetail = {
@@ -82,6 +90,11 @@ describe('createCartBooking', () => {
     const err = await createCartBooking(PAYLOAD).catch((e) => e);
     expect(err).toBeInstanceOf(ActiveCartConflictError);
     expect((err as ActiveCartConflictError).existingBookingId).toBe('other-cart-id');
+  });
+
+  it('throws RateUnavailableError on 409 with RATE_UNAVAILABLE code', async () => {
+    mockedApi.post.mockRejectedValueOnce(axiosError(409, { code: 'RATE_UNAVAILABLE' }));
+    await expect(createCartBooking(PAYLOAD)).rejects.toBeInstanceOf(RateUnavailableError);
   });
 
   it('re-throws other errors unchanged', async () => {

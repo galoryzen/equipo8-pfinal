@@ -188,33 +188,83 @@ class GetPropertyDetailUseCase:
             if calendar:
                 active_promos = [p for p in (rp.promotions or []) if p.is_active]
                 currency_code = calendar[0].currency_code
-                any_promo_applied = False
 
+                # Per-day best price (and the promo that won that day). Same loop
+                # for both modes — only the aggregation downstream differs.
+                day_rows: list[tuple[Decimal, Decimal, Promotion | None]] = []
                 for rc in calendar:
                     day_base = rc.price_amount
                     day_best_price = day_base
                     day_best_promo: Promotion | None = None
-
                     for promo in active_promos:
                         if promo.start_date <= rc.day <= promo.end_date:
                             candidate = _apply_promo(day_base, promo)
                             if candidate < day_best_price:
                                 day_best_price = candidate
                                 day_best_promo = promo
+                    day_rows.append((day_base, day_best_price, day_best_promo))
 
-                    if day_best_promo is not None:
-                        any_promo_applied = True
+                if checkin and checkout:
+                    # Dated mode: report the avg-per-night of the full stay so
+                    # the displayed price reconciles with the cart total when
+                    # nightly rates vary. Require full-date coverage — a gap
+                    # means the rate plan is unbookable for this range, same
+                    # semantics as the cart's RATE_UNAVAILABLE.
+                    nights_required = (checkout - checkin).days
+                    if nights_required > 0 and len(day_rows) == nights_required:
+                        sum_base = sum((row[0] for row in day_rows), Decimal("0"))
+                        sum_effective = sum((row[1] for row in day_rows), Decimal("0"))
+                        nights_dec = Decimal(nights_required)
+                        min_price = (sum_effective / nights_dec).quantize(_CENT)
+                        avg_base = (sum_base / nights_dec).quantize(_CENT)
 
-                    if min_price is None or day_best_price < min_price:
-                        min_price = day_best_price
-                        winning_promo = day_best_promo
+                        # Winning promo for the badge: the one applied to the
+                        # most days across the stay (tie-break: largest total
+                        # discount contributed). Picking the promo from the
+                        # cheapest single night is meaningless for multi-night
+                        # variable pricing.
+                        promo_day_counts: dict = {}
+                        promo_total_discount: dict = {}
+                        promo_by_id: dict = {}
+                        for day_base, day_best_price, day_best_promo in day_rows:
+                            if day_best_promo is None:
+                                continue
+                            pid = day_best_promo.id
+                            promo_day_counts[pid] = promo_day_counts.get(pid, 0) + 1
+                            promo_total_discount[pid] = (
+                                promo_total_discount.get(pid, Decimal("0"))
+                                + (day_base - day_best_price)
+                            )
+                            promo_by_id[pid] = day_best_promo
 
-                    if original_min_price is None or day_base < original_min_price:
-                        original_min_price = day_base
-
-                if not any_promo_applied or min_price == original_min_price:
-                    original_min_price = None
-                    winning_promo = None
+                        if promo_day_counts and min_price < avg_base:
+                            original_min_price = avg_base
+                            winning_id = max(
+                                promo_day_counts.keys(),
+                                key=lambda pid: (
+                                    promo_day_counts[pid],
+                                    promo_total_discount[pid],
+                                ),
+                            )
+                            winning_promo = promo_by_id[winning_id]
+                    # else: calendar gap → leave min_price = None
+                else:
+                    # Browse mode (no dates supplied): "from $X" display, no
+                    # booking risk. Keep the existing cheapest-single-night
+                    # behavior so the property card still has a price tag when
+                    # the user hasn't picked dates yet.
+                    any_promo_applied = False
+                    for day_base, day_best_price, day_best_promo in day_rows:
+                        if day_best_promo is not None:
+                            any_promo_applied = True
+                        if min_price is None or day_best_price < min_price:
+                            min_price = day_best_price
+                            winning_promo = day_best_promo
+                        if original_min_price is None or day_base < original_min_price:
+                            original_min_price = day_base
+                    if not any_promo_applied or min_price == original_min_price:
+                        original_min_price = None
+                        winning_promo = None
 
         return RatePlanOut(
             id=rp.id,

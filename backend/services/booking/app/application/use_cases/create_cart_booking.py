@@ -1,28 +1,50 @@
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from app.application.exceptions import CatalogUnavailableError, ConflictingActiveCartError
+from shared.pricing import compute_fees
+
+from app.application.exceptions import (
+    CatalogUnavailableError,
+    ConflictingActiveCartError,
+    RateCurrencyMismatchError,
+)
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
+from app.application.ports.outbound.catalog_pricing_port import (
+    CatalogPricingPort,
+    PricingResult,
+)
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType, new_status_history_row
-from app.schemas.booking import CartBookingOut, CreateCartBookingIn
+from app.schemas.booking import CartBookingOut, CreateCartBookingIn, NightPriceOut
 
 _HOLD_MINUTES = 15
 _DEFAULT_POLICY = CancellationPolicyType.FULL
+_CENT = Decimal("0.01")
 
 logger = logging.getLogger(__name__)
 
 
+def _q(amount: Decimal) -> Decimal:
+    return amount.quantize(_CENT, rounding=ROUND_HALF_UP)
+
+
 class CreateCartBookingUseCase:
-    def __init__(self, repo: BookingRepository, catalog: CatalogInventoryPort):
+    def __init__(
+        self,
+        repo: BookingRepository,
+        catalog: CatalogInventoryPort,
+        pricing: CatalogPricingPort,
+    ):
         self._repo = repo
         self._catalog = catalog
+        self._pricing = pricing
 
     async def execute(self, user_id: UUID, payload: CreateCartBookingIn) -> CartBookingOut:
         # Idempotency: same user/room/dates -> return existing cart without
-        # decrementing Catalog again (avoids double-hold).
+        # decrementing Catalog again (avoids double-hold and double-pricing).
         existing = await self._repo.find_active_cart(
             user_id=user_id,
             room_type_id=payload.room_type_id,
@@ -40,8 +62,26 @@ class CreateCartBookingUseCase:
         if other_active is not None:
             raise ConflictingActiveCartError(other_active.id)
 
-        # Reserve inventory first. If Catalog rejects (409 -> InventoryUnavailableError)
-        # or fails (network -> CatalogUnavailableError), propagate and skip persistence.
+        # Fetch authoritative pricing from Catalog BEFORE reserving inventory.
+        # If pricing fails (404/409/422/network), we exit without holding any
+        # inventory — important so a price failure costs zero hold churn.
+        pricing_result: PricingResult = await self._pricing.get_pricing(
+            rate_plan_id=payload.rate_plan_id,
+            checkin=payload.checkin,
+            checkout=payload.checkout,
+        )
+
+        # Client-declared currency must match the rate plan's actual currency
+        # so the user can't be quoted in one currency and charged in another.
+        if payload.currency_code != pricing_result.currency_code:
+            raise RateCurrencyMismatchError(
+                f"Client requested {payload.currency_code} but rate plan is "
+                f"in {pricing_result.currency_code}"
+            )
+
+        # Reserve inventory after pricing succeeds. If Catalog rejects
+        # (409 -> InventoryUnavailableError) or fails (network ->
+        # CatalogUnavailableError), propagate and skip persistence.
         await self._catalog.create_hold(
             room_type_id=payload.room_type_id,
             checkin=payload.checkin,
@@ -50,7 +90,23 @@ class CreateCartBookingUseCase:
 
         nights = (payload.checkout - payload.checkin).days
         now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC — columns are TIMESTAMP WITHOUT TIME ZONE
-        total = payload.unit_price * nights
+        total = _q(pricing_result.subtotal)
+        # Average nightly rate, kept on the booking row for legacy list/detail
+        # consumers that read unit_price directly. The breakdown is the source of truth.
+        avg_unit_price = _q(total / Decimal(nights)) if nights > 0 else total
+        # Standardised additional charges from shared.pricing — same constants
+        # the catalog used to advertise the price, so cart total matches what
+        # the user saw on search/detail.
+        taxes, service_fee = compute_fees(total)
+
+        nightly_breakdown_json = [
+            {
+                "day": night.day.isoformat(),
+                "price": str(_q(night.price)),
+                "original_price": str(_q(night.original_price)) if night.original_price is not None else None,
+            }
+            for night in pricing_result.nights
+        ]
 
         booking = Booking(
             id=uuid.uuid4(),
@@ -60,16 +116,19 @@ class CreateCartBookingUseCase:
             checkout=payload.checkout,
             hold_expires_at=now + timedelta(minutes=_HOLD_MINUTES),
             total_amount=total,
-            currency_code=payload.currency_code,
+            currency_code=pricing_result.currency_code,
             property_id=payload.property_id,
             room_type_id=payload.room_type_id,
             rate_plan_id=payload.rate_plan_id,
-            unit_price=payload.unit_price,
+            unit_price=avg_unit_price,
             policy_type_applied=_DEFAULT_POLICY,
             policy_hours_limit_applied=None,
             policy_refund_percent_applied=None,
             inventory_released=False,  # hold is live in Catalog; reconciler flips on release
             guests_count=payload.guests_count,
+            nightly_breakdown=nightly_breakdown_json,
+            taxes=taxes,
+            service_fee=service_fee,
             created_at=now,
             updated_at=now,
         )
@@ -108,6 +167,23 @@ class CreateCartBookingUseCase:
         return _to_cart_out(saved)
 
 
+def _nights_breakdown_from_booking(booking: Booking) -> list[NightPriceOut]:
+    raw = booking.nightly_breakdown
+    if not raw:
+        return []
+    out: list[NightPriceOut] = []
+    for entry in raw:
+        original_raw = entry.get("original_price")
+        out.append(
+            NightPriceOut(
+                day=entry["day"],
+                price=Decimal(entry["price"]),
+                original_price=Decimal(original_raw) if original_raw is not None else None,
+            )
+        )
+    return out
+
+
 def _to_cart_out(booking: Booking) -> CartBookingOut:
     return CartBookingOut(
         id=booking.id,
@@ -122,4 +198,8 @@ def _to_cart_out(booking: Booking) -> CartBookingOut:
         rate_plan_id=booking.rate_plan_id,
         unit_price=booking.unit_price,
         guests_count=booking.guests_count,
+        nights_breakdown=_nights_breakdown_from_booking(booking),
+        taxes=booking.taxes,
+        service_fee=booking.service_fee,
+        grand_total=booking.total_amount + booking.taxes + booking.service_fee,
     )

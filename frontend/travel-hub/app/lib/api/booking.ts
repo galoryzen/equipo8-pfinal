@@ -54,6 +54,13 @@ export class CartConflictError extends Error {
   }
 }
 
+export class RateUnavailableError extends Error {
+  constructor(message = 'Rates are not available for the selected dates.') {
+    super(message);
+    this.name = 'RateUnavailableError';
+  }
+}
+
 export async function createCartBooking(payload: CreateCartBookingPayload): Promise<CartBooking> {
   const res = await fetch(`${API_URL}/api/v1/booking/bookings`, {
     method: 'POST',
@@ -65,6 +72,9 @@ export async function createCartBooking(payload: CreateCartBookingPayload): Prom
     const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
     if (body?.code === 'CART_ALREADY_EXISTS' && typeof body.existing_booking_id === 'string') {
       throw new CartConflictError(String(body.message), body.existing_booking_id);
+    }
+    if (body?.code === 'RATE_UNAVAILABLE') {
+      throw new RateUnavailableError();
     }
     throw new Error(body && 'message' in body ? String(body.message) : `Error ${res.status}`);
   }

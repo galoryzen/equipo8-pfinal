@@ -82,6 +82,8 @@
       "perNightLine_one": "{{price}} × {{count}} noche",
       "perNightLine_other": "{{price}} × {{count}} noches",
       "perNightShort": "/noche",
+      "nightLine": "{{day}}",
+      "nightlyRates": "Tarifas por noche",
       "discount": "Descuento",
       "subtotal": "Subtotal",
       "taxes": "Impuestos",
@@ -218,6 +220,7 @@
     },
     "cart": {
       "unavailable": "La habitación ya no está disponible para las fechas seleccionadas",
+      "rateUnavailable": "No hay tarifas disponibles para las fechas seleccionadas. Elige otras fechas.",
       "countdown": {
         "label": "La reserva expira en {{label}}"
       },

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useAuthAction } from '@/app/lib/hooks/useAuthAction';
-import type { PropertyDetail } from '@/app/lib/types/catalog';
+import { getRatePlanPricing, RateUnavailableError } from '@/app/lib/api/catalog';
+import type { PropertyDetail, RatePlanPricing } from '@/app/lib/types/catalog';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -52,13 +53,56 @@ export default function PriceCard({
   const [guests, setGuests] = useState(2);
 
   const nights = nightsBetween(checkin, checkout);
-  const pricePerNight = selectedRoom?.unitPrice ?? minPrice ?? 0;
-  const roomTotal = pricePerNight * Math.max(nights, 1);
-  const cleaningFee = Math.round(pricePerNight * 0.1);
-  const serviceFee = Math.round(pricePerNight * 0.05);
-  const total = roomTotal + cleaningFee + serviceFee;
 
-  const canReserve = Boolean(selectedRoom);
+  // Authoritative per-night pricing from the catalog. Refetched whenever the
+  // user changes dates or picks a different rate plan. ``selectedRoom.unitPrice``
+  // is only a fallback while pricing is loading or for the initial header.
+  const [pricing, setPricing] = useState<RatePlanPricing | null>(null);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const ratePlanId = selectedRoom?.ratePlanId;
+
+  useEffect(() => {
+    if (!ratePlanId || !checkin || !checkout || nights <= 0) {
+      setPricing(null);
+      setPricingError(null);
+      return;
+    }
+    let cancelled = false;
+    setPricingError(null);
+    void (async () => {
+      try {
+        const data = await getRatePlanPricing(ratePlanId, checkin, checkout);
+        if (!cancelled) setPricing(data);
+      } catch (err) {
+        if (cancelled) return;
+        if (err instanceof RateUnavailableError) {
+          setPricingError(err.message);
+        } else {
+          setPricingError(err instanceof Error ? err.message : 'Could not load pricing');
+        }
+        setPricing(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ratePlanId, checkin, checkout, nights]);
+
+  const fallbackPricePerNight = selectedRoom?.unitPrice ?? minPrice ?? 0;
+  const roomTotal = pricing
+    ? Number(pricing.subtotal)
+    : fallbackPricePerNight * Math.max(nights, 1);
+  const pricePerNight = pricing && nights > 0
+    ? roomTotal / nights
+    : fallbackPricePerNight;
+  // Fees come from the server (shared.pricing constants) so this card matches
+  // the cart and payment-page totals exactly. Pre-pricing fallback is 0; the
+  // Reserve button is disabled while pricing loads anyway.
+  const taxes = pricing ? Number(pricing.taxes) : 0;
+  const serviceFee = pricing ? Number(pricing.service_fee) : 0;
+  const total = pricing ? Number(pricing.total) : roomTotal;
+
+  const canReserve = Boolean(selectedRoom) && !pricingError;
 
   function handleCheckinChange(val: string) {
     setCheckin(val);
@@ -166,8 +210,7 @@ export default function PriceCard({
             checkin,
             checkout,
             guests: String(guests),
-            unit_price: String(selectedRoom.unitPrice),
-            currency: 'USD',
+            currency: pricing?.currency_code ?? 'USD',
             property_name: property.name,
             room_name: selectedRoom.roomName,
           });
@@ -183,6 +226,12 @@ export default function PriceCard({
         </Alert>
       )}
 
+      {pricingError && (
+        <Alert severity="error" sx={{ mb: 1, py: 0.5 }}>
+          {pricingError}
+        </Alert>
+      )}
+
       <Typography
         variant="caption"
         color="text.secondary"
@@ -191,7 +240,9 @@ export default function PriceCard({
         You won&apos;t be charged yet
       </Typography>
 
-      {/* Price breakdown */}
+      {/* Price breakdown — single line; ``pricePerNight`` is the average derived
+          from the authoritative breakdown, so the math always reconciles to the
+          total even when nightly rates vary. */}
       {pricePerNight > 0 && nights > 0 && (
         <>
           <Divider sx={{ mb: 1.5 }} />
@@ -204,9 +255,9 @@ export default function PriceCard({
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                Cleaning fee
+                Taxes
               </Typography>
-              <Typography variant="body2">${cleaningFee.toLocaleString()}</Typography>
+              <Typography variant="body2">${taxes.toLocaleString()}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">

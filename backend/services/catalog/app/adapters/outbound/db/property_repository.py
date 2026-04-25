@@ -243,11 +243,26 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             else_=RateCalendar.price_amount,
         )
 
-        min_price_sq = (
+        # Reported min_price is the average nightly rate of the *cheapest full
+        # stay* across qualifying rate plans (= sum of effective per-night
+        # prices, divided by nights). This keeps the per-night display contract
+        # for cards but makes the math reconcile with the cart total when
+        # nightly rates vary across the window.
+        #
+        # Three-level aggregation:
+        #   L1 best_per_day_sq — collapses overlapping promos to the cheapest
+        #                        effective price for each (rate_plan, day).
+        #   L2 stay_total_sq   — SUMs L1 across the window per (property,
+        #                        rate_plan); HAVING enforces full-date coverage
+        #                        so a missing night disqualifies that plan.
+        #   L3 min_price_sq    — MIN of L2 totals per property → divide by nights.
+        best_per_day_sq = (
             select(
                 RoomType.property_id.label("property_id"),
-                sa_func.min(effective_price).label("min_price"),
-                sa_func.min(RateCalendar.price_amount).label("original_min_price"),
+                RatePlan.id.label("rate_plan_id"),
+                RateCalendar.day.label("day"),
+                sa_func.min(effective_price).label("eff"),
+                RateCalendar.price_amount.label("base"),
             )
             .join(RatePlan, RatePlan.room_type_id == RoomType.id)
             .join(RateCalendar, RateCalendar.rate_plan_id == RatePlan.id)
@@ -266,7 +281,33 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                 RateCalendar.day >= checkin,
                 RateCalendar.day < checkout,
             )
-            .group_by(RoomType.property_id)
+            .group_by(
+                RoomType.property_id,
+                RatePlan.id,
+                RateCalendar.day,
+                RateCalendar.price_amount,
+            )
+        ).subquery("best_per_day_sq")
+
+        stay_total_sq = (
+            select(
+                best_per_day_sq.c.property_id.label("property_id"),
+                best_per_day_sq.c.rate_plan_id.label("rate_plan_id"),
+                sa_func.sum(best_per_day_sq.c.eff).label("sum_eff"),
+                sa_func.sum(best_per_day_sq.c.base).label("sum_base"),
+            )
+            .group_by(best_per_day_sq.c.property_id, best_per_day_sq.c.rate_plan_id)
+            .having(sa_func.count(best_per_day_sq.c.day) == nights)
+        ).subquery("stay_total_sq")
+
+        nights_dec = Decimal(nights)
+        min_price_sq = (
+            select(
+                stay_total_sq.c.property_id.label("property_id"),
+                (sa_func.min(stay_total_sq.c.sum_eff) / nights_dec).label("min_price"),
+                (sa_func.min(stay_total_sq.c.sum_base) / nights_dec).label("original_min_price"),
+            )
+            .group_by(stay_total_sq.c.property_id)
         ).subquery("min_price_sq")
 
         review_avg_sq = (
