@@ -1,3 +1,4 @@
+import * as dashboardApi from '@/app/lib/api/dashboard';
 import { EMPTY_DASHBOARD_DATA } from '@/app/lib/api/dashboard';
 import { useDashboardData } from '@/app/manager/hooks/useDashboardData';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -51,7 +52,7 @@ describe('useDashboardData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     const firstUrl = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
-    expect(firstUrl).toContain('/api/v1/dashboard/metrics?');
+    expect(firstUrl).toContain('/api/v1/booking/dashboard/metrics?');
     expect(firstUrl).toContain('from=2026-01-01');
     expect(firstUrl).toContain('to=2026-01-31');
     expect(result.current.data.metrics.revenue.value).toBe(0);
@@ -98,6 +99,33 @@ describe('useDashboardData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.data).toEqual(EMPTY_DASHBOARD_DATA);
+    expect(result.current.error).toEqual({
+      message: 'Error loading dashboard',
+      kind: 'network',
+    });
+  });
+
+  it('maps a plain Error rejection to a network-shaped error', async () => {
+    vi.spyOn(dashboardApi, 'getHotelDashboardMetrics').mockRejectedValueOnce(new Error('custom'));
+
+    const { result } = renderHook(() => useDashboardData('2026-05-01', '2026-05-31'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.data).toEqual(EMPTY_DASHBOARD_DATA);
+    expect(result.current.error).toEqual({
+      message: 'custom',
+      kind: 'network',
+    });
+  });
+
+  it('maps a non-Error rejection to the fallback dashboard error', async () => {
+    vi.spyOn(dashboardApi, 'getHotelDashboardMetrics').mockRejectedValueOnce('weird');
+
+    const { result } = renderHook(() => useDashboardData('2026-06-01', '2026-06-30'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
     expect(result.current.error).toEqual({
       message: 'Error loading dashboard',
       kind: 'network',

@@ -6,7 +6,7 @@ from app.main import app
 
 def test_revenue_report_forbidden_for_traveler(client_authenticated):
     resp = client_authenticated.get(
-        "/api/v1/dashboard/revenue-report",
+        "/api/v1/booking/dashboard/revenue-report",
         params={
             "hotel_id": "c0000000-0000-0000-0000-000000000001",
             "from": "2026-01-01",
@@ -49,7 +49,7 @@ def test_revenue_report_ok_for_hotel_partner():
     try:
         with TestClient(app) as client:
             response = client.get(
-                "/api/v1/dashboard/revenue-report",
+                "/api/v1/booking/dashboard/revenue-report",
                 params={
                     "hotel_id": "c0000000-0000-0000-0000-000000000001",
                     "from": "2026-10-01",

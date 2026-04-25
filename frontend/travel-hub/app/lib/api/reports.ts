@@ -148,9 +148,12 @@ export async function getRevenueReport(params: {
 
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/api/v1/dashboard/revenue-report?${query.toString()}`, {
-      credentials: 'include',
-    });
+    response = await fetch(
+      `${API_URL}/api/v1/booking/dashboard/revenue-report?${query.toString()}`,
+      {
+        credentials: 'include',
+      }
+    );
   } catch {
     throw new RevenueReportFetchError('Error loading revenue report', { kind: 'network' });
   }

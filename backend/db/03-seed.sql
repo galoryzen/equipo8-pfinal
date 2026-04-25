@@ -995,7 +995,7 @@ INSERT INTO catalog.promotion (id, rate_plan_id, name, discount_type, discount_v
 
 -- =============================================
 -- Dashboard metrics — dataset dinámico para Andrea (hotel e000...0002)
--- Objetivo: que /api/v1/dashboard/metrics tenga datos útiles para last-7 y last-30
+-- Objetivo: que /api/v1/booking/dashboard/metrics tenga datos útiles para last-7 y last-30
 -- incluso al cambiar la fecha del sistema.
 -- Reglas:
 --   * Reservas del dashboard solo en propiedades del hotel de Andrea (hotel_id e000...0002)

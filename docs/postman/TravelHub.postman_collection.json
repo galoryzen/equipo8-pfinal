@@ -387,15 +387,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/dashboard/metrics?from=2026-01-01&to=2026-01-31",
+              "raw": "{{baseUrl}}/api/v1/booking/dashboard/metrics?from=2026-01-01&to=2026-01-31",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "dashboard", "metrics"],
+              "path": ["api", "v1", "booking", "dashboard", "metrics"],
               "query": [
                 { "key": "from", "value": "2026-01-01" },
                 { "key": "to", "value": "2026-01-31" }
               ]
             },
-            "description": "Métricas agregadas para el hotel vinculado al usuario (Auth `hotel_id`). Roles **HOTEL** / **MANAGER**, o **TRAVELER** si existe fila en `users.hotel_user` (seed: `maria@example.com` → Cadena del Sol).\n\n**Si obtienes 404 HTML de nginx:** el gateway no tiene la ruta nueva; en el repo ejecuta `docker compose up -d --force-recreate thub-gateway` (o `docker compose down` + `up`) para remontar `backend/nginx/nginx.conf`.\n\n**Base de datos:** si el volumen de Postgres ya existía antes del seed nuevo, aplica el `INSERT` de `hotel_user` de María o recrea el volumen (`docker compose down -v`)."
+            "description": "Métricas agregadas para el hotel vinculado al usuario (Auth `hotel_id`). Roles **HOTEL** / **MANAGER**, o **TRAVELER** si existe fila en `users.hotel_user` (seed: `maria@example.com` → Cadena del Sol).\n\n**Base de datos:** si el volumen de Postgres ya existía antes del seed nuevo, aplica el `INSERT` de `hotel_user` de María o recrea el volumen (`docker compose down -v`)."
           },
           "response": [
             {
@@ -403,7 +403,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{baseUrl}}/api/v1/dashboard/metrics?from=2026-01-01&to=2026-01-31"
+                "url": "{{baseUrl}}/api/v1/booking/dashboard/metrics?from=2026-01-01&to=2026-01-31"
               },
               "status": "OK",
               "code": 200,
@@ -416,7 +416,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{baseUrl}}/api/v1/dashboard/metrics?from=2026-01-01&to=2026-01-31"
+                "url": "{{baseUrl}}/api/v1/booking/dashboard/metrics?from=2026-01-01&to=2026-01-31"
               },
               "status": "Forbidden",
               "code": 403,
@@ -442,9 +442,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id={{hotelId}}&from={{reportFrom}}&to={{reportTo}}",
+              "raw": "{{baseUrl}}/api/v1/booking/dashboard/revenue-report?hotel_id={{hotelId}}&from={{reportFrom}}&to={{reportTo}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "dashboard", "revenue-report"],
+              "path": ["api", "v1", "booking", "dashboard", "revenue-report"],
               "query": [
                 { "key": "hotel_id", "value": "{{hotelId}}" },
                 { "key": "from", "value": "{{reportFrom}}" },
@@ -459,7 +459,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id={{hotelId}}&from={{reportFrom}}&to={{reportTo}}"
+                "url": "{{baseUrl}}/api/v1/booking/dashboard/revenue-report?hotel_id={{hotelId}}&from={{reportFrom}}&to={{reportTo}}"
               },
               "status": "OK",
               "code": 200,
@@ -472,7 +472,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id=ffffffff-ffff-ffff-ffff-ffffffffffff&from={{reportFrom}}&to={{reportTo}}"
+                "url": "{{baseUrl}}/api/v1/booking/dashboard/revenue-report?hotel_id=ffffffff-ffff-ffff-ffff-ffffffffffff&from={{reportFrom}}&to={{reportTo}}"
               },
               "status": "Forbidden",
               "code": 403,
@@ -485,7 +485,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{baseUrl}}/api/v1/dashboard/revenue-report?hotel_id={{hotelId}}&from=2026-10-31&to=2026-10-01"
+                "url": "{{baseUrl}}/api/v1/booking/dashboard/revenue-report?hotel_id={{hotelId}}&from=2026-10-31&to=2026-10-01"
               },
               "status": "Bad Request",
               "code": 400,
