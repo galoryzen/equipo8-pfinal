@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from uuid import UUID
@@ -6,6 +7,7 @@ from uuid import UUID
 import httpx
 
 from app.application.ports.outbound.booking_repository import BookingRepository
+from app.application.ports.outbound.guest_repository import GuestRepository
 from app.config import settings
 from app.domain.models import Booking, BookingScope
 from app.schemas.booking import BookingListItemOut, PaginatedBookingListOut
@@ -21,18 +23,18 @@ def _default_today() -> date:
 
 
 async def _fetch_property_info(client: httpx.AsyncClient, property_id: UUID) -> dict | None:
-    try:
+    with contextlib.suppress(Exception):
         resp = await client.get(
             f"{settings.CATALOG_SERVICE_URL}/api/v1/catalog/properties/{property_id}"
         )
         if resp.status_code == 200:
             return resp.json()
-    except Exception:
-        pass
     return None
 
 
-def _map_booking_to_list_item(booking: Booking, prop_info: dict | None) -> BookingListItemOut:
+def _map_booking_to_list_item(
+    booking: Booking, prop_info: dict | None, guest_name: str | None
+) -> BookingListItemOut:
     property_name = None
     image_url = None
     if prop_info:
@@ -43,10 +45,8 @@ def _map_booking_to_list_item(booking: Booking, prop_info: dict | None) -> Booki
 
     nights = None
     if booking.checkin and booking.checkout:
-        try:
+        with contextlib.suppress(Exception):
             nights = (booking.checkout - booking.checkin).days
-        except Exception:
-            pass
 
     return BookingListItemOut(
         id=booking.id,
@@ -61,7 +61,7 @@ def _map_booking_to_list_item(booking: Booking, prop_info: dict | None) -> Booki
         property_name=property_name,
         image_url=image_url,
         nights=nights,
-        guest_name=None,  # auth fan-out removed; not needed for list view
+        guest_name=guest_name,
         guests_count=booking.guests_count,
     )
 
@@ -70,10 +70,12 @@ class ListMyBookingsUseCase:
     def __init__(
         self,
         repo: BookingRepository,
+        guest_repo: GuestRepository,
         clock: Callable[[], date] = _default_today,
         catalog_http_client: httpx.AsyncClient | None = None,
     ):
         self._repo = repo
+        self._guest_repo = guest_repo
         self._clock = clock
         self._catalog_client = catalog_http_client
 
@@ -82,19 +84,24 @@ class ListMyBookingsUseCase:
             return []
 
         unique_pids = list({b.property_id for b in bookings})
+        booking_ids = [b.id for b in bookings]
         owned = self._catalog_client is None
         client = self._catalog_client or httpx.AsyncClient(timeout=5.0)
 
         try:
-            results = await asyncio.gather(
-                *[_fetch_property_info(client, pid) for pid in unique_pids]
+            results, guest_map = await asyncio.gather(
+                asyncio.gather(*[_fetch_property_info(client, pid) for pid in unique_pids]),
+                self._guest_repo.get_primary_names_for_bookings(booking_ids),
             )
         finally:
             if owned:
                 await client.aclose()
 
-        prop_map: dict[UUID, dict | None] = dict(zip(unique_pids, results))
-        return [_map_booking_to_list_item(b, prop_map.get(b.property_id)) for b in bookings]
+        prop_map: dict[UUID, dict | None] = dict(zip(unique_pids, results, strict=False))
+        return [
+            _map_booking_to_list_item(b, prop_map.get(b.property_id), guest_map.get(b.id))
+            for b in bookings
+        ]
 
     async def execute(
         self,

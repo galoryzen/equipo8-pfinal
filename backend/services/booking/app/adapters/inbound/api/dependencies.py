@@ -130,7 +130,10 @@ def get_list_my_bookings_use_case(
     session: AsyncSession = Depends(get_db_session),
 ) -> ListMyBookingsUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return ListMyBookingsUseCase(repo, catalog_http_client=_get_catalog_http_client())
+    guest_repo = SqlAlchemyGuestRepository(session)
+    return ListMyBookingsUseCase(
+        repo, guest_repo, catalog_http_client=_get_catalog_http_client()
+    )
 
 def get_booking_detail_use_case(
     session: AsyncSession = Depends(get_db_session),
