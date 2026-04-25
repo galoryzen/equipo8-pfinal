@@ -149,7 +149,7 @@ export async function getHotelDashboardMetrics(from: string, to: string): Promis
   const params = new URLSearchParams({ from, to });
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/api/v1/dashboard/metrics?${params}`, {
+    response = await fetch(`${API_URL}/api/v1/booking/dashboard/metrics?${params}`, {
       credentials: 'include',
     });
   } catch {

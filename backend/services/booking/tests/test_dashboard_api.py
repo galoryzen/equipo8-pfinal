@@ -6,7 +6,7 @@ from app.main import app
 
 def test_metrics_forbidden_for_traveler(client_authenticated):
     resp = client_authenticated.get(
-        "/api/v1/dashboard/metrics",
+        "/api/v1/booking/dashboard/metrics",
         params={"from": "2026-01-01", "to": "2026-01-31"},
     )
     assert resp.status_code == 403
@@ -55,7 +55,7 @@ def test_metrics_ok_for_hotel_partner():
     try:
         with TestClient(app) as client:
             r = client.get(
-                "/api/v1/dashboard/metrics",
+                "/api/v1/booking/dashboard/metrics",
                 params={"from": "2026-04-01", "to": "2026-04-30"},
             )
         assert r.status_code == 200

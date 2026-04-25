@@ -422,6 +422,86 @@
         "cancel": "Cancelar",
         "unknownError": "Error desconocido"
       }
+    },
+    "reports": {
+      "title": "Reportes de ingresos",
+      "subtitle": "Genera reportes de desempeño de ingresos por período.",
+      "filters": {
+        "hotel": "Hotel",
+        "myHotel": "Mi hotel",
+        "from": "Desde",
+        "to": "Hasta"
+      },
+      "kpis": {
+        "totalRevenue": "Ingresos totales",
+        "adr": "ADR",
+        "occupancyRate": "Tasa de ocupación"
+      },
+      "sections": {
+        "trends": "Tendencias de ingresos",
+        "byRoomType": "Ingresos por tipo de habitación"
+      },
+      "chart": {
+        "revenue": "Ingresos",
+        "occupancy": "Ocupación"
+      },
+      "table": {
+        "roomType": "Tipo de habitación",
+        "unitsSold": "Unidades vendidas",
+        "avgRate": "Tarifa promedio",
+        "totalRevenue": "Ingresos totales",
+        "totalAggregatedRevenue": "Ingreso total agregado"
+      },
+      "actions": {
+        "generate": "Generar reporte",
+        "download": "Descargar reporte"
+      },
+      "states": {
+        "initial": "Selecciona un hotel y un rango de fechas, luego haz clic en Generar reporte.",
+        "empty": "No hay datos de reporte para el período seleccionado.",
+        "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
+        "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
+      }
+    },
+    "reports": {
+      "title": "Reportes de ingresos",
+      "subtitle": "Genera reportes de desempeño de ingresos por período.",
+      "filters": {
+        "hotel": "Hotel",
+        "myHotel": "Mi hotel",
+        "from": "Desde",
+        "to": "Hasta"
+      },
+      "kpis": {
+        "totalRevenue": "Ingresos totales",
+        "adr": "ADR",
+        "occupancyRate": "Tasa de ocupación"
+      },
+      "sections": {
+        "trends": "Tendencias de ingresos",
+        "byRoomType": "Ingresos por tipo de habitación"
+      },
+      "chart": {
+        "revenue": "Ingresos",
+        "occupancy": "Ocupación"
+      },
+      "table": {
+        "roomType": "Tipo de habitación",
+        "unitsSold": "Unidades vendidas",
+        "avgRate": "Tarifa promedio",
+        "totalRevenue": "Ingresos totales",
+        "totalAggregatedRevenue": "Ingreso total agregado"
+      },
+      "actions": {
+        "generate": "Generar reporte",
+        "download": "Descargar reporte"
+      },
+      "states": {
+        "initial": "Selecciona un hotel y un rango de fechas, luego haz clic en Generar reporte.",
+        "empty": "No hay datos de reporte para el período seleccionado.",
+        "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
+        "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
+      }
     }
   }
 }

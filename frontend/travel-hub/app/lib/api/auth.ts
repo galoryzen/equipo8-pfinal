@@ -1,5 +1,30 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
+export interface RegisterPayload {
+  email: string;
+  username: string;
+  phone: string;
+  country_code: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  id: string;
+  email: string;
+  role: string;
+  hotel_id?: string | null;
+}
+
+export interface UserProfileResponse {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  country_code?: string | null;
+  hotel_id?: string | null;
+}
+
 // ── getMe cache ───────────────────────────────────────────────────────────────
 // Deduplicates concurrent calls and caches the result for 30 s so navigating
 // between protected pages never triggers a redundant network request.
@@ -15,20 +40,6 @@ function _invalidateMeCache(): void {
 /** Exposed for unit tests only — do not call in application code. */
 export function _resetMeCache(): void {
   _invalidateMeCache();
-}
-
-export interface RegisterPayload {
-  email: string;
-  username: string;
-  phone: string;
-  country_code: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  id: string;
-  email: string;
-  role: string;
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<AuthResponse> {
@@ -88,6 +99,17 @@ export async function getMe(): Promise<AuthResponse | null> {
     })();
   }
   return _meCacheInflight;
+}
+
+export async function getUserById(userId: string): Promise<UserProfileResponse> {
+  const res = await fetch(`${API_URL}/api/v1/auth/users/${encodeURIComponent(userId)}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Error ${res.status}`);
+  }
+  return res.json();
 }
 
 export async function logoutUser(): Promise<void> {

@@ -43,4 +43,5 @@ register_error_handlers(app)
 app.include_router(health_router, prefix="/api/v1/booking")
 app.include_router(bookings_router, prefix="/api/v1/booking")
 app.include_router(internal_router, prefix="/api/v1/booking")
-app.include_router(dashboard_router, prefix="/api/v1/dashboard")
+app.include_router(dashboard_router, prefix="/api/v1/booking/dashboard")
+
