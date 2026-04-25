@@ -16,6 +16,14 @@ resource "aws_security_group" "ecs_tasks" {
     security_groups = [aws_security_group.alb.id]
   }
 
+  ingress {
+    description = "Allow service-to-service via CloudMap (e.g. booking-worker calling catalog)"
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    self        = true
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -81,6 +89,19 @@ locals {
         # PAYMENT_EVENT_PUBLISHER_BACKEND + EVENTBRIDGE_BUS_NAME come from the Dockerfile ENV.
       ]
     }
+    "notification-worker" = {
+      image_service = "notification"
+      env = [
+        { name = "NOTIFICATION_EVENT_CONSUMER_BACKEND", value = "sqs" },
+        { name = "NOTIFICATION_EVENT_QUEUE_URL", value = aws_sqs_queue.worker["notification"].url },
+        { name = "NOTIFICATION_AWS_REGION", value = var.aws_region },
+        { name = "NOTIFICATION_EMAIL_SENDER_BACKEND", value = "ses" },
+        { name = "NOTIFICATION_SES_FROM_ADDRESS", value = var.ses_from_address },
+        { name = "NOTIFICATION_AUTH_SERVICE_URL", value = "http://auth.services.local:8000" },
+        { name = "NOTIFICATION_CATALOG_SERVICE_URL", value = "http://catalog.services.local:8000" },
+        { name = "NOTIFICATION_INTERNAL_SERVICE_TOKEN", value = var.internal_service_token },
+      ]
+    }
   }
 }
 
@@ -110,24 +131,33 @@ resource "aws_ecs_task_definition" "services" {
         }
       ]
 
-      environment = [
-        {
-          name  = "${upper(each.key)}_DATABASE_URL"
-          value = "postgresql+asyncpg://${aws_db_instance.main.username}:${var.db_password}@${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name}"
-        },
-        {
-          name  = "${upper(each.key)}_DB_SCHEMA"
-          value = local.db_schemas[each.key]
-        },
-        {
-          name  = "${upper(each.key)}_REDIS_URL"
-          value = "rediss://${aws_elasticache_serverless_cache.main.endpoint[0].address}:6379/0"
-        },
-        {
-          name  = "${upper(each.key)}_DEBUG"
-          value = "false"
-        }
-      ]
+      environment = concat(
+        [
+          {
+            name  = "${upper(each.key)}_DATABASE_URL"
+            value = "postgresql+asyncpg://${aws_db_instance.main.username}:${var.db_password}@${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name}"
+          },
+          {
+            name  = "${upper(each.key)}_DB_SCHEMA"
+            value = local.db_schemas[each.key]
+          },
+          {
+            name  = "${upper(each.key)}_REDIS_URL"
+            value = "rediss://${aws_elasticache_serverless_cache.main.endpoint[0].address}:6379/0"
+          },
+          {
+            name  = "${upper(each.key)}_DEBUG"
+            value = "false"
+          },
+        ],
+        # Only auth and catalog expose /internal/* endpoints today.
+        contains(["auth", "catalog"], each.key) ? [
+          {
+            name  = "${upper(each.key)}_INTERNAL_SERVICE_TOKEN"
+            value = var.internal_service_token
+          }
+        ] : [],
+      )
 
       logConfiguration = {
         logDriver = "awslogs"

@@ -11,6 +11,7 @@ from app.adapters.inbound.api.dependencies import (
 )
 from app.adapters.inbound.api.error_handlers import register_error_handlers
 from app.adapters.inbound.api.health import router as health_router
+from app.adapters.inbound.api.internal_properties import router as internal_properties_router
 from app.adapters.inbound.api.inventory import router as inventory_router
 from app.adapters.inbound.api.manager import router as manager_router
 from app.adapters.inbound.api.properties import router as properties_router
@@ -49,3 +50,6 @@ app.include_router(health_router, prefix="/api/v1/catalog")
 app.include_router(properties_router, prefix="/api/v1/catalog")
 app.include_router(inventory_router, prefix="/api/v1/catalog")
 app.include_router(manager_router, prefix="/api/v1/catalog")
+# Internal router is NOT under /api/v1/* — nginx/ALB do not route /internal/* to the
+# public gateway, so this endpoint is only reachable via service discovery.
+app.include_router(internal_properties_router, prefix="/internal")
