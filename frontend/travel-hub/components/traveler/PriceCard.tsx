@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { RateUnavailableError, getRatePlanPricing } from '@/app/lib/api/catalog';
 import { useAuthAction } from '@/app/lib/hooks/useAuthAction';
-import { getRatePlanPricing, RateUnavailableError } from '@/app/lib/api/catalog';
 import type { PropertyDetail, RatePlanPricing } from '@/app/lib/types/catalog';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Alert from '@mui/material/Alert';
@@ -57,44 +57,50 @@ export default function PriceCard({
   // Authoritative per-night pricing from the catalog. Refetched whenever the
   // user changes dates or picks a different rate plan. ``selectedRoom.unitPrice``
   // is only a fallback while pricing is loading or for the initial header.
-  const [pricing, setPricing] = useState<RatePlanPricing | null>(null);
-  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [pricingResult, setPricingResult] = useState<{
+    key: string | null;
+    data: RatePlanPricing | null;
+    error: string | null;
+  }>({ key: null, data: null, error: null });
   const ratePlanId = selectedRoom?.ratePlanId;
 
+  const pricingQueryKey =
+    ratePlanId && checkin && checkout && nights > 0 ? `${ratePlanId}:${checkin}:${checkout}` : null;
+
   useEffect(() => {
-    if (!ratePlanId || !checkin || !checkout || nights <= 0) {
-      setPricing(null);
-      setPricingError(null);
-      return;
-    }
+    if (!pricingQueryKey || !ratePlanId) return;
     let cancelled = false;
-    setPricingError(null);
     void (async () => {
       try {
         const data = await getRatePlanPricing(ratePlanId, checkin, checkout);
-        if (!cancelled) setPricing(data);
+        if (cancelled) return;
+        setPricingResult({ key: pricingQueryKey, data, error: null });
       } catch (err) {
         if (cancelled) return;
-        if (err instanceof RateUnavailableError) {
-          setPricingError(err.message);
-        } else {
-          setPricingError(err instanceof Error ? err.message : 'Could not load pricing');
-        }
-        setPricing(null);
+        const message =
+          err instanceof RateUnavailableError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Could not load pricing';
+        setPricingResult({ key: pricingQueryKey, data: null, error: message });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [ratePlanId, checkin, checkout, nights]);
+  }, [pricingQueryKey, ratePlanId, checkin, checkout]);
+
+  const pricing =
+    pricingQueryKey && pricingResult.key === pricingQueryKey ? pricingResult.data : null;
+  const pricingError =
+    pricingQueryKey && pricingResult.key === pricingQueryKey ? pricingResult.error : null;
 
   const fallbackPricePerNight = selectedRoom?.unitPrice ?? minPrice ?? 0;
   const roomTotal = pricing
     ? Number(pricing.subtotal)
     : fallbackPricePerNight * Math.max(nights, 1);
-  const pricePerNight = pricing && nights > 0
-    ? roomTotal / nights
-    : fallbackPricePerNight;
+  const pricePerNight = pricing && nights > 0 ? roomTotal / nights : fallbackPricePerNight;
   // Fees come from the server (shared.pricing constants) so this card matches
   // the cart and payment-page totals exactly. Pre-pricing fallback is 0; the
   // Reserve button is disabled while pricing loads anyway.
@@ -102,7 +108,8 @@ export default function PriceCard({
   const serviceFee = pricing ? Number(pricing.service_fee) : 0;
   const total = pricing ? Number(pricing.total) : roomTotal;
 
-  const canReserve = Boolean(selectedRoom) && !pricingError;
+  const canReserve =
+    Boolean(selectedRoom) && Boolean(pricingQueryKey) && !pricingError && !!pricing;
 
   function handleCheckinChange(val: string) {
     setCheckin(val);

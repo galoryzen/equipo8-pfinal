@@ -97,20 +97,18 @@ interface AdditionalGuest {
  * from the booking response so the payment page renders the same numbers the
  * server will charge — no client-side fee math.
  */
-function pricingFromBooking(
-  b: {
-    nights_breakdown?: { day: string; price: string; original_price?: string | null }[] | null;
-    total_amount?: string;
-    taxes?: string;
-    service_fee?: string;
-    grand_total?: string;
-  }
-): { subtotal: number; taxes: number; serviceFee: number; total: number } | null {
+function pricingFromBooking(b: {
+  nights_breakdown?: { day: string; price: string; original_price?: string | null }[] | null;
+  total_amount?: string;
+  taxes?: string;
+  service_fee?: string;
+  grand_total?: string;
+}): { subtotal: number; taxes: number; serviceFee: number; total: number } | null {
   if (!b.nights_breakdown || b.nights_breakdown.length === 0) {
     return null;
   }
-  const subtotal = Number(b.total_amount ?? 0)
-    || b.nights_breakdown.reduce((acc, n) => acc + Number(n.price), 0);
+  const subtotal =
+    Number(b.total_amount ?? 0) || b.nights_breakdown.reduce((acc, n) => acc + Number(n.price), 0);
   const taxes = Number(b.taxes ?? 0);
   const serviceFee = Number(b.service_fee ?? 0);
   const total = Number(b.grand_total ?? 0) || subtotal + taxes + serviceFee;
@@ -263,12 +261,7 @@ function PaymentPageContent() {
           const b = await getBookingDetail(urlBookingId);
           if (!mountedRef.current) return;
           setIsResumed(true);
-          handleBookingResolved(
-            b.id,
-            b.hold_expires_at ?? '',
-            b.status,
-            pricingFromBooking(b)
-          );
+          handleBookingResolved(b.id, b.hold_expires_at ?? '', b.status, pricingFromBooking(b));
           return;
         } catch {
           // fall through
@@ -283,12 +276,7 @@ function PaymentPageContent() {
           if (!mountedRef.current) return;
           if (b.status !== 'EXPIRED' && b.hold_expires_at) {
             setIsResumed(true);
-            handleBookingResolved(
-              b.id,
-              b.hold_expires_at,
-              b.status,
-              pricingFromBooking(b)
-            );
+            handleBookingResolved(b.id, b.hold_expires_at, b.status, pricingFromBooking(b));
             const params = new URLSearchParams(searchParams.toString());
             params.set('booking_id', stored);
             router.replace(`/traveler/payment?${params.toString()}`);
@@ -375,12 +363,7 @@ function PaymentPageContent() {
       try {
         const b = await getBookingDetail(bookingId);
         if (mountedRef.current) {
-          handleBookingResolved(
-            b.id,
-            b.hold_expires_at ?? '',
-            b.status,
-            pricingFromBooking(b)
-          );
+          handleBookingResolved(b.id, b.hold_expires_at ?? '', b.status, pricingFromBooking(b));
         }
       } catch {
         if (mountedRef.current) {

@@ -1,12 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { RateUnavailableError, createCartBooking } from '@/app/lib/api/booking';
 import {
   RateUnavailableError as CatalogRateUnavailableError,
   getRatePlanPricing,
 } from '@/app/lib/api/catalog';
-import { RateUnavailableError, createCartBooking } from '@/app/lib/api/booking';
 import type { CreateCartBookingPayload } from '@/app/lib/types/booking';
 import type { RatePlanPricing } from '@/app/lib/types/catalog';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('getRatePlanPricing', () => {
   beforeEach(() => {
@@ -39,7 +38,7 @@ describe('getRatePlanPricing', () => {
 
     const [url] = vi.mocked(global.fetch).mock.calls[0] as [string];
     expect(url).toMatch(
-      /\/api\/v1\/catalog\/rate-plans\/rp1\/pricing\?checkin=2026-05-01&checkout=2026-05-03$/,
+      /\/api\/v1\/catalog\/rate-plans\/rp1\/pricing\?checkin=2026-05-01&checkout=2026-05-03$/
     );
     expect(result.subtotal).toBe('290.00');
     expect(result.nights).toHaveLength(2);
@@ -54,7 +53,7 @@ describe('getRatePlanPricing', () => {
     } as Response);
 
     await expect(getRatePlanPricing('rp1', '2026-05-01', '2026-05-03')).rejects.toBeInstanceOf(
-      CatalogRateUnavailableError,
+      CatalogRateUnavailableError
     );
   });
 });
