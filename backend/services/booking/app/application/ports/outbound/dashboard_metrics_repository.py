@@ -48,7 +48,7 @@ class DashboardMetricsRepository(ABC):
         *,
         period_end_exclusive: date,
     ) -> HotelPeriodAggregate:
-        """Aggregate dashboard inputs for one hotel and one stay/payment window.
+        """Aggregate dashboard inputs for one hotel and one stay window.
 
         ``period_end_exclusive`` is ``date_to + 1 day`` (checkout-exclusive overlap rule).
         """

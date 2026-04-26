@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from uuid import UUID
 
@@ -11,6 +11,11 @@ from app.application.ports.outbound.dashboard_metrics_repository import (
     HotelPeriodAggregate,
     RecentActivityItem,
     UpcomingCheckinItem,
+)
+
+
+ACTIVE_BOOKING_STATUSES = (
+    "'CONFIRMED', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION'"
 )
 
 
@@ -36,7 +41,7 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
                 SELECT COUNT(*)::int
                 FROM booking.booking b
                 WHERE b.property_id IN (SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid))
-                  AND b.status NOT IN ('CART', 'EXPIRED')
+                  AND b.status IN (""" + ACTIVE_BOOKING_STATUSES + """)
                   AND b.checkin < CAST(:period_end_exclusive AS date)
                   AND b.checkout > CAST(:date_from AS date)
               ) AS total_bookings,
@@ -69,20 +74,19 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
                     )::int AS overlap_nights,
                     1::int AS qty
                   FROM booking.booking b
-                  WHERE b.status IN ('CONFIRMED', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION')
+                  WHERE b.status IN (""" + ACTIVE_BOOKING_STATUSES + """)
                     AND b.property_id IN (SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid))
                     AND b.checkin < CAST(:period_end_exclusive AS date)
                     AND b.checkout > CAST(:date_from AS date)
                 ) x
               ) AS active_room_nights,
               (
-                SELECT COALESCE(SUM(p.captured_amount), 0)
-                FROM payments.payment p
-                INNER JOIN booking.booking b ON b.id = p.booking_id
+                SELECT COALESCE(SUM(b.total_amount), 0)
+                FROM booking.booking b
                 WHERE b.property_id IN (SELECT pr.id FROM catalog.property pr WHERE pr.hotel_id = CAST(:hotel_id AS uuid))
-                  AND p.status = 'CAPTURED'
-                  AND COALESCE(p.processed_at::date, p.created_at::date)
-                      BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
+                  AND b.status IN (""" + ACTIVE_BOOKING_STATUSES + """)
+                  AND b.checkin < CAST(:period_end_exclusive AS date)
+                  AND b.checkout > CAST(:date_from AS date)
               ) AS revenue_captured,
               (
                 SELECT AVG(r.rating::float)
@@ -154,23 +158,29 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
     async def list_booking_trends(
         self, hotel_id: UUID, date_from: date, date_to: date
     ) -> list[BookingTrendPoint]:
+        period_end_exclusive = date_to + timedelta(days=1)
         sql = text(
             """
-            SELECT b.checkin::date AS day, COUNT(*)::int AS bookings
+            SELECT GREATEST(b.checkin, CAST(:date_from AS date))::date AS day, COUNT(*)::int AS bookings
             FROM booking.booking b
             WHERE b.property_id IN (
               SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid)
             )
-              AND b.status NOT IN ('CART', 'EXPIRED')
-              AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
-            GROUP BY b.checkin::date
+              AND b.status IN (""" + ACTIVE_BOOKING_STATUSES + """)
+              AND b.checkin < CAST(:period_end_exclusive AS date)
+              AND b.checkout > CAST(:date_from AS date)
+            GROUP BY GREATEST(b.checkin, CAST(:date_from AS date))::date
             ORDER BY day ASC
             """
         )
         rows = (
             await self._session.execute(
                 sql,
-                {"hotel_id": str(hotel_id), "date_from": date_from, "date_to": date_to},
+                {
+                    "hotel_id": str(hotel_id),
+                    "date_from": date_from,
+                    "period_end_exclusive": period_end_exclusive,
+                },
             )
         ).all()
         return [BookingTrendPoint(day=row.day, bookings=int(row.bookings)) for row in rows]
@@ -265,7 +275,7 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
             WHERE b.property_id IN (
               SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid)
             )
-              AND b.status IN ('CONFIRMED', 'PENDING_CONFIRMATION', 'PENDING_PAYMENT')
+              AND b.status IN (""" + ACTIVE_BOOKING_STATUSES + """)
               AND b.checkin >= CURRENT_DATE
             ORDER BY b.checkin ASC, b.created_at DESC
             LIMIT :limit
