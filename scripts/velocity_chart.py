@@ -32,7 +32,6 @@ VELOCITY = 16  # pts por semana proyectados (default)
 # Overrides puntuales cuando una semana cambia su capacidad proyectada.
 # Ej: S2-W1 = 18 porque entraron 2 HU nuevas al sprint sobre la estimacion base.
 VELOCITY_OVERRIDES = {
-    "S2-W1": 18,
 }
 
 # ── Semanas del proyecto ──────────────────────────────────────────────
@@ -80,7 +79,8 @@ def parse_csv(csv_path: str) -> dict[str, float]:
             status = row.get("Status", "").strip()
             key = row.get("Issue key", "").strip()
             resolved_str = row.get("Resolved", "").strip()
-            pts_raw = row.get("Custom field (Story point estimate)", "").strip()
+            pts_raw = row.get(
+                "Custom field (Story point estimate)", "").strip()
 
             if itype != "Story" or not sprint or status != "Done":
                 continue
@@ -89,7 +89,8 @@ def parse_csv(csv_path: str) -> dict[str, float]:
 
             resolved = parse_resolved_date(resolved_str)
             if not resolved:
-                print(f"  WARN: no se pudo parsear fecha de {key}: {resolved_str}")
+                print(
+                    f"  WARN: no se pudo parsear fecha de {key}: {resolved_str}")
                 continue
 
             pts = float(pts_raw)
@@ -98,7 +99,8 @@ def parse_csv(csv_path: str) -> dict[str, float]:
                 week_pts[week] += pts
                 print(f"  {key} → {resolved} → {week} (+{pts:.0f} pts)")
             else:
-                print(f"  WARN: {key} resuelto {resolved} no cae en ninguna semana")
+                print(
+                    f"  WARN: {key} resuelto {resolved} no cae en ninguna semana")
 
     return week_pts
 
@@ -151,7 +153,8 @@ def build_chart(week_pts: dict[str, float], velocity: int, output: str):
 
     # Labels de sprint
     for i, boundary in enumerate(sprint_boundaries):
-        end = sprint_boundaries[i + 1] if i + 1 < len(sprint_boundaries) else len(labels)
+        end = sprint_boundaries[i + 1] if i + \
+            1 < len(sprint_boundaries) else len(labels)
         mid = (boundary + end - 1) / 2
         ax.text(
             mid, -0.12, sprint_names[i],
@@ -161,7 +164,8 @@ def build_chart(week_pts: dict[str, float], velocity: int, output: str):
 
     ax.set_xlabel("Semana", fontsize=12, labelpad=25)
     ax.set_ylabel("Story Points", fontsize=12)
-    ax.set_title("Velocity Chart — Proyectado vs Realizado", fontsize=14, fontweight="bold")
+    ax.set_title("Velocity Chart — Proyectado vs Realizado",
+                 fontsize=14, fontweight="bold")
     ax.set_xticks(list(x))
     ax.set_xticklabels(labels, fontsize=10)
     ax.yaxis.set_major_locator(ticker.MultipleLocator(4))
@@ -178,10 +182,14 @@ def build_chart(week_pts: dict[str, float], velocity: int, output: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Genera velocity chart semanal desde Jira CSV")
-    parser.add_argument("--csv", default=DEFAULT_CSV, help="Ruta al CSV de Jira")
-    parser.add_argument("--velocity", type=int, default=VELOCITY, help="Story points por semana proyectados")
-    parser.add_argument("--output", default=OUTPUT_FILE, help="Ruta de salida del PNG")
+    parser = argparse.ArgumentParser(
+        description="Genera velocity chart semanal desde Jira CSV")
+    parser.add_argument("--csv", default=DEFAULT_CSV,
+                        help="Ruta al CSV de Jira")
+    parser.add_argument("--velocity", type=int, default=VELOCITY,
+                        help="Story points por semana proyectados")
+    parser.add_argument("--output", default=OUTPUT_FILE,
+                        help="Ruta de salida del PNG")
     args = parser.parse_args()
 
     if not os.path.exists(args.csv):

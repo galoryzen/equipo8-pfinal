@@ -1,0 +1,25 @@
+# Local dev venvs (created by `make _venv-<svc>`)
+.venv
+.venv-*
+services/*/.venv
+services/*/.venv-*
+
+# Python build/test artifacts
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.ruff_cache
+.coverage
+.coverage.*
+htmlcov
+coverage.json
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+
+# Git (the build doesn't need history)
+.git
+.gitignore
