@@ -100,7 +100,27 @@ export default function PriceCard({
   const roomTotal = pricing
     ? Number(pricing.subtotal)
     : fallbackPricePerNight * Math.max(nights, 1);
+  const originalRoomTotal = (() => {
+    if (!pricing?.nights || pricing.nights.length === 0) return null;
+    const originalSum = pricing.nights.reduce((acc, n) => acc + Number(n.original_price ?? 0), 0);
+    const discountedSubtotal = Number(pricing.subtotal);
+    if (
+      !Number.isFinite(originalSum) ||
+      originalSum <= 0 ||
+      !Number.isFinite(discountedSubtotal) ||
+      originalSum <= discountedSubtotal
+    ) {
+      return null;
+    }
+    return originalSum;
+  })();
   const pricePerNight = pricing && nights > 0 ? roomTotal / nights : fallbackPricePerNight;
+  const originalPricePerNight =
+    originalRoomTotal != null && nights > 0 ? originalRoomTotal / nights : null;
+  const discountPercent =
+    originalRoomTotal != null && originalRoomTotal > 0
+      ? (1 - roomTotal / originalRoomTotal) * 100
+      : null;
   // Fees come from the server (shared.pricing constants) so this card matches
   // the cart and payment-page totals exactly. Pre-pricing fallback is 0; the
   // Reserve button is disabled while pricing loads anyway.
@@ -133,9 +153,24 @@ export default function PriceCard({
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: selectedRoom ? 0.5 : 2 }}>
         {pricePerNight > 0 ? (
           <>
-            <Typography variant="h5" fontWeight={700}>
-              ${pricePerNight.toLocaleString()}
-            </Typography>
+            {originalPricePerNight != null ? (
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                <Typography
+                  variant="body1"
+                  fontWeight={700}
+                  sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
+                >
+                  ${Math.round(originalPricePerNight).toLocaleString()}
+                </Typography>
+                <Typography variant="h5" fontWeight={800}>
+                  ${Math.round(pricePerNight).toLocaleString()}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography variant="h5" fontWeight={700}>
+                ${Math.round(pricePerNight).toLocaleString()}
+              </Typography>
+            )}
             <Typography variant="body2" color="text.secondary">
               {t('propertyDetail.priceCard.night')}
             </Typography>
@@ -258,30 +293,70 @@ export default function PriceCard({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                ${pricePerNight.toLocaleString()} x {nights} {t('propertyDetail.priceCard.night')}
+                ${Math.round(pricePerNight).toLocaleString()} x {nights}{' '}
+                {t('propertyDetail.priceCard.night')}
               </Typography>
-              <Typography variant="body2">${roomTotal.toLocaleString()}</Typography>
+              {originalRoomTotal != null ? (
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
+                  >
+                    ${Math.round(originalRoomTotal).toLocaleString()}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700}>
+                    ${Math.round(roomTotal).toLocaleString()}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2">${Math.round(roomTotal).toLocaleString()}</Typography>
+              )}
             </Box>
+            {discountPercent != null && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Discount
+                </Typography>
+                <Typography variant="body2" color="success.main" fontWeight={700}>
+                  {Math.round(discountPercent)}%
+                </Typography>
+              </Box>
+            )}
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
                 {t('propertyDetail.priceCard.taxes')}
               </Typography>
-              <Typography variant="body2">${taxes.toLocaleString()}</Typography>
+              <Typography variant="body2">${Math.round(taxes).toLocaleString()}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
                 {t('propertyDetail.priceCard.serviceFee')}
               </Typography>
-              <Typography variant="body2">${serviceFee.toLocaleString()}</Typography>
+              <Typography variant="body2">${Math.round(serviceFee).toLocaleString()}</Typography>
             </Box>
             <Divider sx={{ my: 0.5 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" fontWeight={700}>
                 {t('propertyDetail.priceCard.total')}
               </Typography>
-              <Typography variant="body2" fontWeight={700}>
-                ${total.toLocaleString()}
-              </Typography>
+              <Box sx={{ textAlign: 'right' }}>
+                {originalRoomTotal != null && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: 'block',
+                      color: 'text.disabled',
+                      textDecoration: 'line-through',
+                    }}
+                  >
+                    Price ${Math.round(originalRoomTotal + taxes + serviceFee).toLocaleString()}
+                  </Typography>
+                )}
+                <Typography variant="body2" fontWeight={700}>
+                  {originalRoomTotal != null ? 'Price with discount ' : ''}$
+                  {Math.round(total).toLocaleString()}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </>

@@ -44,6 +44,9 @@ function ConfirmationPageContent() {
   const checkout = searchParams.get('checkout') ?? '';
   const guests = Number(searchParams.get('guests') ?? '1');
   const unitPrice = searchParams.get('unit_price') ?? '0';
+  const discountPercentParam = searchParams.get('discount_percent') ?? '';
+  const originalSubtotalParam = searchParams.get('original_total_amount') ?? '';
+  const originalGrandTotalParam = searchParams.get('original_grand_total') ?? '';
   const currency = searchParams.get('currency') ?? 'USD';
   const guestName = searchParams.get('guest_name') ?? '';
   const guestEmail = searchParams.get('guest_email') ?? '';
@@ -64,6 +67,18 @@ function ConfirmationPageContent() {
     () => parseFloat((basePrice + taxes + SERVICE_FEE).toFixed(2)),
     [basePrice, taxes]
   );
+  const discountPercent = useMemo(() => {
+    const n = Number(discountPercentParam);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [discountPercentParam]);
+  const originalSubtotal = useMemo(() => {
+    const n = Number(originalSubtotalParam);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [originalSubtotalParam]);
+  const originalDisplayTotal = useMemo(() => {
+    const n = Number(originalGrandTotalParam);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [originalGrandTotalParam]);
 
   const currencySymbol = currency === 'USD' ? '$' : currency;
 
@@ -227,11 +242,37 @@ function ConfirmationPageContent() {
                     <Typography variant="body2" color="text.secondary">
                       Nightly rate (x{nights})
                     </Typography>
-                    <Typography variant="body2">
-                      {currencySymbol}
-                      {basePrice.toFixed(2)}
-                    </Typography>
+                    {originalSubtotal != null ? (
+                      <Stack direction="row" spacing={1.25} alignItems="baseline">
+                        <Typography
+                          variant="body2"
+                          sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
+                        >
+                          {currencySymbol}
+                          {originalSubtotal.toFixed(2)}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700}>
+                          {currencySymbol}
+                          {basePrice.toFixed(2)}
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Typography variant="body2">
+                        {currencySymbol}
+                        {basePrice.toFixed(2)}
+                      </Typography>
+                    )}
                   </Box>
+                  {discountPercent != null && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Discount
+                      </Typography>
+                      <Typography variant="body2" color="success.main" fontWeight={700}>
+                        {discountPercent.toFixed(0)}%
+                      </Typography>
+                    </Box>
+                  )}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2" color="text.secondary">
                       Service fees
@@ -260,10 +301,22 @@ function ConfirmationPageContent() {
                   <Typography variant="body1" fontWeight={700}>
                     Total Amount
                   </Typography>
-                  <Typography variant="h6" fontWeight={800} color="primary.main">
-                    {currencySymbol}
-                    {displayTotal.toFixed(2)}
-                  </Typography>
+                  <Box sx={{ textAlign: 'right' }}>
+                    {originalDisplayTotal != null && (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
+                      >
+                        Price {currencySymbol}
+                        {originalDisplayTotal.toFixed(2)}
+                      </Typography>
+                    )}
+                    <Typography variant="h6" fontWeight={800} color="primary.main">
+                      {originalDisplayTotal != null ? 'Price with discount ' : ''}
+                      {currencySymbol}
+                      {displayTotal.toFixed(2)}
+                    </Typography>
+                  </Box>
                 </Box>
               </CardContent>
             </Card>

@@ -74,11 +74,14 @@ class BookingDetailOut(BaseModel):
     checkout: date
     hold_expires_at: datetime | None
     total_amount: Decimal
+    original_total_amount: Decimal | None = None
+    discount_percent: Decimal | None = None
     currency_code: str
     property_id: UUID
     room_type_id: UUID
     rate_plan_id: UUID
     unit_price: Decimal
+    original_unit_price: Decimal | None = None
     policy_type_applied: str
     policy_hours_limit_applied: int | None
     policy_refund_percent_applied: int | None
@@ -88,6 +91,9 @@ class BookingDetailOut(BaseModel):
     taxes: Decimal = Decimal("0")
     service_fee: Decimal = Decimal("0")
     grand_total: Decimal = Decimal("0")
+    original_taxes: Decimal | None = None
+    original_service_fee: Decimal | None = None
+    original_grand_total: Decimal | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -109,13 +115,19 @@ class CartBookingOut(BaseModel):
     checkout: date
     hold_expires_at: datetime
     total_amount: Decimal
+    original_total_amount: Decimal | None = None
+    discount_percent: Decimal | None = None
     currency_code: str
     property_id: UUID
     room_type_id: UUID
     rate_plan_id: UUID
     unit_price: Decimal
+    original_unit_price: Decimal | None = None
     guests_count: int
     nights_breakdown: list[NightPriceOut] = Field(default_factory=list)
     taxes: Decimal = Decimal("0")
     service_fee: Decimal = Decimal("0")
     grand_total: Decimal = Decimal("0")
+    original_taxes: Decimal | None = None
+    original_service_fee: Decimal | None = None
+    original_grand_total: Decimal | None = None

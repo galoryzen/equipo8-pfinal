@@ -7,6 +7,7 @@ from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest, new_status_history_row
 from app.schemas.booking import BookingDetailOut, GuestOut, NightPriceOut
+from shared.pricing import compute_fees
 
 
 def _status_str(booking: Booking) -> str:
@@ -71,6 +72,27 @@ def _nights_breakdown_from_booking(booking: Booking) -> list[NightPriceOut]:
 
 
 def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
+    nights_breakdown = _nights_breakdown_from_booking(booking)
+    original_total: Decimal | None = None
+    if nights_breakdown:
+        originals = [n.original_price for n in nights_breakdown if n.original_price is not None]
+        if originals:
+            original_total = sum(originals, Decimal("0"))
+
+    discount_percent: Decimal | None = None
+    original_unit_price: Decimal | None = None
+    original_taxes: Decimal | None = None
+    original_service_fee: Decimal | None = None
+    original_grand_total: Decimal | None = None
+    if original_total is not None and original_total > 0 and booking.total_amount < original_total:
+        discount_percent = (Decimal("1") - (booking.total_amount / original_total)) * Decimal("100")
+        discount_percent = discount_percent.quantize(Decimal("0.01"))
+        nights = (booking.checkout - booking.checkin).days
+        if nights > 0:
+            original_unit_price = (original_total / Decimal(nights)).quantize(Decimal("0.01"))
+        original_taxes, original_service_fee = compute_fees(original_total)
+        original_grand_total = (original_total + original_taxes + original_service_fee).quantize(Decimal("0.01"))
+
     return BookingDetailOut(
         id=booking.id,
         status=_status_str(booking),
@@ -78,11 +100,14 @@ def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
         checkout=booking.checkout,
         hold_expires_at=booking.hold_expires_at,
         total_amount=booking.total_amount,
+        original_total_amount=original_total,
+        discount_percent=discount_percent,
         currency_code=booking.currency_code,
         property_id=booking.property_id,
         room_type_id=booking.room_type_id,
         rate_plan_id=booking.rate_plan_id,
         unit_price=booking.unit_price,
+        original_unit_price=original_unit_price,
         policy_type_applied=_policy_type_str(booking.policy_type_applied),
         policy_hours_limit_applied=booking.policy_hours_limit_applied,
         policy_refund_percent_applied=booking.policy_refund_percent_applied,
@@ -97,10 +122,13 @@ def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
             )
             for g in guests
         ],
-        nights_breakdown=_nights_breakdown_from_booking(booking),
+        nights_breakdown=nights_breakdown,
         taxes=booking.taxes,
         service_fee=booking.service_fee,
         grand_total=booking.total_amount + booking.taxes + booking.service_fee,
+        original_taxes=original_taxes,
+        original_service_fee=original_service_fee,
+        original_grand_total=original_grand_total,
         created_at=booking.created_at,
         updated_at=booking.updated_at,
     )
