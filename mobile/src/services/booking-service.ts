@@ -113,6 +113,19 @@ export class GuestsValidationError extends Error {
   }
 }
 
+/**
+ * Raised when the booking has already left CART state (typically because the
+ * user already kicked off a checkout). The guests are necessarily already
+ * persisted at this point, so the caller should treat this as a no-op rather
+ * than a failure and continue forward in the flow.
+ */
+export class GuestsAlreadySubmittedError extends Error {
+  constructor() {
+    super('Booking already submitted; guest details are locked');
+    this.name = 'GuestsAlreadySubmittedError';
+  }
+}
+
 export async function saveBookingGuests(
   bookingId: string,
   payload: SaveGuestsPayload,
@@ -124,9 +137,13 @@ export async function saveBookingGuests(
     );
     return resp.data;
   } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 422) {
-      const body = err.response?.data as { code?: string; message?: string } | undefined;
-      if (body?.code) {
+    if (axios.isAxiosError(err) && err.response) {
+      const status = err.response.status;
+      const body = err.response.data as { code?: string; message?: string } | undefined;
+      if (status === 409 && body?.code === 'INVALID_BOOKING_STATE') {
+        throw new GuestsAlreadySubmittedError();
+      }
+      if (status === 422 && body?.code) {
         throw new GuestsValidationError(body.code, body.message ?? 'Invalid guests payload');
       }
     }
@@ -153,10 +170,20 @@ export class CheckoutInvalidStateError extends Error {
   }
 }
 
-export async function checkoutBooking(bookingId: string): Promise<BookingDetail> {
+/**
+ * Triggers the async payment flow on the backend. When `forceDecline` is true,
+ * the booking service tags the PaymentRequested event so the mock PSP
+ * deterministically rejects the charge — the only way to exercise the failure
+ * path end-to-end without hitting a real gateway.
+ */
+export async function checkoutBooking(
+  bookingId: string,
+  forceDecline = false,
+): Promise<BookingDetail> {
   try {
     const resp = await api.post<BookingDetail>(
       `/v1/booking/bookings/${encodeURIComponent(bookingId)}/checkout`,
+      { force_decline: forceDecline },
     );
     return resp.data;
   } catch (err) {

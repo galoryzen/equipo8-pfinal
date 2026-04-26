@@ -38,6 +38,7 @@ class CheckoutBookingUseCase:
         *,
         booking_id: UUID,
         user_id: UUID,
+        force_decline: bool = False,
     ) -> BookingDetailOut:
         booking = await self._booking_repo.get_by_id_for_user(booking_id, user_id)
         if booking is None:
@@ -45,12 +46,22 @@ class CheckoutBookingUseCase:
 
         guests = await self._guest_repo.list_by_booking(booking.id)
 
-        # Idempotency by state: already in PENDING_PAYMENT, return current detail
-        # without creating another intent or publishing.
+        is_retry_after_failure = False
         if booking.status == BookingStatus.PENDING_PAYMENT:
-            return _to_detail(booking, guests)
-
-        if booking.status != BookingStatus.CART:
+            # PENDING_PAYMENT splits into two sub-states: an in-flight first
+            # attempt vs. a failed attempt awaiting retry. The history table
+            # is the discriminator — a `payment_failed:` row means the PSP
+            # already rejected and the user is now trying again with new card
+            # details. Without this branch, the original idempotent no-op
+            # would silently swallow the retry and the mobile polling would
+            # time out instead of resolving.
+            last_failure = await self._booking_repo.find_last_status_history_by_reason_prefix(
+                booking.id, "payment_failed:"
+            )
+            if last_failure is None:
+                return _to_detail(booking, guests)
+            is_retry_after_failure = True
+        elif booking.status != BookingStatus.CART:
             raise InvalidBookingStateError(
                 f"Cannot checkout booking in state {booking.status.value}"
             )
@@ -63,18 +74,33 @@ class CheckoutBookingUseCase:
 
         idempotency_key = str(uuid.uuid4())
 
-        booking.status = BookingStatus.PENDING_PAYMENT
-        booking.updated_at = now
-        await self._booking_repo.save(booking)
-        await self._booking_repo.add_status_history(
-            new_status_history_row(
-                booking.id,
-                from_status=BookingStatus.CART,
-                to_status=BookingStatus.PENDING_PAYMENT,
-                reason="checkout",
-                changed_by=user_id,
+        if is_retry_after_failure:
+            # Booking already in PENDING_PAYMENT; only refresh updated_at and
+            # log a retry marker so the timeline is auditable.
+            booking.updated_at = now
+            await self._booking_repo.save(booking)
+            await self._booking_repo.add_status_history(
+                new_status_history_row(
+                    booking.id,
+                    from_status=BookingStatus.PENDING_PAYMENT,
+                    to_status=BookingStatus.PENDING_PAYMENT,
+                    reason="checkout_retry",
+                    changed_by=user_id,
+                )
             )
-        )
+        else:
+            booking.status = BookingStatus.PENDING_PAYMENT
+            booking.updated_at = now
+            await self._booking_repo.save(booking)
+            await self._booking_repo.add_status_history(
+                new_status_history_row(
+                    booking.id,
+                    from_status=BookingStatus.CART,
+                    to_status=BookingStatus.PENDING_PAYMENT,
+                    reason="checkout",
+                    changed_by=user_id,
+                )
+            )
 
         # Charge the user the grand total (subtotal + taxes + service_fee) —
         # the same number the cart/checkout UI showed. ``booking.total_amount``
@@ -89,7 +115,7 @@ class CheckoutBookingUseCase:
                 amount=charge_amount,
                 currency=booking.currency_code,
                 idempotency_key=idempotency_key,
-                force_decline=False,
+                force_decline=force_decline,
             ).model_dump(mode="json"),
         )
         logger.info("Publishing payment requested event:")

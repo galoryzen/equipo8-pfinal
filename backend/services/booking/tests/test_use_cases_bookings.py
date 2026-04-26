@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -12,6 +12,7 @@ from app.domain.models import (
     Booking,
     BookingScope,
     BookingStatus,
+    BookingStatusHistory,
     CancellationPolicyType,
 )
 from app.schemas.booking import PaginatedBookingListOut
@@ -196,6 +197,7 @@ class TestGetBookingDetailUseCase:
         )
         repo = AsyncMock()
         repo.get_by_id_for_user.return_value = b
+        repo.find_last_status_history_by_reason_prefix.return_value = None
 
         uc = GetBookingDetailUseCase(repo)
         out = await uc.execute(booking_id=bid, user_id=uid)
@@ -208,6 +210,7 @@ class TestGetBookingDetailUseCase:
         assert out.rate_plan_id == b.rate_plan_id
         assert out.unit_price == b.unit_price
         assert out.total_amount == Decimal("100.00")
+        assert out.last_payment_attempt is None
 
     async def test_other_users_booking_raises_not_found(self):
         uid = UUID("a0000000-0000-0000-0000-000000000001")
@@ -219,3 +222,41 @@ class TestGetBookingDetailUseCase:
 
         with pytest.raises(BookingNotFoundError):
             await uc.execute(booking_id=bid, user_id=uid)
+
+    async def test_exposes_last_payment_attempt_when_history_has_failure(self):
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        bid = UUID("90000000-0000-0000-0000-000000000050")
+        b = _booking(
+            bid,
+            uid,
+            BookingStatus.PENDING_PAYMENT,
+            date(2026, 5, 1),
+            date(2026, 5, 4),
+        )
+        intent_id = uuid4()
+        occurred = datetime(2026, 4, 25, 18, 30, 0)
+        history_row = BookingStatusHistory(
+            id=uuid4(),
+            booking_id=bid,
+            from_status=BookingStatus.PENDING_PAYMENT,
+            to_status=BookingStatus.PENDING_PAYMENT,
+            reason=f"payment_failed:{intent_id}:mock_decline:card_declined",
+            changed_by=None,
+            changed_at=occurred,
+        )
+        repo = AsyncMock()
+        repo.get_by_id_for_user.return_value = b
+        repo.find_last_status_history_by_reason_prefix.return_value = history_row
+
+        uc = GetBookingDetailUseCase(repo)
+        out = await uc.execute(booking_id=bid, user_id=uid)
+
+        repo.find_last_status_history_by_reason_prefix.assert_awaited_once_with(
+            bid, "payment_failed:"
+        )
+        assert out.last_payment_attempt is not None
+        assert out.last_payment_attempt.outcome == "failed"
+        # Reason strips the "payment_failed:{intent}:" prefix and keeps the rest
+        # intact, including any colons in the upstream gateway reason.
+        assert out.last_payment_attempt.reason == "mock_decline:card_declined"
+        assert out.last_payment_attempt.occurred_at == occurred

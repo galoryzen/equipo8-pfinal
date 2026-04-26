@@ -109,6 +109,12 @@ class BookingRepository(ABC):
         """Return the most recent history row for this booking matching reason exactly, or None."""
 
     @abstractmethod
+    async def find_last_status_history_by_reason_prefix(
+        self, booking_id: UUID, reason_prefix: str
+    ) -> BookingStatusHistory | None:
+        """Return the most recent history row whose reason starts with prefix, or None."""
+
+    @abstractmethod
     async def get_property_stats(self, property_id: UUID) -> dict:
         """Return active booking count and current-month revenue for a property.
 

@@ -32,6 +32,11 @@ type CardErrors = {
 
 const EXPIRY_RE = /^(0[1-9]|1[0-2])\/(\d{2})$/;
 
+// Visa "decline" test card. Triggers force_decline on the backend so QA can
+// exercise the failure path against the mock PSP. Any other number behaves
+// normally and authorizes through the happy path.
+const FORCE_DECLINE_TEST_CARD = '4000000000000002';
+
 function formatCardNumber(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 19);
   return digits.replace(/(.{4})/g, '$1 ').trim();
@@ -111,8 +116,9 @@ export default function PaymentScreen() {
     setSubmitError(null);
     if (!validate()) return;
     setSubmitting(true);
+    const forceDecline = cardNumber.replace(/\s/g, '') === FORCE_DECLINE_TEST_CARD;
     try {
-      await checkoutBooking(cart.id);
+      await checkoutBooking(cart.id, forceDecline);
       polling.startPolling(cart.id);
     } catch (err) {
       if (err instanceof CheckoutInvalidStateError) {
@@ -176,7 +182,7 @@ export default function PaymentScreen() {
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>{t('booking.success.totalLabel')}</Text>
                 <Text style={styles.total}>
-                  {authorizedDetail.total_amount} {authorizedDetail.currency_code}
+                  {authorizedDetail.grand_total} {authorizedDetail.currency_code}
                 </Text>
               </View>
             </Card>
@@ -223,8 +229,11 @@ export default function PaymentScreen() {
   const isFailed = polling.status === 'failed';
   const isBusy = submitting || isProcessing;
   const payDisabled = countdown.expired || isBusy;
+  // grand_total = subtotal + taxes + service_fee. This is the figure shown on
+  // the checkout screen and the amount the backend actually charges. Showing
+  // total_amount (subtotal only) here would mismatch both.
   const payLabel = t('booking.payment.payButton', {
-    amount: cart.total_amount,
+    amount: cart.grand_total,
     currency: cart.currency_code,
   });
 
@@ -251,7 +260,7 @@ export default function PaymentScreen() {
               {cart.checkin} → {cart.checkout}
             </Text>
             <Text style={styles.total}>
-              {cart.total_amount} {cart.currency_code}
+              {cart.grand_total} {cart.currency_code}
             </Text>
           </Card>
 
