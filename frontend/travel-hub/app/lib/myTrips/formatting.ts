@@ -1,13 +1,10 @@
+import { formatDate } from '@/app/lib/date/formatDate';
 import type { BookingListItem } from '@/app/lib/types/booking';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
-import { format, isBefore, parseISO, startOfDay } from 'date-fns';
+import { isBefore, parseISO, startOfDay } from 'date-fns';
 
 export function formatTripDate(isoDate: string): string {
-  try {
-    return format(parseISO(isoDate), 'MMM d, yyyy');
-  } catch {
-    return isoDate;
-  }
+  return formatDate(isoDate);
 }
 
 /** Short reference for UI, e.g. Ref: #A1B2C3D4 */

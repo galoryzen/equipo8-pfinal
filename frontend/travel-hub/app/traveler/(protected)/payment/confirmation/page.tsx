@@ -5,6 +5,7 @@ import { Suspense, useMemo } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+import { formatDate } from '@/app/lib/date/formatDate';
 import BedroomParentOutlinedIcon from '@mui/icons-material/BedroomParentOutlined';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import CheckBoxOutlinedIcon from '@mui/icons-material/CheckBoxOutlined';
@@ -27,12 +28,6 @@ import Typography from '@mui/material/Typography';
 
 const SERVICE_FEE = 35;
 const TAX_RATE = 0.12;
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
 
 function ConfirmationPageContent() {
   const searchParams = useSearchParams();

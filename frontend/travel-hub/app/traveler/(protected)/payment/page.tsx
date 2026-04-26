@@ -13,6 +13,10 @@ import {
   getBookingDetail,
   saveBookingGuests,
 } from '@/app/lib/api/booking';
+import {
+  formatDate as formatDateLong,
+  formatDateShort as formatShortDate,
+} from '@/app/lib/date/formatDate';
 import type { CartBooking } from '@/app/lib/types/booking';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import Alert from '@mui/material/Alert';
@@ -56,18 +60,6 @@ function formatCountdown(ms: number): string {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function formatDateShort(dateStr: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
 }
 
 function formatExpiryInput(digits: string): string {
@@ -1102,8 +1094,8 @@ function PaymentPageContent() {
                     fontWeight={700}
                     sx={{ color: 'primary.main', mb: 0.5 }}
                   >
-                    📅 {checkin ? formatDateShort(checkin) : '—'} –{' '}
-                    {checkout ? formatDateShort(checkout) : '—'}
+                    📅 {checkin ? formatShortDate(checkin).toUpperCase() : '—'} –{' '}
+                    {checkout ? formatShortDate(checkout).toUpperCase() : '—'}
                   </Typography>
                   <Typography variant="body1" fontWeight={600}>
                     {roomName}
@@ -1172,7 +1164,7 @@ function PaymentPageContent() {
                     </Typography>
                     <Typography variant="caption" color="success.main">
                       {t('payment.freeCancellationUntil', {
-                        date: checkin ? formatDate(checkin) : '—',
+                        date: checkin ? formatDateLong(checkin) : '—',
                       })}
                     </Typography>
                   </Box>

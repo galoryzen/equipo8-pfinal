@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { formatDateShort } from '@/app/lib/date/formatDate';
 import UnauthorizedDashboard from '@/app/manager/components/UnauthorizedDashboard';
 import { useDashboardData } from '@/app/manager/hooks/useDashboardData';
 import { tokens } from '@/lib/theme/tokens';
@@ -76,12 +77,6 @@ function formatCurrency(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
-}
-
-function formatShortDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
 }
 
 function formatDateTime(value: string): string {
@@ -268,7 +263,7 @@ function BookingTrendChart({
               fontSize="11"
               fill={tokens.dashboard.mutedText}
             >
-              {formatShortDate(point.date)}
+              {formatDateShort(point.date)}
             </text>
           </g>
         ))}
@@ -587,8 +582,8 @@ export default function ManagerDashboardPage() {
                   <TableRow key={`${checkin.guest}-${checkin.checkIn}-${index}`}>
                     <TableCell>{checkin.guest}</TableCell>
                     <TableCell>{checkin.roomType}</TableCell>
-                    <TableCell>{formatShortDate(checkin.checkIn)}</TableCell>
-                    <TableCell>{formatShortDate(checkin.checkOut)}</TableCell>
+                    <TableCell>{formatDateShort(checkin.checkIn)}</TableCell>
+                    <TableCell>{formatDateShort(checkin.checkOut)}</TableCell>
                     <TableCell>
                       <Chip
                         label={getDashboardStatusLabel(checkin.status, t)}
