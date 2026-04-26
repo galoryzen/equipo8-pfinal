@@ -29,6 +29,7 @@ from app.schemas.booking import (
     BookingDetailOut,
     BookingListItemOut,
     CartBookingOut,
+    CheckoutBookingIn,
     CreateCartBookingIn,
     GuestOut,
     PaginatedBookingListOut,
@@ -134,10 +135,14 @@ async def reject_booking(
 )
 async def checkout_booking(
     booking_id: UUID,
+    body: CheckoutBookingIn | None = None,
     user_id: UUID = Depends(get_current_user_id),
     use_case: CheckoutBookingUseCase = Depends(get_checkout_booking_use_case),
 ):
-    return await use_case.execute(booking_id=booking_id, user_id=user_id)
+    force_decline = body.force_decline if body is not None else False
+    return await use_case.execute(
+        booking_id=booking_id, user_id=user_id, force_decline=force_decline
+    )
 
 
 @router.put("/bookings/{booking_id}/guests", response_model=list[GuestOut])

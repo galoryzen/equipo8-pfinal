@@ -9,6 +9,7 @@ import { useCountdown } from '@src/features/booking/use-countdown';
 import { buildBreakdownFromNights, calculateNights } from '@src/features/catalog/rate-breakdown';
 import { useAuth } from '@src/services/auth-context';
 import {
+  GuestsAlreadySubmittedError,
   GuestsValidationError,
   listBookingGuests,
   saveBookingGuests,
@@ -208,6 +209,13 @@ export default function CheckoutScreen() {
       await saveBookingGuests(cart.id, payload);
       router.push('/booking/payment');
     } catch (err) {
+      // The user came back from the payment screen (booking already in
+      // PENDING_PAYMENT). Guests are already persisted on the server, so we
+      // skip the save and just resume the flow on the payment screen.
+      if (err instanceof GuestsAlreadySubmittedError) {
+        router.push('/booking/payment');
+        return;
+      }
       if (err instanceof GuestsValidationError) {
         const key =
           err.code === 'GUESTS_COUNT_MISMATCH'

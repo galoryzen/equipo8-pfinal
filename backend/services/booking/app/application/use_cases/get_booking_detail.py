@@ -5,9 +5,22 @@ from uuid import UUID
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
-from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest, new_status_history_row
-from app.schemas.booking import BookingDetailOut, GuestOut, NightPriceOut
+from app.domain.models import (
+    Booking,
+    BookingStatus,
+    BookingStatusHistory,
+    CancellationPolicyType,
+    Guest,
+    new_status_history_row,
+)
+from app.schemas.booking import BookingDetailOut, GuestOut, LastPaymentAttemptOut, NightPriceOut
 from shared.pricing import compute_fees
+
+# Reason format written by HandlePaymentResultUseCase on PAYMENT_FAILED:
+#   payment_failed:{intent_id}:{reason}
+# We expose the latest such row in the booking detail so the mobile checkout
+# polling can distinguish a real decline from a slow event bus.
+_PAYMENT_FAILED_REASON_PREFIX = "payment_failed:"
 
 
 def _status_str(booking: Booking) -> str:
@@ -51,7 +64,31 @@ class GetBookingDetailUseCase:
         if self._guest_repo is not None:
             guests = await self._guest_repo.list_by_booking(booking.id)
 
-        return _to_detail(booking, guests)
+        last_payment_attempt = await self._load_last_payment_attempt(booking.id)
+        return _to_detail(booking, guests, last_payment_attempt)
+
+    async def _load_last_payment_attempt(
+        self, booking_id: UUID
+    ) -> LastPaymentAttemptOut | None:
+        row = await self._repo.find_last_status_history_by_reason_prefix(
+            booking_id, _PAYMENT_FAILED_REASON_PREFIX
+        )
+        if row is None:
+            return None
+        return _failed_attempt_from_history(row)
+
+
+def _failed_attempt_from_history(row: BookingStatusHistory) -> LastPaymentAttemptOut:
+    raw = row.reason or ""
+    # Strip "payment_failed:{intent}:" so the UI sees just the gateway reason.
+    # split(maxsplit=2) keeps any colons inside the reason itself intact.
+    parts = raw.split(":", 2)
+    reason = parts[2] if len(parts) >= 3 else raw
+    return LastPaymentAttemptOut(
+        outcome="failed",
+        reason=reason,
+        occurred_at=row.changed_at,
+    )
 
 
 def _nights_breakdown_from_booking(booking: Booking) -> list[NightPriceOut]:
@@ -71,7 +108,11 @@ def _nights_breakdown_from_booking(booking: Booking) -> list[NightPriceOut]:
     return out
 
 
-def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
+def _to_detail(
+    booking: Booking,
+    guests: list[Guest],
+    last_payment_attempt: LastPaymentAttemptOut | None = None,
+) -> BookingDetailOut:
     nights_breakdown = _nights_breakdown_from_booking(booking)
     original_total: Decimal | None = None
     if nights_breakdown:
@@ -129,6 +170,7 @@ def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
         original_taxes=original_taxes,
         original_service_fee=original_service_fee,
         original_grand_total=original_grand_total,
+        last_payment_attempt=last_payment_attempt,
         created_at=booking.created_at,
         updated_at=booking.updated_at,
     )

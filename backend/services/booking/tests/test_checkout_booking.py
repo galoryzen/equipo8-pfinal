@@ -107,12 +107,35 @@ async def test_happy_path_saves_pending_payment_and_publishes():
 
 
 @pytest.mark.asyncio
+async def test_force_decline_propagates_to_payment_event():
+    user_id = uuid4()
+    future = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)
+    b = _booking(user_id=user_id, hold_expires_at=future, guests_count=1)
+
+    booking_repo = AsyncMock()
+    booking_repo.get_by_id_for_user = AsyncMock(return_value=b)
+    guest_repo = AsyncMock()
+    guest_repo.list_by_booking = AsyncMock(return_value=[_guest(is_primary=True)])
+    events = AsyncMock()
+
+    uc = CheckoutBookingUseCase(booking_repo, guest_repo, events)
+    await uc.execute(booking_id=b.id, user_id=user_id, force_decline=True)
+
+    events.publish.assert_awaited_once()
+    payload = events.publish.call_args[0][0].payload
+    assert payload["force_decline"] is True
+
+
+@pytest.mark.asyncio
 async def test_idempotent_when_already_pending_payment():
     user_id = uuid4()
     b = _booking(user_id=user_id, status=BookingStatus.PENDING_PAYMENT)
 
     booking_repo = AsyncMock()
     booking_repo.get_by_id_for_user = AsyncMock(return_value=b)
+    # No prior failure on file → first attempt is still in flight, the
+    # idempotent no-op should kick in and we should NOT republish.
+    booking_repo.find_last_status_history_by_reason_prefix = AsyncMock(return_value=None)
     guest_repo = AsyncMock()
     guest_repo.list_by_booking = AsyncMock(return_value=[])
     events = AsyncMock()
@@ -123,6 +146,53 @@ async def test_idempotent_when_already_pending_payment():
     booking_repo.save.assert_not_awaited()
     events.publish.assert_not_awaited()
     assert result.status == "PENDING_PAYMENT"
+
+
+@pytest.mark.asyncio
+async def test_retry_after_failure_republishes_payment_event():
+    """User retries after a declined payment — book stays PENDING_PAYMENT but
+    we MUST republish PaymentRequested with a fresh idempotency key so the
+    PSP sees a new attempt. Without this, the mobile polling would never see
+    a state transition and would time out."""
+    from app.domain.models import BookingStatusHistory
+
+    user_id = uuid4()
+    b = _booking(user_id=user_id, status=BookingStatus.PENDING_PAYMENT, guests_count=1)
+
+    prior_failure = BookingStatusHistory(
+        id=uuid4(),
+        booking_id=b.id,
+        from_status=BookingStatus.PENDING_PAYMENT,
+        to_status=BookingStatus.PENDING_PAYMENT,
+        reason=f"payment_failed:{uuid4()}:card_declined",
+        changed_by=None,
+        changed_at=datetime.now(UTC).replace(tzinfo=None) - timedelta(seconds=5),
+    )
+
+    booking_repo = AsyncMock()
+    booking_repo.get_by_id_for_user = AsyncMock(return_value=b)
+    booking_repo.find_last_status_history_by_reason_prefix = AsyncMock(return_value=prior_failure)
+    guest_repo = AsyncMock()
+    guest_repo.list_by_booking = AsyncMock(return_value=[_guest(is_primary=True)])
+    events = AsyncMock()
+
+    uc = CheckoutBookingUseCase(booking_repo, guest_repo, events)
+    await uc.execute(booking_id=b.id, user_id=user_id, force_decline=False)
+
+    # Booking stays PENDING_PAYMENT; we don't re-transition state.
+    assert b.status == BookingStatus.PENDING_PAYMENT
+    booking_repo.save.assert_awaited_once()
+    # A retry marker is recorded for traceability.
+    booking_repo.add_status_history.assert_awaited_once()
+    history_row = booking_repo.add_status_history.await_args.args[0]
+    assert history_row.reason == "checkout_retry"
+    assert history_row.from_status == BookingStatus.PENDING_PAYMENT
+    assert history_row.to_status == BookingStatus.PENDING_PAYMENT
+    # Most importantly: a fresh PaymentRequested goes out.
+    events.publish.assert_awaited_once()
+    payload = events.publish.call_args[0][0].payload
+    assert payload["force_decline"] is False
+    assert "idempotency_key" in payload
 
 
 @pytest.mark.asyncio

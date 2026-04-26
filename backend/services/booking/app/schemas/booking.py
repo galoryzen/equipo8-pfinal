@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -13,6 +14,19 @@ class CreateCartBookingIn(BaseModel):
     room_type_id: UUID
     rate_plan_id: UUID
     guests_count: int = Field(default=1, ge=1, le=20)
+
+
+class CheckoutBookingIn(BaseModel):
+    # Mock-only switch to drive the PSP into a deterministic decline. Plumbed
+    # straight through to the PaymentRequested event payload; ignored by any
+    # real gateway.
+    force_decline: bool = False
+
+
+class LastPaymentAttemptOut(BaseModel):
+    outcome: Literal["failed"]
+    reason: str
+    occurred_at: datetime
 
 
 class NightPriceOut(BaseModel):
@@ -94,6 +108,7 @@ class BookingDetailOut(BaseModel):
     original_taxes: Decimal | None = None
     original_service_fee: Decimal | None = None
     original_grand_total: Decimal | None = None
+    last_payment_attempt: LastPaymentAttemptOut | None = None
     created_at: datetime
     updated_at: datetime
 

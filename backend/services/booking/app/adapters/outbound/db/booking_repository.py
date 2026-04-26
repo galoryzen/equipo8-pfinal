@@ -226,6 +226,21 @@ class SqlAlchemyBookingRepository(BookingRepository):
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
+    async def find_last_status_history_by_reason_prefix(
+        self, booking_id: UUID, reason_prefix: str
+    ) -> BookingStatusHistory | None:
+        stmt = (
+            select(BookingStatusHistory)
+            .where(
+                BookingStatusHistory.booking_id == booking_id,
+                BookingStatusHistory.reason.like(f"{reason_prefix}%"),
+            )
+            .order_by(BookingStatusHistory.changed_at.desc())
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().one_or_none()
+
     async def get_property_stats(self, property_id: UUID) -> dict:
         today = datetime.now(UTC).date()
         now = datetime.now(UTC).replace(tzinfo=None)
