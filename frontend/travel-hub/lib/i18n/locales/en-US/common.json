@@ -268,6 +268,7 @@
     "upcoming": "Upcoming",
     "past": "Past",
     "noUpcoming": "No upcoming trips in this tab.",
+    "endOfTrips": "Fin de tus viajes {{tab}}.",
     "noPast": "No past trips yet.",
     "card": {
       "locationNotAvailable": "Location not available",
