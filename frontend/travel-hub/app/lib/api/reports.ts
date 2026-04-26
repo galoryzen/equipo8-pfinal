@@ -136,6 +136,7 @@ export async function getRevenueReport(params: {
   from: string;
   to: string;
   hotelId: string;
+  mode?: 'partner' | 'admin';
 }): Promise<RevenueReportData> {
   const hotelId = params.hotelId?.trim();
   if (!hotelId) {
@@ -148,12 +149,14 @@ export async function getRevenueReport(params: {
 
   let response: Response;
   try {
-    response = await fetch(
-      `${API_URL}/api/v1/booking/dashboard/revenue-report?${query.toString()}`,
-      {
-        credentials: 'include',
-      }
-    );
+    const mode = params.mode ?? 'partner';
+    const path =
+      mode === 'admin'
+        ? '/api/v1/booking/dashboard/admin/revenue-report'
+        : '/api/v1/booking/dashboard/revenue-report';
+    response = await fetch(`${API_URL}${path}?${query.toString()}`, {
+      credentials: 'include',
+    });
   } catch {
     throw new RevenueReportFetchError('Error loading revenue report', { kind: 'network' });
   }

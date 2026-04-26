@@ -21,17 +21,23 @@ export interface CartBooking {
   checkout: string;
   hold_expires_at: string;
   total_amount: string;
+  original_total_amount?: string | null;
+  discount_percent?: string | null;
   currency_code: string;
   property_id: string;
   room_type_id: string;
   rate_plan_id: string;
   unit_price: string;
+  original_unit_price?: string | null;
   nights_breakdown: NightPrice[];
   /** Server-computed fees persisted on the cart row for consistent display. */
   taxes: string;
   service_fee: string;
   /** Subtotal + taxes + service_fee — what the user is charged. */
   grand_total: string;
+  original_taxes?: string | null;
+  original_service_fee?: string | null;
+  original_grand_total?: string | null;
 }
 
 export interface BookingListItem {
@@ -85,11 +91,14 @@ export interface BookingDetail {
   checkout: string;
   hold_expires_at: string | null;
   total_amount: string;
+  original_total_amount?: string | null;
+  discount_percent?: string | null;
   currency_code: string;
   property_id: string;
   room_type_id: string;
   rate_plan_id: string;
   unit_price: string;
+  original_unit_price?: string | null;
   policy_type_applied: string;
   policy_hours_limit_applied: number | null;
   policy_refund_percent_applied: number | null;
@@ -97,6 +106,9 @@ export interface BookingDetail {
   taxes?: string;
   service_fee?: string;
   grand_total?: string;
+  original_taxes?: string | null;
+  original_service_fee?: string | null;
+  original_grand_total?: string | null;
   created_at: string;
   updated_at: string;
 }

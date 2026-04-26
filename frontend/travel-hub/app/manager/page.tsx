@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import { getAdminProperties } from '@/app/lib/api/adminProperties';
+import { getMe } from '@/app/lib/api/auth';
 import UnauthorizedDashboard from '@/app/manager/components/UnauthorizedDashboard';
-import { useDashboardData } from '@/app/manager/hooks/useDashboardData';
+import { useAdminDashboardData, useDashboardData } from '@/app/manager/hooks/useDashboardData';
 import { tokens } from '@/lib/theme/tokens';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -333,8 +335,49 @@ export default function ManagerDashboardPage() {
   const [range, setRange] = useState<DateRangeOption>('last7');
   const dateRangeLabel = t('manager.hotels.roomTypeManage.dashboard.filters.dateRange');
 
+  const [role, setRole] = useState<string | null>(null);
+  const isAdmin = role === 'ADMIN';
+  const [properties, setProperties] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedHotelId, setSelectedHotelId] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    getMe()
+      .then((me) => {
+        if (!cancelled) setRole(me?.role ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setRole(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (role === null) return; // wait until we know the role
+    if (!isAdmin) return;
+    let cancelled = false;
+    getAdminProperties()
+      .then((items) => {
+        if (cancelled) return;
+        setProperties(items);
+        if (items.length > 0) {
+          setSelectedHotelId((prev) => prev || items[0].id);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setProperties([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [role, isAdmin]);
+
   const { from, to } = useMemo(() => calculateDateRange(range), [range]);
-  const { data, loading, error } = useDashboardData(from, to);
+  const partnerState = useDashboardData(from, to);
+  const adminState = useAdminDashboardData(from, to, selectedHotelId);
+  const { data, loading, error } = isAdmin ? adminState : partnerState;
   const isUnauthorized = error?.kind === 'unauthorized' || error?.status === 403;
 
   if (isUnauthorized) {
@@ -385,27 +428,47 @@ export default function ManagerDashboardPage() {
           </Typography>
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 190, bgcolor: tokens.surface.paper }}>
-          <InputLabel id="manager-dashboard-date-range-label">{dateRangeLabel}</InputLabel>
-          <Select
-            labelId="manager-dashboard-date-range-label"
-            id="manager-dashboard-date-range"
-            value={range}
-            label={dateRangeLabel}
-            onChange={(event) => setRange(event.target.value as DateRangeOption)}
-            inputProps={{ 'aria-label': dateRangeLabel }}
-          >
-            <MenuItem value="last7">
-              {t('manager.hotels.roomTypeManage.dashboard.filters.last7days')}
-            </MenuItem>
-            <MenuItem value="last30">
-              {t('manager.hotels.roomTypeManage.dashboard.filters.last30days')}
-            </MenuItem>
-            <MenuItem value="currentMonth">
-              {t('manager.hotels.roomTypeManage.dashboard.filters.currentMonth')}
-            </MenuItem>
-          </Select>
-        </FormControl>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center">
+          {isAdmin && (
+            <FormControl size="small" sx={{ minWidth: 220, bgcolor: tokens.surface.paper }}>
+              <InputLabel id="admin-dashboard-property-label">Property</InputLabel>
+              <Select
+                labelId="admin-dashboard-property-label"
+                value={selectedHotelId}
+                label="Property"
+                onChange={(event) => setSelectedHotelId(event.target.value)}
+                disabled={properties.length === 0}
+              >
+                {properties.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {p.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+          <FormControl size="small" sx={{ minWidth: 190, bgcolor: tokens.surface.paper }}>
+            <InputLabel id="manager-dashboard-date-range-label">{dateRangeLabel}</InputLabel>
+            <Select
+              labelId="manager-dashboard-date-range-label"
+              id="manager-dashboard-date-range"
+              value={range}
+              label={dateRangeLabel}
+              onChange={(event) => setRange(event.target.value as DateRangeOption)}
+              inputProps={{ 'aria-label': dateRangeLabel }}
+            >
+              <MenuItem value="last7">
+                {t('manager.hotels.roomTypeManage.dashboard.filters.last7days')}
+              </MenuItem>
+              <MenuItem value="last30">
+                {t('manager.hotels.roomTypeManage.dashboard.filters.last30days')}
+              </MenuItem>
+              <MenuItem value="currentMonth">
+                {t('manager.hotels.roomTypeManage.dashboard.filters.currentMonth')}
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
       </Stack>
 
       {error && !isUnauthorized && (

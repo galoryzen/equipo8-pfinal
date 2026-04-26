@@ -9,11 +9,14 @@ const CART: CartBooking = {
   checkout: '2026-06-04',
   hold_expires_at: '2026-06-01T12:15:00',
   total_amount: '300.00',
+  original_total_amount: null,
+  discount_percent: null,
   currency_code: 'USD',
   property_id: 'p1',
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
   unit_price: '100.00',
+  original_unit_price: null,
   nights_breakdown: [
     { day: '2026-06-01', price: '100.00', original_price: null },
     { day: '2026-06-02', price: '100.00', original_price: null },
@@ -22,6 +25,9 @@ const CART: CartBooking = {
   taxes: '30.00',
   service_fee: '15.00',
   grand_total: '345.00',
+  original_taxes: null,
+  original_service_fee: null,
+  original_grand_total: null,
 };
 
 const PAYLOAD: CreateCartBookingPayload = {

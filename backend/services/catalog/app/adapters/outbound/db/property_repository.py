@@ -506,3 +506,14 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         )
         rows = (await self._session.execute(stmt)).all()
         return {row[0]: row[1] for row in rows}
+
+    async def list_admin_properties(self, *, limit: int = 500) -> list[dict]:
+        stmt = (
+            select(Property.hotel_id, Property.name)
+            .where(Property.status == PropertyStatus.ACTIVE)
+            .order_by(Property.name.asc(), Property.hotel_id)
+            .limit(limit)
+        )
+        rows = (await self._session.execute(stmt)).all()
+        # Booking dashboard aggregates by catalog.property.hotel_id, not property.id.
+        return [{"id": hid, "name": name} for hid, name in rows]

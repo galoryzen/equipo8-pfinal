@@ -173,3 +173,40 @@ export async function getHotelDashboardMetrics(from: string, to: string): Promis
 
   return normalizeDashboardData(payload as DashboardResponse);
 }
+
+export async function getAdminDashboardMetrics(params: {
+  from: string;
+  to: string;
+  hotelId: string;
+}): Promise<DashboardData> {
+  const hotelId = params.hotelId?.trim();
+  if (!hotelId) {
+    throw new DashboardFetchError('Missing hotel_id for admin dashboard', { kind: 'server' });
+  }
+  const query = new URLSearchParams({ from: params.from, to: params.to, hotel_id: hotelId });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/v1/booking/dashboard/metrics?${query.toString()}`, {
+      credentials: 'include',
+    });
+  } catch {
+    throw new DashboardFetchError('Error loading dashboard', { kind: 'network' });
+  }
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: unknown } | null;
+    const detail =
+      body && typeof body.detail === 'string' ? body.detail : `Error ${response.status}`;
+    const kind = response.status === 403 ? 'unauthorized' : 'server';
+    throw new DashboardFetchError(detail, { status: response.status, kind });
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new DashboardFetchError('Error loading dashboard', { kind: 'network' });
+  }
+
+  return normalizeDashboardData(payload as DashboardResponse);
+}

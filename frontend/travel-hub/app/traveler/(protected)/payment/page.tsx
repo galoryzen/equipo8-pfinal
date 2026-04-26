@@ -100,19 +100,73 @@ interface AdditionalGuest {
 function pricingFromBooking(b: {
   nights_breakdown?: { day: string; price: string; original_price?: string | null }[] | null;
   total_amount?: string;
+  original_total_amount?: string | null;
+  discount_percent?: string | null;
   taxes?: string;
   service_fee?: string;
   grand_total?: string;
-}): { subtotal: number; taxes: number; serviceFee: number; total: number } | null {
+  original_taxes?: string | null;
+  original_service_fee?: string | null;
+  original_grand_total?: string | null;
+}): {
+  subtotal: number;
+  originalSubtotal: number | null;
+  discountPercent: number | null;
+  taxes: number;
+  serviceFee: number;
+  total: number;
+  originalTaxes: number | null;
+  originalServiceFee: number | null;
+  originalTotal: number | null;
+} | null {
   if (!b.nights_breakdown || b.nights_breakdown.length === 0) {
     return null;
   }
   const subtotal =
     Number(b.total_amount ?? 0) || b.nights_breakdown.reduce((acc, n) => acc + Number(n.price), 0);
+  const originalSubtotalRaw =
+    b.original_total_amount != null
+      ? Number(b.original_total_amount)
+      : b.nights_breakdown.reduce((acc, n) => acc + Number(n.original_price ?? 0), 0);
+  const originalSubtotal =
+    Number.isFinite(originalSubtotalRaw) && originalSubtotalRaw > subtotal
+      ? originalSubtotalRaw
+      : null;
+  const discountPercentRaw = b.discount_percent != null ? Number(b.discount_percent) : null;
+  const discountPercent =
+    discountPercentRaw != null && Number.isFinite(discountPercentRaw) && discountPercentRaw > 0
+      ? discountPercentRaw
+      : null;
   const taxes = Number(b.taxes ?? 0);
   const serviceFee = Number(b.service_fee ?? 0);
   const total = Number(b.grand_total ?? 0) || subtotal + taxes + serviceFee;
-  return { subtotal, taxes, serviceFee, total };
+
+  const originalTaxesRaw = b.original_taxes != null ? Number(b.original_taxes) : null;
+  const originalServiceFeeRaw =
+    b.original_service_fee != null ? Number(b.original_service_fee) : null;
+  const originalTotalRaw = b.original_grand_total != null ? Number(b.original_grand_total) : null;
+  const originalTaxes =
+    originalTaxesRaw != null && Number.isFinite(originalTaxesRaw) ? originalTaxesRaw : null;
+  const originalServiceFee =
+    originalServiceFeeRaw != null && Number.isFinite(originalServiceFeeRaw)
+      ? originalServiceFeeRaw
+      : null;
+  const originalTotal =
+    originalTotalRaw != null && Number.isFinite(originalTotalRaw) && originalTotalRaw > total
+      ? originalTotalRaw
+      : null;
+
+  return {
+    subtotal,
+    originalSubtotal,
+    discountPercent,
+    taxes,
+    serviceFee,
+    total,
+    originalTaxes,
+    originalServiceFee,
+    originalTotal,
+  };
 }
 
 function PaymentPageContent() {
@@ -145,9 +199,14 @@ function PaymentPageContent() {
   // consistent total from search → detail → payment.
   const [cartPricing, setCartPricing] = useState<{
     subtotal: number;
+    originalSubtotal: number | null;
+    discountPercent: number | null;
     taxes: number;
     serviceFee: number;
     total: number;
+    originalTaxes: number | null;
+    originalServiceFee: number | null;
+    originalTotal: number | null;
   } | null>(null);
 
   // Guest details form
@@ -198,9 +257,12 @@ function PaymentPageContent() {
   );
 
   const basePrice = cartPricing?.subtotal ?? 0;
+  const originalBasePrice = cartPricing?.originalSubtotal ?? null;
+  const discountPercent = cartPricing?.discountPercent ?? null;
   const taxes = cartPricing?.taxes ?? 0;
   const serverServiceFee = cartPricing?.serviceFee ?? 0;
   const displayTotal = cartPricing?.total ?? 0;
+  const originalDisplayTotal = cartPricing?.originalTotal ?? null;
   const avgUnitPrice = useMemo(() => {
     if (!cartPricing || nights <= 0) return 0;
     return cartPricing.subtotal / nights;
@@ -211,7 +273,17 @@ function PaymentPageContent() {
       id: string,
       expAt: string,
       status: string,
-      pricing?: { subtotal: number; taxes: number; serviceFee: number; total: number } | null
+      pricing?: {
+        subtotal: number;
+        originalSubtotal: number | null;
+        discountPercent: number | null;
+        taxes: number;
+        serviceFee: number;
+        total: number;
+        originalTaxes: number | null;
+        originalServiceFee: number | null;
+        originalTotal: number | null;
+      } | null
     ) => {
       if (status === 'EXPIRED') {
         setExpired(true);
@@ -442,6 +514,15 @@ function PaymentPageContent() {
             checkout,
             guests: String(guests),
             unit_price: avgUnitPrice.toFixed(2),
+            ...(cartPricing?.discountPercent != null && {
+              discount_percent: cartPricing.discountPercent.toFixed(2),
+            }),
+            ...(cartPricing?.originalSubtotal != null && {
+              original_total_amount: cartPricing.originalSubtotal.toFixed(2),
+            }),
+            ...(cartPricing?.originalTotal != null && {
+              original_grand_total: cartPricing.originalTotal.toFixed(2),
+            }),
             currency,
             guest_name: `${firstName.trim()} ${lastName.trim()}`,
             guest_email: email.trim(),
@@ -473,6 +554,9 @@ function PaymentPageContent() {
     email,
     phone,
     additionalGuests,
+    cartPricing?.discountPercent,
+    cartPricing?.originalSubtotal,
+    cartPricing?.originalTotal,
     router,
     t,
     cardNumber,
@@ -1184,8 +1268,32 @@ function PaymentPageContent() {
                     <Typography variant="body2" color="text.secondary">
                       {t('payment.basePrice', { count: nights })}
                     </Typography>
-                    <Typography variant="body2">${basePrice.toFixed(2)}</Typography>
+                    {originalBasePrice != null ? (
+                      <Stack direction="row" spacing={1.25} alignItems="baseline">
+                        <Typography
+                          variant="body2"
+                          sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
+                        >
+                          ${originalBasePrice.toFixed(2)}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700}>
+                          ${basePrice.toFixed(2)}
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Typography variant="body2">${basePrice.toFixed(2)}</Typography>
+                    )}
                   </Box>
+                  {discountPercent != null && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Discount
+                      </Typography>
+                      <Typography variant="body2" color="success.main" fontWeight={700}>
+                        {discountPercent.toFixed(0)}%
+                      </Typography>
+                    </Box>
+                  )}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2" color="text.secondary">
                       {t('payment.taxesAndFees')}
@@ -1215,9 +1323,20 @@ function PaymentPageContent() {
                       })}
                     </Typography>
                   </Box>
-                  <Typography variant="h5" fontWeight={800} color="primary.main">
-                    ${displayTotal.toFixed(2)}
-                  </Typography>
+                  <Box sx={{ textAlign: 'right' }}>
+                    {originalDisplayTotal != null && (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
+                      >
+                        Price ${originalDisplayTotal.toFixed(2)}
+                      </Typography>
+                    )}
+                    <Typography variant="h5" fontWeight={800} color="primary.main">
+                      {originalDisplayTotal != null ? 'Price with discount ' : ''}$
+                      {displayTotal.toFixed(2)}
+                    </Typography>
+                  </Box>
                 </Box>
 
                 <Divider sx={{ my: 2 }} />

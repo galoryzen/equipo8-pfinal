@@ -1,6 +1,6 @@
 import * as dashboardApi from '@/app/lib/api/dashboard';
 import { EMPTY_DASHBOARD_DATA } from '@/app/lib/api/dashboard';
-import { useDashboardData } from '@/app/manager/hooks/useDashboardData';
+import { useAdminDashboardData, useDashboardData } from '@/app/manager/hooks/useDashboardData';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -129,6 +129,65 @@ describe('useDashboardData', () => {
     expect(result.current.error).toEqual({
       message: 'Error loading dashboard',
       kind: 'network',
+    });
+  });
+});
+
+describe('useAdminDashboardData', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns empty data and does not fetch when hotelId is missing', async () => {
+    const { result } = renderHook(() => useAdminDashboardData('2026-01-01', '2026-01-31', ''));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.data).toEqual(EMPTY_DASHBOARD_DATA);
+    expect(result.current.error).toBeNull();
+    expect(vi.mocked(global.fetch).mock.calls.length).toBe(0);
+  });
+
+  it('fetches admin dashboard metrics when hotelId exists', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({}),
+    } as Response);
+
+    const { result } = renderHook(() =>
+      useAdminDashboardData('2026-02-01', '2026-02-28', 'hotel-1')
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
+    expect(url).toContain('/api/v1/booking/dashboard/metrics?');
+    expect(url).toContain('from=2026-02-01');
+    expect(url).toContain('to=2026-02-28');
+    expect(url).toContain('hotel_id=hotel-1');
+    expect(result.current.data).toEqual(EMPTY_DASHBOARD_DATA);
+  });
+
+  it('sets server-kind error when getAdminDashboardMetrics rejects with DashboardFetchError', async () => {
+    vi.spyOn(dashboardApi, 'getAdminDashboardMetrics').mockRejectedValueOnce(
+      new dashboardApi.DashboardFetchError('Missing hotel_id for admin dashboard', {
+        kind: 'server',
+      })
+    );
+
+    const { result } = renderHook(() => useAdminDashboardData('2026-03-01', '2026-03-31', '   '));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.data).toEqual(EMPTY_DASHBOARD_DATA);
+    expect(result.current.error).toEqual({
+      message: 'Missing hotel_id for admin dashboard',
+      kind: 'server',
+      status: undefined,
     });
   });
 });

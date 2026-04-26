@@ -204,7 +204,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                 startIcon={<LogoutIcon />}
                 sx={{
                   bgcolor: th.brand.accentOrange,
-                  color: '#111827',
+                  color: 'white',
                   fontWeight: 700,
                   textTransform: 'none',
                   borderRadius: '10px',

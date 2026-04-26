@@ -60,3 +60,7 @@ class PropertyRepository(ABC):
     @abstractmethod
     async def get_min_prices(self, property_ids: list[UUID], checkin: date, checkout: date) -> dict[UUID, Decimal]:
         """Min nightly price per property for the date range."""
+
+    @abstractmethod
+    async def list_admin_properties(self, *, limit: int = 500) -> list[dict]:
+        """Admin list of hotel ids for dropdowns (hotel_id + name)."""

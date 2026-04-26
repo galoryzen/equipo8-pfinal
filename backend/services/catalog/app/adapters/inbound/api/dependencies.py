@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from uuid import UUID
 
 import httpx
-from fastapi import Cookie, Header
+from fastapi import Cookie, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.cache.redis_cache import RedisCache
@@ -18,12 +18,13 @@ from app.application.use_cases.create_inventory_hold import CreateInventoryHoldU
 from app.application.use_cases.create_promotion import CreatePromotionUseCase
 from app.application.use_cases.delete_promotion import DeletePromotionUseCase
 from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
-from app.application.use_cases.get_rate_plan_cancellation_policy import GetRatePlanCancellationPolicyUseCase
-from app.application.use_cases.get_room_type_promotion import GetRoomTypePromotionUseCase
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_hotel_metrics import GetHotelMetricsUseCase
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
+from app.application.use_cases.get_rate_plan_cancellation_policy import GetRatePlanCancellationPolicyUseCase
 from app.application.use_cases.get_rate_plan_pricing import GetRatePlanPricingUseCase
+from app.application.use_cases.get_room_type_promotion import GetRoomTypePromotionUseCase
+from app.application.use_cases.list_admin_properties import ListAdminPropertiesUseCase
 from app.application.use_cases.list_amenities import ListAmenitiesUseCase
 from app.application.use_cases.list_manager_hotels import ListManagerHotelsUseCase
 from app.application.use_cases.list_room_types_availability import ListRoomTypesAvailabilityUseCase
@@ -93,6 +94,47 @@ def get_detail_use_case(session: AsyncSession, cache: CachePort) -> GetPropertyD
 def get_list_amenities_use_case(session: AsyncSession) -> ListAmenitiesUseCase:
     repo = get_property_repository(session)
     return ListAmenitiesUseCase(repo)
+
+
+def get_admin_user_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> str:
+    from shared.jwt import decode_access_token
+
+    raw: str | None = None
+    if authorization and authorization.lower().startswith("bearer "):
+        raw = authorization[7:].strip()
+    elif access_token:
+        raw = access_token
+
+    if not raw:
+        raise UnauthorizedError("Authentication required")
+
+    payload = decode_access_token(raw)
+    if not payload:
+        raise UnauthorizedError("Invalid or expired token")
+
+    role = payload.get("role")
+    if not role:
+        raise UnauthorizedError("Token does not contain role claim")
+    return str(role)
+
+
+def require_admin_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> None:
+    decoded_role = get_admin_user_role(authorization=authorization, access_token=access_token)
+    if decoded_role != "ADMIN":
+        raise UnauthorizedError("Admin role required")
+
+
+def get_list_admin_properties_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> ListAdminPropertiesUseCase:
+    repo = get_property_repository(session)
+    return ListAdminPropertiesUseCase(repo)
 
 
 def get_rate_plan_repository(session: AsyncSession) -> SqlAlchemyRatePlanRepository:
