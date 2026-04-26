@@ -43,6 +43,20 @@
   "booking": {
     "confirm_error": "Could not confirm your booking. Please try again."
   },
+  "tripDetail": {
+    "backButton": "Back to My Trips",
+    "breadcrumb": "My Trips",
+    "reservationDetails": "Reservation details",
+    "checkOut": "Check-out",
+    "total": "Total",
+    "room": "Room",
+    "costDetails": "Cost details",
+    "subtotal": "Subtotal",
+    "taxes": "Taxes",
+    "serviceFee": "Service fee",
+    "totalDue": "Total due",
+    "nightlyBreakdown": "Nightly breakdown"
+  },
   "recommended": {
     "title": "Recommended for You",
     "subtitle": "Properties based on your recent activity",
