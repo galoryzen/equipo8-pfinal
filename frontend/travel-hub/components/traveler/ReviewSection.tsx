@@ -45,7 +45,7 @@ export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: Review
           </>
         ) : (
           <Typography variant="h6" fontWeight={600} color="text.secondary" component="p">
-            {t('propertyDetail.reviews.noReviewsYet')}
+            {t('propertyDetail.noRanking')}
           </Typography>
         )}
       </Box>

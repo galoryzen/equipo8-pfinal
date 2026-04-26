@@ -73,6 +73,11 @@
   "a11y": {
     "loading": "Loading"
   },
+  "common": {
+    "tryAgain": "Try again",
+    "cancel": "Cancel",
+    "unknownError": "Unknown error"
+  },
   "footer": {
     "support": {
       "title": "Support",

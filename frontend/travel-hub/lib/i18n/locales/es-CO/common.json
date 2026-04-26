@@ -73,6 +73,11 @@
   "a11y": {
     "loading": "Cargando"
   },
+  "common": {
+    "tryAgain": "Intentar de nuevo",
+    "cancel": "Cancelar",
+    "unknownError": "Error desconocido"
+  },
   "footer": {
     "support": {
       "title": "Soporte",
