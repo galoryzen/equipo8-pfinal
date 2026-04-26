@@ -28,7 +28,7 @@ async def get_dashboard_metrics(
     date_to: date = Query(..., alias="to"),
     user_info: dict = Depends(get_current_user_info),
     use_case: GetHotelDashboardMetricsUseCase = Depends(get_hotel_dashboard_metrics_use_case),
-    hotel_id: UUID | None = Query(..., alias="hotel_id"),
+    hotel_id: UUID | None = Query(None, alias="hotel_id"),
 ):
     role = user_info.get("role")
     uid = user_info.get("user_id")
@@ -47,16 +47,13 @@ async def get_dashboard_metrics(
             detail="hotel_id es requerido para este rol",
         )
 
-    hotel_uuid = hotel_id if role == "ADMIN" else UUID(user_info.get("hotel_id"))
-
-    if not hotel_uuid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="hotel_id es requerido",
-        )
-
     try:
-        payload = await use_case.execute(date_from=date_from, date_to=date_to, hotel_id=hotel_uuid)
+        payload = await use_case.execute(
+            user_id=UUID(uid),
+            date_from=date_from,
+            date_to=date_to,
+            hotel_id=hotel_id if role == "ADMIN" else None,
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     return DashboardMetricsResponse.model_validate(payload)
