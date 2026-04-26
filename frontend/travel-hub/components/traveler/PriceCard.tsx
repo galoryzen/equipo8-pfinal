@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { RateUnavailableError, getRatePlanPricing } from '@/app/lib/api/catalog';
 import { useAuthAction } from '@/app/lib/hooks/useAuthAction';
-import type { PropertyDetail } from '@/app/lib/types/catalog';
+import type { PropertyDetail, RatePlanPricing } from '@/app/lib/types/catalog';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -52,13 +53,63 @@ export default function PriceCard({
   const [guests, setGuests] = useState(2);
 
   const nights = nightsBetween(checkin, checkout);
-  const pricePerNight = selectedRoom?.unitPrice ?? minPrice ?? 0;
-  const roomTotal = pricePerNight * Math.max(nights, 1);
-  const cleaningFee = Math.round(pricePerNight * 0.1);
-  const serviceFee = Math.round(pricePerNight * 0.05);
-  const total = roomTotal + cleaningFee + serviceFee;
 
-  const canReserve = Boolean(selectedRoom);
+  // Authoritative per-night pricing from the catalog. Refetched whenever the
+  // user changes dates or picks a different rate plan. ``selectedRoom.unitPrice``
+  // is only a fallback while pricing is loading or for the initial header.
+  const [pricingResult, setPricingResult] = useState<{
+    key: string | null;
+    data: RatePlanPricing | null;
+    error: string | null;
+  }>({ key: null, data: null, error: null });
+  const ratePlanId = selectedRoom?.ratePlanId;
+
+  const pricingQueryKey =
+    ratePlanId && checkin && checkout && nights > 0 ? `${ratePlanId}:${checkin}:${checkout}` : null;
+
+  useEffect(() => {
+    if (!pricingQueryKey || !ratePlanId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = await getRatePlanPricing(ratePlanId, checkin, checkout);
+        if (cancelled) return;
+        setPricingResult({ key: pricingQueryKey, data, error: null });
+      } catch (err) {
+        if (cancelled) return;
+        const message =
+          err instanceof RateUnavailableError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Could not load pricing';
+        setPricingResult({ key: pricingQueryKey, data: null, error: message });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pricingQueryKey, ratePlanId, checkin, checkout]);
+
+  const pricing =
+    pricingQueryKey && pricingResult.key === pricingQueryKey ? pricingResult.data : null;
+  const pricingError =
+    pricingQueryKey && pricingResult.key === pricingQueryKey ? pricingResult.error : null;
+
+  const fallbackPricePerNight = selectedRoom?.unitPrice ?? minPrice ?? 0;
+  const roomTotal = pricing
+    ? Number(pricing.subtotal)
+    : fallbackPricePerNight * Math.max(nights, 1);
+  const pricePerNight = pricing && nights > 0 ? roomTotal / nights : fallbackPricePerNight;
+  // Fees come from the server (shared.pricing constants) so this card matches
+  // the cart and payment-page totals exactly. Pre-pricing fallback is 0; the
+  // Reserve button is disabled while pricing loads anyway.
+  const taxes = pricing ? Number(pricing.taxes) : 0;
+  const serviceFee = pricing ? Number(pricing.service_fee) : 0;
+  const total = pricing ? Number(pricing.total) : roomTotal;
+
+  const canReserve =
+    Boolean(selectedRoom) && Boolean(pricingQueryKey) && !pricingError && !!pricing;
 
   function handleCheckinChange(val: string) {
     setCheckin(val);
@@ -86,12 +137,12 @@ export default function PriceCard({
               ${pricePerNight.toLocaleString()}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              / night
+              {t('propertyDetail.priceCard.night')}
             </Typography>
           </>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            Price not available
+            {t('propertyDetail.priceCard.priceNotAvailable')}
           </Typography>
         )}
       </Box>
@@ -166,20 +217,27 @@ export default function PriceCard({
             checkin,
             checkout,
             guests: String(guests),
-            unit_price: String(selectedRoom.unitPrice),
-            currency: 'USD',
+            currency: pricing?.currency_code ?? 'USD',
             property_name: property.name,
             room_name: selectedRoom.roomName,
           });
           requireAuth(`/traveler/booking?${params.toString()}`);
         }}
       >
-        {authStatus === 'unauthenticated' ? 'Sign in to Reserve' : 'Reserve'}
+        {authStatus === 'unauthenticated'
+          ? t('propertyDetail.priceCard.signInToReserve')
+          : t('propertyDetail.priceCard.reserve')}
       </Button>
 
       {!selectedRoom && (
         <Alert severity="info" sx={{ mb: 1, py: 0.5 }}>
-          Select a room below to continue
+          {t('propertyDetail.priceCard.selectRoom')}
+        </Alert>
+      )}
+
+      {pricingError && (
+        <Alert severity="error" sx={{ mb: 1, py: 0.5 }}>
+          {pricingError}
         </Alert>
       )}
 
@@ -188,36 +246,38 @@ export default function PriceCard({
         color="text.secondary"
         sx={{ display: 'block', textAlign: 'center', mb: 2 }}
       >
-        You won&apos;t be charged yet
+        {t('propertyDetail.priceCard.youWillNotBeChargedYet')}
       </Typography>
 
-      {/* Price breakdown */}
+      {/* Price breakdown — single line; ``pricePerNight`` is the average derived
+          from the authoritative breakdown, so the math always reconciles to the
+          total even when nightly rates vary. */}
       {pricePerNight > 0 && nights > 0 && (
         <>
           <Divider sx={{ mb: 1.5 }} />
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                ${pricePerNight.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}
+                ${pricePerNight.toLocaleString()} x {nights} {t('propertyDetail.priceCard.night')}
               </Typography>
               <Typography variant="body2">${roomTotal.toLocaleString()}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                Cleaning fee
+                {t('propertyDetail.priceCard.taxes')}
               </Typography>
-              <Typography variant="body2">${cleaningFee.toLocaleString()}</Typography>
+              <Typography variant="body2">${taxes.toLocaleString()}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                Service fee
+                {t('propertyDetail.priceCard.serviceFee')}
               </Typography>
               <Typography variant="body2">${serviceFee.toLocaleString()}</Typography>
             </Box>
             <Divider sx={{ my: 0.5 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" fontWeight={700}>
-                Total
+                {t('propertyDetail.priceCard.total')}
               </Typography>
               <Typography variant="body2" fontWeight={700}>
                 ${total.toLocaleString()}
@@ -256,7 +316,7 @@ export default function PriceCard({
         </Box>
         <Box>
           <Typography variant="caption" color="text.secondary">
-            Hosted by
+            {t('propertyDetail.priceCard.hostedBy')}
           </Typography>
           <Typography variant="body2" fontWeight={600}>
             {property.name}

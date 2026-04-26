@@ -6,6 +6,7 @@ import type {
   PaginatedResponse,
   PropertyDetailResponse,
   PropertySummary,
+  RatePlanPricing,
   SearchFilters,
 } from '@src/types/catalog';
 
@@ -75,6 +76,18 @@ export async function getPropertyDetail(
   const { data } = await api.get<PropertyDetailResponse>(
     `/v1/catalog/properties/${id}`,
     { params },
+  );
+  return data;
+}
+
+export async function getRatePlanPricing(
+  ratePlanId: string,
+  checkin: string,
+  checkout: string,
+): Promise<RatePlanPricing> {
+  const { data } = await api.get<RatePlanPricing>(
+    `/v1/catalog/rate-plans/${encodeURIComponent(ratePlanId)}/pricing`,
+    { params: { checkin, checkout } },
   );
   return data;
 }

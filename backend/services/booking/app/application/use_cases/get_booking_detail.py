@@ -1,11 +1,12 @@
 from datetime import UTC, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from app.application.exceptions import BookingNotFoundError
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
 from app.domain.models import Booking, BookingStatus, CancellationPolicyType, Guest, new_status_history_row
-from app.schemas.booking import BookingDetailOut, GuestOut
+from app.schemas.booking import BookingDetailOut, GuestOut, NightPriceOut
 
 
 def _status_str(booking: Booking) -> str:
@@ -52,6 +53,23 @@ class GetBookingDetailUseCase:
         return _to_detail(booking, guests)
 
 
+def _nights_breakdown_from_booking(booking: Booking) -> list[NightPriceOut]:
+    raw = booking.nightly_breakdown
+    if not raw:
+        return []
+    out: list[NightPriceOut] = []
+    for entry in raw:
+        original_raw = entry.get("original_price")
+        out.append(
+            NightPriceOut(
+                day=entry["day"],
+                price=Decimal(entry["price"]),
+                original_price=Decimal(original_raw) if original_raw is not None else None,
+            )
+        )
+    return out
+
+
 def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
     return BookingDetailOut(
         id=booking.id,
@@ -79,6 +97,10 @@ def _to_detail(booking: Booking, guests: list[Guest]) -> BookingDetailOut:
             )
             for g in guests
         ],
+        nights_breakdown=_nights_breakdown_from_booking(booking),
+        taxes=booking.taxes,
+        service_fee=booking.service_fee,
+        grand_total=booking.total_amount + booking.taxes + booking.service_fee,
         created_at=booking.created_at,
         updated_at=booking.updated_at,
     )

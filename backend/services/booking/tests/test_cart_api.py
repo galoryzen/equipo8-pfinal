@@ -31,7 +31,6 @@ _VALID_PAYLOAD = {
     "property_id": str(PROPERTY_ID),
     "room_type_id": str(ROOM_TYPE_ID),
     "rate_plan_id": str(RATE_PLAN_ID),
-    "unit_price": "100.00",
 }
 
 
@@ -42,13 +41,18 @@ def _sample_cart() -> CartBookingOut:
         checkin=date(2026, 6, 1),
         checkout=date(2026, 6, 4),
         hold_expires_at=datetime(2026, 6, 1, 12, 15, 0),
-        total_amount=Decimal("300.00"),
+        total_amount=Decimal("350.00"),
         currency_code="USD",
         property_id=PROPERTY_ID,
         room_type_id=ROOM_TYPE_ID,
         rate_plan_id=RATE_PLAN_ID,
-        unit_price=Decimal("100.00"),
+        unit_price=Decimal("116.67"),
         guests_count=1,
+        nights_breakdown=[
+            {"day": "2026-06-01", "price": "100.00", "original_price": None},
+            {"day": "2026-06-02", "price": "150.00", "original_price": None},
+            {"day": "2026-06-03", "price": "100.00", "original_price": None},
+        ],
     )
 
 
@@ -89,6 +93,10 @@ class TestCreateCartEndpoint:
         assert body["status"] == "CART"
         assert body["id"] == str(BOOKING_ID)
         assert body["property_id"] == str(PROPERTY_ID)
+        # Variable per-night pricing: response carries the breakdown.
+        assert len(body["nights_breakdown"]) == 3
+        assert body["nights_breakdown"][1]["price"] == "150.00"
+        assert body["total_amount"] == "350.00"
         mock_uc.execute.assert_awaited_once()
 
     def test_returns_409_when_inventory_unavailable(self, client_authenticated):

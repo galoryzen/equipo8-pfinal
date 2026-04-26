@@ -73,6 +73,14 @@ const CART: CartBooking = {
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
   unit_price: '100.00',
+  nights_breakdown: [
+    { day: '2026-06-01', price: '100.00', original_price: null },
+    { day: '2026-06-02', price: '150.00', original_price: null },
+    { day: '2026-06-03', price: '85.00', original_price: null },
+  ],
+  taxes: '33.50',
+  service_fee: '16.75',
+  grand_total: '385.25',
 };
 
 describe('TravelerPaymentPage', () => {

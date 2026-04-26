@@ -54,3 +54,21 @@ class CheckoutGuestsIncompleteError(Exception):
     checkout semantics are simpler: we only need a single 422 surface for the
     front to display.
     """
+
+
+class RatePlanNotFoundError(Exception):
+    """Raised when Catalog does not recognize the rate plan (404)."""
+
+
+class RateUnavailableError(Exception):
+    """Raised when one or more nights in the range have no rate (Catalog 409).
+
+    A missing day means the rate plan is not bookable for that range.
+    """
+
+
+class RateCurrencyMismatchError(Exception):
+    """Raised when the client-declared currency does not match the rate plan's currency.
+
+    Also raised when Catalog returns 422 for mixed currencies in the calendar window.
+    """

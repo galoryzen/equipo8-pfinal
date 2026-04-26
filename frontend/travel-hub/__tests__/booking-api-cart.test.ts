@@ -14,6 +14,14 @@ const CART: CartBooking = {
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
   unit_price: '100.00',
+  nights_breakdown: [
+    { day: '2026-06-01', price: '100.00', original_price: null },
+    { day: '2026-06-02', price: '100.00', original_price: null },
+    { day: '2026-06-03', price: '100.00', original_price: null },
+  ],
+  taxes: '30.00',
+  service_fee: '15.00',
+  grand_total: '345.00',
 };
 
 const PAYLOAD: CreateCartBookingPayload = {
@@ -23,7 +31,6 @@ const PAYLOAD: CreateCartBookingPayload = {
   property_id: 'p1',
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
-  unit_price: '100.00',
 };
 
 describe('createCartBooking', () => {

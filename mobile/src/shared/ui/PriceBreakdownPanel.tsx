@@ -1,23 +1,19 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@src/theme';
 import { formatCurrency } from '@src/shared/utils/format-currency';
-import { buildBreakdown } from '@src/features/catalog/rate-breakdown';
+import type { RateBreakdown } from '@src/features/catalog/rate-breakdown';
 import type { SelectedRoomInfo } from './RoomTypeCard';
 
 interface PriceBreakdownPanelProps {
   selection: SelectedRoomInfo;
-  nights: number;
+  /** Pre-built breakdown from authoritative pricing (per-night + server fees). */
+  breakdown: RateBreakdown;
 }
 
-export function PriceBreakdownPanel({ selection, nights }: PriceBreakdownPanelProps) {
+export function PriceBreakdownPanel({ selection, breakdown }: PriceBreakdownPanelProps) {
   const { t } = useTranslation();
-
-  const breakdown = useMemo(
-    () => buildBreakdown(selection.unitPrice, nights, selection.originalUnitPrice),
-    [selection.unitPrice, selection.originalUnitPrice, nights],
-  );
 
   const currency = selection.currencyCode;
   const hasPromo = breakdown.discount != null && breakdown.discount > 0;
@@ -40,7 +36,9 @@ export function PriceBreakdownPanel({ selection, nights }: PriceBreakdownPanelPr
 
   return (
     <View style={styles.container} accessibilityRole="summary">
-      {/* Base price × nights */}
+      {/* Avg price × nights. When per-night pricing varies, ``firstLinePrice``
+          is the average derived from the authoritative breakdown — the total
+          still matches the sum of per-night rates exactly. */}
       <View style={styles.row}>
         <Text style={styles.rowLabel}>
           {t('rooms.breakdown.perNightLine', {
@@ -64,7 +62,7 @@ export function PriceBreakdownPanel({ selection, nights }: PriceBreakdownPanelPr
         </View>
       )}
 
-      {/* Subtotal after discount (only when promo — otherwise first line already is the subtotal) */}
+      {/* Subtotal after discount (only when promo) */}
       {hasPromo && (
         <>
           <View style={styles.subtleDivider} />

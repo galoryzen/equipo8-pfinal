@@ -10,6 +10,10 @@ class GuestRepository(ABC):
         """Return guests for a booking, ordered by primary first then full_name."""
 
     @abstractmethod
+    async def get_primary_names_for_bookings(self, booking_ids: list[UUID]) -> dict[UUID, str]:
+        """Return a map booking_id -> primary guest full_name (best-effort)."""
+
+    @abstractmethod
     async def replace_guests_for_booking(
         self, booking_id: UUID, guests: list[Guest]
     ) -> list[Guest]:

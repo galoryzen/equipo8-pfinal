@@ -14,6 +14,9 @@ from app.application.exceptions import (
     InventoryUnavailableError,
     PrimaryGuestMissingContactError,
     PrimaryGuestRequiredError,
+    RateCurrencyMismatchError,
+    RatePlanNotFoundError,
+    RateUnavailableError,
 )
 
 logger = logging.getLogger(__name__)
@@ -131,6 +134,39 @@ def register_error_handlers(app: FastAPI) -> None:
             content={
                 "code": "CATALOG_UNAVAILABLE",
                 "message": "Inventory service is temporarily unavailable. Please try again.",
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(RatePlanNotFoundError)
+    async def rate_plan_not_found_handler(request: Request, exc: RatePlanNotFoundError):
+        return JSONResponse(
+            status_code=404,
+            content={
+                "code": "RATE_PLAN_NOT_FOUND",
+                "message": "Rate plan not found",
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(RateUnavailableError)
+    async def rate_unavailable_handler(request: Request, exc: RateUnavailableError):
+        return JSONResponse(
+            status_code=409,
+            content={
+                "code": "RATE_UNAVAILABLE",
+                "message": "Rates are not available for the selected dates. Please pick different dates.",
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(RateCurrencyMismatchError)
+    async def rate_currency_mismatch_handler(request: Request, exc: RateCurrencyMismatchError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "RATE_CURRENCY_MISMATCH",
+                "message": "Currency does not match the rate plan",
                 "trace_id": request.headers.get("x-request-id"),
             },
         )

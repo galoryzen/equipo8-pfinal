@@ -140,10 +140,6 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <IconButton sx={{ color: 'text.secondary' }} aria-label={t('nav.notifications')}>
-                <NotificationsNoneIcon />
-              </IconButton>
-
               <Box
                 onClick={(e) => setMenuAnchor(e.currentTarget)}
                 sx={{

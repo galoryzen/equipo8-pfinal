@@ -15,6 +15,7 @@ from app.adapters.outbound.http.catalog_client import HttpCatalogClient
 from app.adapters.outbound.jwt_token import JwtTokenAdapter
 from app.application.exceptions import InvalidTokenError
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
+from app.application.ports.outbound.catalog_pricing_port import CatalogPricingPort
 from app.application.ports.outbound.token_port import TokenPort
 from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
 from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
@@ -78,6 +79,10 @@ def get_catalog_client() -> CatalogInventoryPort:
     return HttpCatalogClient(_get_catalog_http_client(), base_url=settings.CATALOG_SERVICE_URL)
 
 
+def get_catalog_pricing_client() -> CatalogPricingPort:
+    return HttpCatalogClient(_get_catalog_http_client(), base_url=settings.CATALOG_SERVICE_URL)
+
+
 def get_current_user_id(
     authorization: str | None = Header(None),
     access_token: str | None = Cookie(default=None),
@@ -108,9 +113,10 @@ def get_current_user_id(
 def get_create_cart_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
     catalog: CatalogInventoryPort = Depends(get_catalog_client),
+    pricing: CatalogPricingPort = Depends(get_catalog_pricing_client),
 ) -> CreateCartBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return CreateCartBookingUseCase(repo, catalog)
+    return CreateCartBookingUseCase(repo, catalog, pricing)
 
 
 def get_cancel_cart_booking_use_case(
@@ -124,7 +130,10 @@ def get_list_my_bookings_use_case(
     session: AsyncSession = Depends(get_db_session),
 ) -> ListMyBookingsUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return ListMyBookingsUseCase(repo, catalog_http_client=_get_catalog_http_client())
+    guest_repo = SqlAlchemyGuestRepository(session)
+    return ListMyBookingsUseCase(
+        repo, guest_repo, catalog_http_client=_get_catalog_http_client()
+    )
 
 def get_booking_detail_use_case(
     session: AsyncSession = Depends(get_db_session),

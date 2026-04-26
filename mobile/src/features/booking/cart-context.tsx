@@ -16,6 +16,7 @@ import { useAuth } from '@src/services/auth-context';
 import {
   ActiveCartConflictError,
   InventoryUnavailableError,
+  RateUnavailableError,
   cancelCartBooking,
   createCartBooking,
   getBookingDetail,
@@ -265,4 +266,4 @@ export function useCart(): CartState {
   return ctx;
 }
 
-export { ActiveCartConflictError, InventoryUnavailableError };
+export { ActiveCartConflictError, InventoryUnavailableError, RateUnavailableError };

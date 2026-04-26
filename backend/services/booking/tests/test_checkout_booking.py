@@ -44,6 +44,8 @@ def _booking(
         inventory_released=False,
         confirmation_payment_intent_id=None,
         guests_count=guests_count,
+        taxes=Decimal("15.00"),
+        service_fee=Decimal("7.50"),
         created_at=now,
         updated_at=now,
     )
@@ -92,7 +94,10 @@ async def test_happy_path_saves_pending_payment_and_publishes():
     payload = envelope.payload
     assert payload["booking_id"] == str(b.id)
     assert payload["user_id"] == str(user_id)
-    assert payload["amount"] == "150.00"
+    # Grand total: subtotal $150 + taxes $15 + service fee $7.50 = $172.50.
+    # Charging only the subtotal would silently undercharge by the fees and
+    # mismatch the amount the cart/checkout UI showed the user.
+    assert payload["amount"] == "172.50"
     assert payload["currency"] == "USD"
     assert payload["force_decline"] is False
     assert "idempotency_key" in payload and len(payload["idempotency_key"]) > 0

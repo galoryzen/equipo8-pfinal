@@ -1,3 +1,9 @@
+export interface NightPrice {
+  day: string;
+  price: string;
+  original_price?: string | null;
+}
+
 export interface CreateCartBookingPayload {
   checkin: string;
   checkout: string;
@@ -5,7 +11,6 @@ export interface CreateCartBookingPayload {
   property_id: string;
   room_type_id: string;
   rate_plan_id: string;
-  unit_price: string;
   guests_count?: number;
 }
 
@@ -21,6 +26,12 @@ export interface CartBooking {
   room_type_id: string;
   rate_plan_id: string;
   unit_price: string;
+  nights_breakdown: NightPrice[];
+  /** Server-computed fees persisted on the cart row for consistent display. */
+  taxes: string;
+  service_fee: string;
+  /** Subtotal + taxes + service_fee — what the user is charged. */
+  grand_total: string;
 }
 
 export interface BookingListItem {
@@ -82,6 +93,10 @@ export interface BookingDetail {
   policy_type_applied: string;
   policy_hours_limit_applied: number | null;
   policy_refund_percent_applied: number | null;
+  nights_breakdown?: NightPrice[];
+  taxes?: string;
+  service_fee?: string;
+  grand_total?: string;
   created_at: string;
   updated_at: string;
 }
