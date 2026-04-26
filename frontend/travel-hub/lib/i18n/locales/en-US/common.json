@@ -43,6 +43,20 @@
   "booking": {
     "confirm_error": "Could not confirm your booking. Please try again."
   },
+  "tripDetail": {
+    "backButton": "Back to My Trips",
+    "breadcrumb": "My Trips",
+    "reservationDetails": "Reservation details",
+    "checkOut": "Check-out",
+    "total": "Total",
+    "room": "Room",
+    "costDetails": "Cost details",
+    "subtotal": "Subtotal",
+    "taxes": "Taxes",
+    "serviceFee": "Service fee",
+    "totalDue": "Total due",
+    "nightlyBreakdown": "Nightly breakdown"
+  },
   "recommended": {
     "title": "Recommended for You",
     "subtitle": "Properties based on your recent activity",
@@ -58,6 +72,11 @@
   },
   "a11y": {
     "loading": "Loading"
+  },
+  "common": {
+    "tryAgain": "Try again",
+    "cancel": "Cancel",
+    "unknownError": "Unknown error"
   },
   "footer": {
     "support": {
@@ -127,7 +146,36 @@
     "parking": "Parking"
   },
   "propertyDetail": {
-    "availableRooms": "Available Rooms"
+    "availableRooms": "Available Rooms",
+    "about": "About this property",
+    "popularAmenities": "Popular amenities",
+    "breakfast": "Breakfast included",
+    "location": "Location",
+    "noRanking": "Rating not available",
+    "amenities": {
+      "pool": "Pool included",
+      "freeCancellation": "Free cancellation",
+      "list": "Show all {{count}} amenities",
+      "allAmenities": "All amenities"
+    },
+    "reviews": {
+      "guestName": "Guest",
+      "reviewsCount_one": "{{count}} review(s)",
+      "noReviewsYet": "No reviews yet",
+      "showAllReviews": "Show all {{count}} reviews"
+    },
+    "priceCard": {
+      "night": " / night",
+      "priceNotAvailable": "Price not available",
+      "taxes": "Taxes",
+      "serviceFee": "Service fee",
+      "total": "Total",
+      "hostedBy": "Hosted by",
+      "selectRoom": "Select a room below to continue",
+      "signInToReserve": "Sign in to Reserve",
+      "youWillNotBeChargedYet": "You won't be charged yet",
+      "reserve": "Reserve"
+    }
   },
   "roomCard": {
     "bookingInProgress": "Booking in progress",
@@ -216,6 +264,25 @@
     "processingFeature3Title": "24/7 Support",
     "processingFeature3Desc": "We're here if you need help",
     "processingWarning": "Please do not refresh the page or click back to avoid duplicate charges."
+  },
+  "myTrips": {
+    "title": "My Trips",
+    "subtitle": "Manage your upcoming and past reservations.",
+    "backToSearch": "Back to search",
+    "findHotel": "Find a hotel",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "noUpcoming": "No upcoming trips in this tab.",
+    "endOfTrips": "Fin de tus viajes {{tab}}.",
+    "noPast": "No past trips yet.",
+    "card": {
+      "locationNotAvailable": "Location not available",
+      "noImage": "No image",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "viewDetails": "View details",
+      "hotelName": "Hotel"
+    }
   },
   "manager": {
     "pendingConfirmation": "Pending confirmation",
@@ -415,47 +482,8 @@
       },
       "common": {
         "cancel": "Cancel",
-        "unknownError": "Unknown error"
-      }
-    },
-    "reports": {
-      "title": "Revenue Reports",
-      "subtitle": "Generate revenue performance reports by period.",
-      "filters": {
-        "hotel": "Hotel",
-        "myHotel": "My hotel",
-        "from": "From",
-        "to": "To"
-      },
-      "kpis": {
-        "totalRevenue": "Total Revenue",
-        "adr": "ADR",
-        "occupancyRate": "Occupancy Rate"
-      },
-      "sections": {
-        "trends": "Revenue trends",
-        "byRoomType": "Revenue by room type"
-      },
-      "chart": {
-        "revenue": "Revenue",
-        "occupancy": "Occupancy"
-      },
-      "table": {
-        "roomType": "Room Type",
-        "unitsSold": "Units Sold",
-        "avgRate": "Avg Rate",
-        "totalRevenue": "Total Revenue",
-        "totalAggregatedRevenue": "Total Aggregated Revenue"
-      },
-      "actions": {
-        "generate": "Generate report",
-        "download": "Download report"
-      },
-      "states": {
-        "initial": "Select a hotel and date range, then click Generate report.",
-        "empty": "No report data available for the selected period.",
-        "error": "We could not load the report. Please try again.",
-        "hotelNotResolved": "We could not resolve your hotel profile. Please sign in again."
+        "unknownError": "Unknown error",
+        "tryAgain": "Try again"
       }
     },
     "reports": {

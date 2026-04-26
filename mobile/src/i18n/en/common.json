@@ -82,6 +82,8 @@
       "perNightLine_one": "{{price}} × {{count}} night",
       "perNightLine_other": "{{price}} × {{count}} nights",
       "perNightShort": "/night",
+      "nightLine": "{{day}}",
+      "nightlyRates": "Nightly rates",
       "discount": "Discount",
       "subtotal": "Subtotal",
       "taxes": "Taxes",
@@ -218,6 +220,7 @@
     },
     "cart": {
       "unavailable": "Room no longer available for the selected dates",
+      "rateUnavailable": "Rates are not available for the selected dates. Please pick different dates.",
       "countdown": {
         "label": "Hold expires in {{label}}"
       },

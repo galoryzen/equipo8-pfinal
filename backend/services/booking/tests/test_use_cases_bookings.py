@@ -57,6 +57,8 @@ def _booking(
         policy_hours_limit_applied=48,
         policy_refund_percent_applied=100,
         guests_count=1,
+        taxes=Decimal("10.00"),
+        service_fee=Decimal("5.00"),
         created_at=now,
         updated_at=now,
     )

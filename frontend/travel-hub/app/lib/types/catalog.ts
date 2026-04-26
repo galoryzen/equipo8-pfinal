@@ -133,3 +133,23 @@ export interface PropertyDetailResponse {
   detail: PropertyDetail;
   reviews: PaginatedResponse<ReviewOut>;
 }
+
+// ── Rate plan pricing ────────────────────────────────────
+
+export interface NightPriceOut {
+  day: string;
+  price: string;
+  original_price?: string | null;
+}
+
+export interface RatePlanPricing {
+  rate_plan_id: string;
+  currency_code: string;
+  nights: NightPriceOut[];
+  subtotal: string;
+  original_subtotal?: string | null;
+  /** Server-computed fees from shared.pricing — same constants as the cart. */
+  taxes: string;
+  service_fee: string;
+  total: string;
+}

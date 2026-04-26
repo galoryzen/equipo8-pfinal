@@ -33,7 +33,7 @@ export default function AmenityFilter({ amenities, selected, onChange }: Amenity
   return (
     <Box>
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-        Amenities
+        {t('amenityFilter.title')}
       </Typography>
       <FormGroup>
         {visible.map((a) => (

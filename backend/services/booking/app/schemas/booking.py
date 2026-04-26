@@ -12,8 +12,13 @@ class CreateCartBookingIn(BaseModel):
     property_id: UUID
     room_type_id: UUID
     rate_plan_id: UUID
-    unit_price: Decimal
     guests_count: int = Field(default=1, ge=1, le=20)
+
+
+class NightPriceOut(BaseModel):
+    day: date
+    price: Decimal
+    original_price: Decimal | None = None
 
 
 class BookingListItemOut(BaseModel):
@@ -79,6 +84,10 @@ class BookingDetailOut(BaseModel):
     policy_refund_percent_applied: int | None
     guests_count: int
     guests: list[GuestOut] = Field(default_factory=list)
+    nights_breakdown: list[NightPriceOut] = Field(default_factory=list)
+    taxes: Decimal = Decimal("0")
+    service_fee: Decimal = Decimal("0")
+    grand_total: Decimal = Decimal("0")
     created_at: datetime
     updated_at: datetime
 
@@ -106,3 +115,7 @@ class CartBookingOut(BaseModel):
     rate_plan_id: UUID
     unit_price: Decimal
     guests_count: int
+    nights_breakdown: list[NightPriceOut] = Field(default_factory=list)
+    taxes: Decimal = Decimal("0")
+    service_fee: Decimal = Decimal("0")
+    grand_total: Decimal = Decimal("0")

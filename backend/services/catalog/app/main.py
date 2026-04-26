@@ -15,6 +15,7 @@ from app.adapters.inbound.api.internal_properties import router as internal_prop
 from app.adapters.inbound.api.inventory import router as inventory_router
 from app.adapters.inbound.api.manager import router as manager_router
 from app.adapters.inbound.api.properties import router as properties_router
+from app.adapters.inbound.api.rate_plans import router as rate_plans_router
 from app.adapters.outbound.db.session import engine
 from app.config import settings
 
@@ -48,6 +49,7 @@ register_error_handlers(app)
 
 app.include_router(health_router, prefix="/api/v1/catalog")
 app.include_router(properties_router, prefix="/api/v1/catalog")
+app.include_router(rate_plans_router, prefix="/api/v1/catalog")
 app.include_router(inventory_router, prefix="/api/v1/catalog")
 app.include_router(manager_router, prefix="/api/v1/catalog")
 # Internal router is NOT under /api/v1/* — nginx/ALB do not route /internal/* to the

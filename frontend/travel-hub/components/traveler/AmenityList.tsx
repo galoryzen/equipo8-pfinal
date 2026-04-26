@@ -22,6 +22,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 interface AmenityListProps {
   amenities: AmenitySummary[];
@@ -47,6 +48,7 @@ function getAmenityIcon(code: string) {
 export default function AmenityList({ amenities, previewCount = 6 }: AmenityListProps) {
   const [open, setOpen] = useState(false);
   const preview = amenities.slice(0, previewCount);
+  const { t } = useTranslation();
 
   if (!amenities.length) return null;
 
@@ -70,7 +72,7 @@ export default function AmenityList({ amenities, previewCount = 6 }: AmenityList
           sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
           onClick={() => setOpen(true)}
         >
-          Show all {amenities.length} amenities
+          {t('propertyDetail.amenities.list', { count: amenities.length })}
         </Button>
       )}
 
@@ -78,7 +80,7 @@ export default function AmenityList({ amenities, previewCount = 6 }: AmenityList
         <DialogTitle
           sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
         >
-          All amenities
+          {t('propertyDetail.amenities.allAmenities')}
           <IconButton onClick={() => setOpen(false)} size="small">
             <CloseIcon />
           </IconButton>

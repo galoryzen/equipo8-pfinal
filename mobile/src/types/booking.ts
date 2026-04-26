@@ -1,3 +1,5 @@
+import type { NightPrice } from '@src/types/catalog';
+
 export interface CreateCartBookingPayload {
   checkin: string;
   checkout: string;
@@ -5,7 +7,6 @@ export interface CreateCartBookingPayload {
   property_id: string;
   room_type_id: string;
   rate_plan_id: string;
-  unit_price: string;
   guests_count: number;
 }
 
@@ -22,6 +23,12 @@ export interface CartBooking {
   rate_plan_id: string;
   unit_price: string;
   guests_count: number;
+  nights_breakdown: NightPrice[];
+  /** Server-computed fees persisted on the cart for consistent display. */
+  taxes: string;
+  service_fee: string;
+  /** Subtotal + taxes + service_fee — what the user is charged. */
+  grand_total: string;
 }
 
 export interface BookingListItem {

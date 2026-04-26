@@ -160,6 +160,26 @@ export interface PropertyDetailResponse {
   reviews: PaginatedResponse<Review>;
 }
 
+// ── Pricing ──────────────────────────────────────────────
+
+export interface NightPrice {
+  day: string; // ISO date (YYYY-MM-DD)
+  price: string; // Decimal as string
+  original_price?: string | null;
+}
+
+export interface RatePlanPricing {
+  rate_plan_id: string;
+  currency_code: string;
+  nights: NightPrice[];
+  subtotal: string;
+  original_subtotal?: string | null;
+  /** Server-computed fees from shared.pricing — same for every surface. */
+  taxes: string;
+  service_fee: string;
+  total: string;
+}
+
 // ── Search ──────────────────────────────────────────────
 
 export interface SearchFilters {

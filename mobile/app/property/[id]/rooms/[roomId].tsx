@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -21,14 +21,21 @@ import {
   type SelectedRoomInfo,
 } from '@src/shared/ui';
 import { useProperty } from '@src/features/catalog/use-property';
-import { calculateNights } from '@src/features/catalog/rate-breakdown';
+import { getRatePlanPricing } from '@src/features/catalog/catalog-service';
+import {
+  buildBreakdownFromNights,
+  calculateNights,
+  type RateBreakdown,
+} from '@src/features/catalog/rate-breakdown';
 import {
   ActiveCartConflictError,
   InventoryUnavailableError,
+  RateUnavailableError,
   useCart,
 } from '@src/features/booking/cart-context';
 import { useAuth } from '@src/services/auth-context';
 import type { CartExtras, CreateCartBookingPayload } from '@src/types/booking';
+import type { RatePlanPricing } from '@src/types/catalog';
 
 const GALLERY_WIDTH = Dimensions.get('window').width;
 const GALLERY_HEIGHT = 280;
@@ -105,24 +112,66 @@ export default function RoomDetailScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [conflictVisible, setConflictVisible] = useState(false);
 
+  // Authoritative per-night pricing from the catalog. Fetched on mount /
+  // whenever rate plan + dates change. The cart total comes from this — the
+  // ``unitPrice`` route param is now only used as a fallback while loading.
+  const [pricing, setPricing] = useState<RatePlanPricing | null>(null);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!ratePlanId || !checkin || !checkout) {
+      setPricing(null);
+      return;
+    }
+    let cancelled = false;
+    setPricingError(null);
+    void (async () => {
+      try {
+        const data = await getRatePlanPricing(ratePlanId, checkin, checkout);
+        if (!cancelled) setPricing(data);
+      } catch (err) {
+        if (cancelled) return;
+        // 409 RATE_UNAVAILABLE → user picked an unbookable range; surface a
+        // specific message so they can pick different dates.
+        const status = (err as { response?: { status?: number; data?: { code?: string } } })
+          .response?.status;
+        const code = (err as { response?: { data?: { code?: string } } }).response?.data?.code;
+        if (status === 409 && code === 'RATE_UNAVAILABLE') {
+          setPricingError(t('booking.cart.rateUnavailable'));
+        } else {
+          setPricingError(t('common.error'));
+        }
+        setPricing(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ratePlanId, checkin, checkout, t]);
+
+  const breakdown = useMemo<RateBreakdown | null>(() => {
+    if (!pricing) return null;
+    return buildBreakdownFromNights(pricing.nights, {
+      taxes: Number(pricing.taxes),
+      serviceFee: Number(pricing.service_fee),
+    });
+  }, [pricing]);
+
   const continuePayload = useMemo<CreateCartBookingPayload | null>(() => {
     if (!room || !ratePlanId || !checkin || !checkout || !property) return null;
-    const price = Number(unitPrice);
-    if (!Number.isFinite(price)) return null;
     const parsedGuests = guests ? parseInt(guests, 10) : 1;
     const guestsCount =
       Number.isFinite(parsedGuests) && parsedGuests > 0 ? parsedGuests : 1;
     return {
       checkin,
       checkout,
-      currency_code: currency ?? 'USD',
+      currency_code: pricing?.currency_code ?? currency ?? 'USD',
       property_id: property.id,
       room_type_id: room.id,
       rate_plan_id: ratePlanId,
-      unit_price: String(price),
       guests_count: guestsCount,
     };
-  }, [property, room, ratePlanId, checkin, checkout, currency, unitPrice, guests]);
+  }, [property, room, ratePlanId, checkin, checkout, currency, guests, pricing]);
 
   const continueExtras = useMemo<CartExtras | null>(() => {
     if (!room || !property) return null;
@@ -145,6 +194,8 @@ export default function RoomDetailScreen() {
         // Cart-context ya rescató el booking existente; abrimos el modal de
         // conflicto para que el user decida reemplazar o continuar el actual.
         setConflictVisible(true);
+      } else if (err instanceof RateUnavailableError) {
+        Alert.alert(t('booking.cart.rateUnavailable'));
       } else if (err instanceof InventoryUnavailableError) {
         Alert.alert(t('booking.cart.unavailable'));
       } else {
@@ -192,6 +243,8 @@ export default function RoomDetailScreen() {
     } catch (err) {
       if (err instanceof ActiveCartConflictError) {
         setConflictVisible(true);
+      } else if (err instanceof RateUnavailableError) {
+        Alert.alert(t('booking.cart.rateUnavailable'));
       } else if (err instanceof InventoryUnavailableError) {
         Alert.alert(t('booking.cart.unavailable'));
       } else {
@@ -302,7 +355,13 @@ export default function RoomDetailScreen() {
             {selection && nights > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>{t('rooms.priceBreakdown')}</Text>
-                <PriceBreakdownPanel selection={selection} nights={nights} />
+                {pricingError && !breakdown ? (
+                  <Text style={styles.errorText}>{pricingError}</Text>
+                ) : (
+                  breakdown && (
+                    <PriceBreakdownPanel selection={selection} breakdown={breakdown} />
+                  )
+                )}
               </View>
             )}
           </View>

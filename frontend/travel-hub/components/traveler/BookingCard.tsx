@@ -24,6 +24,7 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 interface BookingCardProps {
   booking: BookingListItem;
@@ -37,12 +38,14 @@ function primaryImageUrl(property: PropertyDetail | null | undefined): string | 
 }
 
 export default function BookingCard({ booking, property }: BookingCardProps) {
+  const { t } = useTranslation();
+
   const pid = primaryPropertyId(booking);
-  const hotelName = property?.name ?? 'Hotel';
+  const hotelName = property?.name ?? t('myTrips.card.hotelName');
   const cityLine = property?.city
     ? `${property.city.name}${property.city.country ? `, ${property.city.country}` : ''}`
     : pid
-      ? 'Ubicación no disponible'
+      ? t('myTrips.card.locationNotAvailable')
       : '—';
   const imageUrl = primaryImageUrl(property);
   const rating = property?.rating_avg;
@@ -87,7 +90,7 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
               justifyContent: 'center',
             }}
           >
-            <Typography color="text.secondary">Sin imagen</Typography>
+            <Typography color="text.secondary">{t('myTrips.card.noImage')}</Typography>
           </Box>
         )}
         {rating != null && (
@@ -152,7 +155,7 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
             >
               <CalendarTodayOutlinedIcon sx={{ fontSize: 18 }} />
               <Typography variant="caption" fontWeight={600}>
-                Check-in
+                {t('myTrips.card.checkIn')}
               </Typography>
             </Stack>
             <Typography variant="subtitle1" fontWeight={700}>
@@ -169,7 +172,7 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
             >
               <EventOutlinedIcon sx={{ fontSize: 18 }} />
               <Typography variant="caption" fontWeight={600}>
-                Check-out
+                {t('myTrips.card.checkOut')}
               </Typography>
             </Stack>
             <Typography variant="subtitle1" fontWeight={700}>
@@ -193,7 +196,7 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
             variant="contained"
             sx={{ textTransform: 'none', px: 3 }}
           >
-            View details
+            {t('myTrips.card.viewDetails')}
           </Button>
         </Box>
       </Box>

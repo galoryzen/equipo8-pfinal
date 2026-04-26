@@ -11,7 +11,6 @@ import FreeBreakfastIcon from '@mui/icons-material/FreeBreakfast';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PoolIcon from '@mui/icons-material/Pool';
-import ShareIcon from '@mui/icons-material/Share';
 import StarIcon from '@mui/icons-material/Star';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -161,7 +160,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {error.message}
         </Typography>
         <Button variant="outlined" onClick={() => fetchDetail(checkin, checkout)}>
-          Try again
+          {t('common.tryAgain')}
         </Button>
       </Container>
     );
@@ -225,7 +224,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
               </Box>
             ) : (
               <Typography variant="body2" color="text.secondary" component="span">
-                Rating not available
+                {t('propertyDetail.noRanking')}
               </Typography>
             )}
             <Typography
@@ -244,14 +243,6 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
             </Box>
           </Box>
         </Box>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<ShareIcon />}
-          sx={{ borderRadius: 2, textTransform: 'none' }}
-        >
-          Share
-        </Button>
       </Box>
 
       {/* Image gallery */}
@@ -265,7 +256,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {detail.default_cancellation_policy?.type === 'FULL' && (
             <Chip
               icon={<CancelIcon />}
-              label="Free cancellation"
+              label={t('propertyDetail.amenities.freeCancellation')}
               size="small"
               sx={{ bgcolor: '#f0fdf4', color: '#166534', '& .MuiChip-icon': { color: '#16a34a' } }}
             />
@@ -273,7 +264,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {detail.amenities.some((a) => a.code.toLowerCase().includes('pool')) && (
             <Chip
               icon={<PoolIcon />}
-              label="Pool included"
+              label={t('propertyDetail.amenities.pool')}
               size="small"
               sx={{ bgcolor: '#eff6ff', color: '#1e40af' }}
             />
@@ -281,7 +272,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {detail.amenities.some((a) => a.code.toLowerCase().includes('breakfast')) && (
             <Chip
               icon={<FreeBreakfastIcon />}
-              label="Breakfast included"
+              label={t('propertyDetail.breakfast')}
               size="small"
               sx={{ bgcolor: '#fefce8', color: '#854d0e' }}
             />
@@ -297,7 +288,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {detail.description && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" fontWeight={700} gutterBottom>
-                About this property
+                {t('propertyDetail.about')}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
                 {detail.description}
@@ -311,7 +302,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {detail.amenities.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" fontWeight={700} gutterBottom>
-                Popular amenities
+                {t('propertyDetail.popularAmenities')}
               </Typography>
               <AmenityList amenities={detail.amenities} previewCount={6} />
             </Box>
@@ -348,7 +339,7 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
           {/* Location placeholder */}
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6" fontWeight={700} gutterBottom>
-              Location
+              {t('propertyDetail.location')}
             </Typography>
             <Box
               sx={{

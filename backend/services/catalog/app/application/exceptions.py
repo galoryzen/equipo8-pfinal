@@ -33,3 +33,29 @@ class UnauthorizedError(Exception):
     def __init__(self, detail: str = "Unauthorized"):
         self.detail = detail
         super().__init__(detail)
+
+
+class RatePlanNotFoundError(Exception):
+    def __init__(self, rate_plan_id: UUID):
+        self.rate_plan_id = rate_plan_id
+        super().__init__(f"Rate plan {rate_plan_id} not found")
+
+
+class RateUnavailableError(Exception):
+    """Raised when one or more days in the requested range have no rate_calendar entry.
+
+    A missing day means the rate plan is not bookable for that range — clients
+    should be told to pick different dates rather than receive a partial total.
+    """
+
+    def __init__(self, missing_days: list):
+        self.missing_days = missing_days
+        super().__init__(f"Rate not available for days: {missing_days}")
+
+
+class RateCurrencyMismatchError(Exception):
+    """Raised when rate_calendar rows in the requested range mix currencies."""
+
+    def __init__(self, currencies: list[str]):
+        self.currencies = currencies
+        super().__init__(f"Rate plan calendar mixes currencies: {currencies}")

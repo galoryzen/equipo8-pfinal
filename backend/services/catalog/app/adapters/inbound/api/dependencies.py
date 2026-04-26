@@ -10,6 +10,7 @@ from app.adapters.outbound.db.city_repository import SqlAlchemyCityRepository
 from app.adapters.outbound.db.inventory_repository import SqlAlchemyInventoryRepository
 from app.adapters.outbound.db.manager_repository import SqlAlchemyManagerRepository
 from app.adapters.outbound.db.property_repository import SqlAlchemyPropertyRepository
+from app.adapters.outbound.db.rate_plan_repository import SqlAlchemyRatePlanRepository
 from app.adapters.outbound.db.session import async_session
 from app.application.exceptions import UnauthorizedError
 from app.application.ports.outbound.cache_port import CachePort
@@ -22,6 +23,7 @@ from app.application.use_cases.get_room_type_promotion import GetRoomTypePromoti
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_hotel_metrics import GetHotelMetricsUseCase
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
+from app.application.use_cases.get_rate_plan_pricing import GetRatePlanPricingUseCase
 from app.application.use_cases.list_amenities import ListAmenitiesUseCase
 from app.application.use_cases.list_manager_hotels import ListManagerHotelsUseCase
 from app.application.use_cases.list_room_types_availability import ListRoomTypesAvailabilityUseCase
@@ -91,6 +93,15 @@ def get_detail_use_case(session: AsyncSession, cache: CachePort) -> GetPropertyD
 def get_list_amenities_use_case(session: AsyncSession) -> ListAmenitiesUseCase:
     repo = get_property_repository(session)
     return ListAmenitiesUseCase(repo)
+
+
+def get_rate_plan_repository(session: AsyncSession) -> SqlAlchemyRatePlanRepository:
+    return SqlAlchemyRatePlanRepository(session)
+
+
+def get_rate_plan_pricing_use_case(session: AsyncSession) -> GetRatePlanPricingUseCase:
+    repo = get_rate_plan_repository(session)
+    return GetRatePlanPricingUseCase(repo)
 
 
 def get_inventory_repository(session: AsyncSession) -> SqlAlchemyInventoryRepository:

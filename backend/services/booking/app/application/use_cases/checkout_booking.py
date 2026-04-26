@@ -76,12 +76,17 @@ class CheckoutBookingUseCase:
             )
         )
 
+        # Charge the user the grand total (subtotal + taxes + service_fee) —
+        # the same number the cart/checkout UI showed. ``booking.total_amount``
+        # is just the room subtotal; charging it would silently undercharge by
+        # the fee amount and create a refund mismatch later.
+        charge_amount = booking.total_amount + booking.taxes + booking.service_fee
         envelope = DomainEventEnvelope(
             event_type=PAYMENT_REQUESTED,
             payload=PaymentRequestedPayload(
                 booking_id=booking.id,
                 user_id=user_id,
-                amount=booking.total_amount,
+                amount=charge_amount,
                 currency=booking.currency_code,
                 idempotency_key=idempotency_key,
                 force_decline=False,

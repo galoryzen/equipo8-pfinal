@@ -177,7 +177,6 @@ describe('booking API uncovered flows', () => {
       property_id: 'p1',
       room_type_id: 'r1',
       rate_plan_id: 'rp1',
-      unit_price: '120',
     };
     vi.mocked(global.fetch).mockResolvedValue({
       ok: false,

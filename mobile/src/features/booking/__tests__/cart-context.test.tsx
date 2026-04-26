@@ -71,6 +71,14 @@ const SNAPSHOT: CartSnapshot = {
   rate_plan_id: 'rp1',
   unit_price: '120.00',
   guests_count: 1,
+  nights_breakdown: [
+    { day: '2026-05-01', price: '120.00', original_price: null },
+    { day: '2026-05-02', price: '120.00', original_price: null },
+    { day: '2026-05-03', price: '120.00', original_price: null },
+  ],
+  taxes: '36.00',
+  service_fee: '18.00',
+  grand_total: '414.00',
   property_name: 'Casa Medina',
   room_name: 'Suite Deluxe',
   image_url: 'https://example.com/img.jpg',
@@ -83,7 +91,6 @@ const PAYLOAD: CreateCartBookingPayload = {
   property_id: SNAPSHOT.property_id,
   room_type_id: SNAPSHOT.room_type_id,
   rate_plan_id: SNAPSHOT.rate_plan_id,
-  unit_price: SNAPSHOT.unit_price,
   guests_count: 1,
 };
 

@@ -14,6 +14,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card } from '@src/shared/ui';
+import { formatCurrency } from '@src/shared/utils/format-currency';
 import { colors, radius, spacing, typography } from '@src/theme';
 import { getBookingDetail } from '@src/services/booking-service';
 import { getPropertyDetail } from '@src/features/catalog/catalog-service';
@@ -234,10 +235,7 @@ export default function BookingDetailScreen() {
               </Text>
             </View>
 
-            <Text style={[styles.label, styles.spaced]}>{t('trips.detail.total')}</Text>
-            <Text style={styles.value}>
-              {booking.total_amount} {booking.currency_code}
-            </Text>
+            <PriceBreakdown booking={booking} />
           </Card>
 
           {booking.guests && booking.guests.length > 0 ? (
@@ -356,6 +354,46 @@ export default function BookingDetailScreen() {
           ) : null}
         </View>
       </ScrollView>
+    </>
+  );
+}
+
+function PriceBreakdown({ booking }: { booking: BookingDetail }) {
+  const { t } = useTranslation();
+  const currency = booking.currency_code;
+  // Defensive number coercion: legacy bookings created before the fee columns
+  // existed may serialise with 0 or missing values. ``grand_total`` is
+  // computed by the server and should be trusted as the all-in total.
+  const subtotal = Number(booking.total_amount ?? 0);
+  const taxes = Number(booking.taxes ?? 0);
+  const serviceFee = Number(booking.service_fee ?? 0);
+  const total = Number(booking.grand_total ?? 0) || subtotal + taxes + serviceFee;
+  const hasFees = taxes > 0 || serviceFee > 0;
+
+  return (
+    <>
+      <Text style={[styles.label, styles.spaced]}>{t('rooms.priceBreakdown')}</Text>
+      <View style={styles.priceRow}>
+        <Text style={styles.meta}>{t('rooms.breakdown.subtotal')}</Text>
+        <Text style={styles.value}>{formatCurrency(subtotal, currency)}</Text>
+      </View>
+      {hasFees && (
+        <>
+          <View style={styles.priceRow}>
+            <Text style={styles.meta}>{t('rooms.breakdown.taxes')}</Text>
+            <Text style={styles.value}>{formatCurrency(taxes, currency)}</Text>
+          </View>
+          <View style={styles.priceRow}>
+            <Text style={styles.meta}>{t('rooms.breakdown.serviceFee')}</Text>
+            <Text style={styles.value}>{formatCurrency(serviceFee, currency)}</Text>
+          </View>
+        </>
+      )}
+      <View style={styles.priceDivider} />
+      <View style={styles.priceRow}>
+        <Text style={styles.value}>{t('trips.detail.total')}</Text>
+        <Text style={styles.totalValue}>{formatCurrency(total, currency)}</Text>
+      </View>
     </>
   );
 }
@@ -485,6 +523,23 @@ const styles = StyleSheet.create({
   value: {
     fontFamily: typography.fontFamily.medium,
     fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  priceDivider: {
+    height: 1,
+    backgroundColor: colors.border.default,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  totalValue: {
+    fontFamily: typography.fontFamily.bold,
+    fontSize: typography.fontSize.lg,
     color: colors.text.primary,
   },
   meta: {

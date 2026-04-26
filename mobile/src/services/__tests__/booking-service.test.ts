@@ -4,6 +4,7 @@ import { api } from '@src/services/api';
 import {
   ActiveCartConflictError,
   InventoryUnavailableError,
+  RateUnavailableError,
   cancelCartBooking,
   createCartBooking,
   getBookingDetail,
@@ -22,7 +23,6 @@ const PAYLOAD: CreateCartBookingPayload = {
   property_id: 'p1',
   room_type_id: 'r1',
   rate_plan_id: 'rp1',
-  unit_price: '120.00',
   guests_count: 1,
 };
 
@@ -37,8 +37,16 @@ const CART: CartBooking = {
   property_id: PAYLOAD.property_id,
   room_type_id: PAYLOAD.room_type_id,
   rate_plan_id: PAYLOAD.rate_plan_id,
-  unit_price: PAYLOAD.unit_price,
+  unit_price: '120.00',
   guests_count: 1,
+  nights_breakdown: [
+    { day: '2026-05-01', price: '120.00', original_price: null },
+    { day: '2026-05-02', price: '120.00', original_price: null },
+    { day: '2026-05-03', price: '120.00', original_price: null },
+  ],
+  taxes: '36.00',
+  service_fee: '18.00',
+  grand_total: '414.00',
 };
 
 const DETAIL: BookingDetail = {
@@ -82,6 +90,11 @@ describe('createCartBooking', () => {
     const err = await createCartBooking(PAYLOAD).catch((e) => e);
     expect(err).toBeInstanceOf(ActiveCartConflictError);
     expect((err as ActiveCartConflictError).existingBookingId).toBe('other-cart-id');
+  });
+
+  it('throws RateUnavailableError on 409 with RATE_UNAVAILABLE code', async () => {
+    mockedApi.post.mockRejectedValueOnce(axiosError(409, { code: 'RATE_UNAVAILABLE' }));
+    await expect(createCartBooking(PAYLOAD)).rejects.toBeInstanceOf(RateUnavailableError);
   });
 
   it('re-throws other errors unchanged', async () => {
@@ -135,6 +148,27 @@ describe('listMyBookings', () => {
     expect(mockedApi.get).toHaveBeenCalledWith('/v1/booking/bookings', {
       params: { scope: 'past' },
     });
+  });
+
+  it('unwraps the paginated envelope returned by the backend', async () => {
+    // Backend route: PaginatedBookingListOut = { items, total, page, page_size, total_pages }.
+    // Without unwrap, `list.map(...)` in useMyBookings blows up with
+    // "list.map is not a function" and Trips shows the load error.
+    const item: Partial<CartBooking> = {
+      id: 'b1',
+      status: 'CONFIRMED',
+      property_id: 'p1',
+      room_type_id: 'r1',
+    };
+    mockedApi.get.mockResolvedValueOnce({
+      data: { items: [item], total: 1, page: 1, page_size: 10, total_pages: 1 },
+    });
+
+    const result = await listMyBookings('active');
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('b1');
   });
 });
 

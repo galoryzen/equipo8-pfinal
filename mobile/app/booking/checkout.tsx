@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useCart } from '@src/features/booking/cart-context';
 import { useCountdown } from '@src/features/booking/use-countdown';
-import { calculateNights } from '@src/features/catalog/rate-breakdown';
+import { buildBreakdownFromNights, calculateNights } from '@src/features/catalog/rate-breakdown';
 import { useAuth } from '@src/services/auth-context';
 import {
   GuestsValidationError,
@@ -260,10 +260,16 @@ export default function CheckoutScreen() {
             </Text>
           </Card>
 
-          {nights > 0 && (
+          {nights > 0 && cart.nights_breakdown && cart.nights_breakdown.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t('rooms.priceBreakdown')}</Text>
-              <PriceBreakdownPanel selection={selection} nights={nights} />
+              <PriceBreakdownPanel
+                selection={selection}
+                breakdown={buildBreakdownFromNights(cart.nights_breakdown, {
+                  taxes: Number(cart.taxes ?? 0),
+                  serviceFee: Number(cart.service_fee ?? 0),
+                })}
+              />
             </View>
           )}
 

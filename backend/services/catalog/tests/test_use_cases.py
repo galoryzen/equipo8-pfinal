@@ -361,7 +361,12 @@ class TestGetPropertyDetail:
         assert reviews["total_pages"] == 3  # ceil(25/10)
 
     async def test_min_price_filtered_by_checkin_checkout(self, mock_property_repo, mock_cache):
-        """min_price per room type should use only rates within the date range."""
+        """min_price per room type should use only rates within the date range.
+
+        Single-night window with the matching in-range entry; the out-of-range
+        $50 row must not pull min_price down. (The new full-coverage rule
+        requires the calendar to span every night in the requested window.)
+        """
         prop = _make_fake_property()
         rc_in_range = MagicMock()
         rc_in_range.day = date(2026, 6, 1)
@@ -384,7 +389,7 @@ class TestGetPropertyDetail:
         result = await uc.execute(
             property_id=CANCUN_PROPERTY_ID,
             checkin=date(2026, 6, 1),
-            checkout=date(2026, 6, 30),
+            checkout=date(2026, 6, 2),
         )
 
         room = result["detail"]["room_types"][0]
@@ -537,7 +542,10 @@ def _make_promo(
 class TestPromotionApplication:
     """Cover the per-day greedy promotion logic in GetPropertyDetailUseCase."""
 
-    async def test_no_promotion_returns_base_min_and_null_original(self, mock_property_repo, mock_cache):
+    async def test_no_promotion_variable_nightly_rates_returns_avg(self, mock_property_repo, mock_cache):
+        """Dated mode: ``min_price`` is the avg-per-night of the full stay so
+        the displayed price reconciles with the cart total. Without a promo,
+        ``original_min_price`` stays null."""
         prop = _make_fake_property()
         rp = prop.room_types[0].rate_plans[0]
         rp.rate_calendar = [
@@ -558,7 +566,8 @@ class TestPromotionApplication:
         )
 
         plan = result["detail"]["room_types"][0]["rate_plans"][0]
-        assert plan["min_price"] == "100.00"
+        # (120 + 100) / 2 = 110 — the avg, not the cheapest single night ($100).
+        assert plan["min_price"] == "110.00"
         assert plan["original_min_price"] is None
         assert plan["promotion"] is None
         assert plan["currency_code"] == "USD"
@@ -731,6 +740,139 @@ class TestPromotionApplication:
         plan = result["detail"]["room_types"][0]["rate_plans"][0]
         assert plan["min_price"] == "0.00"
         assert plan["original_min_price"] == "30.00"
+
+    async def test_variable_nightly_rates_with_promo_avg_matches_cart_total(self, mock_property_repo, mock_cache):
+        """Reconciliation: avg-per-night × nights = the same total the cart will charge."""
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        # Nights at $140 and $150 — the user's original example.
+        rp.rate_calendar = [
+            _make_rc(date(2026, 5, 1), Decimal("140.00")),
+            _make_rc(date(2026, 5, 2), Decimal("150.00")),
+        ]
+        rp.promotions = [
+            _make_promo(DiscountType.PERCENT, Decimal("15"), date(2026, 5, 1), date(2026, 5, 31)),
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 5, 1),
+            checkout=date(2026, 5, 3),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        # 15% off → night1=$119, night2=$127.50 ; sum=$246.50 ; avg=$123.25
+        assert plan["min_price"] == "123.25"
+        # Original avg = (140 + 150) / 2 = 145
+        assert plan["original_min_price"] == "145.00"
+        assert plan["promotion"]["discount_type"] == "PERCENT"
+        # Cart total reconciliation: avg × nights = stay total.
+        assert Decimal(plan["min_price"]) * 2 == Decimal("246.50")
+
+    async def test_calendar_gap_returns_null_min_price(self, mock_property_repo, mock_cache):
+        """Missing nights in the requested range → unbookable → null pricing
+        (matches cart RATE_UNAVAILABLE so we never advertise a price the user
+        can't actually book at)."""
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        # 3-night stay but only 2 days have rate_calendar entries.
+        rp.rate_calendar = [
+            _make_rc(date(2026, 6, 1), Decimal("100.00")),
+            _make_rc(date(2026, 6, 3), Decimal("100.00")),
+        ]
+        rp.promotions = []
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 4),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        assert plan["min_price"] is None
+        assert plan["original_min_price"] is None
+        assert plan["promotion"] is None
+
+    async def test_winning_promo_picks_most_applied_across_stay(self, mock_property_repo, mock_cache):
+        """When different promos apply on different days, the badge shows the
+        one applied to the most days. Tie-break: largest total discount."""
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [
+            _make_rc(date(2026, 6, 1), Decimal("100.00")),
+            _make_rc(date(2026, 6, 2), Decimal("100.00")),
+            _make_rc(date(2026, 6, 3), Decimal("100.00")),
+        ]
+        # ``early_bird``: 25% off on night 1 only ($25 saved)
+        # ``midweek``:    10% off on nights 2 and 3 ($20 saved total)
+        # midweek wins on day-count (2 vs 1) even though early_bird saves more per day.
+        rp.promotions = [
+            _make_promo(
+                DiscountType.PERCENT,
+                Decimal("25"),
+                date(2026, 6, 1),
+                date(2026, 6, 1),
+                name="early_bird",
+            ),
+            _make_promo(
+                DiscountType.PERCENT,
+                Decimal("10"),
+                date(2026, 6, 2),
+                date(2026, 6, 3),
+                name="midweek",
+            ),
+        ]
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        result = await uc.execute(
+            property_id=CANCUN_PROPERTY_ID,
+            checkin=date(2026, 6, 1),
+            checkout=date(2026, 6, 4),
+        )
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        # Effective per night: 75 + 90 + 90 = 255 ; avg = 85
+        assert plan["min_price"] == "85.00"
+        assert plan["original_min_price"] == "100.00"
+        assert plan["promotion"]["name"] == "midweek"
+
+    async def test_browse_mode_no_dates_keeps_cheapest_single_night(self, mock_property_repo, mock_cache):
+        """Without checkin/checkout the response is a "from $X" teaser — keep
+        the cheapest single-night display so the property card still has a
+        price tag before the user picks dates."""
+        prop = _make_fake_property()
+        rp = prop.room_types[0].rate_plans[0]
+        rp.rate_calendar = [
+            _make_rc(date(2026, 6, 1), Decimal("120.00")),
+            _make_rc(date(2026, 6, 2), Decimal("80.00")),
+        ]
+        rp.promotions = []
+
+        mock_property_repo.get_by_id.return_value = prop
+        mock_property_repo.get_review_stats.return_value = (None, 0)
+        mock_property_repo.get_reviews.return_value = ([], 0)
+
+        uc = GetPropertyDetailUseCase(mock_property_repo, mock_cache)
+        # No checkin/checkout passed: browse mode.
+        result = await uc.execute(property_id=CANCUN_PROPERTY_ID)
+
+        plan = result["detail"]["room_types"][0]["rate_plans"][0]
+        # Browse mode preserves the legacy "from cheapest" display.
+        assert plan["min_price"] == "80.00"
 
 
 # ── SearchPropertiesUseCase ─────────────────────────────

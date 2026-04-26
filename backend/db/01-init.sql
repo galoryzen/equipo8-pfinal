@@ -285,6 +285,14 @@ CREATE TABLE booking.booking (
     -- legacy rows (pre-integration) default to TRUE (nothing to release).
     inventory_released          BOOLEAN NOT NULL DEFAULT TRUE,
     guests_count                INT NOT NULL DEFAULT 1 CHECK (guests_count BETWEEN 1 AND 20),
+    -- Per-night price breakdown captured at cart creation. Authoritative for the
+    -- booking total. Shape: [{"day": "YYYY-MM-DD", "price": "140.00", "original_price": "150.00" | null}, ...].
+    -- Null on legacy carts created before the variable-pricing rollout.
+    nightly_breakdown           JSONB,
+    -- Standardised additional charges captured at cart creation. Computed from
+    -- subtotal (= total_amount) × shared.pricing constants so search/detail/cart/payment all agree.
+    taxes                       DECIMAL(12,2) NOT NULL DEFAULT 0,
+    service_fee                 DECIMAL(12,2) NOT NULL DEFAULT 0,
     created_at                  TIMESTAMP NOT NULL DEFAULT now(),
     updated_at                  TIMESTAMP NOT NULL DEFAULT now()
 );

@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class BookingStatus(str, enum.Enum):
@@ -69,6 +69,17 @@ class Booking(Base):
         UUID(as_uuid=True), nullable=True, default=None
     )
     guests_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Per-night price breakdown captured at cart creation. Authoritative for the
+    # booking's total. Shape: [{"day": "YYYY-MM-DD", "price": "140.00",
+    # "original_price": "150.00" | null}, ...]. Null on legacy carts created
+    # before the variable-pricing rollout.
+    nightly_breakdown: Mapped[list[dict] | None] = mapped_column(JSONB, nullable=True)
+    # Standardised additional charges captured at cart creation so every client
+    # surface (search/detail/cart/payment) shows the same total. Computed from
+    # subtotal × shared.pricing constants. Default 0 covers legacy rows that
+    # predate the column.
+    taxes: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0"))
+    service_fee: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0"))
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
 

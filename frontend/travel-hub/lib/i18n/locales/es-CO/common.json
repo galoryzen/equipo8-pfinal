@@ -43,6 +43,20 @@
   "booking": {
     "confirm_error": "No se pudo confirmar tu reserva. Por favor, inténtalo de nuevo."
   },
+  "tripDetail": {
+    "backButton": "Volver a Mis viajes",
+    "breadcrumb": "Mis viajes",
+    "reservationDetails": "Detalles de la reserva",
+    "checkOut": "Salida",
+    "total": "Total",
+    "room": "Habitación",
+    "costDetails": "Detalle de costos",
+    "subtotal": "Subtotal",
+    "taxes": "Impuestos",
+    "serviceFee": "Tarifa de servicio",
+    "totalDue": "Total a pagar",
+    "nightlyBreakdown": "Detalle por noche"
+  },
   "recommended": {
     "title": "Recomendado para ti",
     "subtitle": "Propiedades según tu actividad reciente",
@@ -58,6 +72,11 @@
   },
   "a11y": {
     "loading": "Cargando"
+  },
+  "common": {
+    "tryAgain": "Intentar de nuevo",
+    "cancel": "Cancelar",
+    "unknownError": "Error desconocido"
   },
   "footer": {
     "support": {
@@ -95,7 +114,7 @@
     "minGreaterThanMax": "El mínimo no puede ser mayor que el máximo"
   },
   "amenityFilter": {
-    "title": "Servicios",
+    "title": "Amenidades",
     "showMore": "Ver más",
     "showLess": "Ver menos"
   },
@@ -132,7 +151,36 @@
     "parking": "Parqueadero"
   },
   "propertyDetail": {
-    "availableRooms": "Habitaciones disponibles"
+    "availableRooms": "Habitaciones disponibles",
+    "about": "Acerca de esta propiedad",
+    "popularAmenities": "Amenidades populares",
+    "breakfast": "Desayuno incluido",
+    "location": "Ubicación",
+    "noRanking": "Calificación no disponible",
+    "amenities": {
+      "pool": "Piscina incluida",
+      "freeCancellation": "Cancelación gratuita",
+      "list": "Ver todas las {{count}} amenidades",
+      "allAmenities": "Todas las amenidades"
+    },
+    "reviews": {
+      "guestName": "Huésped",
+      "reviewsCount_one": "{{count}} reseña(s)",
+      "noReviewsYet": "Sin reseñas aún",
+      "showAllReviews": "Ver todas las {{count}} reseñas"
+    },
+    "priceCard": {
+      "night": " / noche",
+      "priceNotAvailable": "Precio no disponible",
+      "taxes": "Impuestos",
+      "serviceFee": "Cargo por servicio",
+      "total": "Total",
+      "hostedBy": "Anfitrión",
+      "selectRoom": "Selecciona una habitación para continuar",
+      "signInToReserve": "Iniciar sesión para reservar",
+      "youWillNotBeChargedYet": "No se te cobrará todavía",
+      "reserve": "Reservar"
+    }
   },
   "roomCard": {
     "bookingInProgress": "Reserva en curso",
@@ -420,7 +468,8 @@
       },
       "common": {
         "cancel": "Cancelar",
-        "unknownError": "Error desconocido"
+        "unknownError": "Error desconocido",
+        "tryAgain": "Intentar de nuevo"
       }
     },
     "reports": {
@@ -462,46 +511,25 @@
         "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
         "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
       }
-    },
-    "reports": {
-      "title": "Reportes de ingresos",
-      "subtitle": "Genera reportes de desempeño de ingresos por período.",
-      "filters": {
-        "hotel": "Hotel",
-        "myHotel": "Mi hotel",
-        "from": "Desde",
-        "to": "Hasta"
-      },
-      "kpis": {
-        "totalRevenue": "Ingresos totales",
-        "adr": "ADR",
-        "occupancyRate": "Tasa de ocupación"
-      },
-      "sections": {
-        "trends": "Tendencias de ingresos",
-        "byRoomType": "Ingresos por tipo de habitación"
-      },
-      "chart": {
-        "revenue": "Ingresos",
-        "occupancy": "Ocupación"
-      },
-      "table": {
-        "roomType": "Tipo de habitación",
-        "unitsSold": "Unidades vendidas",
-        "avgRate": "Tarifa promedio",
-        "totalRevenue": "Ingresos totales",
-        "totalAggregatedRevenue": "Ingreso total agregado"
-      },
-      "actions": {
-        "generate": "Generar reporte",
-        "download": "Descargar reporte"
-      },
-      "states": {
-        "initial": "Selecciona un hotel y un rango de fechas, luego haz clic en Generar reporte.",
-        "empty": "No hay datos de reporte para el período seleccionado.",
-        "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
-        "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
-      }
+    }
+  },
+  "myTrips": {
+    "title": "Mis viajes",
+    "subtitle": "Gestiona tus viajes y reservas",
+    "backToSearch": "Volver a la búsqueda",
+    "findHotel": "Encontrar un hotel",
+    "upcoming": "Próximos",
+    "past": "Pasados",
+    "noUpcoming": "No hay viajes próximos",
+    "noPast": "No hay viajes pasados",
+    "endOfTrips": "Fin de tus viajes {{tab}}.",
+    "card": {
+      "locationNotAvailable": "Ubicación no disponible",
+      "noImage": "Sin imagen",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "viewDetails": "Ver detalles",
+      "hotelName": "Hotel"
     }
   }
 }
