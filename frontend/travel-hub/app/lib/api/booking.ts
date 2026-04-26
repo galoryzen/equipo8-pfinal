@@ -157,13 +157,22 @@ export async function saveBookingGuests(bookingId: string, guests: GuestPayload[
   }
 }
 
-export async function checkoutBooking(bookingId: string): Promise<BookingDetail> {
+/**
+ * Triggers the async payment flow on the backend. Pass `forceDecline=true` to
+ * tag the PaymentRequested event so the mock PSP deterministically rejects —
+ * the only way to exercise the failure path end-to-end without a real gateway.
+ */
+export async function checkoutBooking(
+  bookingId: string,
+  forceDecline = false
+): Promise<BookingDetail> {
   const res = await fetch(
     `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/checkout`,
     {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force_decline: forceDecline }),
     }
   );
   if (!res.ok) {

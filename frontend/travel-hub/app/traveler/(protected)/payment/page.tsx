@@ -459,6 +459,15 @@ function PaymentPageContent() {
       const current = await getBookingDetail(bookingId);
       setProcessingProgress(20);
 
+      // Snapshot the failure (if any) the user already saw, so the polling can
+      // tell apart "the decline I already showed" from "a new decline from
+      // this attempt". Identity comparison on `occurred_at` — no clock math.
+      const previousFailureKey = current.last_payment_attempt?.occurred_at ?? null;
+      // Visa "decline" test card: trips force_decline on the backend so QA can
+      // exercise the failure path against the mock PSP. Any other number runs
+      // the happy path.
+      const forceDecline = cardNumber.replace(/\s/g, '') === '4000000000000002';
+
       if (current.status === 'CART') {
         // 1. Save guests (only valid in CART state)
         const guests = [
@@ -479,10 +488,15 @@ function PaymentPageContent() {
         setProcessingProgress(45);
 
         // 2. Checkout (CART → PENDING_PAYMENT)
-        await checkoutBooking(bookingId);
+        await checkoutBooking(bookingId, forceDecline);
         setProcessingProgress(65);
       } else if (current.status === 'PENDING_PAYMENT') {
-        // Already past checkout from a previous attempt — skip straight to payment intent
+        // Booking already past checkout. Re-call /checkout anyway: the backend
+        // is idempotent for in-flight first attempts and republishes a fresh
+        // PaymentRequested when retrying after a recorded failure. Skipping
+        // this would leave a retry without any new event on the bus, and the
+        // poll loop would just time out.
+        await checkoutBooking(bookingId, forceDecline);
         setProcessingProgress(65);
       } else {
         throw new Error(`${t('payment.paymentError')} (status: ${current.status})`);
@@ -535,7 +549,15 @@ function PaymentPageContent() {
           return;
         }
 
-        if (detail.status === 'REJECTED' || detail.status === 'CANCELLED') {
+        // A new payment_failed history row (different `occurred_at` from the
+        // one we snapshotted before kicking this attempt off) means the PSP
+        // just rejected — surface it as a decline, not a timeout.
+        const failure = detail.last_payment_attempt;
+        if (failure?.outcome === 'failed' && failure.occurred_at !== previousFailureKey) {
+          throw new Error(t('payment.paymentRejected'));
+        }
+
+        if (detail.status === 'CANCELLED' || detail.status === 'EXPIRED') {
           throw new Error(t('payment.paymentRejected'));
         }
         // PENDING_PAYMENT → still waiting for the event bus; keep polling
