@@ -68,13 +68,25 @@ export async function createCartBooking(
 
 export type BookingScope = 'active' | 'past' | 'all';
 
+interface PaginatedBookingsResponse {
+  items: BookingListItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 export async function listMyBookings(
   scope: BookingScope = 'all',
 ): Promise<BookingListItem[]> {
-  const resp = await api.get<BookingListItem[]>('/v1/booking/bookings', {
-    params: { scope },
-  });
-  return resp.data;
+  // Backend returns a paginated envelope (`PaginatedBookingListOut`); unwrap to
+  // the list shape callers expect. Defensive against legacy/mocked array
+  // responses so downstream `.map` / `.find` never blow up.
+  const resp = await api.get<PaginatedBookingsResponse | BookingListItem[]>(
+    '/v1/booking/bookings',
+    { params: { scope } },
+  );
+  return Array.isArray(resp.data) ? resp.data : resp.data.items ?? [];
 }
 
 export async function getBookingDetail(bookingId: string): Promise<BookingDetail> {

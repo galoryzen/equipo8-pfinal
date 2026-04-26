@@ -149,6 +149,27 @@ describe('listMyBookings', () => {
       params: { scope: 'past' },
     });
   });
+
+  it('unwraps the paginated envelope returned by the backend', async () => {
+    // Backend route: PaginatedBookingListOut = { items, total, page, page_size, total_pages }.
+    // Without unwrap, `list.map(...)` in useMyBookings blows up with
+    // "list.map is not a function" and Trips shows the load error.
+    const item: Partial<CartBooking> = {
+      id: 'b1',
+      status: 'CONFIRMED',
+      property_id: 'p1',
+      room_type_id: 'r1',
+    };
+    mockedApi.get.mockResolvedValueOnce({
+      data: { items: [item], total: 1, page: 1, page_size: 10, total_pages: 1 },
+    });
+
+    const result = await listMyBookings('active');
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('b1');
+  });
 });
 
 describe('cancelCartBooking', () => {
