@@ -117,9 +117,13 @@ export default function PaymentScreen() {
     if (!validate()) return;
     setSubmitting(true);
     const forceDecline = cardNumber.replace(/\s/g, '') === FORCE_DECLINE_TEST_CARD;
+    // Snapshot the failure (if any) the user just saw, so the polling can
+    // tell apart "the decline I already showed" from "a new decline from this
+    // attempt". The first attempt has no prior failure → null.
+    const previousFailureKey = polling.bookingDetail?.last_payment_attempt?.occurred_at ?? null;
     try {
       await checkoutBooking(cart.id, forceDecline);
-      polling.startPolling(cart.id);
+      polling.startPolling(cart.id, previousFailureKey);
     } catch (err) {
       if (err instanceof CheckoutInvalidStateError) {
         if (err.code === 'CHECKOUT_GUESTS_INCOMPLETE') {

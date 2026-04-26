@@ -84,10 +84,16 @@ def _failed_attempt_from_history(row: BookingStatusHistory) -> LastPaymentAttemp
     # split(maxsplit=2) keeps any colons inside the reason itself intact.
     parts = raw.split(":", 2)
     reason = parts[2] if len(parts) >= 3 else raw
+    # changed_at is stored as naive UTC (TIMESTAMP WITHOUT TIME ZONE). Marking
+    # it tz-aware here forces Pydantic to serialize as ISO 8601 WITH a "+00:00"
+    # offset; without this, JS Date.parse on the client treats the naive string
+    # as local time and the polling's "occurred_at >= pollStartedAt" filter
+    # misfires on retries (the old failure ends up looking N hours in the
+    # future of the new attempt's anchor).
     return LastPaymentAttemptOut(
         outcome="failed",
         reason=reason,
-        occurred_at=row.changed_at,
+        occurred_at=row.changed_at.replace(tzinfo=UTC),
     )
 
 

@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
@@ -234,6 +234,7 @@ class TestGetBookingDetailUseCase:
             date(2026, 5, 4),
         )
         intent_id = uuid4()
+        # changed_at is stored naive UTC, the use case attaches tz info.
         occurred = datetime(2026, 4, 25, 18, 30, 0)
         history_row = BookingStatusHistory(
             id=uuid4(),
@@ -259,4 +260,6 @@ class TestGetBookingDetailUseCase:
         # Reason strips the "payment_failed:{intent}:" prefix and keeps the rest
         # intact, including any colons in the upstream gateway reason.
         assert out.last_payment_attempt.reason == "mock_decline:card_declined"
-        assert out.last_payment_attempt.occurred_at == occurred
+        # Returned datetime is tz-aware UTC so JS clients parse it correctly.
+        assert out.last_payment_attempt.occurred_at == occurred.replace(tzinfo=UTC)
+        assert out.last_payment_attempt.occurred_at.utcoffset() == timedelta(0)
