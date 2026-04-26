@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { getAdminProperties } from '@/app/lib/api/adminProperties';
 import { getMe, getUserById } from '@/app/lib/api/auth';
 import { useRevenueReport } from '@/app/manager/hooks/useRevenueReport';
 import { tokens } from '@/lib/theme/tokens';
@@ -201,6 +202,10 @@ export default function ManagerReportsPage() {
   const [hotelLabel, setHotelLabel] = useState(t('manager.reports.filters.myHotel'));
   const [hotelLoading, setHotelLoading] = useState(true);
   const [hotelResolveError, setHotelResolveError] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const isAdmin = role === 'ADMIN';
+  const [adminProperties, setAdminProperties] = useState<Array<{ id: string; name: string }>>([]);
+  const [adminPropertiesLoading, setAdminPropertiesLoading] = useState(false);
   const [chartMode, setChartMode] = useState<ChartMode>('revenue');
   const [fromDate, setFromDate] = useState(() => {
     const now = new Date();
@@ -270,9 +275,11 @@ export default function ManagerReportsPage() {
       setHotelResolveError(null);
       try {
         const me = await getMe();
+        setRole(me?.role ?? null);
         if (!me || !me.id) {
           throw new Error(t('manager.reports.states.hotelNotResolved'));
         }
+        if (me.role === 'ADMIN') return;
         const profile = await getUserById(me.id);
         const resolvedHotelId = profile.hotel_id ?? me.hotel_id ?? '';
         if (!resolvedHotelId) {
@@ -300,6 +307,35 @@ export default function ManagerReportsPage() {
     };
   }, [t]);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    setAdminPropertiesLoading(true);
+    getAdminProperties()
+      .then((properties) => {
+        if (cancelled) return;
+        setAdminProperties(properties);
+        if (properties.length > 0) {
+          setHotelId((prev) => prev || properties[0].id);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAdminProperties([]);
+      })
+      .finally(() => {
+        if (!cancelled) setAdminPropertiesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const selected = adminProperties.find((p) => p.id === hotelId);
+    if (selected) setHotelLabel(selected.name);
+  }, [isAdmin, adminProperties, hotelId]);
+
   function handleGenerateReport() {
     if (!hotelId) {
       setHotelResolveError(t('manager.reports.states.hotelNotResolved'));
@@ -310,6 +346,7 @@ export default function ManagerReportsPage() {
       hotelId,
       from: fromDate,
       to: toDate,
+      mode: isAdmin ? 'admin' : 'partner',
     });
   }
 
@@ -343,9 +380,17 @@ export default function ManagerReportsPage() {
                     value={hotelId}
                     label={t('manager.reports.filters.hotel')}
                     onChange={(event) => setHotelId(event.target.value)}
-                    disabled={hotelLoading}
+                    disabled={hotelLoading || (isAdmin && adminPropertiesLoading)}
                   >
-                    <MenuItem value={hotelId || ''}>{hotelLabel}</MenuItem>
+                    {isAdmin ? (
+                      adminProperties.map((p) => (
+                        <MenuItem key={p.id} value={p.id}>
+                          {p.name}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem value={hotelId || ''}>{hotelLabel}</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
               </Grid>

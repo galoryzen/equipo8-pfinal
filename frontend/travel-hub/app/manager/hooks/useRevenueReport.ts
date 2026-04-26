@@ -15,7 +15,12 @@ export function useRevenueReport() {
   const [error, setError] = useState<RevenueReportError | null>(null);
   const [hasLoaded, setHasLoaded] = useState<boolean>(false);
 
-  async function generateReport(params: { from: string; to: string; hotelId: string }) {
+  async function generateReport(params: {
+    from: string;
+    to: string;
+    hotelId: string;
+    mode?: 'partner' | 'admin';
+  }) {
     setLoading(true);
     setError(null);
     setHasLoaded(true);
