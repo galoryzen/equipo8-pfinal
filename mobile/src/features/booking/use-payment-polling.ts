@@ -24,10 +24,14 @@ interface State {
  * payment flow to resolve. Resolves to:
  *  - `authorized` once status leaves PENDING_PAYMENT to PENDING_CONFIRMATION/CONFIRMED
  *  - `failed` when the booking surfaces a `last_payment_attempt` whose
- *    `occurred_at` is newer than this polling session's start (so a stale
- *    failure from a previous attempt is ignored when the user retries)
+ *    identity (`occurred_at` string) differs from the one the caller passed
+ *    as `previousFailureKey`, i.e. a NEW failure not the one we already showed
  *  - `expired` if the booking transitions to EXPIRED/CANCELLED
  *  - `timeout` after POLL_TIMEOUT_MS without any of the above
+ *
+ * Identity comparison (not timestamp ordering) is the right primitive here:
+ * we want to know "is this a different failure" — and clock-based filters
+ * misfire whenever the device and server clocks drift even by a few seconds.
  *
  * REJECTED is intentionally NOT terminal here — that state is set by hotel
  * rejection of an already-confirmed booking, never during the payment window.
@@ -38,7 +42,7 @@ export function usePaymentPolling() {
   const [state, setState] = useState<State>({ status: 'idle', bookingDetail: null });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startedAtRef = useRef<number>(0);
+  const knownFailureKeyRef = useRef<string | null>(null);
 
   const clearTimers = useCallback(() => {
     if (intervalRef.current) {
@@ -57,12 +61,12 @@ export function usePaymentPolling() {
   }, [clearTimers]);
 
   const startPolling = useCallback(
-    (bookingId: string) => {
+    (bookingId: string, previousFailureKey: string | null = null) => {
       clearTimers();
-      // Anchor the session start so we only react to failures that happened
-      // AFTER startPolling — guards against showing a stale decline from a
-      // prior attempt the user already saw and corrected.
-      startedAtRef.current = Date.now();
+      // The caller tells us which failure (if any) was already on the
+      // booking before this attempt kicked off. We treat that one as
+      // "already known" and only react to a different `occurred_at`.
+      knownFailureKeyRef.current = previousFailureKey;
       setState({ status: 'processing', bookingDetail: null });
 
       const tick = async () => {
@@ -79,13 +83,13 @@ export function usePaymentPolling() {
             return;
           }
           const lastFailure = detail.last_payment_attempt;
-          if (lastFailure?.outcome === 'failed') {
-            const occurredMs = Date.parse(lastFailure.occurred_at);
-            if (Number.isFinite(occurredMs) && occurredMs >= startedAtRef.current) {
-              clearTimers();
-              setState({ status: 'failed', bookingDetail: detail });
-              return;
-            }
+          if (
+            lastFailure?.outcome === 'failed' &&
+            lastFailure.occurred_at !== knownFailureKeyRef.current
+          ) {
+            clearTimers();
+            setState({ status: 'failed', bookingDetail: detail });
+            return;
           }
           setState((prev) => ({ ...prev, bookingDetail: detail }));
         } catch {
