@@ -137,12 +137,12 @@ export default function PriceCard({
               ${pricePerNight.toLocaleString()}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              / night
+              {t('propertyDetail.priceCard.night')}
             </Typography>
           </>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            Price not available
+            {t('propertyDetail.priceCard.priceNotAvailable')}
           </Typography>
         )}
       </Box>
@@ -224,12 +224,14 @@ export default function PriceCard({
           requireAuth(`/traveler/booking?${params.toString()}`);
         }}
       >
-        {authStatus === 'unauthenticated' ? 'Sign in to Reserve' : 'Reserve'}
+        {authStatus === 'unauthenticated'
+          ? t('propertyDetail.priceCard.signInToReserve')
+          : t('propertyDetail.priceCard.reserve')}
       </Button>
 
       {!selectedRoom && (
         <Alert severity="info" sx={{ mb: 1, py: 0.5 }}>
-          Select a room below to continue
+          {t('propertyDetail.priceCard.selectRoom')}
         </Alert>
       )}
 
@@ -244,7 +246,7 @@ export default function PriceCard({
         color="text.secondary"
         sx={{ display: 'block', textAlign: 'center', mb: 2 }}
       >
-        You won&apos;t be charged yet
+        {t('propertyDetail.priceCard.youWillNotBeChargedYet')}
       </Typography>
 
       {/* Price breakdown — single line; ``pricePerNight`` is the average derived
@@ -256,26 +258,26 @@ export default function PriceCard({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                ${pricePerNight.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}
+                ${pricePerNight.toLocaleString()} x {nights} {t('propertyDetail.priceCard.night')}
               </Typography>
               <Typography variant="body2">${roomTotal.toLocaleString()}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                Taxes
+                {t('propertyDetail.priceCard.taxes')}
               </Typography>
               <Typography variant="body2">${taxes.toLocaleString()}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                Service fee
+                {t('propertyDetail.priceCard.serviceFee')}
               </Typography>
               <Typography variant="body2">${serviceFee.toLocaleString()}</Typography>
             </Box>
             <Divider sx={{ my: 0.5 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" fontWeight={700}>
-                Total
+                {t('propertyDetail.priceCard.total')}
               </Typography>
               <Typography variant="body2" fontWeight={700}>
                 ${total.toLocaleString()}
@@ -314,7 +316,7 @@ export default function PriceCard({
         </Box>
         <Box>
           <Typography variant="caption" color="text.secondary">
-            Hosted by
+            {t('propertyDetail.priceCard.hostedBy')}
           </Typography>
           <Typography variant="body2" fontWeight={600}>
             {property.name}

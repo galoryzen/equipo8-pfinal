@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 
 interface ReviewSectionProps {
   reviews: PaginatedResponse<ReviewOut>;
@@ -24,6 +25,8 @@ function formatDate(iso: string) {
 }
 
 export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: ReviewSectionProps) {
+  const { t } = useTranslation();
+
   return (
     <Box>
       {/* Header — aligned with PropertyDetailView: show aggregate or unavailable */}
@@ -37,18 +40,18 @@ export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: Review
               </Typography>
             </Box>
             <Typography variant="body1" color="text.secondary" component="span">
-              · {reviews.total.toLocaleString()} reviews
+              · {t('propertyDetail.reviews.reviewsCount_one', { count: reviews.total })}
             </Typography>
           </>
         ) : (
           <Typography variant="h6" fontWeight={600} color="text.secondary" component="p">
-            Rating not available
+            {t('propertyDetail.reviews.noReviewsYet')}
           </Typography>
         )}
       </Box>
 
       {reviews.items.length === 0 && ratingAvg != null && (
-        <Typography color="text.secondary">No reviews yet.</Typography>
+        <Typography color="text.secondary">{t('propertyDetail.reviews.noReviewsYet')}</Typography>
       )}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
@@ -71,7 +74,7 @@ export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: Review
               </Box>
               <Box>
                 <Typography variant="body2" fontWeight={600}>
-                  Guest
+                  {t('propertyDetail.reviews.guestName')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {formatDate(review.created_at)}
@@ -98,7 +101,7 @@ export default function ReviewSection({ reviews, ratingAvg, onLoadMore }: Review
             onClick={onLoadMore}
             sx={{ borderRadius: 2, textTransform: 'none' }}
           >
-            Show all {reviews.total.toLocaleString()} reviews
+            {t('propertyDetail.reviews.showAllReviews', { count: reviews.total })}
           </Button>
         </>
       )}

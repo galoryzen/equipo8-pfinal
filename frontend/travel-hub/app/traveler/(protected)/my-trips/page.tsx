@@ -46,10 +46,10 @@ export default function MyTripsPage() {
             component="h1"
             sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}
           >
-            My Trips
+            {t('myTrips.title')}
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-            Manage your upcoming and past reservations.
+            {t('myTrips.subtitle')}
           </Typography>
         </Box>
         <Button
@@ -58,7 +58,7 @@ export default function MyTripsPage() {
           variant="contained"
           sx={{ textTransform: 'none' }}
         >
-          Find a hotel
+          {t('myTrips.findHotel')}
         </Button>
       </Box>
 
@@ -89,7 +89,7 @@ export default function MyTripsPage() {
             <Tab
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Upcoming
+                  {t('myTrips.upcoming')}
                   {upcoming.length > 0 && (
                     <Chip
                       label={upcoming.length}
@@ -104,7 +104,7 @@ export default function MyTripsPage() {
             <Tab
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Past
+                  {t('myTrips.past')}
                   {past.length > 0 && <Chip label={past.length} size="small" sx={{ height: 22 }} />}
                 </Box>
               }
@@ -113,7 +113,7 @@ export default function MyTripsPage() {
 
           {shown.length === 0 ? (
             <Typography color="text.secondary" sx={{ py: 4 }}>
-              {tab === 0 ? 'No upcoming trips in this tab.' : 'No past trips yet.'}
+              {tab === 0 ? t('myTrips.noUpcoming') : t('myTrips.noPast')}
             </Typography>
           ) : (
             <BookingList bookings={shown} propertyById={propertyById} />
@@ -121,7 +121,9 @@ export default function MyTripsPage() {
 
           {bookings.length > 0 && (
             <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 6 }}>
-              End of your {tab === 0 ? 'upcoming' : 'past'} trips.
+              {t('myTrips.endOfTrips', {
+                tab: tab === 0 ? t('myTrips.upcoming') : t('myTrips.past'),
+              })}
             </Typography>
           )}
         </>

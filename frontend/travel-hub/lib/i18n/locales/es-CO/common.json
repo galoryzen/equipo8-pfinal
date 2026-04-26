@@ -109,7 +109,7 @@
     "minGreaterThanMax": "El mínimo no puede ser mayor que el máximo"
   },
   "amenityFilter": {
-    "title": "Servicios",
+    "title": "Amenidades",
     "showMore": "Ver más",
     "showLess": "Ver menos"
   },
@@ -146,7 +146,36 @@
     "parking": "Parqueadero"
   },
   "propertyDetail": {
-    "availableRooms": "Habitaciones disponibles"
+    "availableRooms": "Habitaciones disponibles",
+    "about": "Acerca de esta propiedad",
+    "popularAmenities": "Amenidades populares",
+    "breakfast": "Desayuno incluido",
+    "location": "Ubicación",
+    "noRanking": "Calificación no disponible",
+    "amenities": {
+      "pool": "Piscina incluida",
+      "freeCancellation": "Cancelación gratuita",
+      "list": "Ver todas las {{count}} amenidades",
+      "allAmenities": "Todas las amenidades"
+    },
+    "reviews": {
+      "guestName": "Huésped",
+      "reviewsCount_one": "{{count}} reseña(s)",
+      "noReviewsYet": "Sin reseñas aún",
+      "showAllReviews": "Ver todas las {{count}} reseñas"
+    },
+    "priceCard": {
+      "night": " / noche",
+      "priceNotAvailable": "Precio no disponible",
+      "taxes": "Impuestos",
+      "serviceFee": "Cargo por servicio",
+      "total": "Total",
+      "hostedBy": "Anfitrión",
+      "selectRoom": "Selecciona una habitación para continuar",
+      "signInToReserve": "Iniciar sesión para reservar",
+      "youWillNotBeChargedYet": "No se te cobrará todavía",
+      "reserve": "Reservar"
+    }
   },
   "roomCard": {
     "bookingInProgress": "Reserva en curso",
@@ -434,7 +463,8 @@
       },
       "common": {
         "cancel": "Cancelar",
-        "unknownError": "Error desconocido"
+        "unknownError": "Error desconocido",
+        "tryAgain": "Intentar de nuevo"
       }
     },
     "reports": {
@@ -476,6 +506,25 @@
         "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
         "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
       }
+    }
+  },
+  "myTrips": {
+    "title": "Mis viajes",
+    "subtitle": "Gestiona tus viajes y reservas",
+    "backToSearch": "Volver a la búsqueda",
+    "findHotel": "Encontrar un hotel",
+    "upcoming": "Próximos",
+    "past": "Pasados",
+    "noUpcoming": "No hay viajes próximos",
+    "noPast": "No hay viajes pasados",
+    "endOfTrips": "Fin de tus viajes {{tab}}.",
+    "card": {
+      "locationNotAvailable": "Ubicación no disponible",
+      "noImage": "Sin imagen",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "viewDetails": "Ver detalles",
+      "hotelName": "Hotel"
     }
   }
 }
