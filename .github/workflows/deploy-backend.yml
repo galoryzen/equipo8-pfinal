@@ -82,10 +82,10 @@ jobs:
               --force-new-deployment \
               --query 'service.serviceArn' --output text
 
-            # For booking/payment, roll the matching worker service with the
-            # same image. Worker env vars are owned by Terraform and
-            # preserved via describe-task-definition.
-            if [[ "$svc" == "booking" || "$svc" == "payment" ]]; then
+            # For booking/payment/notification, roll the matching worker
+            # service with the same image. Worker env vars are owned by
+            # Terraform and preserved via describe-task-definition.
+            if [[ "$svc" == "booking" || "$svc" == "payment" || "$svc" == "notification" ]]; then
               WORKER_FAMILY="thub-$svc-worker"
               aws ecs describe-task-definition \
                 --task-definition "$WORKER_FAMILY" \

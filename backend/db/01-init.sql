@@ -10,6 +10,24 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- ── Tear down any prior schema so this script is fully re-runnable.
+-- Workflow assumption: every run wipes and reseeds. Schemas drop their tables
+-- + indexes + FKs via CASCADE; enum types live in ``public`` so they need a
+-- separate drop. (``CREATE TYPE`` has no ``IF NOT EXISTS``, hence the wipe.)
+DROP SCHEMA IF EXISTS notifications CASCADE;
+DROP SCHEMA IF EXISTS payments CASCADE;
+DROP SCHEMA IF EXISTS booking CASCADE;
+DROP SCHEMA IF EXISTS catalog CASCADE;
+DROP SCHEMA IF EXISTS users CASCADE;
+DROP TYPE IF EXISTS
+    user_role, partner_status,
+    cancellation_policy_type, property_status, room_type_status,
+    policy_category, discount_type,
+    booking_status,
+    payment_status, payment_intent_status,
+    notification_channel, notification_status
+CASCADE;
+
 -- ── Schemas ─────────────────────────────────────────────
 CREATE SCHEMA IF NOT EXISTS users;
 CREATE SCHEMA IF NOT EXISTS catalog;
