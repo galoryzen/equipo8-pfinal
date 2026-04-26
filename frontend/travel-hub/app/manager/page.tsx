@@ -79,14 +79,20 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+function formatShortDate(value: string): string {
+  return formatDateShort(value);
+}
+
 function formatDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
+  const hasExplicitTz = /z$/i.test(value) || /[+-]\d{2}:\d{2}$/.test(value);
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    ...(hasExplicitTz ? { timeZone: 'UTC' as const } : null),
   }).format(date);
 }
 
@@ -263,7 +269,7 @@ function BookingTrendChart({
               fontSize="11"
               fill={tokens.dashboard.mutedText}
             >
-              {formatDateShort(point.date)}
+              {formatShortDate(point.date)}
             </text>
           </g>
         ))}
@@ -582,8 +588,8 @@ export default function ManagerDashboardPage() {
                   <TableRow key={`${checkin.guest}-${checkin.checkIn}-${index}`}>
                     <TableCell>{checkin.guest}</TableCell>
                     <TableCell>{checkin.roomType}</TableCell>
-                    <TableCell>{formatDateShort(checkin.checkIn)}</TableCell>
-                    <TableCell>{formatDateShort(checkin.checkOut)}</TableCell>
+                    <TableCell>{formatShortDate(checkin.checkIn)}</TableCell>
+                    <TableCell>{formatShortDate(checkin.checkOut)}</TableCell>
                     <TableCell>
                       <Chip
                         label={getDashboardStatusLabel(checkin.status, t)}
