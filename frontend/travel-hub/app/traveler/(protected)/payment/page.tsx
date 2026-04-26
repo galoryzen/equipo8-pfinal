@@ -553,10 +553,7 @@ function PaymentPageContent() {
         // one we snapshotted before kicking this attempt off) means the PSP
         // just rejected — surface it as a decline, not a timeout.
         const failure = detail.last_payment_attempt;
-        if (
-          failure?.outcome === 'failed' &&
-          failure.occurred_at !== previousFailureKey
-        ) {
+        if (failure?.outcome === 'failed' && failure.occurred_at !== previousFailureKey) {
           throw new Error(t('payment.paymentRejected'));
         }
 
