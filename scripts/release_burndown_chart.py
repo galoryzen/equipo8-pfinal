@@ -25,7 +25,7 @@ TOTAL_POINTS = 112
 SPRINTS = [
     ("Sprint 1", TOTAL_POINTS),
     ("Sprint 2", TOTAL_POINTS - 32),
-    ("Sprint 3", None),
+    ("Sprint 3", TOTAL_POINTS - 64),
     ("Fin", None),
 ]
 
