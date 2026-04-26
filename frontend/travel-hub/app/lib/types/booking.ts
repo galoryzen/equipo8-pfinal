@@ -84,6 +84,20 @@ export interface GuestPayload {
   phone?: string | null;
 }
 
+/**
+ * Latest failed payment attempt observed for this booking. Populated by the
+ * booking service from `booking_status_history` rows tagged
+ * `payment_failed:...`. Absent (null) means no failure has ever been recorded.
+ * Used by the payment screen polling to distinguish a real decline from a slow
+ * event without minting a new booking state.
+ */
+export interface LastPaymentAttempt {
+  outcome: 'failed';
+  reason: string;
+  /** ISO 8601 — when the booking service recorded the failure. */
+  occurred_at: string;
+}
+
 export interface BookingDetail {
   id: string;
   status: string;
@@ -109,6 +123,7 @@ export interface BookingDetail {
   original_taxes?: string | null;
   original_service_fee?: string | null;
   original_grand_total?: string | null;
+  last_payment_attempt?: LastPaymentAttempt | null;
   created_at: string;
   updated_at: string;
 }
