@@ -20,13 +20,11 @@ class GetHotelDashboardMetricsUseCase:
     async def execute(
         self,
         *,
-        user_id: UUID,
         date_from: date,
         date_to: date,
-        hotel_id: UUID | None = None,
+        hotel_id: UUID,
     ) -> dict:
         # CACHE (future): key f"dashboard:metrics:{hotel_id}:{date_from}:{date_to}"
-        resolved_hotel_id = hotel_id or await resolve_hotel_id_for_user(user_id)
         if date_to < date_from:
             raise ValueError("Rango de fechas inválido: 'to' debe ser >= 'from'")
         if date_to > date.today():
@@ -35,7 +33,7 @@ class GetHotelDashboardMetricsUseCase:
         period_end_exclusive = date_to + timedelta(days=1)
 
         cur = await self._repo.aggregate_hotel_period(
-            resolved_hotel_id, date_from, date_to, period_end_exclusive=period_end_exclusive
+            hotel_id, date_from, date_to, period_end_exclusive=period_end_exclusive
         )
         span_days = (date_to - date_from).days + 1
         prev_to = date_from - timedelta(days=1)
@@ -43,7 +41,7 @@ class GetHotelDashboardMetricsUseCase:
         prev_end_exclusive = prev_to + timedelta(days=1)
 
         prev = await self._repo.aggregate_hotel_period(
-            resolved_hotel_id, prev_from, prev_to, period_end_exclusive=prev_end_exclusive
+            hotel_id, prev_from, prev_to, period_end_exclusive=prev_end_exclusive
         )
 
         current = PeriodRawMetrics(
@@ -63,13 +61,13 @@ class GetHotelDashboardMetricsUseCase:
 
         metrics = build_dashboard_metrics(current, previous)
         active_cancellations = await self._repo.count_active_cancellations(
-            resolved_hotel_id, date_from, period_end_exclusive=period_end_exclusive
+            hotel_id, date_from, period_end_exclusive=period_end_exclusive
         )
-        trends = await self._repo.list_booking_trends(resolved_hotel_id, date_from, date_to)
+        trends = await self._repo.list_booking_trends(hotel_id, date_from, date_to)
         activities = await self._repo.list_recent_activity(
-            resolved_hotel_id, date_from, date_to, limit=10
+            hotel_id, date_from, date_to, limit=10
         )
-        upcoming = await self._repo.list_upcoming_checkins(resolved_hotel_id, limit=10)
+        upcoming = await self._repo.list_upcoming_checkins(hotel_id, limit=10)
 
         available_rooms = max(0.0, cur.capacity_room_nights - cur.active_room_nights)
 

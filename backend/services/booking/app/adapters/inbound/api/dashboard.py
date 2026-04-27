@@ -47,12 +47,31 @@ async def get_dashboard_metrics(
             detail="hotel_id es requerido para este rol",
         )
 
+    hotel_id = (
+        user_info.get("hotel_id")
+        if hotel_id is None
+        else hotel_id
+    )
+
+    if not hotel_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id es requerido",
+        )
+
+    try:
+        hotel_id = UUID(str(hotel_id))
+    except (TypeError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id inválido",
+        ) from e
+
     try:
         payload = await use_case.execute(
-            user_id=UUID(uid),
+            hotel_id=hotel_id,
             date_from=date_from,
-            date_to=date_to,
-            hotel_id=hotel_id if role == "ADMIN" else None,
+            date_to=date_to
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -70,21 +89,48 @@ async def get_revenue_report(
     date_to: date = Query(..., alias="to"),
     user_info: dict = Depends(get_current_user_info),
     use_case: GetHotelRevenueReportUseCase = Depends(get_hotel_revenue_report_use_case),
+    hotel_Id: UUID | None = Query(None, alias="hotel_id"),
 ):
     role = user_info.get("role")
     uid = user_info.get("user_id")
+
     if not uid:
         raise HTTPException(status_code=401, detail="user_id es requerido")
 
-    if role not in ("HOTEL", "MANAGER"):
+    if role == "TRAVELER":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No autorizado para generar reportes de hotel.",
         )
 
+    if role == "ADMIN" and hotel_Id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id es requerido para este rol",
+        )
+
+    hotel_id = (
+        user_info.get("hotel_id")
+        if hotel_id is None
+        else hotel_id
+    )
+
+    if not hotel_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id es requerido",
+        )
+
+    try:
+        hotel_id = UUID(str(hotel_id))
+    except (TypeError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id inválido",
+        ) from e
+
     try:
         payload = await use_case.execute(
-            user_id=UUID(uid),
             hotel_id=hotel_id,
             date_from=date_from,
             date_to=date_to,

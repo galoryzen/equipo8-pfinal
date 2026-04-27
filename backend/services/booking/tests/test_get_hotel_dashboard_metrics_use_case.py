@@ -49,7 +49,7 @@ async def test_execute_calls_repo_twice_and_returns_shape(monkeypatch):
 
     uc = GetHotelDashboardMetricsUseCase(repo)
     out = await uc.execute(
-        user_id=UUID("a0000000-0000-0000-0000-000000000001"),
+        hotel_id=hotel,
         date_from=date(2026, 2, 1),
         date_to=date(2026, 2, 7),
     )
@@ -84,7 +84,7 @@ async def test_execute_invalid_range(monkeypatch):
     uc = GetHotelDashboardMetricsUseCase(repo)
     with pytest.raises(ValueError, match="inválido"):
         await uc.execute(
-            user_id=UUID("a0000000-0000-0000-0000-000000000001"),
+            hotel_id=UUID("c0000000-0000-0000-0000-000000000001"),
             date_from=date(2026, 3, 10),
             date_to=date(2026, 3, 1),
         )
@@ -105,7 +105,7 @@ async def test_execute_rejects_date_to_in_future(monkeypatch):
     uc = GetHotelDashboardMetricsUseCase(repo)
     with pytest.raises(ValueError, match="posterior"):
         await uc.execute(
-            user_id=UUID("a0000000-0000-0000-0000-000000000001"),
+            hotel_id=UUID("c0000000-0000-0000-0000-000000000001"),
             date_from=date(2099, 1, 1),
             date_to=date(2099, 1, 31),
         )

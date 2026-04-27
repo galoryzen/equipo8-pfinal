@@ -50,6 +50,7 @@ def test_metrics_ok_for_hotel_partner():
     app.dependency_overrides[get_current_user_info] = lambda: {
         "role": "HOTEL",
         "user_id": "b0000000-0000-0000-0000-000000000001",
+        "hotel_id": "c0000000-0000-0000-0000-000000000001",
     }
     app.dependency_overrides[get_hotel_dashboard_metrics_use_case] = lambda: mock_uc
     try:

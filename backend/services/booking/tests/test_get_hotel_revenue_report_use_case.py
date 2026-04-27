@@ -71,7 +71,6 @@ async def test_execute_returns_revenue_report_payload(monkeypatch):
 
     uc = GetHotelRevenueReportUseCase(repo)
     out = await uc.execute(
-        user_id=UUID("a0000000-0000-0000-0000-000000000001"),
         hotel_id=hotel,
         date_from=date(2026, 2, 1),
         date_to=date(2026, 2, 7),
@@ -126,7 +125,6 @@ async def test_execute_no_data_returns_zero_values(monkeypatch):
 
     uc = GetHotelRevenueReportUseCase(repo)
     out = await uc.execute(
-        user_id=UUID("a0000000-0000-0000-0000-000000000001"),
         hotel_id=hotel,
         date_from=date(2026, 3, 1),
         date_to=date(2026, 3, 31),
@@ -179,7 +177,6 @@ async def test_execute_without_previous_period_activity_sets_variation_zero(monk
 
     uc = GetHotelRevenueReportUseCase(repo)
     out = await uc.execute(
-        user_id=UUID("a0000000-0000-0000-0000-000000000001"),
         hotel_id=hotel,
         date_from=date(2026, 4, 1),
         date_to=date(2026, 4, 7),
