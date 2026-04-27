@@ -19,7 +19,6 @@ class GetHotelRevenueReportUseCase:
     async def execute(
         self,
         *,
-        user_id: UUID,
         hotel_id: UUID,
         date_from: date,
         date_to: date,
@@ -28,10 +27,6 @@ class GetHotelRevenueReportUseCase:
             raise ValueError("Rango de fechas inválido: 'to' debe ser >= 'from'")
         if date_to > date.today():
             raise ValueError("Rango de fechas inválido: 'to' no puede ser posterior a la fecha actual.")
-
-        resolved_hotel_id = await resolve_hotel_id_for_user(user_id)
-        if resolved_hotel_id != hotel_id:
-            raise PermissionError("No autorizado para consultar reportes de este hotel.")
 
         period_end_exclusive = date_to + timedelta(days=1)
         current_period = await self._repo.aggregate_hotel_period(
