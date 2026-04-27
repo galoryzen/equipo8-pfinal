@@ -19,11 +19,26 @@ class LoginUserUseCase:
         if not bcrypt.checkpw(password.encode("utf-8"), user.password):
             raise InvalidCredentialsError()
 
+        # Solo permitir roles HOTEL, AGENCY, ADMIN para login de manager
+        allowed_roles = {UserRole.HOTEL, UserRole.AGENCY, UserRole.ADMIN}
+        if user.role not in allowed_roles:
+            raise InvalidCredentialsError()
+
         hotel_id: str | None = None
+        # Validar usuario activo según rol
         if user.role == UserRole.HOTEL:
             hid = await self._repo.get_hotel_id_by_user_id(user.id)
-            if hid is not None:
-                hotel_id = str(hid)
+            if hid is None:
+                # No tiene relación activa
+                raise InvalidCredentialsError()
+            hotel_id = str(hid)
+        elif user.role == UserRole.AGENCY:
+            agency_id = await self._repo.get_agency_id_by_user_id(user.id)
+            if agency_id is None:
+                # No tiene relación activa
+                raise InvalidCredentialsError()
+            agency_id = str(agency_id)
+        # ADMIN solo requiere credenciales válidas
 
         access_token = self._token.create_access_token(
             subject=str(user.id),

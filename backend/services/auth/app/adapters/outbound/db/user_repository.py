@@ -15,6 +15,14 @@ from app.domain.models import (
 )
 
 class SqlAlchemyUserRepository(UserRepository):
+        async def get_agency_id_by_user_id(self, user_id: uuid.UUID) -> uuid.UUID | None:
+            result = await self._session.execute(
+                select(AgencyUser.agency_id).where(
+                    AgencyUser.user_id == user_id,
+                    AgencyUser.is_active.is_(True),
+                )
+            )
+            return result.scalar_one_or_none()
     def __init__(self, session: AsyncSession):
         self._session = session
 
