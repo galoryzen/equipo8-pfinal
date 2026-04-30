@@ -16,8 +16,9 @@ def render_payment_failed(ctx: PaymentFailedContext) -> tuple[str, str, str]:
     subject = f"Pago rechazado en TravelHub"
     text = f"""Hola {ctx.full_name},\n\nTu pago no pudo ser procesado.\n\nReferencia de transacción: {ctx.transaction_reference}\nSiguiente acción sugerida: {ctx.suggested_action}\n\nPor favor, intenta con otro método de pago o revisa los detalles ingresados.\n\nGracias por usar TravelHub."""
 
+    alt_text = ctx.property_name if ctx.property_name else "Propiedad"
     hero_html = (
-      f'<img src="{ctx.property_image_url}" alt="{ctx.property_name or \"Propiedad\"}" '
+      f'<img src="{ctx.property_image_url}" alt="{alt_text}" '
       'style="display:block;width:100%;max-width:560px;height:auto;border-radius:8px 8px 0 0;" />'
       if ctx.property_image_url
       else ""

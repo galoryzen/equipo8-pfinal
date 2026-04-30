@@ -52,7 +52,7 @@ async def test_exists_by_event_id_returns_false_when_missing():
 @pytest.mark.asyncio
 async def test_create_adds_and_flushes():
     session = AsyncMock()
-    session.add = MagicMock()
+    session.add = AsyncMock()
     repo = SqlAlchemyNotificationRepository(session)
     notification = _make_notification()
 
