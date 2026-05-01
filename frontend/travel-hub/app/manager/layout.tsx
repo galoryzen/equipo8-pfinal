@@ -112,8 +112,19 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   return (
     <AuthGuard>
       <div style={{ display: 'flex' }}>
-        <aside>
-          <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Box
+          component="aside"
+          sx={{
+            position: 'sticky',
+            top: 0,
+            alignSelf: 'flex-start',
+            height: '100vh',
+            maxHeight: '100vh',
+            overflowY: 'auto',
+            flexShrink: 0,
+          }}
+        >
+          <Box sx={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box
               sx={{
                 display: 'flex',
@@ -226,7 +237,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               </Button>
             </Box>
           </Box>
-        </aside>
+        </Box>
         <main style={{ flex: 1, background: '#F8FAFC', minHeight: '100vh' }}>
           <Box
             sx={{

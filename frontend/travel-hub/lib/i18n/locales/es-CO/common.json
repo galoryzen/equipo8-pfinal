@@ -534,6 +534,12 @@
           "submit": "Agregar",
           "cancel": "Cancelar",
           "helper": "Pega una URL pública de imagen. La carga directa de archivos llegará pronto."
+        },
+        "deleteDialog": {
+          "title": "¿Eliminar esta imagen?",
+          "message": "Esta foto se quitará de tu galería. Podrás volver a agregarla más tarde con una URL.",
+          "cancel": "Cancelar",
+          "confirm": "Eliminar"
         }
       },
       "toolbar": {

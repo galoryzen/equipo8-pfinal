@@ -317,6 +317,8 @@ export default function ManagerSettingsPage() {
 
   const [saving, setSaving] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [pendingDeleteImageId, setPendingDeleteImageId] = useState<string | null>(null);
+  const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [snack, setSnack] = useState<{ severity: 'success' | 'error'; message: string } | null>(
     null
   );
@@ -462,16 +464,18 @@ export default function ManagerSettingsPage() {
     }
   }
 
-  async function handleDeleteImage(imageId: string) {
-    if (!hotelId) return;
+  async function handleDeleteImage(imageId: string): Promise<boolean> {
+    if (!hotelId) return false;
     try {
       await deleteHotelImage(hotelId, imageId);
       setImages((prev) =>
         prev.filter((i) => i.id !== imageId).map((img, idx) => ({ ...img, display_order: idx }))
       );
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.imageDeleted') });
+      return true;
     } catch {
       setSnack({ severity: 'error', message: t('manager.settings.errors.deleteFailed') });
+      return false;
     }
   }
 
@@ -483,6 +487,17 @@ export default function ManagerSettingsPage() {
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.primaryUpdated') });
     } catch {
       setSnack({ severity: 'error', message: t('manager.settings.errors.saveFailed') });
+    }
+  }
+
+  async function handleConfirmDeleteImage() {
+    if (!pendingDeleteImageId) return;
+    setDeleteInProgress(true);
+    try {
+      const ok = await handleDeleteImage(pendingDeleteImageId);
+      if (ok) setPendingDeleteImageId(null);
+    } finally {
+      setDeleteInProgress(false);
     }
   }
 
@@ -857,8 +872,8 @@ export default function ManagerSettingsPage() {
                         px: 1,
                         py: 0.5,
                         borderRadius: 999,
-                        bgcolor: tokens.brand.accentOrange,
-                        color: 'white',
+                        bgcolor: tokens.brand.accentOrangeFg,
+                        color: tokens.surface.paper,
                         fontWeight: 900,
                         fontSize: '0.72rem',
                       }}
@@ -892,10 +907,7 @@ export default function ManagerSettingsPage() {
                     ) : null}
                     <Tooltip title={t('manager.settings.gallery.actions.delete')}>
                       <IconButton
-                        onClick={() => {
-                          const ok = window.confirm(t('manager.settings.gallery.actions.delete'));
-                          if (ok) void handleDeleteImage(img.id);
-                        }}
+                        onClick={() => setPendingDeleteImageId(img.id)}
                         sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.12)' }}
                       >
                         <DeleteOutlineIcon />
@@ -938,6 +950,47 @@ export default function ManagerSettingsPage() {
         onSubmit={handleAddImage}
         t={t}
       />
+
+      <Dialog
+        open={pendingDeleteImageId !== null}
+        onClose={() => {
+          if (!deleteInProgress) setPendingDeleteImageId(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+        aria-labelledby="delete-image-dialog-title"
+      >
+        <DialogTitle id="delete-image-dialog-title" sx={{ fontWeight: 900 }}>
+          {t('manager.settings.gallery.deleteDialog.title')}
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: '0.9375rem', color: tokens.text.secondary, fontWeight: 500 }}>
+            {t('manager.settings.gallery.deleteDialog.message')}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setPendingDeleteImageId(null)}
+            disabled={deleteInProgress}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+          >
+            {t('manager.settings.gallery.deleteDialog.cancel')}
+          </Button>
+          <Button
+            onClick={() => void handleConfirmDeleteImage()}
+            disabled={deleteInProgress}
+            variant="contained"
+            color="error"
+            sx={{ textTransform: 'none', fontWeight: 800, minWidth: 120 }}
+          >
+            {deleteInProgress ? (
+              <CircularProgress size={22} sx={{ color: 'inherit' }} />
+            ) : (
+              t('manager.settings.gallery.deleteDialog.confirm')
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={Boolean(snack)}

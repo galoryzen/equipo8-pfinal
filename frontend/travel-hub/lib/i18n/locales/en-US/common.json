@@ -548,6 +548,12 @@
           "submit": "Add",
           "cancel": "Cancel",
           "helper": "Paste a public image URL. Direct file upload is coming soon."
+        },
+        "deleteDialog": {
+          "title": "Remove this image?",
+          "message": "This photo will be removed from your gallery. You can add it again later with a URL.",
+          "cancel": "Cancel",
+          "confirm": "Remove"
         }
       },
       "toolbar": {
