@@ -487,6 +487,85 @@
         "tryAgain": "Try again"
       }
     },
+    "settings": {
+      "title": "Edit Hotel Profile",
+      "breadcrumb": {
+        "myHotels": "My Hotels",
+        "editProfile": "Edit Profile"
+      },
+      "status": {
+        "draft": "Draft",
+        "published": "Published"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "description": {
+        "title": "Hotel Description",
+        "subtitle": "Provide a detailed overview of your property to attract guests."
+      },
+      "amenities": {
+        "title": "Amenities & Services",
+        "subtitle": "Select the facilities and services available at your property.",
+        "groups": {
+          "propertyFeatures": "Property Features",
+          "leisureWellness": "Leisure & Wellness",
+          "services": "Services"
+        },
+        "items": {
+          "WIFI": "Free WiFi",
+          "RESTAURANT": "Restaurant",
+          "BAR": "Bar",
+          "PARKING": "Parking",
+          "PET_FRIENDLY": "Pet Friendly",
+          "POOL": "Pool",
+          "FITNESS": "Fitness Center",
+          "SPA": "Spa",
+          "FRONT_DESK_24H": "24h Front Desk"
+        }
+      },
+      "policy": {
+        "title": "Hotel Policy",
+        "subtitle": "Define check-in/out times, smoking rules, and other property policies.",
+        "placeholder": "e.g. Check-in: 3:00 PM, Check-out: 11:00 AM. No smoking allowed inside the rooms..."
+      },
+      "gallery": {
+        "title": "Image Gallery Management",
+        "subtitle": "Upload and manage photos of your property.",
+        "addNew": "Add New Images",
+        "uploadImage": "Upload Image",
+        "primary": "Primary Photo",
+        "actions": {
+          "setPrimary": "Set as primary",
+          "delete": "Remove"
+        },
+        "addDialog": {
+          "title": "Add Image",
+          "urlLabel": "Image URL",
+          "captionLabel": "Caption (optional)",
+          "submit": "Add",
+          "cancel": "Cancel",
+          "helper": "Paste a public image URL. Direct file upload is coming soon."
+        }
+      },
+      "toolbar": {
+        "comingSoon": "Rich text editing coming soon"
+      },
+      "snackbar": {
+        "saved": "Changes saved",
+        "imageAdded": "Image added",
+        "imageDeleted": "Image removed",
+        "primaryUpdated": "Primary image updated"
+      },
+      "errors": {
+        "loadFailed": "Failed to load hotel profile",
+        "saveFailed": "Failed to save changes",
+        "addImageFailed": "Failed to add image",
+        "deleteFailed": "Failed to remove image",
+        "noHotels": "Your account is not associated with any hotel."
+      }
+    },
     "reports": {
       "title": "Revenue Reports",
       "subtitle": "Generate revenue performance reports by period.",
