@@ -16,6 +16,7 @@ import DashboardCustomizeOutlinedIcon from '@mui/icons-material/DashboardCustomi
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import { Box } from '@mui/material';
 import Button from '@mui/material/Button';
@@ -72,6 +73,12 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       icon: <BarChartOutlinedIcon />,
       activeIcon: <BarChartIcon />,
       href: '/manager/reports',
+    },
+    {
+      key: 'manager.hotels.admin.navbar.settings',
+      icon: <SettingsOutlinedIcon />,
+      activeIcon: <SettingsOutlinedIcon />,
+      href: '/manager/settings',
     },
   ];
 

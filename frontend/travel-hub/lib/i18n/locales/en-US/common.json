@@ -477,6 +477,7 @@
           "notifications": "Notifications",
           "reports": "Reports",
           "subtitle": "Super Admin",
+          "settings": "Settings",
           "logOut": "Log Out"
         }
       },
