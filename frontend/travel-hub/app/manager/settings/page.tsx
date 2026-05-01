@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { getAmenityCatalog } from '@/app/lib/api/catalog';
 import {
   type HotelProfile,
+  type ManagerHotelItem,
   type ManagerPropertyImage,
   addHotelImage,
   deleteHotelImage,
@@ -59,6 +60,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+
+import { ManagerSettingsHotelSelect } from './ManagerSettingsHotelSelect';
 
 type AmenityCatalogItem = { code: string; name: string };
 
@@ -298,14 +301,17 @@ function AddImageDialog({
 export default function ManagerSettingsPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
   const [hotelId, setHotelId] = useState<string | null>(null);
+  const [hotels, setHotels] = useState<ManagerHotelItem[]>([]);
   const [profile, setProfile] = useState<HotelProfile | null>(null);
   const [amenityCatalog, setAmenityCatalog] = useState<AmenityCatalogItem[]>([]);
 
   const [description, setDescription] = useState('');
   const [policy, setPolicy] = useState('');
+  // Store backend codes (e.g. "pet_friendly") so PATCH /profile keeps working.
   const [selectedAmenityCodes, setSelectedAmenityCodes] = useState<Set<string>>(new Set());
   const [images, setImages] = useState<ManagerPropertyImage[]>([]);
 
@@ -316,20 +322,22 @@ export default function ManagerSettingsPage() {
   );
 
   const groupedAmenities = useMemo(() => {
-    const map = new Map<string, string>();
+    // Keep backend code, but derive uppercase display code for i18n + icon/category maps.
+    const map = new Map<string, { code: string; displayCode: string; name: string }>();
     for (const a of amenityCatalog) {
-      map.set(a.code, a.name);
+      const displayCode = String(a.code ?? '').toUpperCase();
+      map.set(a.code, { code: a.code, displayCode, name: a.name });
     }
 
-    const groups: Record<AmenityCategory, { code: string; name: string }[]> = {
+    const groups: Record<AmenityCategory, { code: string; displayCode: string; name: string }[]> = {
       PROPERTY_FEATURES: [],
       LEISURE_WELLNESS: [],
       SERVICES: [],
     };
 
-    for (const [code, name] of map.entries()) {
-      const cat = AMENITY_CATEGORY[code] ?? 'SERVICES';
-      groups[cat].push({ code, name });
+    for (const item of map.values()) {
+      const cat = AMENITY_CATEGORY[item.displayCode] ?? 'SERVICES';
+      groups[cat].push(item);
     }
 
     for (const cat of Object.keys(groups) as AmenityCategory[]) {
@@ -355,28 +363,28 @@ export default function ManagerSettingsPage() {
     async function load() {
       setIsLoading(true);
       try {
-        const [hotels, amenities] = await Promise.all([
-          getManagerHotels(1, 1),
-          getAmenityCatalog(),
-        ]);
+        const [hotelList, amenities] = await Promise.all([getManagerHotels(), getAmenityCatalog()]);
         if (cancelled) return;
         setAmenityCatalog(amenities);
 
-        const first = hotels.items?.[0];
-        if (!first) {
+        const items = hotelList.items ?? [];
+        setHotels(items);
+
+        const fromQuery = searchParams.get('id');
+        const initialId = fromQuery ?? items[0]?.id ?? null;
+
+        if (!initialId) {
           setHotelId(null);
           setProfile(null);
           return;
         }
 
-        setHotelId(first.id);
-        const p = await getHotelProfile(first.id);
-        if (cancelled) return;
-        setProfile(p);
-        setDescription(p.description ?? '');
-        setPolicy(p.policy ?? '');
-        setSelectedAmenityCodes(new Set(p.amenity_codes ?? []));
-        setImages(p.images ?? []);
+        setHotelId(initialId);
+        if (!fromQuery) {
+          const next = new URLSearchParams(searchParams.toString());
+          next.set('id', initialId);
+          router.replace(`/manager/settings?${next.toString()}`);
+        }
       } catch {
         setSnack({ severity: 'error', message: t('manager.settings.errors.loadFailed') });
       } finally {
@@ -387,7 +395,33 @@ export default function ManagerSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [t]);
+  }, [router, searchParams, t]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProfile(selectedId: string) {
+      try {
+        const p = await getHotelProfile(selectedId);
+        if (cancelled) return;
+        setProfile(p);
+        setDescription(p.description ?? '');
+        setPolicy(p.policy ?? '');
+        setSelectedAmenityCodes(new Set(p.amenity_codes ?? []));
+        setImages(p.images ?? []);
+      } catch {
+        if (!cancelled) {
+          setProfile(null);
+          setSnack({ severity: 'error', message: t('manager.settings.errors.loadFailed') });
+        }
+      }
+    }
+
+    if (!hotelId) return;
+    void loadProfile(hotelId);
+    return () => {
+      cancelled = true;
+    };
+  }, [hotelId, t]);
 
   function resetEdits() {
     if (!profile) return;
@@ -553,17 +587,29 @@ export default function ManagerSettingsPage() {
       }}
     >
       <Box component="header" sx={{ mb: 3 }}>
+        <ManagerSettingsHotelSelect
+          hotels={hotels}
+          value={hotelId}
+          sectionLabel={t('manager.settings.breadcrumb.settings')}
+          selectAriaLabel={t('manager.settings.breadcrumb.settings')}
+          onHotelChange={(nextId) => {
+            setHotelId(nextId);
+            const next = new URLSearchParams(searchParams.toString());
+            next.set('id', nextId);
+            router.replace(`/manager/settings?${next.toString()}`);
+          }}
+        />
         <Box
           component="nav"
-          aria-label={t('manager.settings.breadcrumb.myHotels')}
+          aria-label={t('manager.settings.breadcrumb.settings')}
           sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}
         >
           <Button
             component={Link}
-            href="/manager/hotels"
+            href="/manager/settings"
             sx={{ textTransform: 'none', fontWeight: 800, color: tokens.text.secondary, px: 0.75 }}
           >
-            {t('manager.settings.breadcrumb.myHotels')}
+            {t('manager.settings.breadcrumb.settings')}
           </Button>
           <NavigateNextIcon
             aria-hidden="true"
@@ -571,7 +617,7 @@ export default function ManagerSettingsPage() {
           />
           <Button
             component={Link}
-            href={`/manager/hotels?id=${hotelId}`}
+            href={`/manager/settings?id=${hotelId}`}
             sx={{ textTransform: 'none', fontWeight: 800, color: tokens.text.secondary, px: 0.75 }}
           >
             {profile.name}
@@ -703,16 +749,16 @@ export default function ManagerSettingsPage() {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {(groupedAmenities[group.key] ?? []).map((a) => {
                     const selected = selectedAmenityCodes.has(a.code);
-                    const label =
-                      (t(`manager.settings.amenities.items.${a.code}`) as string) ||
-                      a.name ||
-                      a.code;
+                    const translated = t(`manager.settings.amenities.items.${a.displayCode}`, {
+                      defaultValue: '',
+                    }) as string;
+                    const label = translated || a.name || a.displayCode || a.code;
                     return (
                       <AmenityToggle
                         key={a.code}
                         selected={selected}
                         label={label}
-                        icon={AMENITY_ICON[a.code] ?? <AddOutlinedIcon fontSize="small" />}
+                        icon={AMENITY_ICON[a.displayCode] ?? <AddOutlinedIcon fontSize="small" />}
                         onClick={() => {
                           setSelectedAmenityCodes((prev) => {
                             const next = new Set(prev);

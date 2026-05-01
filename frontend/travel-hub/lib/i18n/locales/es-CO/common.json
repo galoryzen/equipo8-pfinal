@@ -476,6 +476,7 @@
     "settings": {
       "title": "Editar Perfil del Hotel",
       "breadcrumb": {
+        "settings": "Configuración",
         "myHotels": "Mis Hoteles",
         "editProfile": "Editar Perfil"
       },

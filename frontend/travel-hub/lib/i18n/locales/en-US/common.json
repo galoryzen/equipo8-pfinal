@@ -490,6 +490,7 @@
     "settings": {
       "title": "Edit Hotel Profile",
       "breadcrumb": {
+        "settings": "Settings",
         "myHotels": "My Hotels",
         "editProfile": "Edit Profile"
       },
