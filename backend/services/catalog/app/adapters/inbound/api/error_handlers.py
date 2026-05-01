@@ -4,8 +4,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.application.exceptions import (
+    AmenityNotFoundError,
     InsufficientInventoryError,
     PromotionError,
+    PropertyImageNotFoundError,
     PropertyNotFoundError,
     RateCurrencyMismatchError,
     RatePlanNotFoundError,
@@ -92,6 +94,29 @@ def register_error_handlers(app: FastAPI) -> None:
                 "code": "RATE_CURRENCY_MISMATCH",
                 "message": str(exc),
                 "currencies": exc.currencies,
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(PropertyImageNotFoundError)
+    async def property_image_not_found_handler(request: Request, exc: PropertyImageNotFoundError):
+        return JSONResponse(
+            status_code=404,
+            content={
+                "code": "PROPERTY_IMAGE_NOT_FOUND",
+                "message": str(exc),
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(AmenityNotFoundError)
+    async def amenity_not_found_handler(request: Request, exc: AmenityNotFoundError):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "code": "AMENITY_NOT_FOUND",
+                "message": str(exc),
+                "codes": exc.codes,
                 "trace_id": request.headers.get("x-request-id"),
             },
         )
