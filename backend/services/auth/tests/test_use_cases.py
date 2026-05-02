@@ -33,6 +33,7 @@ def mock_token():
         "sub": "user-id",
         "email": "user@example.com",
         "role": "TRAVELER",
+        "full_name": "Test User",
     }
     return token
 
@@ -63,6 +64,7 @@ class TestLoginUserUseCase:
         assert result["id"] == str(sample_user.id)
         assert result["email"] == "user@example.com"
         assert result["role"] == "TRAVELER"
+        assert result["full_name"] == sample_user.full_name
         assert result["token"] == "generated-jwt-token"
 
     async def test_calls_repo_with_email(self, mock_repo, mock_token, sample_user):
@@ -83,6 +85,7 @@ class TestLoginUserUseCase:
             subject=str(sample_user.id),
             email="user@example.com",
             role="TRAVELER",
+            full_name=sample_user.full_name,
             hotel_id=None,
         )
 
@@ -127,6 +130,7 @@ class TestRegisterUserUseCase:
         assert result["id"] == str(sample_user.id)
         assert result["email"] == "user@example.com"
         assert result["role"] == "TRAVELER"
+        assert result["full_name"] == sample_user.full_name
         assert result["token"] == "generated-jwt-token"
 
     async def test_checks_email_exists_before_creating(self, mock_repo, mock_token, sample_user):
@@ -313,6 +317,7 @@ class TestValidateTokenUseCase:
         assert result["id"] == "user-id"
         assert result["email"] == "user@example.com"
         assert result["role"] == "TRAVELER"
+        assert result["full_name"] == "Test User"
 
     def test_calls_decode_with_token(self, mock_token):
         uc = ValidateTokenUseCase(mock_token)

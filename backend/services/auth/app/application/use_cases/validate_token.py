@@ -15,4 +15,5 @@ class ValidateTokenUseCase:
             "id": payload["sub"],
             "email": payload["email"],
             "role": payload["role"],
+            "full_name": payload.get("full_name"),
         }

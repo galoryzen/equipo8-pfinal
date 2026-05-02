@@ -8,6 +8,7 @@ class TestLogin:
             "id": str(sample_user.id),
             "email": sample_user.email,
             "role": "TRAVELER",
+            "full_name": sample_user.full_name,
             "token": "mock-jwt-token",
         })
 
@@ -18,6 +19,7 @@ class TestLogin:
         data = resp.json()
         assert data["email"] == sample_user.email
         assert data["role"] == "TRAVELER"
+        assert data["full_name"] == sample_user.full_name  # mobile uses this for display
         assert data["token"] == "mock-jwt-token"  # mobile clients read it from the body
         assert "access_token" in resp.cookies  # web keeps using the cookie
 
@@ -55,6 +57,7 @@ class TestRegister:
             "id": str(sample_user.id),
             "email": sample_user.email,
             "role": "TRAVELER",
+            "full_name": sample_user.full_name,
             "token": "mock-jwt-token",
         })
 
@@ -71,6 +74,7 @@ class TestRegister:
         data = resp.json()
         assert data["email"] == sample_user.email
         assert data["role"] == "TRAVELER"
+        assert data["full_name"] == sample_user.full_name
         assert data["token"] == "mock-jwt-token"
         assert "access_token" in resp.cookies
 
@@ -102,6 +106,7 @@ class TestMe:
             "sub": "user-id-123",
             "email": "user@example.com",
             "role": "TRAVELER",
+            "full_name": "Carlos Pérez",
         }
 
         resp = client.get("/api/v1/auth/me", cookies={"access_token": "valid-token"})
@@ -111,6 +116,7 @@ class TestMe:
         assert data["id"] == "user-id-123"
         assert data["email"] == "user@example.com"
         assert data["role"] == "TRAVELER"
+        assert data["full_name"] == "Carlos Pérez"
 
     def test_me_no_cookie_returns_401(self, client):
         resp = client.get("/api/v1/auth/me")
