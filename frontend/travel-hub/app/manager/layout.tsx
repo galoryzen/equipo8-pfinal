@@ -16,6 +16,7 @@ import DashboardCustomizeOutlinedIcon from '@mui/icons-material/DashboardCustomi
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import { Box } from '@mui/material';
 import Button from '@mui/material/Button';
@@ -73,6 +74,12 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       activeIcon: <BarChartIcon />,
       href: '/manager/reports',
     },
+    {
+      key: 'manager.hotels.admin.navbar.settings',
+      icon: <SettingsOutlinedIcon />,
+      activeIcon: <SettingsOutlinedIcon />,
+      href: '/manager/settings',
+    },
   ];
 
   function isActive(href: string) {
@@ -105,8 +112,19 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   return (
     <AuthGuard>
       <div style={{ display: 'flex' }}>
-        <aside>
-          <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Box
+          component="aside"
+          sx={{
+            position: 'sticky',
+            top: 0,
+            alignSelf: 'flex-start',
+            height: '100vh',
+            maxHeight: '100vh',
+            overflowY: 'auto',
+            flexShrink: 0,
+          }}
+        >
+          <Box sx={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box
               sx={{
                 display: 'flex',
@@ -219,7 +237,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               </Button>
             </Box>
           </Box>
-        </aside>
+        </Box>
         <main style={{ flex: 1, background: '#F8FAFC', minHeight: '100vh' }}>
           <Box
             sx={{

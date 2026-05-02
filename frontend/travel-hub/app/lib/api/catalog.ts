@@ -155,3 +155,14 @@ export async function getRatePlanPricing(
   }
   return res.json();
 }
+
+export type AmenityCatalogItem = { code: string; name: string };
+
+export async function getAmenityCatalog(): Promise<AmenityCatalogItem[]> {
+  const res = await fetch(`${API_URL}/api/v1/catalog/amenities`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}

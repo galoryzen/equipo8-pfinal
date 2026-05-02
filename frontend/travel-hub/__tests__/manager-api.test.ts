@@ -1,11 +1,16 @@
 import {
+  addHotelImage,
   createPromotion,
+  deleteHotelImage,
   deletePromotion,
   getHotelMetrics,
+  getHotelProfile,
   getHotelRoomTypes,
   getManagerHotels,
   getRatePlanCancellationPolicy,
   getRoomTypePromotion,
+  setPrimaryHotelImage,
+  updateHotelProfile,
   updateRatePlanCancellationPolicy,
 } from '@/app/lib/api/manager';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -207,5 +212,126 @@ describe('manager API', () => {
     } as Response);
 
     await expect(createPromotion('h1', {} as never)).rejects.toThrow('Invalid discount');
+  });
+
+  it('getHotelProfile fetches profile JSON', async () => {
+    const profile = {
+      id: 'p1',
+      name: 'Test Inn',
+      description: 'Hi',
+      city: 'Bogotá',
+      country: 'CO',
+      amenity_codes: ['wifi'],
+      policy: 'No pets',
+      images: [],
+    };
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(profile),
+    } as Response);
+
+    const out = await getHotelProfile('p1');
+    expect(out).toEqual(profile);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${BASE}/api/v1/catalog/manager/hotels/p1/profile`,
+      { credentials: 'include' }
+    );
+  });
+
+  it('updateHotelProfile PATCHes profile fields', async () => {
+    const updated = {
+      id: 'p1',
+      name: 'Test Inn',
+      description: 'New',
+      city: 'Bogotá',
+      country: 'CO',
+      amenity_codes: ['wifi'],
+      policy: 'OK',
+      images: [],
+    };
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(updated),
+    } as Response);
+
+    const payload = { description: 'New', amenity_codes: ['wifi'], policy: 'OK' };
+    const out = await updateHotelProfile('p1', payload);
+    expect(out).toEqual(updated);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${BASE}/api/v1/catalog/manager/hotels/p1/profile`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      }
+    );
+  });
+
+  it('addHotelImage POSTs url payload', async () => {
+    const img = {
+      id: 'img-1',
+      url: 'https://example.com/a.jpg',
+      caption: null,
+      display_order: 1,
+    };
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(img),
+    } as Response);
+
+    const out = await addHotelImage('p1', { url: img.url, caption: 'x' });
+    expect(out).toEqual(img);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${BASE}/api/v1/catalog/manager/hotels/p1/images`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ url: img.url, caption: 'x' }),
+      }
+    );
+  });
+
+  it('deleteHotelImage sends DELETE', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({}),
+    } as Response);
+
+    await deleteHotelImage('p1', 'img-9');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${BASE}/api/v1/catalog/manager/hotels/p1/images/img-9`,
+      { method: 'DELETE', credentials: 'include' }
+    );
+  });
+
+  it('setPrimaryHotelImage PATCHes primary endpoint', async () => {
+    const list = [
+      { id: 'a', url: 'https://x/a', caption: null, display_order: 0 },
+      { id: 'b', url: 'https://x/b', caption: null, display_order: 1 },
+    ];
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(list),
+    } as Response);
+
+    const out = await setPrimaryHotelImage('p1', 'b');
+    expect(out).toEqual(list);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${BASE}/api/v1/catalog/manager/hotels/p1/images/b/primary`,
+      { method: 'PATCH', credentials: 'include' }
+    );
+  });
+
+  it('getHotelProfile throws on HTTP error', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: () => Promise.resolve({ detail: 'Not found' }),
+    } as Response);
+
+    await expect(getHotelProfile('bad')).rejects.toThrow('Not found');
   });
 });

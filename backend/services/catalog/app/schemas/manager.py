@@ -109,3 +109,53 @@ class UpdateCancellationPolicyIn(BaseModel):
 
     type: CancellationPolicyTypeStr
     refund_percent: int | None = None
+
+
+# ── Hotel profile (manager) ───────────────────────────────
+
+
+class ManagerPropertyImageOut(BaseModel):
+    """Image entry returned from manager-side hotel profile/image endpoints."""
+
+    id: UUID
+    url: str
+    caption: str | None = None
+    display_order: int
+
+
+class HotelProfileOut(BaseModel):
+    """Editable hotel profile payload consumed by the frontend Settings page."""
+
+    id: UUID
+    name: str
+    description: str | None = None
+    city: str
+    country: str
+    amenity_codes: list[str]
+    policy: str
+    images: list[ManagerPropertyImageOut]
+
+
+class UpdateHotelProfileIn(BaseModel):
+    """Body for PATCH /manager/hotels/{property_id}/profile.
+
+    Each field is optional. ``None`` means "leave unchanged"; an explicit value
+    (including an empty string or empty list) means "set". An empty string for
+    ``policy`` removes the single GENERAL policy row, and an empty
+    ``amenity_codes`` clears every amenity.
+    """
+
+    description: str | None = None
+    amenity_codes: list[str] | None = None
+    policy: str | None = None
+
+
+class AddPropertyImageIn(BaseModel):
+    """Body for POST /manager/hotels/{property_id}/images.
+
+    Direct file upload is intentionally not supported yet (catalog has no S3
+    integration). The endpoint persists a public URL string only.
+    """
+
+    url: str
+    caption: str | None = None

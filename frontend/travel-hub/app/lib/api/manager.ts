@@ -82,6 +82,24 @@ export interface UpdateCancellationPolicyPayload {
   refund_percent?: number;
 }
 
+export type ManagerPropertyImage = {
+  id: string;
+  url: string;
+  caption: string | null;
+  display_order: number;
+};
+
+export type HotelProfile = {
+  id: string;
+  name: string;
+  description: string | null;
+  city: string;
+  country: string;
+  amenity_codes: string[];
+  policy: string;
+  images: ManagerPropertyImage[];
+};
+
 // ── API functions ─────────────────────────────────────────────────────────────
 
 export async function getManagerHotels(
@@ -200,6 +218,80 @@ export async function updateRatePlanCancellationPolicy(
       credentials: 'include',
       body: JSON.stringify(payload),
     }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function getHotelProfile(propertyId: string): Promise<HotelProfile> {
+  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function updateHotelProfile(
+  propertyId: string,
+  payload: { description?: string | null; amenity_codes?: string[]; policy?: string }
+): Promise<HotelProfile> {
+  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function addHotelImage(
+  propertyId: string,
+  payload: { url: string; caption?: string }
+): Promise<ManagerPropertyImage> {
+  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function deleteHotelImage(propertyId: string, imageId: string): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+}
+
+export async function setPrimaryHotelImage(
+  propertyId: string,
+  imageId: string
+): Promise<ManagerPropertyImage[]> {
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}/primary`,
+    { method: 'PATCH', credentials: 'include' }
   );
   if (!res.ok) {
     const body = await res.json().catch(() => null);

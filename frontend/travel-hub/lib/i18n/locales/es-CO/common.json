@@ -463,6 +463,7 @@
           "notifications": "Notificaciones",
           "reports": "Reportes",
           "subtitle": "Super Admin",
+          "settings": "Configuración",
           "logOut": "Cerrar sesión"
         }
       },
@@ -470,6 +471,92 @@
         "cancel": "Cancelar",
         "unknownError": "Error desconocido",
         "tryAgain": "Intentar de nuevo"
+      }
+    },
+    "settings": {
+      "title": "Editar Perfil del Hotel",
+      "breadcrumb": {
+        "settings": "Configuración",
+        "myHotels": "Mis Hoteles",
+        "editProfile": "Editar Perfil"
+      },
+      "status": {
+        "draft": "Borrador",
+        "published": "Publicado"
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "saveChanges": "Guardar Cambios"
+      },
+      "description": {
+        "title": "Descripción del Hotel",
+        "subtitle": "Proporciona una descripción detallada de tu propiedad para atraer huéspedes."
+      },
+      "amenities": {
+        "title": "Comodidades y Servicios",
+        "subtitle": "Selecciona las instalaciones y servicios disponibles en tu propiedad.",
+        "groups": {
+          "propertyFeatures": "Características de la Propiedad",
+          "leisureWellness": "Ocio y Bienestar",
+          "services": "Servicios"
+        },
+        "items": {
+          "WIFI": "WiFi Gratis",
+          "RESTAURANT": "Restaurante",
+          "BAR": "Bar",
+          "PARKING": "Estacionamiento",
+          "PET_FRIENDLY": "Admite Mascotas",
+          "POOL": "Piscina",
+          "FITNESS": "Gimnasio",
+          "SPA": "Spa",
+          "FRONT_DESK_24H": "Recepción 24h"
+        }
+      },
+      "policy": {
+        "title": "Política del Hotel",
+        "subtitle": "Define horarios de check-in/out, reglas sobre fumar y otras políticas de la propiedad.",
+        "placeholder": "ej. Check-in: 3:00 PM, Check-out: 11:00 AM. No se permite fumar dentro de las habitaciones..."
+      },
+      "gallery": {
+        "title": "Gestión de Galería de Imágenes",
+        "subtitle": "Sube y gestiona fotos de tu propiedad.",
+        "addNew": "Agregar Nuevas Imágenes",
+        "uploadImage": "Subir Imagen",
+        "primary": "Foto Principal",
+        "actions": {
+          "setPrimary": "Establecer como principal",
+          "delete": "Eliminar"
+        },
+        "addDialog": {
+          "title": "Agregar Imagen",
+          "urlLabel": "URL de la imagen",
+          "captionLabel": "Descripción (opcional)",
+          "submit": "Agregar",
+          "cancel": "Cancelar",
+          "helper": "Pega una URL pública de imagen. La carga directa de archivos llegará pronto."
+        },
+        "deleteDialog": {
+          "title": "¿Eliminar esta imagen?",
+          "message": "Esta foto se quitará de tu galería. Podrás volver a agregarla más tarde con una URL.",
+          "cancel": "Cancelar",
+          "confirm": "Eliminar"
+        }
+      },
+      "toolbar": {
+        "comingSoon": "Edición de texto enriquecido próximamente"
+      },
+      "snackbar": {
+        "saved": "Cambios guardados",
+        "imageAdded": "Imagen agregada",
+        "imageDeleted": "Imagen eliminada",
+        "primaryUpdated": "Imagen principal actualizada"
+      },
+      "errors": {
+        "loadFailed": "Error al cargar el perfil del hotel",
+        "saveFailed": "Error al guardar los cambios",
+        "addImageFailed": "Error al agregar la imagen",
+        "deleteFailed": "Error al eliminar la imagen",
+        "noHotels": "Tu cuenta no está asociada a ningún hotel."
       }
     },
     "reports": {
