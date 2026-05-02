@@ -52,6 +52,7 @@ async def login(
         "id": result["id"],
         "email": result["email"],
         "role": result["role"],
+        "full_name": result["full_name"],
         "token": result["token"],
     }
 
@@ -77,6 +78,7 @@ async def register(
         "id": result["id"],
         "email": result["email"],
         "role": result["role"],
+        "full_name": result["full_name"],
         "token": result["token"],
     }
 

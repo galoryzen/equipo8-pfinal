@@ -247,10 +247,28 @@
     "password": "Password",
     "fullName": "Full Name",
     "phone": "Phone",
+    "country": "Country",
     "continueBtn": "Continue",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
-    "logout": "Log out"
+    "logout": "Log out",
+    "errors": {
+      "INVALID_CREDENTIALS": "Email or password is incorrect",
+      "EMAIL_ALREADY_EXISTS": "An account with this email already exists",
+      "ROLE_NOT_ALLOWED": "This account is for hotel/agency managers. Please use the web portal.",
+      "NETWORK": "Could not connect. Please try again.",
+      "VALIDATION": "Please check your information and try again.",
+      "UNKNOWN": "Something went wrong. Please try again."
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Enter a valid email",
+      "passwordRequired": "Password is required",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "fullNameRequired": "Full name is required",
+      "phoneRequired": "Phone is required",
+      "countryRequired": "Country is required"
+    }
   },
   "guests": {
     "decrease": "Decrease guests",

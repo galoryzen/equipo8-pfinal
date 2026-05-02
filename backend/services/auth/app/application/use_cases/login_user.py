@@ -29,6 +29,7 @@ class LoginUserUseCase:
             subject=str(user.id),
             email=user.email,
             role=user.role.value,
+            full_name=user.full_name,
             hotel_id=hotel_id,
         )
 
@@ -36,5 +37,6 @@ class LoginUserUseCase:
             "id": str(user.id),
             "email": user.email,
             "role": user.role.value,
+            "full_name": user.full_name,
             "token": access_token,
         }
