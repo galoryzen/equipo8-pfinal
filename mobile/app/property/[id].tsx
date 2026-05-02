@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, shadows } from '@src/theme';
-import { Button, CartHeaderButton } from '@src/shared/ui';
+import { Button, CartHeaderButton, PropertyImageGallery } from '@src/shared/ui';
 import { useProperty } from '@src/features/catalog/use-property';
 import { ReviewCard } from '@src/features/catalog/review-card';
 import { RatingHeader } from '@src/features/catalog/rating-header';
@@ -85,10 +85,7 @@ export default function PropertyDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Image Placeholder */}
-        <View style={styles.imagePlaceholder}>
-          <Ionicons name="image-outline" size={60} color={colors.border.default} />
-        </View>
+        <PropertyImageGallery images={property.images} propertyName={property.name} />
 
         {/* Content */}
         <View style={styles.content}>
@@ -201,12 +198,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
     textAlign: 'center',
-  },
-  imagePlaceholder: {
-    height: 280,
-    backgroundColor: colors.surface.soft,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   content: {
     padding: spacing.base,

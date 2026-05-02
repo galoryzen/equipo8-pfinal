@@ -67,7 +67,12 @@
     "reviewsCount_other": "{{count}} reviews",
     "seeAllReviews": "See all reviews ({{count}})",
     "allReviews": "All reviews",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "gallery": {
+      "counter": "{{current}} / {{total}}",
+      "close": "Close",
+      "openFull": "View photos"
+    }
   },
   "rooms": {
     "selectTitle": "Select your room",
