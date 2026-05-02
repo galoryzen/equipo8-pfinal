@@ -56,6 +56,7 @@ def _failed_envelope(booking_id: UUID, intent_id: UUID, reason: str = "card_decl
         payload={
             "payment_intent_id": str(intent_id),
             "booking_id": str(booking_id),
+            "user_id": str(uuid4()),
             "reason": reason,
         },
     )
