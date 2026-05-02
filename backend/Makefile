@@ -1,4 +1,4 @@
-.PHONY: up down reset-db logs test coverage lint lint-fix format format-check install venv venv-clean
+.PHONY: up down reset-db logs test coverage test-integration test-integration-up lint lint-fix format format-check install venv venv-clean
 
 SERVICES := auth catalog booking payment notification
 PYTHON_VERSION := 3.11
@@ -72,6 +72,28 @@ coverage:
 		cd services/$(s) && "$(CURDIR)/.venv-$(s)/bin/python" -m pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=json:coverage.json --tb=short; \
 	fi
 
+# ── Integration tests (live docker-compose stack) ───────
+# Lives at backend/tests/integration/. Drives the gateway, postgres and
+# rabbitmq end-to-end. Reuses the `_venv-%` pattern with its own venv.
+
+test-integration: _venv-integration
+	"$(CURDIR)/.venv-integration/bin/python" -m pytest tests/integration -v -m integration --tb=short
+
+test-integration-up:
+	docker compose up -d --wait
+	$(MAKE) --no-print-directory test-integration
+
+_venv-integration:
+	@if ! command -v uv >/dev/null 2>&1; then \
+		echo "ERROR: uv is required (https://docs.astral.sh/uv/). Install it and retry." >&2; \
+		exit 127; \
+	fi
+	@if [ ! -x ".venv-integration/bin/python" ]; then \
+		echo "── creating .venv-integration (Python $(PYTHON_VERSION))"; \
+		uv venv --python $(PYTHON_VERSION) ".venv-integration" >/dev/null; \
+	fi
+	@VIRTUAL_ENV="$(CURDIR)/.venv-integration" uv pip install -r tests/integration/requirements.txt --quiet
+
 # ── Lint & Format ────────────────────────────────────────
 
 lint:
@@ -107,4 +129,4 @@ format-check:
 install:
 	@$(MAKE) --no-print-directory venv $(if $(s),s=$(s))
 
-.PHONY: up down reset-db logs test coverage lint lint-fix format format-check install
+.PHONY: up down reset-db logs test coverage test-integration test-integration-up lint lint-fix format format-check install
