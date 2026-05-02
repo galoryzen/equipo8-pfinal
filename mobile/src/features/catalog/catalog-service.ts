@@ -68,11 +68,18 @@ export async function searchProperties(
 
 export async function getPropertyDetail(
   id: string,
-  opts: { checkin?: string; checkout?: string } = {},
+  opts: {
+    checkin?: string;
+    checkout?: string;
+    review_page?: number;
+    review_page_size?: number;
+  } = {},
 ): Promise<PropertyDetailResponse> {
-  const params: Record<string, string> = {};
+  const params: Record<string, string | number> = {};
   if (opts.checkin) params.checkin = opts.checkin;
   if (opts.checkout) params.checkout = opts.checkout;
+  if (opts.review_page) params.review_page = opts.review_page;
+  if (opts.review_page_size) params.review_page_size = opts.review_page_size;
   const { data } = await api.get<PropertyDetailResponse>(
     `/v1/catalog/properties/${id}`,
     { params },

@@ -60,7 +60,19 @@
     "viewAvailability": "Ver Disponibilidad",
     "location": "Ubicación",
     "showMore": "Ver más",
-    "showLess": "Ver menos"
+    "showLess": "Ver menos",
+    "guest": "Huésped",
+    "noRating": "Aún no hay calificaciones",
+    "reviewsCount_one": "{{count}} reseña",
+    "reviewsCount_other": "{{count}} reseñas",
+    "seeAllReviews": "Ver todas las reseñas ({{count}})",
+    "allReviews": "Todas las reseñas",
+    "loadMore": "Cargar más",
+    "gallery": {
+      "counter": "{{current}} / {{total}}",
+      "close": "Cerrar",
+      "openFull": "Ver fotos"
+    }
   },
   "rooms": {
     "selectTitle": "Selecciona tu habitación",

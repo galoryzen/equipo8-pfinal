@@ -11,3 +11,5 @@ export { PriceBreakdownPanel } from './PriceBreakdownPanel';
 export { ConflictModal } from './ConflictModal';
 export type { ConflictModalProps } from './ConflictModal';
 export { CartHeaderButton } from './CartHeaderButton';
+export { PropertyImageGallery } from './PropertyImageGallery';
+export { ImageGalleryModal } from './ImageGalleryModal';

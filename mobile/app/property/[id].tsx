@@ -10,33 +10,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { Button, CartHeaderButton } from '@src/shared/ui';
+import { colors, typography, spacing, shadows } from '@src/theme';
+import { Button, CartHeaderButton, PropertyImageGallery } from '@src/shared/ui';
 import { useProperty } from '@src/features/catalog/use-property';
+import { ReviewCard } from '@src/features/catalog/review-card';
+import { RatingHeader } from '@src/features/catalog/rating-header';
 
-const MOCK_REVIEWS = [
-  {
-    id: '1',
-    user_name: 'María G.',
-    rating: 5,
-    comment: 'Absolutely stunning hotel! The staff was incredibly welcoming and the breakfast was delicious.',
-    created_at: '2025-12-15',
-  },
-  {
-    id: '2',
-    user_name: 'John D.',
-    rating: 4,
-    comment: 'Great location and beautiful rooms. The spa was a wonderful surprise.',
-    created_at: '2025-11-28',
-  },
-  {
-    id: '3',
-    user_name: 'Ana L.',
-    rating: 5,
-    comment: 'Best hotel experience in Cusco. Will definitely come back!',
-    created_at: '2025-11-10',
-  },
-];
+const REVIEWS_PREVIEW_SIZE = 5;
 
 export default function PropertyDetailScreen() {
   const { id, checkin, checkout, guests } = useLocalSearchParams<{
@@ -48,10 +28,14 @@ export default function PropertyDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const { property, loading, error, retry } = useProperty(id!, {
-    checkin,
-    checkout,
-  });
+  const { property, reviews, ratingAvg, loading, error, retry } = useProperty(
+    id!,
+    {
+      checkin,
+      checkout,
+      reviewPageSize: REVIEWS_PREVIEW_SIZE,
+    },
+  );
 
   // Tint the cart icon white because the root Stack gives this screen a
   // transparent header that overlaps the hero image.
@@ -101,10 +85,7 @@ export default function PropertyDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Image Placeholder */}
-        <View style={styles.imagePlaceholder}>
-          <Ionicons name="image-outline" size={60} color={colors.border.default} />
-        </View>
+        <PropertyImageGallery images={property.images} propertyName={property.name} />
 
         {/* Content */}
         <View style={styles.content}>
@@ -154,25 +135,30 @@ export default function PropertyDetailScreen() {
             </View>
           )}
 
-          {/* Reviews (mock por ahora) */}
+          {/* Reviews */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('property.reviews')}</Text>
-            {MOCK_REVIEWS.map((review) => (
-              <View key={review.id} style={styles.reviewCard}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewUser}>{review.user_name}</Text>
-                  <View style={styles.reviewRating}>
-                    {Array.from({ length: review.rating }).map((_, i) => (
-                      <Ionicons key={i} name="star" size={12} color="#F59E0B" />
-                    ))}
-                  </View>
-                </View>
-                {review.comment && (
-                  <Text style={styles.reviewComment}>{review.comment}</Text>
+            <RatingHeader
+              ratingAvg={ratingAvg}
+              reviewCount={reviews?.total ?? 0}
+            />
+            {reviews && reviews.items.length > 0 ? (
+              <>
+                {reviews.items.slice(0, REVIEWS_PREVIEW_SIZE).map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+                {reviews.total > REVIEWS_PREVIEW_SIZE && (
+                  <Button
+                    variant="outline"
+                    title={t('property.seeAllReviews', { count: reviews.total })}
+                    onPress={() => router.push(`/property/${id}/reviews`)}
+                    style={styles.seeAllButton}
+                  />
                 )}
-                <Text style={styles.reviewDate}>{review.created_at}</Text>
-              </View>
-            ))}
+              </>
+            ) : (
+              <Text style={styles.emptyReviews}>{t('property.noReviews')}</Text>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -212,12 +198,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
     textAlign: 'center',
-  },
-  imagePlaceholder: {
-    height: 280,
-    backgroundColor: colors.surface.soft,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   content: {
     padding: spacing.base,
@@ -285,38 +265,13 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.primary,
   },
-  reviewCard: {
-    backgroundColor: colors.surface.soft,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+  seeAllButton: {
+    marginTop: spacing.sm,
   },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  reviewUser: {
-    fontFamily: typography.fontFamily.medium,
-    fontSize: typography.fontSize.sm,
-    color: colors.text.primary,
-  },
-  reviewRating: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  reviewComment: {
+  emptyReviews: {
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
-    lineHeight: 20,
-  },
-  reviewDate: {
-    fontFamily: typography.fontFamily.regular,
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-    marginTop: spacing.sm,
   },
   footer: {
     position: 'absolute',
