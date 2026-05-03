@@ -6,9 +6,13 @@ import type { PropertyDetail } from '@/app/lib/types/catalog';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/app/lib/api/booking', () => ({
-  getMyBookings: vi.fn(),
-}));
+vi.mock('@/app/lib/api/booking', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@/app/lib/api/booking')>();
+  return {
+    ...mod,
+    getMyBookings: vi.fn(),
+  };
+});
 
 vi.mock('@/app/lib/myTrips/loadPropertyDetails', () => ({
   fetchPropertyDetailsMap: vi.fn(),

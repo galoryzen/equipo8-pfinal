@@ -44,18 +44,15 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/app/lib/api/booking', () => ({
-  CartConflictError: class CartConflictError extends Error {
-    existingBookingId: string;
-    constructor(existingBookingId: string) {
-      super('Cart conflict');
-      this.existingBookingId = existingBookingId;
-    }
-  },
-  cancelCartBooking: vi.fn(),
-  createCartBooking: vi.fn(),
-  getBookingDetail: vi.fn(),
-}));
+vi.mock('@/app/lib/api/booking', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@/app/lib/api/booking')>();
+  return {
+    ...mod,
+    cancelCartBooking: vi.fn(),
+    createCartBooking: vi.fn(),
+    getBookingDetail: vi.fn(),
+  };
+});
 
 const mockCancel = vi.mocked(bookingApi.cancelCartBooking);
 const mockCreate = vi.mocked(bookingApi.createCartBooking);
@@ -151,10 +148,7 @@ describe('TravelerPaymentPage', () => {
   });
 
   it('replaces existing cart and continues when create returns conflict', async () => {
-    const ConflictError = bookingApi.CartConflictError as unknown as new (
-      existingBookingId: string
-    ) => Error;
-    const conflictError = new ConflictError('existing-cart-1');
+    const conflictError = new bookingApi.CartConflictError('Cart conflict', 'existing-cart-1');
     mockCreate.mockRejectedValueOnce(conflictError).mockResolvedValueOnce(CART);
     mockCancel.mockResolvedValue({
       id: 'existing-cart-1',
