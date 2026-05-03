@@ -1,5 +1,3 @@
-from datetime import date
-from decimal import Decimal
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -14,6 +12,7 @@ from app.application.use_cases.send_payment_failed import (
     SendPaymentFailedEmailUseCase,
 )
 from app.domain.models import NotificationStatus
+
 
 def _make_envelope() -> DomainEventEnvelope:
     payload = PaymentFailedPayload(
