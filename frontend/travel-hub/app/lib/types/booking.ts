@@ -54,6 +54,8 @@ export interface BookingListItem {
   property_name?: string | null;
   image_url?: string | null;
   nights?: number | null;
+  /** Primary guest name from booking service (optional). */
+  guest_name?: string | null;
   guests_count?: number | null;
 }
 

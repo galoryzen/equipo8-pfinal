@@ -12,8 +12,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galory
 
 async function readErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
-  if (body && typeof body === 'object' && 'message' in body) {
-    return String((body as { message: unknown }).message);
+  if (body && typeof body === 'object') {
+    const msg = 'message' in body ? String((body as { message: unknown }).message) : '';
+    const code = 'code' in body ? String((body as { code: unknown }).code) : '';
+    if (msg) return code ? `${msg} (${code})` : msg;
   }
   return `Error ${res.status}`;
 }

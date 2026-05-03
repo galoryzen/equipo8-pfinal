@@ -1,11 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import { getBookingDetail } from '@/app/lib/api/booking';
+import { cancelCartBooking, getBookingDetail } from '@/app/lib/api/booking';
 import { formatBookingRef, formatTripDate } from '@/app/lib/myTrips/formatting';
 import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
 import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
@@ -23,6 +23,7 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +37,34 @@ function BookingDetailContent() {
   const [propertyById, setPropertyById] = useState<Record<string, PropertyDetail | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
+
+  const handleCancelReservation = useCallback(async () => {
+    if (!detail) return;
+    setCancelling(true);
+    try {
+      const updated = await cancelCartBooking(detail.id);
+      setDetail(updated as BookingDetail);
+      setSnackbar({
+        open: true,
+        message: t('tripDetail.cancelSuccess'),
+        severity: 'success',
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : t('tripDetail.cancelFailed'),
+        severity: 'error',
+      });
+    } finally {
+      setCancelling(false);
+    }
+  }, [detail, t]);
 
   useEffect(() => {
     if (!bookingId) {
@@ -99,6 +128,7 @@ function BookingDetailContent() {
   }
 
   const status = statusChipProps(detail.status);
+  const canCancel = detail.status === 'CONFIRMED' || detail.status === 'CART';
   const hotel = propertyById[detail.property_id] ?? null;
   const roomName = hotel?.room_types?.find((r) => r.id === detail.room_type_id)?.name;
   const grandTotal = detail.grand_total ?? detail.total_amount;
@@ -272,12 +302,52 @@ function BookingDetailContent() {
 
       {detail.policy_type_applied && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-          Cancellation policy applied: {detail.policy_type_applied}
+          {t('tripDetail.cancellationPolicyApplied', { type: detail.policy_type_applied })}
           {detail.policy_hours_limit_applied != null
-            ? ` · ${detail.policy_hours_limit_applied}h limit`
+            ? t('tripDetail.cancellationPolicyHoursLimit', {
+                hours: detail.policy_hours_limit_applied,
+              })
             : ''}
         </Typography>
       )}
+
+      {canCancel && (
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{ mt: 3 }}
+          alignItems={{ sm: 'center' }}
+        >
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={cancelling}
+            onClick={() => void handleCancelReservation()}
+            sx={{ textTransform: 'none', alignSelf: { xs: 'stretch', sm: 'auto' } }}
+          >
+            {t('tripDetail.cancelBooking')}
+          </Button>
+          <Typography variant="caption" color="text.secondary">
+            {t('tripDetail.cancelBookingHint')}
+          </Typography>
+        </Stack>
+      )}
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={8000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
