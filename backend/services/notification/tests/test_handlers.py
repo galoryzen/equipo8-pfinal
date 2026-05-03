@@ -44,6 +44,8 @@ def _session_factory_with(mock_session):
 @pytest.mark.asyncio
 async def test_handler_commits_on_success():
     session = AsyncMock()
+    # Ensure add is awaitable to avoid RuntimeWarning
+    session.add = AsyncMock()
     factory = _session_factory_with(session)
     contacts = AsyncMock()
     contacts.get_contact.return_value = UserContact(id=uuid4(), full_name="Ana", email="ana@test.com")
@@ -57,6 +59,7 @@ async def test_handler_commits_on_success():
     handler = make_booking_confirmed_handler(factory, contacts, properties, email_sender)
     await handler(_envelope())
 
+    session.add.assert_awaited()  # Ensure add was awaited
     session.commit.assert_awaited_once()
     session.rollback.assert_not_awaited()
 

@@ -19,7 +19,7 @@ class SqlAlchemyNotificationRepository(NotificationRepository):
         return result.scalar_one_or_none() is not None
 
     async def create(self, notification: Notification) -> None:
-        self._session.add(notification)
+        await self._session.add(notification)
         await self._session.flush()
 
     async def mark_sent(self, notification_id: UUID, provider_message_id: str) -> None:

@@ -93,6 +93,7 @@ class PaymentFinalizationService:
             payload=PaymentFailedPayload(
                 payment_intent_id=intent.id,
                 booking_id=intent.booking_id,
+                user_id=intent.user_id,
                 reason=attempt.detail,
             ).model_dump(mode="json"),
         )
