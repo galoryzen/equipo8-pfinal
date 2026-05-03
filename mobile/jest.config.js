@@ -24,6 +24,7 @@ module.exports = {
   collectCoverageFrom: [
     "src/features/**/*.{ts,tsx}",
     "src/services/api.ts",
+    "src/services/auth-context.tsx",
     "src/shared/**/*.{ts,tsx}",
     "!src/**/i18n/**",
     "!src/**/index.ts",

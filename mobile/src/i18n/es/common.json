@@ -60,7 +60,19 @@
     "viewAvailability": "Ver Disponibilidad",
     "location": "Ubicación",
     "showMore": "Ver más",
-    "showLess": "Ver menos"
+    "showLess": "Ver menos",
+    "guest": "Huésped",
+    "noRating": "Aún no hay calificaciones",
+    "reviewsCount_one": "{{count}} reseña",
+    "reviewsCount_other": "{{count}} reseñas",
+    "seeAllReviews": "Ver todas las reseñas ({{count}})",
+    "allReviews": "Todas las reseñas",
+    "loadMore": "Cargar más",
+    "gallery": {
+      "counter": "{{current}} / {{total}}",
+      "close": "Cerrar",
+      "openFull": "Ver fotos"
+    }
   },
   "rooms": {
     "selectTitle": "Selecciona tu habitación",
@@ -247,10 +259,28 @@
     "password": "Contraseña",
     "fullName": "Nombre completo",
     "phone": "Teléfono",
+    "country": "País",
     "continueBtn": "Continuar",
     "noAccount": "¿No tienes cuenta?",
     "hasAccount": "¿Ya tienes cuenta?",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "errors": {
+      "INVALID_CREDENTIALS": "El correo o la contraseña no son correctos",
+      "EMAIL_ALREADY_EXISTS": "Ya existe una cuenta con este correo",
+      "ROLE_NOT_ALLOWED": "Esta cuenta es para gestores de hotel o agencia. Usa el portal web.",
+      "NETWORK": "No se pudo conectar. Inténtalo de nuevo.",
+      "VALIDATION": "Revisa los datos e inténtalo de nuevo.",
+      "UNKNOWN": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "validation": {
+      "emailRequired": "El correo es obligatorio",
+      "emailInvalid": "Introduce un correo válido",
+      "passwordRequired": "La contraseña es obligatoria",
+      "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+      "fullNameRequired": "El nombre completo es obligatorio",
+      "phoneRequired": "El teléfono es obligatorio",
+      "countryRequired": "El país es obligatorio"
+    }
   },
   "guests": {
     "decrease": "Disminuir huéspedes",

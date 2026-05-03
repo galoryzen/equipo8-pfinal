@@ -22,11 +22,19 @@ const MOCK_DETAIL_RESPONSE = {
     room_types: [],
   },
   reviews: {
-    items: [],
-    total: 0,
+    items: [
+      {
+        id: 'rev-1',
+        user_id: 'user-1',
+        rating: 5,
+        comment: 'Amazing!',
+        created_at: '2026-01-15T10:00:00Z',
+      },
+    ],
+    total: 12,
     page: 1,
-    page_size: 10,
-    total_pages: 0,
+    page_size: 5,
+    total_pages: 3,
   },
 };
 
@@ -47,9 +55,52 @@ describe('useProperty', () => {
     expect(mockedService.getPropertyDetail).toHaveBeenCalledWith('prop-1', {
       checkin: undefined,
       checkout: undefined,
+      review_page: undefined,
+      review_page_size: undefined,
     });
     expect(result.current.property).toEqual(MOCK_DETAIL_RESPONSE.detail);
     expect(result.current.error).toBeNull();
+  });
+
+  it('exposes reviews and ratingAvg from the response', async () => {
+    mockedService.getPropertyDetail.mockResolvedValue(MOCK_DETAIL_RESPONSE as any);
+
+    const { result } = renderHook(() => useProperty('prop-1'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.reviews).toEqual(MOCK_DETAIL_RESPONSE.reviews);
+    expect(result.current.ratingAvg).toBe(4.5);
+  });
+
+  it('returns null ratingAvg when rating_avg is missing', async () => {
+    mockedService.getPropertyDetail.mockResolvedValue({
+      ...MOCK_DETAIL_RESPONSE,
+      detail: { ...MOCK_DETAIL_RESPONSE.detail, rating_avg: null },
+    } as any);
+
+    const { result } = renderHook(() => useProperty('prop-1'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.ratingAvg).toBeNull();
+  });
+
+  it('forwards review pagination options to the service', async () => {
+    mockedService.getPropertyDetail.mockResolvedValue(MOCK_DETAIL_RESPONSE as any);
+
+    renderHook(() =>
+      useProperty('prop-1', { reviewPage: 2, reviewPageSize: 5 }),
+    );
+
+    await waitFor(() =>
+      expect(mockedService.getPropertyDetail).toHaveBeenCalledWith('prop-1', {
+        checkin: undefined,
+        checkout: undefined,
+        review_page: 2,
+        review_page_size: 5,
+      }),
+    );
   });
 
   it('forwards checkin and checkout to the service', async () => {

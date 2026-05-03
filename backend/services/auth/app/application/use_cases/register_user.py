@@ -47,11 +47,13 @@ class RegisterUserUseCase:
             subject=str(created.id),
             email=created.email,
             role=created.role.value,
+            full_name=created.full_name,
         )
 
         return {
             "id": str(created.id),
             "email": created.email,
             "role": created.role.value,
+            "full_name": created.full_name,
             "token": access_token,
         }

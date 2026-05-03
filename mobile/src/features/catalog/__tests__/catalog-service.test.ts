@@ -257,6 +257,30 @@ describe('catalog-service', () => {
       );
     });
 
+    it('forwards review pagination params', async () => {
+      mockedApi.get.mockResolvedValue({ data: { detail: {}, reviews: {} } });
+
+      await getPropertyDetail('prop-123', {
+        review_page: 2,
+        review_page_size: 5,
+      });
+
+      expect(mockedApi.get).toHaveBeenCalledWith(
+        '/v1/catalog/properties/prop-123',
+        { params: { review_page: 2, review_page_size: 5 } },
+      );
+    });
+
+    it('omits review pagination params when not provided', async () => {
+      mockedApi.get.mockResolvedValue({ data: { detail: {}, reviews: {} } });
+
+      await getPropertyDetail('prop-123');
+
+      const callParams = mockedApi.get.mock.calls[0][1]?.params;
+      expect(callParams).not.toHaveProperty('review_page');
+      expect(callParams).not.toHaveProperty('review_page_size');
+    });
+
     it('returns property detail response', async () => {
       const mockResponse = {
         detail: {

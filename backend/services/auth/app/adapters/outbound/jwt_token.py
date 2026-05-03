@@ -7,12 +7,20 @@ from app.config import settings
 
 
 class JwtTokenAdapter(TokenPort):
-    def create_access_token(self, subject: str, email: str, role: str, hotel_id: str | None = None) -> str:
+    def create_access_token(
+        self,
+        subject: str,
+        email: str,
+        role: str,
+        full_name: str,
+        hotel_id: str | None = None,
+    ) -> str:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
         payload: dict = {
             "sub": subject,
             "email": email,
             "role": role,
+            "full_name": full_name,
             "exp": expire,
         }
         if hotel_id is not None:

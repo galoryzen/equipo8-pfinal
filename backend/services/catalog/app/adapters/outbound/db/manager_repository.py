@@ -6,20 +6,33 @@ from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from app.application.exceptions import (
+    AmenityNotFoundError,
+    PropertyImageNotFoundError,
+    PropertyNotFoundError,
+)
 from app.application.ports.outbound.manager_repository import ManagerRepository
 from app.domain.models import (
+    Amenity,
     CancellationPolicy,
     CancellationPolicyType,
     DiscountType,
     InventoryCalendar,
+    PolicyCategory,
+    Promotion,
     Property,
     PropertyImage,
-    Promotion,
+    PropertyPolicy,
     RatePlan,
     RoomType,
     RoomTypeStatus,
 )
-from app.schemas.manager import CreatePromotionIn, UpdateCancellationPolicyIn
+from app.schemas.manager import (
+    AddPropertyImageIn,
+    CreatePromotionIn,
+    UpdateCancellationPolicyIn,
+    UpdateHotelProfileIn,
+)
 
 
 def _icon_from_name(name: str) -> str:
@@ -411,3 +424,218 @@ class SqlAlchemyManagerRepository(ManagerRepository):
             "refund_percent": cp.refund_percent,
             "hours_limit": cp.hours_limit,
         }
+
+    # ── Hotel profile (manager) ──────────────────────────────────────────────
+
+    async def _assert_property_owned_by_hotel(
+        self, property_id: UUID, hotel_id: UUID
+    ) -> Property:
+        """Return the Property if it belongs to ``hotel_id``, else raise 404.
+
+        Using PropertyNotFoundError (not 403) intentionally avoids leaking the
+        existence of properties owned by a different hotel.
+        """
+        stmt = (
+            select(Property)
+            .options(joinedload(Property.city))
+            .where(Property.id == property_id, Property.hotel_id == hotel_id)
+        )
+        result = await self._session.execute(stmt)
+        prop = result.unique().scalar_one_or_none()
+        if prop is None:
+            raise PropertyNotFoundError(property_id)
+        return prop
+
+    @staticmethod
+    def _renumber_images(images: list[PropertyImage]) -> None:
+        """Reset display_order to 0..N-1 in the given list's iteration order."""
+        for index, image in enumerate(images):
+            image.display_order = index
+
+    async def _load_property_images(self, property_id: UUID) -> list[PropertyImage]:
+        stmt = (
+            select(PropertyImage)
+            .where(PropertyImage.property_id == property_id)
+            .order_by(PropertyImage.display_order)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def _load_property_amenity_codes(self, property_id: UUID) -> list[str]:
+        from app.domain.models import property_amenity_table
+
+        stmt = (
+            select(Amenity.code)
+            .join(property_amenity_table, property_amenity_table.c.amenity_id == Amenity.id)
+            .where(property_amenity_table.c.property_id == property_id)
+            .order_by(Amenity.code)
+        )
+        result = await self._session.execute(stmt)
+        return [row[0] for row in result.all()]
+
+    async def _load_general_policy_text(self, property_id: UUID) -> str:
+        stmt = select(PropertyPolicy).where(
+            PropertyPolicy.property_id == property_id,
+            PropertyPolicy.category == PolicyCategory.GENERAL,
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        return row.description if row is not None else ""
+
+    @staticmethod
+    def _serialize_image(image: PropertyImage) -> dict:
+        return {
+            "id": image.id,
+            "url": image.url,
+            "caption": image.caption,
+            "display_order": image.display_order,
+        }
+
+    async def _build_profile_payload(self, prop: Property) -> dict:
+        amenity_codes = await self._load_property_amenity_codes(prop.id)
+        policy_text = await self._load_general_policy_text(prop.id)
+        images = await self._load_property_images(prop.id)
+        city_name = prop.city.name if prop.city else ""
+        country = prop.city.country if prop.city else ""
+        return {
+            "id": prop.id,
+            "name": prop.name,
+            "description": prop.description,
+            "city": city_name,
+            "country": country,
+            "amenity_codes": amenity_codes,
+            "policy": policy_text,
+            "images": [self._serialize_image(img) for img in images],
+        }
+
+    async def get_hotel_profile(self, property_id: UUID, hotel_id: UUID) -> dict:
+        prop = await self._assert_property_owned_by_hotel(property_id, hotel_id)
+        return await self._build_profile_payload(prop)
+
+    async def update_hotel_profile(
+        self, property_id: UUID, hotel_id: UUID, data: UpdateHotelProfileIn
+    ) -> dict:
+        prop = await self._assert_property_owned_by_hotel(property_id, hotel_id)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        if data.description is not None:
+            prop.description = data.description
+
+        if data.amenity_codes is not None:
+            await self._replace_property_amenities(property_id, data.amenity_codes)
+
+        if data.policy is not None:
+            await self._upsert_general_policy(property_id, data.policy, now)
+
+        await self._session.commit()
+        return await self._build_profile_payload(prop)
+
+    async def _replace_property_amenities(
+        self, property_id: UUID, codes: list[str]
+    ) -> None:
+        from app.domain.models import property_amenity_table
+
+        unique_codes = list({code for code in codes if code})
+
+        if not unique_codes:
+            await self._session.execute(
+                property_amenity_table.delete().where(
+                    property_amenity_table.c.property_id == property_id
+                )
+            )
+            return
+
+        stmt = select(Amenity).where(Amenity.code.in_(unique_codes))
+        result = await self._session.execute(stmt)
+        amenities = list(result.scalars().all())
+        found_codes = {a.code for a in amenities}
+        missing = sorted(c for c in unique_codes if c not in found_codes)
+        if missing:
+            raise AmenityNotFoundError(missing)
+
+        await self._session.execute(
+            property_amenity_table.delete().where(
+                property_amenity_table.c.property_id == property_id
+            )
+        )
+        if amenities:
+            await self._session.execute(
+                property_amenity_table.insert(),
+                [{"property_id": property_id, "amenity_id": a.id} for a in amenities],
+            )
+
+    async def _upsert_general_policy(
+        self, property_id: UUID, text: str, now: datetime
+    ) -> None:
+        stmt = select(PropertyPolicy).where(
+            PropertyPolicy.property_id == property_id,
+            PropertyPolicy.category == PolicyCategory.GENERAL,
+        )
+        existing = (await self._session.execute(stmt)).scalar_one_or_none()
+
+        if not text:
+            if existing is not None:
+                await self._session.delete(existing)
+            return
+
+        if existing is None:
+            self._session.add(
+                PropertyPolicy(
+                    id=uuid.uuid4(),
+                    property_id=property_id,
+                    category=PolicyCategory.GENERAL,
+                    description=text,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+        else:
+            existing.description = text
+            existing.updated_at = now
+
+    async def add_property_image(
+        self, property_id: UUID, hotel_id: UUID, data: AddPropertyImageIn
+    ) -> dict:
+        await self._assert_property_owned_by_hotel(property_id, hotel_id)
+        existing = await self._load_property_images(property_id)
+        next_order = (max((img.display_order for img in existing), default=-1) + 1)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        image = PropertyImage(
+            id=uuid.uuid4(),
+            property_id=property_id,
+            url=data.url,
+            caption=data.caption,
+            display_order=next_order,
+            created_at=now,
+        )
+        self._session.add(image)
+        await self._session.commit()
+        await self._session.refresh(image)
+        return self._serialize_image(image)
+
+    async def delete_property_image(
+        self, property_id: UUID, hotel_id: UUID, image_id: UUID
+    ) -> None:
+        await self._assert_property_owned_by_hotel(property_id, hotel_id)
+        images = await self._load_property_images(property_id)
+        target = next((img for img in images if img.id == image_id), None)
+        if target is None:
+            raise PropertyImageNotFoundError(image_id)
+        await self._session.delete(target)
+        remaining = [img for img in images if img.id != image_id]
+        self._renumber_images(remaining)
+        await self._session.commit()
+
+    async def set_primary_property_image(
+        self, property_id: UUID, hotel_id: UUID, image_id: UUID
+    ) -> list[dict]:
+        await self._assert_property_owned_by_hotel(property_id, hotel_id)
+        images = await self._load_property_images(property_id)
+        target = next((img for img in images if img.id == image_id), None)
+        if target is None:
+            raise PropertyImageNotFoundError(image_id)
+
+        new_order = [target] + [img for img in images if img.id != image_id]
+        self._renumber_images(new_order)
+        await self._session.commit()
+        return [self._serialize_image(img) for img in new_order]

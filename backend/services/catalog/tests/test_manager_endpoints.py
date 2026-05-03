@@ -353,3 +353,212 @@ class TestManagerCancellationPolicyEndpoints:
         resp = _with_manager_hotel(client, call)
 
         assert resp.status_code == 422
+
+
+class TestManagerHotelProfileEndpoints:
+    def _profile_payload(self, prop_id):
+        img_id = uuid4()
+        return {
+            "id": str(prop_id),
+            "name": "Grand Plaza Resort",
+            "description": "A nice place.",
+            "city": "Miami",
+            "country": "USA",
+            "amenity_codes": ["WIFI", "POOL"],
+            "policy": "Check-in 3pm.",
+            "images": [
+                {
+                    "id": str(img_id),
+                    "url": "https://example.com/a.jpg",
+                    "caption": None,
+                    "display_order": 0,
+                }
+            ],
+        }
+
+    @patch("app.adapters.inbound.api.manager.get_hotel_profile_use_case")
+    def test_get_profile_ok(self, mock_factory, client):
+        prop_id = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = self._profile_payload(prop_id)
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.get(f"/api/v1/catalog/manager/hotels/{prop_id}/profile")
+
+        resp = _with_manager_hotel(client, call)
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["name"] == "Grand Plaza Resort"
+        assert body["amenity_codes"] == ["WIFI", "POOL"]
+        assert body["images"][0]["display_order"] == 0
+
+    def test_get_profile_401_without_jwt(self, client):
+        resp = client.get(f"/api/v1/catalog/manager/hotels/{uuid4()}/profile")
+        assert resp.status_code == 401
+
+    @patch("app.adapters.inbound.api.manager.get_hotel_profile_use_case")
+    def test_get_profile_404_when_not_owned(self, mock_factory, client):
+        from app.application.exceptions import PropertyNotFoundError
+
+        prop_id = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = PropertyNotFoundError(prop_id)
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.get(f"/api/v1/catalog/manager/hotels/{prop_id}/profile")
+
+        resp = _with_manager_hotel(client, call)
+
+        assert resp.status_code == 404
+        assert resp.json()["code"] == "PROPERTY_NOT_FOUND"
+
+    @patch("app.adapters.inbound.api.manager.get_update_hotel_profile_use_case")
+    def test_patch_profile_ok(self, mock_factory, client):
+        prop_id = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = self._profile_payload(prop_id)
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.patch(
+                f"/api/v1/catalog/manager/hotels/{prop_id}/profile",
+                json={
+                    "description": "Updated.",
+                    "amenity_codes": ["WIFI", "POOL"],
+                    "policy": "Check-in 3pm.",
+                },
+            )
+
+        resp = _with_manager_hotel(client, call)
+
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "Grand Plaza Resort"
+        mock_uc.execute.assert_awaited_once()
+
+    @patch("app.adapters.inbound.api.manager.get_update_hotel_profile_use_case")
+    def test_patch_profile_400_unknown_amenity(self, mock_factory, client):
+        from app.application.exceptions import AmenityNotFoundError
+
+        prop_id = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = AmenityNotFoundError(["BOGUS"])
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.patch(
+                f"/api/v1/catalog/manager/hotels/{prop_id}/profile",
+                json={"amenity_codes": ["BOGUS"]},
+            )
+
+        resp = _with_manager_hotel(client, call)
+
+        assert resp.status_code == 400
+        body = resp.json()
+        assert body["code"] == "AMENITY_NOT_FOUND"
+        assert body["codes"] == ["BOGUS"]
+
+    def test_patch_profile_invalid_body_422(self, client):
+        def call():
+            return client.patch(
+                f"/api/v1/catalog/manager/hotels/{uuid4()}/profile",
+                json={"amenity_codes": "not-a-list"},
+            )
+
+        resp = _with_manager_hotel(client, call)
+        assert resp.status_code == 422
+
+    @patch("app.adapters.inbound.api.manager.get_add_property_image_use_case")
+    def test_add_image_201(self, mock_factory, client):
+        prop_id = uuid4()
+        img_id = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = {
+            "id": str(img_id),
+            "url": "https://example.com/x.jpg",
+            "caption": None,
+            "display_order": 3,
+        }
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.post(
+                f"/api/v1/catalog/manager/hotels/{prop_id}/images",
+                json={"url": "https://example.com/x.jpg"},
+            )
+
+        resp = _with_manager_hotel(client, call)
+
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["url"] == "https://example.com/x.jpg"
+        assert body["display_order"] == 3
+
+    def test_add_image_invalid_body_422(self, client):
+        def call():
+            return client.post(
+                f"/api/v1/catalog/manager/hotels/{uuid4()}/images",
+                json={"caption": "missing url"},
+            )
+
+        resp = _with_manager_hotel(client, call)
+        assert resp.status_code == 422
+
+    @patch("app.adapters.inbound.api.manager.get_delete_property_image_use_case")
+    def test_delete_image_204(self, mock_factory, client):
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = None
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.delete(
+                f"/api/v1/catalog/manager/hotels/{uuid4()}/images/{uuid4()}"
+            )
+
+        resp = _with_manager_hotel(client, call)
+        assert resp.status_code == 204
+
+    @patch("app.adapters.inbound.api.manager.get_delete_property_image_use_case")
+    def test_delete_image_404_when_image_missing(self, mock_factory, client):
+        from app.application.exceptions import PropertyImageNotFoundError
+
+        img_id = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = PropertyImageNotFoundError(img_id)
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.delete(
+                f"/api/v1/catalog/manager/hotels/{uuid4()}/images/{img_id}"
+            )
+
+        resp = _with_manager_hotel(client, call)
+        assert resp.status_code == 404
+        assert resp.json()["code"] == "PROPERTY_IMAGE_NOT_FOUND"
+
+    @patch("app.adapters.inbound.api.manager.get_set_primary_property_image_use_case")
+    def test_set_primary_image_returns_ordered_list(self, mock_factory, client):
+        prop_id = uuid4()
+        img_a = uuid4()
+        img_b = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = [
+            {"id": str(img_b), "url": "https://example.com/b.jpg", "caption": None, "display_order": 0},
+            {"id": str(img_a), "url": "https://example.com/a.jpg", "caption": None, "display_order": 1},
+        ]
+        mock_factory.return_value = mock_uc
+
+        def call():
+            return client.patch(
+                f"/api/v1/catalog/manager/hotels/{prop_id}/images/{img_b}/primary"
+            )
+
+        resp = _with_manager_hotel(client, call)
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body) == 2
+        assert body[0]["display_order"] == 0
+        assert body[0]["id"] == str(img_b)

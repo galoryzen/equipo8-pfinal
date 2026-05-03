@@ -1,7 +1,12 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from app.schemas.manager import CreatePromotionIn, UpdateCancellationPolicyIn
+from app.schemas.manager import (
+    AddPropertyImageIn,
+    CreatePromotionIn,
+    UpdateCancellationPolicyIn,
+    UpdateHotelProfileIn,
+)
 
 
 class ManagerRepository(ABC):
@@ -48,3 +53,40 @@ class ManagerRepository(ABC):
         self, rate_plan_id: UUID, data: "UpdateCancellationPolicyIn"
     ) -> dict:
         """Find-or-create a matching cancellation_policy row and link it to the rate plan."""
+
+    @abstractmethod
+    async def get_hotel_profile(self, property_id: UUID, hotel_id: UUID) -> dict:
+        """Return the editable profile for a property owned by ``hotel_id``.
+
+        Raises ``PropertyNotFoundError`` if the property does not exist or is
+        not owned by the given hotel.
+        """
+
+    @abstractmethod
+    async def update_hotel_profile(
+        self, property_id: UUID, hotel_id: UUID, data: "UpdateHotelProfileIn"
+    ) -> dict:
+        """Apply a partial update to description, amenity codes and the GENERAL policy.
+
+        Returns the same shape as ``get_hotel_profile``. Raises
+        ``PropertyNotFoundError`` when the property is not owned by the hotel
+        and ``AmenityNotFoundError`` when an unknown amenity code is sent.
+        """
+
+    @abstractmethod
+    async def add_property_image(
+        self, property_id: UUID, hotel_id: UUID, data: "AddPropertyImageIn"
+    ) -> dict:
+        """Append an image to the property's gallery (URL-based) and return it."""
+
+    @abstractmethod
+    async def delete_property_image(
+        self, property_id: UUID, hotel_id: UUID, image_id: UUID
+    ) -> None:
+        """Remove an image and renumber the remaining gallery rows by display_order."""
+
+    @abstractmethod
+    async def set_primary_property_image(
+        self, property_id: UUID, hotel_id: UUID, image_id: UUID
+    ) -> list[dict]:
+        """Promote ``image_id`` to ``display_order=0`` and return the new ordered list."""

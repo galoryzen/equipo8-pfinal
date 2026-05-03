@@ -30,7 +30,7 @@ echo "  Bastion: $BASTION_IP"
 
 # --- Resolve RDS endpoint from terraform output ---
 echo "→ Resolving RDS endpoint..."
-RDS_ENDPOINT=$(cd "$(dirname "$0")/../infra" && terraform output -raw rds_endpoint)
+RDS_ENDPOINT=$(cd "$(dirname "$0")/../infra" && terraform output -raw rds_endpoint 2>/dev/null | grep -oE '[A-Za-z0-9.-]+:[0-9]+' | head -n1)
 if [ -z "$RDS_ENDPOINT" ]; then
   echo "✗ Could not resolve RDS endpoint from terraform output."
   exit 1

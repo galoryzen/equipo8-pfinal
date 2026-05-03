@@ -63,6 +63,10 @@ export default function RootLayout() {
             options={{ headerShown: true }}
           />
           <Stack.Screen
+            name="property/[id]/reviews"
+            options={{ headerShown: true }}
+          />
+          <Stack.Screen
             name="property/[id]/rooms/[roomId]"
             options={{ headerShown: true }}
           />

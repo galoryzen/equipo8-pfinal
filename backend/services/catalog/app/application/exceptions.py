@@ -7,6 +7,22 @@ class PropertyNotFoundError(Exception):
         super().__init__(f"Property {property_id} not found")
 
 
+class PropertyImageNotFoundError(Exception):
+    """Raised when a property image cannot be found within its parent property."""
+
+    def __init__(self, image_id: UUID):
+        self.image_id = image_id
+        super().__init__(f"Property image {image_id} not found")
+
+
+class AmenityNotFoundError(Exception):
+    """Raised when one or more amenity codes do not match an existing amenity row."""
+
+    def __init__(self, codes: list[str]):
+        self.codes = codes
+        super().__init__(f"Unknown amenity codes: {codes}")
+
+
 class InsufficientInventoryError(Exception):
     """Raised when create_hold cannot fully cover the requested date range."""
 

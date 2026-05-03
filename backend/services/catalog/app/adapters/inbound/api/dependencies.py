@@ -14,12 +14,15 @@ from app.adapters.outbound.db.rate_plan_repository import SqlAlchemyRatePlanRepo
 from app.adapters.outbound.db.session import async_session
 from app.application.exceptions import UnauthorizedError
 from app.application.ports.outbound.cache_port import CachePort
+from app.application.use_cases.add_property_image import AddPropertyImageUseCase
 from app.application.use_cases.create_inventory_hold import CreateInventoryHoldUseCase
 from app.application.use_cases.create_promotion import CreatePromotionUseCase
 from app.application.use_cases.delete_promotion import DeletePromotionUseCase
+from app.application.use_cases.delete_property_image import DeletePropertyImageUseCase
 from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_hotel_metrics import GetHotelMetricsUseCase
+from app.application.use_cases.get_hotel_profile import GetHotelProfileUseCase
 from app.application.use_cases.get_property_detail import GetPropertyDetailUseCase
 from app.application.use_cases.get_rate_plan_cancellation_policy import GetRatePlanCancellationPolicyUseCase
 from app.application.use_cases.get_rate_plan_pricing import GetRatePlanPricingUseCase
@@ -31,6 +34,8 @@ from app.application.use_cases.list_room_types_availability import ListRoomTypes
 from app.application.use_cases.release_inventory_hold import ReleaseInventoryHoldUseCase
 from app.application.use_cases.search_cities import SearchCitiesUseCase
 from app.application.use_cases.search_properties import SearchPropertiesUseCase
+from app.application.use_cases.set_primary_property_image import SetPrimaryPropertyImageUseCase
+from app.application.use_cases.update_hotel_profile import UpdateHotelProfileUseCase
 from app.application.use_cases.update_rate_plan_cancellation_policy import UpdateRatePlanCancellationPolicyUseCase
 
 # Singleton — created once, shared across requests
@@ -268,3 +273,25 @@ def get_update_cancellation_policy_use_case(
 ) -> UpdateRatePlanCancellationPolicyUseCase:
     repo = get_manager_repository(session)
     return UpdateRatePlanCancellationPolicyUseCase(repo)
+
+
+def get_hotel_profile_use_case(session: AsyncSession) -> GetHotelProfileUseCase:
+    return GetHotelProfileUseCase(get_manager_repository(session))
+
+
+def get_update_hotel_profile_use_case(session: AsyncSession) -> UpdateHotelProfileUseCase:
+    return UpdateHotelProfileUseCase(get_manager_repository(session))
+
+
+def get_add_property_image_use_case(session: AsyncSession) -> AddPropertyImageUseCase:
+    return AddPropertyImageUseCase(get_manager_repository(session))
+
+
+def get_delete_property_image_use_case(session: AsyncSession) -> DeletePropertyImageUseCase:
+    return DeletePropertyImageUseCase(get_manager_repository(session))
+
+
+def get_set_primary_property_image_use_case(
+    session: AsyncSession,
+) -> SetPrimaryPropertyImageUseCase:
+    return SetPrimaryPropertyImageUseCase(get_manager_repository(session))
