@@ -128,6 +128,7 @@ class Property(Base):
     rating_avg: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), default=0)
     review_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     popularity_score: Mapped[Decimal] = mapped_column(Numeric(8, 2), nullable=False, default=0)
+    distance_to_poi_km: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
     default_cancellation_policy_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("cancellation_policy.id")
     )

@@ -25,7 +25,7 @@ class PropertyRepository(ABC):
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,
-        sort_by: str = "popularity",
+        sort_by: str = "relevance",
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:

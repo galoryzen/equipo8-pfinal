@@ -93,6 +93,20 @@ class TestSearchPropertiesValidation:
         assert resp.status_code == 422
 
     @patch("app.adapters.inbound.api.properties.get_search_use_case")
+    def test_sort_by_relevance_accepted(self, mock_factory, client):
+        cid = uuid4()
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = PaginatedResponse(
+            items=[], total=0, page=1, page_size=20, total_pages=0, message=None
+        )
+        mock_factory.return_value = mock_uc
+        resp = client.get(
+            f"/api/v1/catalog/properties?checkin=2026-04-01&checkout=2026-04-05&guests=2&city_id={cid}&sort_by=relevance"
+        )
+        assert resp.status_code == 200
+        assert mock_uc.execute.call_args.kwargs["sort_by"] == "relevance"
+
+    @patch("app.adapters.inbound.api.properties.get_search_use_case")
     def test_negative_price_returns_422(self, mock_factory, client):
         cid = uuid4()
         resp = client.get(

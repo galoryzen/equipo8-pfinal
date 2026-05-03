@@ -893,6 +893,7 @@ class TestSearchProperties:
             city_id=CANCUN_CITY_ID,
         )
 
+        assert mock_property_repo.search.call_args.kwargs.get("sort_by") == "relevance"
         assert result.total == 2
         assert result.page == 1
         assert result.total_pages == 1
@@ -923,6 +924,30 @@ class TestSearchProperties:
         assert mock_property_repo.search.call_args.kwargs["city_id"] == CANCUN_CITY_ID
         assert len(result.items) == 2
         assert all(i.city.id == CANCUN_CITY_ID for i in result.items)
+
+    async def test_relevance_rank_reorders_before_pagination(self, mock_property_repo, mock_cache):
+        """sort_by=relevance: use case ranks full repo page then slices (domain ranking)."""
+        pid_a, pid_b = uuid4(), uuid4()
+        d_a = make_property_summary(id=pid_a, name="A", rating=Decimal("3.0"), min_price=Decimal("50"))
+        d_b = make_property_summary(id=pid_b, name="B", rating=Decimal("5.0"), min_price=Decimal("100"))
+        d_a["_ranking"] = {"price": 50.0, "rating": 3.0, "popularity": 100.0, "distance_km": 5.0}
+        d_b["_ranking"] = {"price": 100.0, "rating": 5.0, "popularity": 100.0, "distance_km": 5.0}
+        mock_property_repo.search.return_value = ([d_a, d_b], 2)
+        uc = SearchPropertiesUseCase(mock_property_repo, mock_cache)
+
+        result = await uc.execute(
+            checkin=date(2026, 4, 1),
+            checkout=date(2026, 4, 5),
+            guests=2,
+            city_id=CANCUN_CITY_ID,
+            sort_by="relevance",
+            page=1,
+            page_size=1,
+        )
+
+        assert result.total == 2
+        assert len(result.items) == 1
+        assert result.items[0].name == "B"
 
     async def test_calculates_total_pages(self, mock_property_repo, mock_cache):
         mock_property_repo.search.return_value = (

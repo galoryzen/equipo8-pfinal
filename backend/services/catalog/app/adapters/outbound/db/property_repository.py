@@ -163,6 +163,8 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             original_to_report = (
                 original if original is not None and discounted is not None and original > discounted else None
             )
+            dist = prop.distance_to_poi_km
+            dist_out = round(float(dist), 2) if dist is not None else None
             items.append(
                 {
                     "id": prop.id,
@@ -179,6 +181,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                     "image": {"url": img.url, "caption": img.caption} if img else None,
                     "min_price": discounted,
                     "original_min_price": original_to_report,
+                    "distance_to_poi_km": dist_out,
                     "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
                 }
             )
@@ -194,7 +197,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,
-        sort_by: str = "popularity",
+        sort_by: str = "relevance",
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:
@@ -350,7 +353,10 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         total_result = await self._session.execute(count_q)
         total = total_result.scalar_one()
 
-        if sort_by == "rating":
+        is_relevance = sort_by == "relevance"
+        if is_relevance:
+            query = query.order_by(Property.id)
+        elif sort_by == "rating":
             query = query.order_by(nulls_last(desc(review_avg_sq.c.review_avg_rating)), Property.id)
         elif sort_by == "price_asc":
             query = query.order_by(min_price_sq.c.min_price.asc().nulls_last(), Property.id)
@@ -359,9 +365,9 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         else:
             query = query.order_by(Property.popularity_score.desc(), Property.id)
 
-        # Paginación
-        offset = (page - 1) * page_size
-        query = query.offset(offset).limit(page_size)
+        if not is_relevance:
+            offset = (page - 1) * page_size
+            query = query.offset(offset).limit(page_size)
 
         result = await self._session.execute(query)
         rows = result.unique().all()
@@ -404,25 +410,34 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
             original_to_report = (
                 original if original is not None and discounted is not None and original > discounted else None
             )
-            items.append(
-                {
-                    "id": prop.id,
-                    "name": prop.name,
-                    "city": {
-                        "id": prop.city.id,
-                        "name": prop.city.name,
-                        "department": prop.city.department,
-                        "country": prop.city.country,
-                    },
-                    "address": prop.address,
-                    "rating_avg": self._rating_for_list_payload(avg_q),
-                    "review_count": rc,
-                    "image": {"url": img.url, "caption": img.caption} if img else None,
-                    "min_price": discounted,
-                    "original_min_price": original_to_report,
-                    "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
+            dist = prop.distance_to_poi_km
+            dist_out = round(float(dist), 2) if dist is not None else None
+            row = {
+                "id": prop.id,
+                "name": prop.name,
+                "city": {
+                    "id": prop.city.id,
+                    "name": prop.city.name,
+                    "department": prop.city.department,
+                    "country": prop.city.country,
+                },
+                "address": prop.address,
+                "rating_avg": self._rating_for_list_payload(avg_q),
+                "review_count": rc,
+                "image": {"url": img.url, "caption": img.caption} if img else None,
+                "min_price": discounted,
+                "original_min_price": original_to_report,
+                "distance_to_poi_km": dist_out,
+                "amenities": [{"code": a.code, "name": a.name} for a in prop_amenities.get(prop.id, [])],
+            }
+            if is_relevance:
+                row["_ranking"] = {
+                    "price": discounted,
+                    "rating": self._rating_for_list_payload(avg_q),
+                    "popularity": float(prop.popularity_score),
+                    "distance_km": dist_out,
                 }
-            )
+            items.append(row)
 
         return items, total
 
@@ -484,7 +499,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         stmt = (
             select(Review)
             .where(Review.property_id == property_id)
-            .order_by(Review.created_at.desc())
+            .order_by(Review.created_at.desc(), Review.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )

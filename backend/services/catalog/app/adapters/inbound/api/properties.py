@@ -58,7 +58,10 @@ async def search_properties(
     min_price: Decimal | None = Query(None, ge=0),
     max_price: Decimal | None = Query(None, ge=0),
     amenities: str | None = Query(None, description="Comma-separated amenity codes"),
-    sort_by: str = Query("popularity", pattern="^(popularity|rating|price_asc|price_desc)$"),
+    sort_by: str = Query(
+        "relevance",
+        pattern="^(relevance|popularity|rating|price_asc|price_desc)$",
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_db_session),
