@@ -2,9 +2,10 @@ from dataclasses import dataclass
 
 import httpx
 from contracts.events.booking import BOOKING_CONFIRMED
+from contracts.events.payment import PAYMENT_FAILED
 from shared.events import DomainEventConsumer, build_event_consumer
 
-from app.adapters.inbound.events.handlers import make_booking_confirmed_handler
+from app.adapters.inbound.events.handlers import make_booking_confirmed_handler, make_payment_failed_handler
 from app.adapters.outbound.db.session import async_session
 from app.adapters.outbound.email import build_email_sender
 from app.adapters.outbound.http.auth_client import HttpAuthClient
@@ -44,6 +45,7 @@ def build_worker_resources() -> WorkerResources:
     )
 
     handler = make_booking_confirmed_handler(async_session, user_contacts, properties, email_sender)
+    payment_failed_handler = make_payment_failed_handler(async_session, user_contacts, email_sender)
 
     consumer = build_event_consumer(
         settings.EVENT_CONSUMER_BACKEND,
@@ -53,4 +55,5 @@ def build_worker_resources() -> WorkerResources:
         sqs_region=settings.AWS_REGION,
     )
     consumer.subscribe(BOOKING_CONFIRMED, handler)
+    consumer.subscribe(PAYMENT_FAILED, payment_failed_handler)
     return WorkerResources(consumer=consumer, http_client=http_client)
