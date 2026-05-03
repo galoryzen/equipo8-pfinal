@@ -165,9 +165,11 @@ class TestCancelCartEndpoint:
         assert resp.status_code == 404
         assert resp.json()["code"] == "BOOKING_NOT_FOUND"
 
-    def test_returns_409_when_not_in_cart_state(self, client_authenticated):
+    def test_returns_409_when_not_in_cancelable_state(self, client_authenticated):
         mock_uc = AsyncMock()
-        mock_uc.execute.side_effect = InvalidBookingStateError("Cannot cancel booking in state CONFIRMED")
+        mock_uc.execute.side_effect = InvalidBookingStateError(
+            "Cannot cancel booking in state PENDING_PAYMENT"
+        )
         app.dependency_overrides[get_cancel_cart_booking_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/cancel")

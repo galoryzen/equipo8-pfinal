@@ -10,6 +10,10 @@ class InvalidBookingStateError(Exception):
     """Raised when an operation is attempted on a booking in a state that does not allow it."""
 
 
+class CancellationNotAllowedError(Exception):
+    """Raised when the booking's cancellation policy forbids cancellation at this time."""
+
+
 class InventoryUnavailableError(Exception):
     """Raised when Catalog rejects a create_hold because inventory is insufficient (409)."""
 
