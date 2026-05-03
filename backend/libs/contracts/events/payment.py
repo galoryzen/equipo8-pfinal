@@ -28,4 +28,5 @@ class PaymentSucceededPayload(BaseModel):
 class PaymentFailedPayload(BaseModel):
     payment_intent_id: UUID
     booking_id: UUID
+    user_id: UUID
     reason: str
