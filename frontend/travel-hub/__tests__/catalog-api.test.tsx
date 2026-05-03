@@ -50,6 +50,7 @@ describe('searchProperties', () => {
     expect(calledUrl).toContain('guests=2');
     expect(calledUrl).toContain('min_price=100');
     expect(calledUrl).toContain('max_price=500');
+    expect(calledUrl).toContain('sort_by=relevance');
   });
 
   it('includes city_id in the request URL for filtered search', async () => {
@@ -68,6 +69,25 @@ describe('searchProperties', () => {
     const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(calledUrl).toContain('guests=4');
     expect(calledUrl).toContain('city_id=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+    expect(calledUrl).toContain('sort_by=relevance');
+  });
+
+  it('sends explicit sort_by when provided', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
+    });
+
+    await searchProperties({
+      checkin: '2026-04-01',
+      checkout: '2026-04-05',
+      guests: 2,
+      city_id: 'bbbe56fe-8f4b-4498-a876-396a342d3615',
+      sort_by: 'price_asc',
+    });
+
+    const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('sort_by=price_asc');
   });
 
   it('omits price params when not provided', async () => {
@@ -86,6 +106,7 @@ describe('searchProperties', () => {
     const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(calledUrl).not.toContain('min_price');
     expect(calledUrl).not.toContain('max_price');
+    expect(calledUrl).toContain('sort_by=relevance');
   });
 
   it('sends only min_price when max is not set', async () => {
@@ -105,6 +126,7 @@ describe('searchProperties', () => {
     const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(calledUrl).toContain('min_price=50');
     expect(calledUrl).not.toContain('max_price');
+    expect(calledUrl).toContain('sort_by=relevance');
   });
 
   it('throws on API error with string detail message', async () => {

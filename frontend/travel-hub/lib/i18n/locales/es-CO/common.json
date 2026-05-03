@@ -111,7 +111,10 @@
     "caption": "Precios por noche antes de impuestos y cargos",
     "min": "Mín.",
     "max": "Máx.",
-    "minGreaterThanMax": "El mínimo no puede ser mayor que el máximo"
+    "minGreaterThanMax": "El mínimo no puede ser mayor que el máximo",
+    "sliderMinThumb": "Precio mínimo por noche del filtro",
+    "sliderMaxThumb": "Precio máximo por noche del filtro",
+    "sliderValueText": "{{value}} dólares por noche"
   },
   "amenityFilter": {
     "title": "Amenidades",
@@ -123,10 +126,13 @@
     "perNight": "/ noche",
     "reviews_one": "{{count}} reseña",
     "reviews_other": "{{count}} reseñas",
-    "reviewsShort": "{{count}}k reseñas"
+    "reviewsShort": "{{count}}k reseñas",
+    "poiDistance": "~{{km}} km del área turística"
   },
   "searchPage": {
     "sort": "Ordenar",
+    "recommended": "Recomendado",
+    "recommendedBadge": "Orden por relevancia",
     "price": "Precio",
     "rating": "Calificación",
     "allStays": "Todos los alojamientos",

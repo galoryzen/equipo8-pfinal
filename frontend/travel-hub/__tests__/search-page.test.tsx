@@ -172,6 +172,67 @@ describe('SearchPage', () => {
           checkin: expect.any(String),
           checkout: expect.any(String),
           guests: 1,
+          sort_by: 'relevance',
+        })
+      );
+    });
+  });
+
+  it('uses relevance as default sort when searching by city', async () => {
+    const user = userEvent.setup();
+    mockSearchCities.mockResolvedValue([
+      { id: 'city-rel', name: 'Tulum', department: null, country: 'México' },
+    ]);
+
+    renderWithI18n(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    const input = screen.getByPlaceholderText(/search destination/i);
+    await user.clear(input);
+    await user.type(input, 'Tu');
+    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
+    await user.click(await screen.findByRole('option', { name: /Tulum/i }));
+
+    const searchButtons = screen.getAllByRole('button');
+    const searchBtn = searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'));
+    await user.click(searchBtn!);
+
+    await waitFor(() => {
+      expect(mockSearch).toHaveBeenCalledWith(expect.objectContaining({ sort_by: 'relevance' }));
+    });
+  });
+
+  it('refetches with relevance when price filter changes after catalog search', async () => {
+    const user = userEvent.setup();
+    mockSearchCities.mockResolvedValue([
+      { id: 'city-price', name: 'P', department: null, country: 'Q' },
+    ]);
+
+    renderWithI18n(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    const input = screen.getByPlaceholderText(/search destination/i);
+    await user.clear(input);
+    await user.type(input, 'Pp');
+    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
+    await user.click(await screen.findByRole('option', { name: /^P/ }));
+
+    const searchButtons = screen.getAllByRole('button');
+    await user.click(searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'))!);
+
+    await waitFor(() => expect(mockSearch).toHaveBeenCalled());
+    mockSearch.mockClear();
+
+    const minInput = screen.getByLabelText('Min');
+    fireEvent.change(minInput, { target: { value: '120' } });
+    fireEvent.blur(minInput);
+
+    await waitFor(() => {
+      expect(mockSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          city_id: 'city-price',
+          min_price: 120,
+          sort_by: 'relevance',
         })
       );
     });
@@ -238,7 +299,7 @@ describe('SearchPage', () => {
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByText('Price'));
+    fireEvent.click(screen.getByTestId('sort-chip-price_asc'));
     await waitFor(() => {
       expect(mockSearch.mock.calls.at(-1)![0].sort_by).toBe('price_asc');
     });
@@ -399,11 +460,39 @@ describe('SearchPage', () => {
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByText('Price'));
+    fireEvent.click(screen.getByTestId('sort-chip-price_asc'));
 
     await waitFor(() => {
       const last = mockSearch.mock.calls.at(-1)![0];
       expect(last.sort_by).toBe('price_asc');
+    });
+  });
+
+  it('changes sort to rating when rating chip is selected', async () => {
+    const user = userEvent.setup();
+    mockSearchCities.mockResolvedValue([
+      { id: 'cid-r', name: 'R', department: null, country: 'S' },
+    ]);
+
+    renderWithI18n(<SearchPage />);
+    await waitFor(() => screen.getByText('Hotel Test'));
+
+    const input = screen.getByPlaceholderText(/search destination/i);
+    await user.clear(input);
+    await user.type(input, 'Rr');
+    await waitFor(() => expect(mockSearchCities).toHaveBeenCalled(), { timeout: 4000 });
+    await user.click(await screen.findByRole('option', { name: /^R/ }));
+
+    const searchButtons = screen.getAllByRole('button');
+    await user.click(searchButtons.find((b) => b.querySelector('[data-testid="SearchIcon"]'))!);
+
+    await waitFor(() => expect(mockSearch).toHaveBeenCalled());
+    mockSearch.mockClear();
+
+    fireEvent.click(screen.getByTestId('sort-chip-rating'));
+
+    await waitFor(() => {
+      expect(mockSearch.mock.calls.at(-1)![0].sort_by).toBe('rating');
     });
   });
 
