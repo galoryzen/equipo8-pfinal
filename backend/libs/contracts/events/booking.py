@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 BOOKING_CONFIRMED = "BookingConfirmed"
 BOOKING_REJECTED = "BookingRejected"
+BOOKING_CANCELLED = "BookingCancelled"
 
 
 class BookingConfirmedPayload(BaseModel):
@@ -20,6 +21,12 @@ class BookingConfirmedPayload(BaseModel):
 
 
 class BookingRejectedPayload(BaseModel):
+    booking_id: UUID
+    user_id: UUID
+    reason: str | None = None
+
+
+class BookingCancelledPayload(BaseModel):
     booking_id: UUID
     user_id: UUID
     reason: str | None = None

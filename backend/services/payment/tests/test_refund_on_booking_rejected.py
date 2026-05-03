@@ -56,6 +56,7 @@ async def test_refund_happy_path_creates_row_and_calls_gateway():
     payment = _payment(intent.id, Decimal("150.00"))
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock(return_value=payment)
     repo.find_refund_by_payment_id = AsyncMock(return_value=None)
@@ -81,6 +82,7 @@ async def test_refund_happy_path_creates_row_and_calls_gateway():
 @pytest.mark.asyncio
 async def test_refund_noop_when_no_intent_for_booking():
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=None)
     repo.add_refund = AsyncMock()
 
@@ -104,6 +106,7 @@ async def test_refund_noop_when_intent_not_succeeded(non_success_status):
     intent = make_payment_intent(booking_id=booking_id, status=non_success_status)
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock()
     repo.add_refund = AsyncMock()
@@ -122,6 +125,35 @@ async def test_refund_noop_when_intent_not_succeeded(non_success_status):
 @pytest.mark.asyncio
 async def test_refund_idempotent_when_refund_row_already_exists():
     booking_id = uuid.uuid4()
+    payment = _payment(uuid.uuid4())
+    existing_refund = Refund(
+        id=uuid.uuid4(),
+        payment_id=payment.id,
+        amount=payment.authorized_amount,
+        status="SUCCEEDED",
+        reason="hotel_rejected",
+        created_at=datetime.now(UTC).replace(tzinfo=None),
+    )
+
+    repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=existing_refund)
+    repo.add_refund = AsyncMock()
+
+    gateway = MagicMock()
+    gateway.refund_payment = MagicMock()
+
+    uc = RefundOnBookingRejectedUseCase(repo, gateway)
+    await uc.execute(_envelope(booking_id))
+
+    gateway.refund_payment.assert_not_called()
+    repo.add_refund.assert_not_awaited()
+    repo.get_intent_by_booking_id.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_refund_idempotent_when_refund_exists_by_payment_id_only():
+    """If booking-level lookup misses but payment already has a refund row, skip."""
+    booking_id = uuid.uuid4()
     intent = make_payment_intent(booking_id=booking_id, status=PaymentIntentStatus.SUCCEEDED)
     payment = _payment(intent.id)
     existing_refund = Refund(
@@ -134,6 +166,7 @@ async def test_refund_idempotent_when_refund_row_already_exists():
     )
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock(return_value=payment)
     repo.find_refund_by_payment_id = AsyncMock(return_value=existing_refund)
@@ -156,6 +189,7 @@ async def test_refund_noop_when_payment_row_missing_for_succeeded_intent():
     intent = make_payment_intent(booking_id=booking_id, status=PaymentIntentStatus.SUCCEEDED)
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock(return_value=None)
     repo.add_refund = AsyncMock()

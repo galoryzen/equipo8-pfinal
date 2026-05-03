@@ -123,9 +123,10 @@ def get_create_cart_booking_use_case(
 def get_cancel_cart_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
     catalog: CatalogInventoryPort = Depends(get_catalog_client),
+    events: DomainEventPublisher = Depends(get_event_publisher),
 ) -> CancelCartBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return CancelCartBookingUseCase(repo, catalog)
+    return CancelCartBookingUseCase(repo, catalog, events=events)
 
 def get_list_my_bookings_use_case(
     session: AsyncSession = Depends(get_db_session),

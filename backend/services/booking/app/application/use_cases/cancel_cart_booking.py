@@ -3,6 +3,10 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
+from contracts.events.base import DomainEventEnvelope
+from contracts.events.booking import BOOKING_CANCELLED, BookingCancelledPayload
+from shared.events import DomainEventPublisher
+
 from app.application.exceptions import (
     BookingNotFoundError,
     CancellationNotAllowedError,
@@ -28,17 +32,26 @@ class CancelCartBookingUseCase:
     transition to CATALOG release path (same release_hold coordination as cart).
 
     EXPIRED remains the terminal for abandoned carts. CANCELLED is used for
-    post-confirmation traveler-initiated cancellation (refund orchestration out of scope).
+    post-confirmation traveler-initiated cancellation.
+
+    **Async refund (why not synchronous):** PSP refunds can be slow or flaky; keeping
+    cancel API synchronous only persists booking state and publishes ``BookingCancelled``.
+    The payment worker performs the refund so the HTTP request stays fast and failures
+    in the PSP do not roll back an already-valid cancellation (inventory + policy).
     """
+
+    _CANCEL_EVENT_REASON = "traveler_cancelled"
 
     def __init__(
         self,
         repo: BookingRepository,
         catalog: CatalogInventoryPort,
         clock: Callable[[], datetime] | None = None,
+        events: DomainEventPublisher | None = None,
     ):
         self._repo = repo
         self._catalog = catalog
+        self._events = events
         self._now = clock or (lambda: datetime.now(UTC).replace(tzinfo=None))
 
     async def execute(self, booking_id: UUID, user_id: UUID) -> BookingDetailOut:
@@ -96,8 +109,35 @@ class CancelCartBookingUseCase:
             )
         )
 
+        await self._publish_booking_cancelled_for_refund(booking)
+
         await self._release_inventory_best_effort(booking)
         return _to_detail(booking)
+
+    async def _publish_booking_cancelled_for_refund(self, booking: Booking) -> None:
+        """Enqueue async refund via payment worker (``BookingCancelled`` event).
+
+        Does not await PSP refund; bus/publish errors are logged and do not roll back
+        the booking transition (inventory release still runs).
+        """
+        if self._events is None:
+            return
+        logger.info("Publishing BOOKING_CANCELLED for booking_id=%s", booking.id)
+        envelope = DomainEventEnvelope(
+            event_type=BOOKING_CANCELLED,
+            payload=BookingCancelledPayload(
+                booking_id=booking.id,
+                user_id=booking.user_id,
+                reason=self._CANCEL_EVENT_REASON,
+            ).model_dump(mode="json"),
+        )
+        try:
+            await self._events.publish(envelope)
+        except Exception:
+            logger.exception(
+                "Failed to publish refund event for traveler-cancelled booking %s",
+                booking.id,
+            )
 
     async def _release_inventory_best_effort(self, booking: Booking) -> None:
         try:

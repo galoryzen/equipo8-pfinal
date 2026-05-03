@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 import pytest
+from contracts.events.booking import BOOKING_CANCELLED
 
 from app.application.exceptions import (
     BookingNotFoundError,
@@ -53,13 +54,15 @@ def _booking(status: BookingStatus = BookingStatus.CART) -> Booking:
 
 @pytest.mark.asyncio
 class TestCancelCartBookingUseCase:
-    async def test_cancels_and_releases_on_happy_path(self):
+    async def test_cart_cancel_does_not_publish_booking_cancelled_event(self):
+        """CART → EXPIRED must not emit BOOKING_CANCELLED (no async refund for carts)."""
         booking = _booking()
         repo = AsyncMock()
         repo.get_by_id_for_user.return_value = booking
         catalog = AsyncMock(spec=CatalogInventoryPort)
+        events = AsyncMock()
 
-        uc = CancelCartBookingUseCase(repo, catalog)
+        uc = CancelCartBookingUseCase(repo, catalog, events=events)
         out = await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
         assert out.status == "EXPIRED"
@@ -79,30 +82,35 @@ class TestCancelCartBookingUseCase:
         assert history_row.to_status == BookingStatus.EXPIRED
         assert history_row.reason == "user_cancelled_cart"
         assert history_row.changed_by == USER_ID
+        events.publish.assert_not_awaited()
 
-    async def test_raises_when_booking_not_found(self):
+    async def test_booking_not_found_does_not_publish_booking_cancelled_event(self):
         repo = AsyncMock()
         repo.get_by_id_for_user.return_value = None
         catalog = AsyncMock(spec=CatalogInventoryPort)
+        events = AsyncMock()
 
-        uc = CancelCartBookingUseCase(repo, catalog)
+        uc = CancelCartBookingUseCase(repo, catalog, events=events)
         with pytest.raises(BookingNotFoundError):
             await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
         catalog.release_hold.assert_not_awaited()
+        events.publish.assert_not_awaited()
 
-    async def test_raises_when_status_not_cancelable(self):
+    async def test_non_confirmed_state_does_not_publish_booking_cancelled_event(self):
         booking = _booking(status=BookingStatus.PENDING_PAYMENT)
         repo = AsyncMock()
         repo.get_by_id_for_user.return_value = booking
         catalog = AsyncMock(spec=CatalogInventoryPort)
+        events = AsyncMock()
 
-        uc = CancelCartBookingUseCase(repo, catalog)
+        uc = CancelCartBookingUseCase(repo, catalog, events=events)
         with pytest.raises(InvalidBookingStateError):
             await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
         catalog.release_hold.assert_not_awaited()
         repo.save.assert_not_awaited()
+        events.publish.assert_not_awaited()
 
     async def test_confirmed_cancellation_succeeds_when_policy_allows(self):
         """Check-in far ahead with 48h policy → CONFIRMED may be cancelled."""
@@ -118,7 +126,8 @@ class TestCancelCartBookingUseCase:
         catalog = AsyncMock(spec=CatalogInventoryPort)
 
         frozen_now = datetime(2026, 4, 1, 12, 0, 0)
-        uc = CancelCartBookingUseCase(repo, catalog, clock=lambda: frozen_now)
+        events = AsyncMock()
+        uc = CancelCartBookingUseCase(repo, catalog, clock=lambda: frozen_now, events=events)
         out = await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
         assert out.status == "CANCELLED"
@@ -130,9 +139,15 @@ class TestCancelCartBookingUseCase:
         assert history_row.from_status == BookingStatus.CONFIRMED
         assert history_row.to_status == BookingStatus.CANCELLED
         assert history_row.reason == "user_cancelled_confirmed"
+        events.publish.assert_awaited_once()
+        envelope = events.publish.await_args.args[0]
+        assert envelope.event_type == BOOKING_CANCELLED
+        assert envelope.payload["booking_id"] == str(BOOKING_ID)
+        assert envelope.payload["user_id"] == str(USER_ID)
+        assert envelope.payload["reason"] == "traveler_cancelled"
 
-    async def test_confirmed_cancellation_fails_when_policy_blocks(self):
-        """Inside 48h window before check-in → CancellationNotAllowedError."""
+    async def test_policy_blocks_confirmed_cancel_without_booking_cancelled_event(self):
+        """Inside 48h window before check-in → no transition, no BOOKING_CANCELLED."""
         booking = _booking(status=BookingStatus.CONFIRMED)
         booking.checkin = date(2026, 6, 1)
         booking.policy_type_applied = CancellationPolicyType.FULL
@@ -141,15 +156,17 @@ class TestCancelCartBookingUseCase:
         repo = AsyncMock()
         repo.get_by_id_for_user.return_value = booking
         catalog = AsyncMock(spec=CatalogInventoryPort)
+        events = AsyncMock()
 
         frozen_now = datetime(2026, 5, 31, 12, 0, 0)
-        uc = CancelCartBookingUseCase(repo, catalog, clock=lambda: frozen_now)
+        uc = CancelCartBookingUseCase(repo, catalog, clock=lambda: frozen_now, events=events)
 
         with pytest.raises(CancellationNotAllowedError):
             await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
         catalog.release_hold.assert_not_awaited()
         repo.save.assert_not_awaited()
+        events.publish.assert_not_awaited()
 
     async def test_returns_200_even_when_catalog_fails(self):
         """State transition MUST persist even if the inline release fails —
@@ -159,11 +176,13 @@ class TestCancelCartBookingUseCase:
         repo.get_by_id_for_user.return_value = booking
         catalog = AsyncMock(spec=CatalogInventoryPort)
         catalog.release_hold.side_effect = CatalogUnavailableError("down")
+        events = AsyncMock()
 
-        uc = CancelCartBookingUseCase(repo, catalog)
+        uc = CancelCartBookingUseCase(repo, catalog, events=events)
         out = await uc.execute(booking_id=BOOKING_ID, user_id=USER_ID)
 
         assert out.status == "EXPIRED"
         assert booking.inventory_released is False
         # Only the pre-release save happened; the post-release save was skipped.
         assert repo.save.await_count == 1
+        events.publish.assert_not_awaited()
