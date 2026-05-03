@@ -17,7 +17,7 @@ locals {
       events = ["PaymentRequested", "BookingRejected"]
     }
     notification = {
-      events = ["BookingConfirmed"]
+      events = ["BookingConfirmed", "PaymentFailed"]
     }
   }
 }
