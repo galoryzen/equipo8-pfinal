@@ -45,6 +45,8 @@ def test_metrics_ok_for_hotel_partner():
                 "amount": 250.0,
             }
         ],
+        "checkedInCount": 2,
+        "checkedInGuests": 5,
     }
 
     app.dependency_overrides[get_current_user_info] = lambda: {
@@ -67,5 +69,7 @@ def test_metrics_ok_for_hotel_partner():
         assert body["bookingTrends"][0]["bookings"] == 1
         assert body["recentActivity"][0]["type"] == "BOOKING_CONFIRMED"
         assert body["upcomingCheckins"][0]["roomType"] == "Suite"
+        assert body["checkedInCount"] == 2
+        assert body["checkedInGuests"] == 5
     finally:
         app.dependency_overrides.clear()

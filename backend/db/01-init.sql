@@ -49,7 +49,7 @@ CREATE TYPE policy_category AS ENUM ('CHECK_IN','CHECK_OUT','PETS','SMOKING','CH
 CREATE TYPE discount_type AS ENUM ('PERCENT','FIXED');
 
 -- booking
-CREATE TYPE booking_status AS ENUM ('CART','PENDING_PAYMENT','PENDING_CONFIRMATION','CONFIRMED','REJECTED','CANCELLED','EXPIRED');
+CREATE TYPE booking_status AS ENUM ('CART','PENDING_PAYMENT','PENDING_CONFIRMATION','CONFIRMED','CHECKED_IN','CHECKED_OUT','REJECTED','CANCELLED','EXPIRED');
 
 -- payments
 CREATE TYPE payment_status AS ENUM ('PENDING','AUTHORIZED','CAPTURED','FAILED','CANCELLED');
@@ -396,6 +396,12 @@ CREATE TABLE payments.webhook_event (
 
 ALTER TABLE booking.booking
     ADD COLUMN confirmation_payment_intent_id UUID REFERENCES payments.payment_intent(id);
+
+ALTER TABLE booking.booking
+    ADD COLUMN actual_checkin_at TIMESTAMP;
+
+ALTER TABLE booking.booking
+    ADD COLUMN actual_checkout_at TIMESTAMP;
 
 CREATE TABLE payments.refund (
     id          UUID PRIMARY KEY,
