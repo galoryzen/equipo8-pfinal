@@ -1,3 +1,4 @@
+import { getMe } from '@/app/lib/api/auth';
 import * as catalogApi from '@/app/lib/api/catalog';
 import ManagerSettingsPage from '@/app/manager/settings/page';
 import { screen, waitFor } from '@testing-library/react';
@@ -5,8 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithI18n } from './test-utils';
 
+vi.mock('@/app/lib/api/auth', () => ({
+  getMe: vi.fn(),
+}));
+
 const managerMocks = vi.hoisted(() => ({
-  getHotels: vi.fn(),
+  getManagerHotels: vi.fn(),
   getHotelProfile: vi.fn(),
 }));
 
@@ -14,7 +19,7 @@ vi.mock('@/app/lib/api/manager', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/app/lib/api/manager')>();
   return {
     ...actual,
-    getHotels: managerMocks.getHotels,
+    getManagerHotels: managerMocks.getManagerHotels,
     getHotelProfile: managerMocks.getHotelProfile,
   };
 });
@@ -33,6 +38,12 @@ describe('ManagerSettingsPage', () => {
   beforeEach(() => {
     searchParamsRef.current = new URLSearchParams('id=hotel-99');
     mockReplace.mockClear();
+
+    vi.mocked(getMe).mockResolvedValue({
+      id: 'user-1',
+      email: 'partner@test.com',
+      role: 'HOTEL',
+    });
 
     vi.spyOn(catalogApi, 'getAmenityCatalog').mockResolvedValue([{ code: 'WIFI', name: 'WiFi' }]);
 
@@ -56,7 +67,7 @@ describe('ManagerSettingsPage', () => {
       reviews: { items: [], total: 0, page: 1, page_size: 10, total_pages: 0 },
     });
 
-    managerMocks.getHotels.mockResolvedValue({
+    managerMocks.getManagerHotels.mockResolvedValue({
       items: [
         {
           id: 'hotel-99',
