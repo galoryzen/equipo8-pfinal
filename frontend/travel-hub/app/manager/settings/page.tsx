@@ -382,7 +382,6 @@ export default function ManagerSettingsPage() {
         }
 
         setPropertyID(initialId);
-        console.log('Hotel list', items);
 
         const hoteld = items.find((h) => h.id === initialId);
         setHotelID(hoteld?.hotelId);
