@@ -233,7 +233,7 @@ describe('manager API', () => {
     const out = await getHotelProfile('p1');
     expect(out).toEqual(profile);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${BASE}/api/v1/catalog/manager/hotels/p1/profile`,
+      `${BASE}/api/v1/catalog/manager/hotels/p1/profile?`,
       { credentials: 'include' }
     );
   });
@@ -258,7 +258,7 @@ describe('manager API', () => {
     const out = await updateHotelProfile('p1', payload);
     expect(out).toEqual(updated);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${BASE}/api/v1/catalog/manager/hotels/p1/profile`,
+      `${BASE}/api/v1/catalog/manager/hotels/p1/profile?`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -283,7 +283,7 @@ describe('manager API', () => {
     const out = await addHotelImage('p1', { url: img.url, caption: 'x' });
     expect(out).toEqual(img);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${BASE}/api/v1/catalog/manager/hotels/p1/images`,
+      `${BASE}/api/v1/catalog/manager/hotels/p1/images?`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -302,7 +302,7 @@ describe('manager API', () => {
     await deleteHotelImage('p1', 'img-9');
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${BASE}/api/v1/catalog/manager/hotels/p1/images/img-9`,
+      `${BASE}/api/v1/catalog/manager/hotels/p1/images/img-9?`,
       { method: 'DELETE', credentials: 'include' }
     );
   });
@@ -320,7 +320,7 @@ describe('manager API', () => {
     const out = await setPrimaryHotelImage('p1', 'b');
     expect(out).toEqual(list);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${BASE}/api/v1/catalog/manager/hotels/p1/images/b/primary`,
+      `${BASE}/api/v1/catalog/manager/hotels/p1/images/b/primary?`,
       { method: 'PATCH', credentials: 'include' }
     );
   });

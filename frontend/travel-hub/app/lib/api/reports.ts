@@ -1,11 +1,12 @@
-import type {
+import { API_URL } from '@/app/lib/api/constants';
+import {
   ReportMetric,
   RevenueByRoomType,
   RevenueReportData,
+  RevenueReportFetchError,
+  RevenueReportResponse,
   RevenueTrend,
 } from '@/app/lib/types/reports';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
 export const EMPTY_REVENUE_REPORT_DATA: RevenueReportData = {
   kpis: {
@@ -22,37 +23,6 @@ export const EMPTY_REVENUE_REPORT_DATA: RevenueReportData = {
     currency: 'USD',
   },
 };
-
-type RevenueReportResponse = Partial<{
-  kpis: Partial<{
-    totalRevenue: unknown;
-    adr: unknown;
-    occupancyRate: unknown;
-  }>;
-  trends: unknown[];
-  revenueByRoomType: unknown[];
-  totalAggregatedRevenue: unknown;
-  metadata: Partial<{
-    from: unknown;
-    to: unknown;
-    currency: unknown;
-  }>;
-}>;
-
-export class RevenueReportFetchError extends Error {
-  readonly status?: number;
-  readonly kind: 'unauthorized' | 'network' | 'server';
-
-  constructor(
-    message: string,
-    opts: { status?: number; kind: 'unauthorized' | 'network' | 'server' }
-  ) {
-    super(message);
-    this.name = 'RevenueReportFetchError';
-    this.status = opts.status;
-    this.kind = opts.kind;
-  }
-}
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;

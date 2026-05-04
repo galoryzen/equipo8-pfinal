@@ -1,0 +1,51 @@
+# CI-only merge: BuildKit GitHub Actions cache (requires COMPOSE_FILE=...:docker-compose.ci.yml
+# and docker/setup-buildx-action on GHA). Merges with docker-compose.yml under `build:`.
+services:
+  thub-auth:
+    build:
+      cache_from:
+        - type=gha,scope=auth
+      cache_to:
+        - type=gha,mode=max,scope=auth
+  thub-catalog:
+    build:
+      cache_from:
+        - type=gha,scope=catalog
+      cache_to:
+        - type=gha,mode=max,scope=catalog
+  thub-booking:
+    build:
+      cache_from:
+        - type=gha,scope=booking
+      cache_to:
+        - type=gha,mode=max,scope=booking
+  thub-booking-worker:
+    build:
+      cache_from:
+        - type=gha,scope=booking-worker
+      cache_to:
+        - type=gha,mode=max,scope=booking-worker
+  thub-payment:
+    build:
+      cache_from:
+        - type=gha,scope=payment
+      cache_to:
+        - type=gha,mode=max,scope=payment
+  thub-payment-worker:
+    build:
+      cache_from:
+        - type=gha,scope=payment-worker
+      cache_to:
+        - type=gha,mode=max,scope=payment-worker
+  thub-notification:
+    build:
+      cache_from:
+        - type=gha,scope=notification
+      cache_to:
+        - type=gha,mode=max,scope=notification
+  thub-notification-worker:
+    build:
+      cache_from:
+        - type=gha,scope=notification-worker
+      cache_to:
+        - type=gha,mode=max,scope=notification-worker

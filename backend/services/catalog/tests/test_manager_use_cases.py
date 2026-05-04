@@ -52,6 +52,7 @@ class TestListManagerHotelsUseCase:
                     "status": "ACTIVE",
                     "imageUrl": "https://example.com/p.jpg",
                     "categories": 2,
+                    "hotelId": hid,
                 }
             ],
             1,

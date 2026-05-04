@@ -1,3 +1,4 @@
+import { API_URL } from '@/app/lib/api/constants';
 import type {
   BookingDetail,
   BookingListItem,
@@ -7,8 +8,6 @@ import type {
   PaginatedResponse,
   PendingConfirmationBookingItem,
 } from '@/app/lib/types/booking';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
 async function readErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);

@@ -41,3 +41,34 @@ export type RevenueReportError = {
   message: string;
   kind: 'unauthorized' | 'network' | 'server';
 };
+
+export type RevenueReportResponse = Partial<{
+  kpis: Partial<{
+    totalRevenue: unknown;
+    adr: unknown;
+    occupancyRate: unknown;
+  }>;
+  trends: unknown[];
+  revenueByRoomType: unknown[];
+  totalAggregatedRevenue: unknown;
+  metadata: Partial<{
+    from: unknown;
+    to: unknown;
+    currency: unknown;
+  }>;
+}>;
+
+export class RevenueReportFetchError extends Error {
+  readonly status?: number;
+  readonly kind: 'unauthorized' | 'network' | 'server';
+
+  constructor(
+    message: string,
+    opts: { status?: number; kind: 'unauthorized' | 'network' | 'server' }
+  ) {
+    super(message);
+    this.name = 'RevenueReportFetchError';
+    this.status = opts.status;
+    this.kind = opts.kind;
+  }
+}

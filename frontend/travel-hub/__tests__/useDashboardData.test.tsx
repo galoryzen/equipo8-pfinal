@@ -1,6 +1,11 @@
 import * as dashboardApi from '@/app/lib/api/dashboard';
 import { EMPTY_DASHBOARD_DATA } from '@/app/lib/api/dashboard';
-import { useAdminDashboardData, useDashboardData } from '@/app/manager/hooks/useDashboardData';
+import { DashboardFetchError } from '@/app/lib/types/dashboard';
+import {
+  useAdminDashboardData,
+  useDashboardData,
+  useManagerDashboardData,
+} from '@/app/manager/hooks/useDashboardData';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -174,7 +179,7 @@ describe('useAdminDashboardData', () => {
 
   it('sets server-kind error when getAdminDashboardMetrics rejects with DashboardFetchError', async () => {
     vi.spyOn(dashboardApi, 'getAdminDashboardMetrics').mockRejectedValueOnce(
-      new dashboardApi.DashboardFetchError('Missing hotel_id for admin dashboard', {
+      new DashboardFetchError('Missing hotel_id for admin dashboard', {
         kind: 'server',
       })
     );
@@ -189,5 +194,85 @@ describe('useAdminDashboardData', () => {
       kind: 'server',
       status: undefined,
     });
+  });
+});
+
+describe('useManagerDashboardData', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('does not fetch until the role is ready', async () => {
+    const hotelSpy = vi
+      .spyOn(dashboardApi, 'getHotelDashboardMetrics')
+      .mockResolvedValueOnce(EMPTY_DASHBOARD_DATA);
+    const adminSpy = vi
+      .spyOn(dashboardApi, 'getAdminDashboardMetrics')
+      .mockResolvedValueOnce(EMPTY_DASHBOARD_DATA);
+
+    const { result, rerender } = renderHook(
+      ({ isReady, isAdmin, hotelId }) =>
+        useManagerDashboardData('2026-09-01', '2026-09-30', isReady, isAdmin, hotelId),
+      {
+        initialProps: { isReady: false, isAdmin: false, hotelId: 'hotel-1' },
+      }
+    );
+
+    expect(result.current.loading).toBe(true);
+    expect(hotelSpy).not.toHaveBeenCalled();
+    expect(adminSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      rerender({ isReady: true, isAdmin: false, hotelId: 'hotel-1' });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(hotelSpy).toHaveBeenCalledWith('2026-09-01', '2026-09-30');
+    expect(adminSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses the partner dashboard when the role is not admin', async () => {
+    const hotelSpy = vi
+      .spyOn(dashboardApi, 'getHotelDashboardMetrics')
+      .mockResolvedValueOnce(EMPTY_DASHBOARD_DATA);
+    const adminSpy = vi
+      .spyOn(dashboardApi, 'getAdminDashboardMetrics')
+      .mockResolvedValueOnce(EMPTY_DASHBOARD_DATA);
+
+    const { result } = renderHook(() =>
+      useManagerDashboardData('2026-07-01', '2026-07-31', true, false, 'hotel-1')
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(hotelSpy).toHaveBeenCalledWith('2026-07-01', '2026-07-31');
+    expect(adminSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses the admin dashboard when the role is admin', async () => {
+    const hotelSpy = vi
+      .spyOn(dashboardApi, 'getHotelDashboardMetrics')
+      .mockResolvedValueOnce(EMPTY_DASHBOARD_DATA);
+    const adminSpy = vi
+      .spyOn(dashboardApi, 'getAdminDashboardMetrics')
+      .mockResolvedValueOnce(EMPTY_DASHBOARD_DATA);
+
+    const { result } = renderHook(() =>
+      useManagerDashboardData('2026-08-01', '2026-08-31', true, true, 'hotel-2')
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(adminSpy).toHaveBeenCalledWith({
+      from: '2026-08-01',
+      to: '2026-08-31',
+      hotelId: 'hotel-2',
+    });
+    expect(hotelSpy).not.toHaveBeenCalled();
   });
 });

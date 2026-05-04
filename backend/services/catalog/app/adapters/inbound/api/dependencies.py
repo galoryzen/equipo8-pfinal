@@ -2,8 +2,11 @@ from collections.abc import AsyncGenerator
 from uuid import UUID
 
 import httpx
-from fastapi import Cookie, Depends, Header
+from fastapi import Cookie, Depends, Header, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.exceptions import HTTPException
+import logging
 
 from app.adapters.outbound.cache.redis_cache import RedisCache
 from app.adapters.outbound.db.city_repository import SqlAlchemyCityRepository
@@ -13,12 +16,14 @@ from app.adapters.outbound.db.property_repository import SqlAlchemyPropertyRepos
 from app.adapters.outbound.db.rate_plan_repository import SqlAlchemyRatePlanRepository
 from app.adapters.outbound.db.session import async_session
 from app.application.exceptions import UnauthorizedError
+from app.domain.models import Property
 from app.application.ports.outbound.cache_port import CachePort
 from app.application.use_cases.add_property_image import AddPropertyImageUseCase
 from app.application.use_cases.create_inventory_hold import CreateInventoryHoldUseCase
 from app.application.use_cases.create_promotion import CreatePromotionUseCase
 from app.application.use_cases.delete_promotion import DeletePromotionUseCase
 from app.application.use_cases.delete_property_image import DeletePropertyImageUseCase
+from app.application.use_cases.get_active_hotels import GetActiveHotelsUseCase
 from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_hotel_metrics import GetHotelMetricsUseCase
@@ -41,6 +46,7 @@ from app.application.use_cases.update_rate_plan_cancellation_policy import Updat
 # Singleton — created once, shared across requests
 _redis_cache: RedisCache | None = None
 
+logger = logging.getLogger(__name__)
 
 def init_cache() -> RedisCache:
     global _redis_cache
@@ -101,6 +107,13 @@ def get_list_amenities_use_case(session: AsyncSession) -> ListAmenitiesUseCase:
     return ListAmenitiesUseCase(repo)
 
 
+def get_active_hotels_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetActiveHotelsUseCase:
+    repo = get_property_repository(session)
+    return GetActiveHotelsUseCase(repo)
+
+
 def get_admin_user_role(
     authorization: str | None = Header(None),
     access_token: str | None = Cookie(default=None),
@@ -133,6 +146,20 @@ def require_admin_role(
     decoded_role = get_admin_user_role(authorization=authorization, access_token=access_token)
     if decoded_role != "ADMIN":
         raise UnauthorizedError("Admin role required")
+
+    return True
+
+
+def get_is_admin_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> bool:
+    """True only for ADMIN callers; missing/invalid token or other roles -> False."""
+    try:
+        role = get_admin_user_role(authorization=authorization, access_token=access_token)
+    except UnauthorizedError:
+        return False
+    return role == "ADMIN"
 
 
 def get_list_admin_properties_use_case(
@@ -186,7 +213,7 @@ def _get_booking_http_client() -> httpx.AsyncClient:
 def get_manager_hotel_id(
     authorization: str | None = Header(None),
     access_token: str | None = Cookie(default=None),
-) -> UUID:
+) -> UUID | None:
     """Decode JWT and return the hotel_id claim; raise UnauthorizedError if missing."""
     from shared.jwt import decode_access_token
 
@@ -197,20 +224,72 @@ def get_manager_hotel_id(
         raw = access_token
 
     if not raw:
-        raise UnauthorizedError("Authentication required")
+        return None
 
     payload = decode_access_token(raw)
     if not payload:
-        raise UnauthorizedError("Invalid or expired token")
+        return None
 
     hotel_id_str = payload.get("hotel_id")
     if not hotel_id_str:
-        raise UnauthorizedError("Token does not contain hotel_id claim")
+        return None
 
     try:
         return UUID(str(hotel_id_str))
-    except ValueError as exc:
-        raise UnauthorizedError("Invalid hotel_id in token") from exc
+    except Exception:
+        return None
+
+def enforce_administrative_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> None:
+    """Raise UnauthorizedError if the JWT does not have role=ADMIN."""
+    decoded_role = get_admin_user_role(authorization=authorization, access_token=access_token)
+    if decoded_role == "TRAVELER":
+        raise UnauthorizedError("Administrative role required")
+
+
+def require_manager_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> None:
+    """Raise UnauthorizedError if the user is not a manager (HOTEL or AGENCY).
+
+    Explicitly rejects TRAVELER and ADMIN roles.
+    """
+    decoded_role = get_admin_user_role(authorization=authorization, access_token=access_token)
+    if decoded_role not in ("HOTEL", "AGENCY"):
+        raise UnauthorizedError("Manager role required (HOTEL or AGENCY)")
+
+async def resolve_hotel_id(
+    manager_hotel_id: UUID | None = Depends(get_manager_hotel_id),
+    hotel_id_query: UUID | None = Query(None, alias="hotel_id"),
+    is_admin: bool = Depends(get_is_admin_role),
+) -> UUID:
+    if is_admin:
+        if hotel_id_query is None:
+            raise HTTPException(400, "Admins must provide hotel_id")
+
+        return hotel_id_query
+
+    if manager_hotel_id:
+        return manager_hotel_id
+
+    raise HTTPException(403, "Unauthorized")
+
+
+async def resolve_admin_property_hotel_id(
+    property_id: UUID,
+    _: bool = Depends(require_admin_role),
+    session: AsyncSession = Depends(get_db_session),
+) -> UUID:
+    """Resolve catalog ``hotel_id`` for a property. Admin JWT only."""
+    hid = (
+        await session.execute(select(Property.hotel_id).where(Property.id == property_id))
+    ).scalar_one_or_none()
+    if hid is None:
+        raise HTTPException(404, "Property not found")
+    return hid
 
 
 def get_manager_repository(session: AsyncSession) -> SqlAlchemyManagerRepository:

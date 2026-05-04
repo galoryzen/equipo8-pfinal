@@ -67,6 +67,7 @@ class TestUpdateCancellationPolicyIn:
 class TestManagerHotelItem:
     def test_both_status_literals(self):
         hid = uuid4()
+        hid_group = uuid4()
         active = ManagerHotelItem(
             id=hid,
             name="H",
@@ -76,6 +77,7 @@ class TestManagerHotelItem:
             status="ACTIVE",
             imageUrl=None,
             categories=1,
+            hotelId=hid_group,
         )
         pending = ManagerHotelItem(
             id=hid,
@@ -86,6 +88,7 @@ class TestManagerHotelItem:
             status="PENDING_REVIEW",
             imageUrl=None,
             categories=1,
+            hotelId=hid_group,
         )
         assert active.status == "ACTIVE"
         assert pending.status == "PENDING_REVIEW"
@@ -102,6 +105,7 @@ class TestManagerHotelItem:
                     "status": "CLOSED",
                     "imageUrl": None,
                     "categories": 0,
+                    "hotelId": uuid4(),
                 }
             )
 

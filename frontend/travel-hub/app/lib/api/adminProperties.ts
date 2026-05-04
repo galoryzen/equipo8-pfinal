@@ -1,21 +1,9 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
-
-export type AdminProperty = { id: string; name: string };
-
-export class AdminPropertiesFetchError extends Error {
-  readonly status?: number;
-  readonly kind: 'unauthorized' | 'network' | 'server';
-
-  constructor(
-    message: string,
-    opts: { status?: number; kind: 'unauthorized' | 'network' | 'server' }
-  ) {
-    super(message);
-    this.name = 'AdminPropertiesFetchError';
-    this.status = opts.status;
-    this.kind = opts.kind;
-  }
-}
+import { API_URL } from '@/app/lib/api/constants';
+import {
+  AdminProperty,
+  GetAdminPropertiesResponse,
+  createAdminPropertiesFetchError,
+} from '@/app/lib/types/adminProperties';
 
 export async function getAdminProperties(limit = 1000): Promise<AdminProperty[]> {
   let response: Response;
@@ -26,7 +14,7 @@ export async function getAdminProperties(limit = 1000): Promise<AdminProperty[]>
       credentials: 'include',
     });
   } catch {
-    throw new AdminPropertiesFetchError('Error loading properties', { kind: 'network' });
+    throw createAdminPropertiesFetchError('Error loading properties', { kind: 'network' });
   }
 
   if (!response.ok) {
@@ -34,19 +22,16 @@ export async function getAdminProperties(limit = 1000): Promise<AdminProperty[]>
     const detail =
       body && typeof body.detail === 'string' ? body.detail : `Error ${response.status}`;
     const kind = response.status === 403 ? 'unauthorized' : 'server';
-    throw new AdminPropertiesFetchError(detail, { status: response.status, kind });
+    throw createAdminPropertiesFetchError(detail, { status: response.status, kind });
   }
 
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (!Array.isArray(payload)) return [];
-  return payload
+  const payload = (await response.json().catch(() => null)) as GetAdminPropertiesResponse;
+
+  if (!Array.isArray(payload?.items)) return [];
+
+  return payload.items
     .map((item) => {
-      if (!item || typeof item !== 'object') return null;
-      const src = item as { id?: unknown; name?: unknown };
-      const id = typeof src.id === 'string' ? src.id : '';
-      const name = typeof src.name === 'string' ? src.name : '';
-      if (!id || !name) return null;
-      return { id, name };
+      return { id: item.id, name: item.name };
     })
     .filter((x): x is AdminProperty => x !== null);
 }
