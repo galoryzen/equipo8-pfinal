@@ -22,6 +22,9 @@ interface PriceCardProps {
   property: PropertyDetail;
   minPrice: number | null;
   selectedRoom: SelectedRoomInfo | null;
+  initialCheckin?: string;
+  initialCheckout?: string;
+  initialGuests?: number;
   onDatesChange?: (checkin: string, checkout: string) => void;
 }
 
@@ -42,15 +45,18 @@ export default function PriceCard({
   property,
   minPrice,
   selectedRoom,
+  initialCheckin,
+  initialCheckout,
+  initialGuests,
   onDatesChange,
 }: PriceCardProps) {
   const { today, tomorrow } = getDefaultDates();
   const { authStatus, requireAuth } = useAuthAction();
   const { t } = useTranslation();
 
-  const [checkin, setCheckin] = useState(today);
-  const [checkout, setCheckout] = useState(tomorrow);
-  const [guests, setGuests] = useState(2);
+  const [checkin, setCheckin] = useState(initialCheckin || today);
+  const [checkout, setCheckout] = useState(initialCheckout || tomorrow);
+  const [guests, setGuests] = useState(initialGuests || 2);
 
   const nights = nightsBetween(checkin, checkout);
 

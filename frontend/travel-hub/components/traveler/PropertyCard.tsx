@@ -16,6 +16,9 @@ import { useTranslation } from 'react-i18next';
 
 interface PropertyCardProps {
   property: PropertySummary;
+  checkin?: string;
+  checkout?: string;
+  guests?: number;
 }
 
 function formatReviewCount(count: number, t: TFunction): string {
@@ -23,11 +26,21 @@ function formatReviewCount(count: number, t: TFunction): string {
   return t('propertyCard.reviews', { count });
 }
 
-export default function PropertyCard({ property }: PropertyCardProps) {
+export default function PropertyCard({ property, checkin, checkout, guests }: PropertyCardProps) {
   const { t } = useTranslation();
+
+  const href = (() => {
+    const params = new URLSearchParams();
+    params.set('id', property.id);
+    if (checkin) params.set('checkin', checkin);
+    if (checkout) params.set('checkout', checkout);
+    if (guests != null && guests > 0) params.set('guests', String(guests));
+    return `/traveler/hotel?${params.toString()}`;
+  })();
+
   return (
     <NextLink
-      href={`/traveler/hotel?id=${property.id}`}
+      href={href}
       data-testid={`traveler-property-card-${property.id}`}
       style={{ textDecoration: 'none', display: 'block', height: '100%' }}
     >

@@ -34,6 +34,9 @@ import RoomTypeCard from './RoomTypeCard';
 
 interface PropertyDetailViewProps {
   id: string;
+  checkin?: string;
+  checkout?: string;
+  guests?: number;
 }
 
 function formatReviewCount(count: number): string {
@@ -63,7 +66,12 @@ function getDefaultDates() {
   };
 }
 
-export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
+export default function PropertyDetailView({
+  id,
+  checkin: initialCheckin,
+  checkout: initialCheckout,
+  guests: initialGuests,
+}: PropertyDetailViewProps) {
   const { t } = useTranslation();
   const { today, tomorrow } = getDefaultDates();
   const { authStatus } = useAuthAction();
@@ -71,8 +79,10 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
   const [reviews, setReviews] = useState<PaginatedResponse<ReviewOut> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [checkin, setCheckin] = useState<string>(today);
-  const [checkout, setCheckout] = useState<string>(tomorrow);
+  const [checkin, setCheckin] = useState<string>(initialCheckin || today);
+  const [checkout, setCheckout] = useState<string>(initialCheckout || tomorrow);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- passed to PriceCard
+  const [guests, setGuests] = useState<number>(initialGuests || 1);
   const [reviewPage, setReviewPage] = useState(1);
   const [selectedRoom, setSelectedRoom] = useState<SelectedRoomInfo | null>(null);
   // room_type_id → booking_id for the CURRENT user's own CART bookings
@@ -394,6 +404,9 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
               property={detail}
               minPrice={minPrice}
               selectedRoom={selectedRoom}
+              initialCheckin={checkin}
+              initialCheckout={checkout}
+              initialGuests={guests}
               onDatesChange={handleDatesChange}
             />
           </Grid>

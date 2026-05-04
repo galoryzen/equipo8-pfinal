@@ -283,6 +283,9 @@ export default function SearchBar({
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           slotProps={{
             paper: {
+              ...({
+                'data-testid': 'traveler-search-dates-popover',
+              } as React.HTMLAttributes<HTMLDivElement>),
               sx: {
                 borderRadius: 3,
                 p: 3,
@@ -364,7 +367,14 @@ export default function SearchBar({
           onClose={closeGuestPopover}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-          slotProps={{ paper: { sx: { borderRadius: 3, p: 3, mt: 1 } } }}
+          slotProps={{
+            paper: {
+              ...({
+                'data-testid': 'traveler-select-guests-popover',
+              } as React.HTMLAttributes<HTMLDivElement>),
+              sx: { borderRadius: 3, p: 3, mt: 1 },
+            },
+          }}
         >
           <Typography sx={{ fontWeight: 600, color: 'text.primary', mb: 1.5 }}>
             {t('search.guests')}
@@ -381,7 +391,7 @@ export default function SearchBar({
             onBlur={commitGuests}
             placeholder="1"
             size="small"
-            inputProps={{ 'data-testid': 'traveler-search-guests-input' }}
+            inputProps={{ 'data-testid': 'traveler-select-guests-input' }}
             sx={{ minWidth: 120 }}
             helperText={t('search.guestsMinHelper')}
           />
@@ -394,7 +404,6 @@ export default function SearchBar({
             onClick={handleSearch}
             disabled={!selected}
             startIcon={<SearchIcon />}
-            data-testid="traveler-search-submit"
             sx={{
               bgcolor: 'primary.main',
               borderRadius: '999px',

@@ -422,7 +422,12 @@ function SearchPageContent() {
               <Grid container spacing={2.5}>
                 {gridData.items.map((property) => (
                   <Grid size={{ xs: 12, sm: 6, xl: 4 }} key={property.id}>
-                    <PropertyCard property={property} />
+                    <PropertyCard
+                      property={property}
+                      checkin={checkin}
+                      checkout={checkout}
+                      guests={guests}
+                    />
                   </Grid>
                 ))}
               </Grid>

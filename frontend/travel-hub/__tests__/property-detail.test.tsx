@@ -325,4 +325,29 @@ describe('PropertyCard links to detail page', () => {
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toBe('/traveler/hotel?id=prop-123');
   });
+
+  it('includes search params in link when provided', async () => {
+    const { default: PropertyCard } = await import('@/components/traveler/PropertyCard');
+
+    const property = {
+      id: 'prop-123',
+      name: 'Test Hotel',
+      city: { id: 'c1', name: 'Bogotá', department: 'Cundinamarca', country: 'Colombia' },
+      address: 'Calle 100',
+      rating_avg: 4.5,
+      review_count: 120,
+      image: null,
+      min_price: 150,
+      amenities: [],
+    };
+
+    renderWithI18n(
+      <PropertyCard property={property} checkin="2026-05-04" checkout="2026-05-08" guests={3} />
+    );
+
+    const link = screen.getByRole('link');
+    expect(link.getAttribute('href')).toBe(
+      '/traveler/hotel?id=prop-123&checkin=2026-05-04&checkout=2026-05-08&guests=3'
+    );
+  });
 });
