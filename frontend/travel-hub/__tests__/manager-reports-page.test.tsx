@@ -1,4 +1,4 @@
-import { getAdminProperties } from '@/app/lib/api/adminProperties';
+import { getActiveHotels } from '@/app/lib/api/activeHotels';
 import { getMe, getUserById } from '@/app/lib/api/auth';
 import { EMPTY_REVENUE_REPORT_DATA } from '@/app/lib/api/reports';
 import ManagerReportsPage from '@/app/manager/reports/page';
@@ -24,8 +24,8 @@ vi.mock('@/app/lib/api/auth', () => ({
   getUserById: vi.fn(),
 }));
 
-vi.mock('@/app/lib/api/adminProperties', () => ({
-  getAdminProperties: vi.fn(),
+vi.mock('@/app/lib/api/activeHotels', () => ({
+  getActiveHotels: vi.fn(),
 }));
 
 describe('ManagerReportsPage', () => {
@@ -41,7 +41,7 @@ describe('ManagerReportsPage', () => {
       email: 'partner@hotelesdemo.com',
       hotel_id: 'hotel-1',
     });
-    vi.mocked(getAdminProperties).mockResolvedValue([]);
+    vi.mocked(getActiveHotels).mockResolvedValue([]);
   });
 
   it('renders the reports shell for a hotel partner', async () => {
@@ -58,12 +58,12 @@ describe('ManagerReportsPage', () => {
       role: 'ADMIN',
     });
 
-    vi.mocked(getAdminProperties).mockResolvedValue([{ id: 'p1', name: 'Admin Property One' }]);
+    vi.mocked(getActiveHotels).mockResolvedValue([{ id: 'p1', name: 'Admin Property One' }]);
 
     renderWithI18n(<ManagerReportsPage />);
 
     await waitFor(() => {
-      expect(getAdminProperties).toHaveBeenCalled();
+      expect(getActiveHotels).toHaveBeenCalled();
     });
     expect(await screen.findByText('Admin Property One')).toBeTruthy();
   });

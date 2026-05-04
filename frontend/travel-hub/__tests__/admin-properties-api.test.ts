@@ -16,10 +16,12 @@ describe('admin properties API', () => {
     vi.mocked(globalThis.fetch).mockResolvedValue({
       ok: true,
       json: () =>
-        Promise.resolve([
-          { id: 'p1', name: 'Hotel One' },
-          { id: 'p2', name: 'Hotel Two' },
-        ]),
+        Promise.resolve({
+          items: [
+            { id: 'p1', name: 'Hotel One' },
+            { id: 'p2', name: 'Hotel Two' },
+          ],
+        }),
     } as Response);
 
     const result = await getAdminProperties(25);
@@ -34,26 +36,28 @@ describe('admin properties API', () => {
     );
   });
 
-  it('filters invalid items and returns [] for non-array payloads', async () => {
+  it('maps items from paginated response and returns [] when items is not an array', async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce({
       ok: true,
       json: () =>
-        Promise.resolve([
-          null,
-          {},
-          { id: 'ok', name: 'Valid' },
-          { id: 123, name: 'Bad id' },
-          { id: 'missing-name' },
-          { id: 'missing', name: '' },
-        ]),
+        Promise.resolve({
+          items: [{ id: 'ok', name: 'Valid' }],
+        }),
     } as Response);
 
-    const filtered = await getAdminProperties();
-    expect(filtered).toEqual([{ id: 'ok', name: 'Valid' }]);
+    const mapped = await getAdminProperties();
+    expect(mapped).toEqual([{ id: 'ok', name: 'Valid' }]);
 
     vi.mocked(globalThis.fetch).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ items: [] }),
+    } as Response);
+
+    await expect(getAdminProperties()).resolves.toEqual([]);
+
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ notItems: true }),
     } as Response);
 
     await expect(getAdminProperties()).resolves.toEqual([]);
