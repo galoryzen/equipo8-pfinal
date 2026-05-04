@@ -41,6 +41,14 @@ export class LoginPage extends BasePage {
   }
 
   /**
+   * Wait for redirect away from login page after successful login
+   */
+  async waitForRedirect(timeout = 15000) {
+    await this.page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout });
+    await this.waitForLoadingComplete();
+  }
+
+  /**
    * Login and wait for redirect to traveler dashboard
    */
   async loginAndWaitForDashboard(email: string, password: string) {

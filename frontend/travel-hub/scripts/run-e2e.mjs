@@ -6,7 +6,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDir, '..');
 const backendDir = path.resolve(projectRoot, '..', '..', 'backend');
 const composeFile = path.join(backendDir, 'docker-compose.yml');
-const frontendBaseUrl = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000';
+const frontendBaseUrl = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const loginUrl = new URL('/login/traveler/', frontendBaseUrl).toString();
 
 function startProcess(command, args, options = {}) {
@@ -59,15 +59,15 @@ async function waitForUrl(url, timeoutMs = 180000) {
   throw new Error(`Timed out waiting for ${url}${lastError ? `: ${lastError.message}` : ''}`);
 }
 
-const frontendServer = startProcess('pnpm', [
-  'exec',
-  'next',
-  'dev',
-  '-H',
-  '127.0.0.1',
-  '-p',
-  '3000',
-]);
+const frontendServer = startProcess(
+  'pnpm',
+  ['exec', 'next', 'dev', '-H', '127.0.0.1', '-p', '3000'],
+  {
+    env: {
+      NEXT_PUBLIC_API_URL: 'http://localhost:8080',
+    },
+  }
+);
 
 async function cleanup() {
   if (!frontendServer.killed) {
