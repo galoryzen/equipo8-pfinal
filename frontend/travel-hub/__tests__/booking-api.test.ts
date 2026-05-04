@@ -1,4 +1,9 @@
-import { getBookingDetail, getMyBookings } from '@/app/lib/api/booking';
+import {
+  getBookingDetail,
+  getMyBookings,
+  listPartnerBookings,
+  registerGuestCheckIn,
+} from '@/app/lib/api/booking';
 import type { BookingDetail, BookingListItem, PaginatedResponse } from '@/app/lib/types/booking';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -75,6 +80,65 @@ describe('booking API', () => {
       } as Response);
 
       await expect(getMyBookings()).rejects.toThrow('Error 500');
+    });
+  });
+
+  describe('listPartnerBookings', () => {
+    it('adds status query when provided', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            items: [],
+            total: 0,
+            page: 1,
+            page_size: 10,
+            total_pages: 1,
+          }),
+      } as Response);
+
+      await listPartnerBookings({ status: 'CANCELLED', page: 2, page_size: 10 });
+
+      const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
+      expect(url).toContain('status=CANCELLED');
+      expect(url).toContain('page=2');
+      expect(url).toContain('page_size=10');
+    });
+  });
+
+  describe('registerGuestCheckIn', () => {
+    it('POSTs JSON body and returns detail on success', async () => {
+      const detail = { id: 'b1', status: 'CHECKED_IN' };
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(detail),
+      } as Response);
+
+      const out = await registerGuestCheckIn('b1', {
+        actual_arrival_at: '2026-05-03T15:00:00.000Z',
+      });
+      expect(out).toEqual(detail);
+      const call = vi.mocked(global.fetch).mock.calls[0];
+      expect(String(call?.[0])).toContain('/bookings/b1/check-in');
+      expect(call?.[1]).toMatchObject({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      expect(JSON.parse(String((call?.[1] as { body?: string }).body))).toEqual({
+        actual_arrival_at: '2026-05-03T15:00:00.000Z',
+      });
+    });
+
+    it('throws ApiHttpError on HTTP error', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.resolve({ detail: 'conflict' }),
+      } as Response);
+
+      await expect(
+        registerGuestCheckIn('b1', { actual_arrival_at: '2026-05-03T15:00:00.000Z' })
+      ).rejects.toMatchObject({ name: 'ApiHttpError', status: 409, message: 'conflict' });
     });
   });
 

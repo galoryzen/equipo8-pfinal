@@ -284,6 +284,86 @@
     "notifications": "Notificaciones",
     "pendingBookingsToday": "Tienes {{count}} reservas pendientes de confirmación hoy.",
     "noPendingBookings": "No hay reservas pendientes.",
+    "bookings": {
+      "title": "Gestión de reservas",
+      "subtitle": "Administra y da seguimiento a todas las reservas de huéspedes desde un solo lugar.",
+      "newBooking": "Nueva reserva",
+      "table": {
+        "bookingGuest": "Reserva y huésped",
+        "roomType": "Habitación / propiedad",
+        "checkin": "Check-in",
+        "checkout": "Check-out",
+        "status": "Estado",
+        "amount": "Monto",
+        "actions": "Acciones",
+        "guestFallback": "Huésped",
+        "roomFallback": "—",
+        "roomTypeSubline": "Tipo de habitación · {{id}}",
+        "roomTypeUnavailable": "Tipo de habitación no disponible"
+      },
+      "tabs": {
+        "all": "Todas las reservas",
+        "checkinToday": "Check-ins hoy",
+        "checkoutToday": "Check-outs hoy",
+        "pending": "Pendientes",
+        "cancelled": "Canceladas"
+      },
+      "actions": {
+        "open": "Abrir acciones",
+        "menuLabel": "Acciones",
+        "registerCheckIn": "Registrar check-in",
+        "registerCheckOut": "Registrar check-out",
+        "checkOut": "Check-out",
+        "checkOutUnavailableHint": "Disponible cuando la reserva tenga check-in realizado y la fecha de salida sea hoy o anterior.",
+        "editDetails": "Editar detalles",
+        "cancelBooking": "Cancelar reserva",
+        "comingSoon": "Próximamente",
+        "disabledNotImplemented": "Disponible en una próxima historia",
+        "disabledByState": "Acción no disponible para el estado actual de la reserva"
+      },
+      "stats": {
+        "confirmed": "Confirmadas",
+        "pending": "Pendientes",
+        "checkinsToday": "Check-ins (hoy)",
+        "cancelled": "Canceladas",
+        "loadError": "No se pudieron cargar las métricas de reservas."
+      },
+      "status": {
+        "checkedInDone": "Check-in realizado",
+        "checkedOutDone": "Check-out realizado"
+      },
+      "pagination": "Mostrando {{from}}–{{to}} de {{total}} reservas",
+      "empty": "No hay reservas en esta vista.",
+      "loadError": "No se pudieron cargar las reservas.",
+      "checkIn": {
+        "title": "Registrar check-in",
+        "arrivalLabel": "Hora real de llegada",
+        "confirm": "Confirmar check-in",
+        "success": "Check-in registrado correctamente.",
+        "errors": {
+          "required": "La hora real de llegada es obligatoria.",
+          "future": "La hora de llegada no puede ser futura.",
+          "forbidden": "No tienes permisos para registrar el check-in de esta reserva.",
+          "notFound": "La reserva no existe o no pertenece a este hotel.",
+          "conflict": "No es posible registrar el check-in para esta reserva. Verifica el estado o la fecha.",
+          "validation": "La hora de llegada ingresada no es válida."
+        }
+      },
+      "checkOut": {
+        "title": "Registrar check-out",
+        "departureLabel": "Hora real de salida",
+        "confirm": "Confirmar check-out",
+        "success": "Check-out registrado correctamente.",
+        "errors": {
+          "required": "La hora real de salida es obligatoria.",
+          "future": "La hora de salida no puede ser futura.",
+          "forbidden": "No tienes permisos para registrar el check-out de esta reserva.",
+          "notFound": "La reserva no existe o no pertenece a este hotel.",
+          "conflict": "No es posible registrar el check-out para esta reserva. Verifica el estado o la fecha.",
+          "validation": "La hora de salida ingresada no es válida."
+        }
+      }
+    },
     "noAvailability": "No hay disponibilidad suficiente. Puede ofrecer upgrade, cambiar fechas o rechazar la reserva.",
     "hotels": {
       "title": "Mis Hoteles",
@@ -442,7 +522,8 @@
             "confirmed": "Confirmada",
             "pending_payment": "Pago pendiente",
             "pending_confirmation": "Confirmación pendiente",
-            "cancelled": "Cancelada"
+            "cancelled": "Cancelada",
+            "checked_in": "Check-in realizado"
           },
           "activity": {
             "booking_confirmed": "Reserva confirmada",

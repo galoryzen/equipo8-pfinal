@@ -32,6 +32,10 @@ export type DashboardMetrics = {
 
 export type DashboardData = {
   metrics: DashboardMetrics;
+  /** Active CHECKED_IN stays for the hotel (check-in ≤ today < check-out). */
+  checkedInCount: number;
+  /** Sum of guests_count for those stays. */
+  checkedInGuests: number;
   bookingTrends: BookingTrend[];
   recentActivity: RecentActivityItem[];
   upcomingCheckins: UpcomingCheckin[];

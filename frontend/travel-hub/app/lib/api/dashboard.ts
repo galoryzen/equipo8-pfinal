@@ -16,6 +16,8 @@ export const EMPTY_DASHBOARD_DATA: DashboardData = {
     occupancyRate: { value: 0, variation: 0 },
     averageRating: { value: 0, variation: 0 },
   },
+  checkedInCount: 0,
+  checkedInGuests: 0,
   bookingTrends: [],
   recentActivity: [],
   upcomingCheckins: [],
@@ -23,6 +25,10 @@ export const EMPTY_DASHBOARD_DATA: DashboardData = {
 
 type DashboardResponse = Partial<{
   metrics?: Partial<DashboardMetrics>;
+  checkedInCount?: unknown;
+  checked_in_count?: unknown;
+  checkedInGuests?: unknown;
+  checked_in_guests?: unknown;
   bookingTrends?: unknown[];
   recentActivity?: unknown[];
   upcomingCheckins?: unknown[];
@@ -133,9 +139,21 @@ function normalizeUpcomingCheckins(items: unknown[] | undefined): UpcomingChecki
     .filter((item): item is UpcomingCheckin => item !== null);
 }
 
+function readRootInt(
+  payload: DashboardResponse | null,
+  camel: keyof DashboardResponse,
+  snake: keyof DashboardResponse
+): number {
+  if (!payload) return 0;
+  const raw = (payload[camel] ?? payload[snake]) as unknown;
+  return toFiniteNumber(raw, 0);
+}
+
 function normalizeDashboardData(payload: DashboardResponse | null): DashboardData {
   return {
     metrics: normalizeMetrics(payload),
+    checkedInCount: readRootInt(payload, 'checkedInCount', 'checked_in_count'),
+    checkedInGuests: readRootInt(payload, 'checkedInGuests', 'checked_in_guests'),
     bookingTrends: normalizeBookingTrends(payload?.bookingTrends),
     recentActivity: normalizeRecentActivity(payload?.recentActivity),
     upcomingCheckins: normalizeUpcomingCheckins(payload?.upcomingCheckins),

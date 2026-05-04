@@ -1,3 +1,4 @@
+import { formatApiErrorBody } from '@/app/lib/api/catalog';
 import type {
   BookingDetail,
   BookingListItem,
@@ -10,12 +11,70 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
+/** HTTP error with status for hotel booking actions (check-in, etc.). */
+export class ApiHttpError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+
+  constructor(message: string, status: number, body: unknown) {
+    super(message);
+    this.name = 'ApiHttpError';
+    this.status = status;
+    this.body = body;
+  }
+}
+
 async function readErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
   if (body && typeof body === 'object' && 'message' in body) {
     return String((body as { message: unknown }).message);
   }
   return `Error ${res.status}`;
+}
+
+export interface HotelBookingsMetrics {
+  confirmedCount: number;
+  pendingCount: number;
+  checkInsTodayCount: number;
+  cancelledCount: number;
+}
+
+/** Hotel-wide aggregates for the manager Bookings stat cards (not paginated). */
+export async function fetchHotelBookingsMetrics(): Promise<HotelBookingsMetrics> {
+  const res = await fetch(`${API_URL}/api/v1/booking/dashboard/bookings-metrics`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json() as Promise<HotelBookingsMetrics>;
+}
+
+/**
+ * Lists bookings for the current session: traveler (own), hotel partner (property
+ * scope), or admin (all) — same `/bookings` route, role resolved by the gateway.
+ */
+export async function listPartnerBookings(options?: {
+  status?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<PaginatedResponse<BookingListItem>> {
+  const page = options?.page ?? 1;
+  const page_size = options?.page_size ?? 10;
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(page_size),
+  });
+  if (options?.status) {
+    params.set('status', options.status);
+  }
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json();
 }
 
 /**
@@ -25,14 +84,7 @@ export async function getMyBookings(
   page = 1,
   pageSize = 10
 ): Promise<PaginatedResponse<BookingListItem>> {
-  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
-  const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorMessage(res));
-  }
-  return res.json();
+  return listPartnerBookings({ page, page_size: pageSize });
 }
 
 export async function getBookingDetail(bookingId: string): Promise<BookingDetail> {
@@ -179,4 +231,46 @@ export async function checkoutBooking(
     throw new Error(await readErrorMessage(res));
   }
   return res.json();
+}
+
+/** Registers physical guest check-in for a hotel booking (HOTEL / MANAGER roles). */
+export async function registerGuestCheckIn(
+  bookingId: string,
+  payload: { actual_arrival_at: string }
+): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/check-in`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiHttpError(formatApiErrorBody(body, res.status), res.status, body);
+  }
+  return body as BookingDetail;
+}
+
+/** Registers physical guest check-out for a hotel booking (HOTEL / MANAGER roles). */
+export async function registerBookingCheckOut(
+  bookingId: string,
+  payload: { actual_departure_at: string }
+): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/check-out`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiHttpError(formatApiErrorBody(body, res.status), res.status, body);
+  }
+  return body as BookingDetail;
 }
