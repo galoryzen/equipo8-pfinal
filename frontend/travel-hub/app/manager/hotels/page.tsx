@@ -6,7 +6,8 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { type ManagerHotelItem, getHotels } from '@/app/lib/api/manager';
+import { getHotels } from '@/app/lib/api/manager';
+import { ManagerHotelItem } from '@/app/lib/types/manager';
 import { tokens } from '@/lib/theme/tokens';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getAdminProperties } from '@/app/lib/api/adminProperties';
 import { getMe } from '@/app/lib/api/auth';
 import UnauthorizedDashboard from '@/app/manager/components/UnauthorizedDashboard';
-import { useAdminDashboardData, useDashboardData } from '@/app/manager/hooks/useDashboardData';
+import { useManagerDashboardData } from '@/app/manager/hooks/useDashboardData';
 import { tokens } from '@/lib/theme/tokens';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -336,6 +336,7 @@ export default function ManagerDashboardPage() {
   const dateRangeLabel = t('manager.hotels.roomTypeManage.dashboard.filters.dateRange');
 
   const [role, setRole] = useState<string | null>(null);
+  const [roleLoaded, setRoleLoaded] = useState(false);
   const isAdmin = role === 'ADMIN';
   const [properties, setProperties] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedHotelId, setSelectedHotelId] = useState('');
@@ -348,6 +349,9 @@ export default function ManagerDashboardPage() {
       })
       .catch(() => {
         if (!cancelled) setRole(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRoleLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -355,8 +359,7 @@ export default function ManagerDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (role === null) return; // wait until we know the role
-    if (!isAdmin) return;
+    if (!roleLoaded || !isAdmin) return;
     let cancelled = false;
     getAdminProperties()
       .then((items) => {
@@ -372,12 +375,16 @@ export default function ManagerDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [role, isAdmin]);
+  }, [roleLoaded, isAdmin]);
 
   const { from, to } = useMemo(() => calculateDateRange(range), [range]);
-  const partnerState = useDashboardData(from, to);
-  const adminState = useAdminDashboardData(from, to, selectedHotelId);
-  const { data, loading, error } = isAdmin ? adminState : partnerState;
+  const { data, loading, error } = useManagerDashboardData(
+    from,
+    to,
+    roleLoaded,
+    isAdmin,
+    selectedHotelId
+  );
   const isUnauthorized = error?.kind === 'unauthorized' || error?.status === 403;
 
   if (isUnauthorized) {

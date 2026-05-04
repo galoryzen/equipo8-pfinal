@@ -7,9 +7,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { getAmenityCatalog } from '@/app/lib/api/catalog';
 import {
-  type HotelProfile,
-  type ManagerHotelItem,
-  type ManagerPropertyImage,
   addHotelImage,
   deleteHotelImage,
   getHotelProfile,
@@ -17,6 +14,7 @@ import {
   setPrimaryHotelImage,
   updateHotelProfile,
 } from '@/app/lib/api/manager';
+import { HotelProfile, ManagerHotelItem, ManagerPropertyImage } from '@/app/lib/types/manager';
 import { tokens } from '@/lib/theme/tokens';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import CodeIcon from '@mui/icons-material/Code';

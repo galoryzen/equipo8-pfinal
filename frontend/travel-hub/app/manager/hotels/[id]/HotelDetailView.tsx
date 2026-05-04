@@ -4,14 +4,8 @@ import { useEffect, useId, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import {
-  type HotelStatsOut,
-  type ManagerHotelItem,
-  type RoomTypeManagerItem,
-  getHotelMetrics,
-  getHotelRoomTypes,
-  getHotels,
-} from '@/app/lib/api/manager';
+import { getHotelMetrics, getHotelRoomTypes, getHotels } from '@/app/lib/api/manager';
+import { HotelStatsOut, ManagerHotelItem, RoomTypeManagerItem } from '@/app/lib/types/manager';
 import { tokens } from '@/lib/theme/tokens';
 import BedOutlinedIcon from '@mui/icons-material/BedOutlined';
 import BedroomChildOutlinedIcon from '@mui/icons-material/BedroomChildOutlined';
