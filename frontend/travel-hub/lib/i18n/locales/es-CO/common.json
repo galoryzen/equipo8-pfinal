@@ -414,6 +414,7 @@
           },
           "filters": {
             "dateRange": "Rango de fechas",
+            "hotels": "Hoteles",
             "last7days": "Últimos 7 días",
             "last30days": "Últimos 30 días",
             "currentMonth": "Mes actual"

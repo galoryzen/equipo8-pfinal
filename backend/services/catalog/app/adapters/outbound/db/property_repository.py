@@ -1,8 +1,8 @@
-from datetime import date
+from datetime import UTC, date
 from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, case, desc, nulls_last, select
+from sqlalchemy import and_, case, desc, nulls_last, select, text
 from sqlalchemy import func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload, with_loader_criteria
@@ -508,9 +508,9 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         return {row[0]: row[1] for row in rows}
 
     async def list_admin_properties(self, *, page: int, page_size: int) -> tuple[list[dict], int]:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(UTC).date()
 
         # Count total active properties
         count_stmt = select(sa_func.count(Property.id)).where(Property.status == PropertyStatus.ACTIVE)
@@ -622,13 +622,22 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         return items, total
 
     async def get_active_hotels(self) -> list[dict]:
-        """Return all active hotels with just id and name."""
-        stmt = (
-            select(Property.id, Property.name)
-            .where(Property.status == PropertyStatus.ACTIVE)
-            .order_by(Property.name)
+        """Return all active hotels with just id and name.
+
+        The catalog schema stores hotel grouping in ``Property.hotel_id``.
+        Join against ``users.hotel`` so we return the actual partner hotel name
+        seeded in the users schema, not a property name.
+        """
+        stmt = text(
+            """
+            SELECT DISTINCT h.id, h.name
+            FROM users.hotel AS h
+            JOIN catalog.property AS p ON p.hotel_id = h.id
+            WHERE p.status = CAST(:active_status AS public.property_status)
+            ORDER BY h.name
+            """
         )
-        result = await self._session.execute(stmt)
+        result = await self._session.execute(stmt, {"active_status": PropertyStatus.ACTIVE.value})
         rows = result.all()
         return [{"id": row[0], "name": row[1]} for row in rows]
 

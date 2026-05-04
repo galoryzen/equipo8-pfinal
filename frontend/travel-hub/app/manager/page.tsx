@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { getActiveHotels } from '@/app/lib/api/activeHotels';
 import { getAdminProperties } from '@/app/lib/api/adminProperties';
 import { getMe } from '@/app/lib/api/auth';
 import UnauthorizedDashboard from '@/app/manager/components/UnauthorizedDashboard';
@@ -361,7 +362,7 @@ export default function ManagerDashboardPage() {
   useEffect(() => {
     if (!roleLoaded || !isAdmin) return;
     let cancelled = false;
-    getAdminProperties()
+    getActiveHotels()
       .then((items) => {
         if (cancelled) return;
         setProperties(items);
@@ -438,11 +439,13 @@ export default function ManagerDashboardPage() {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center">
           {isAdmin && (
             <FormControl size="small" sx={{ minWidth: 220, bgcolor: tokens.surface.paper }}>
-              <InputLabel id="admin-dashboard-property-label">Property</InputLabel>
+              <InputLabel id="admin-dashboard-property-label">
+                {t('manager.hotels.roomTypeManage.dashboard.filters.hotels')}
+              </InputLabel>
               <Select
                 labelId="admin-dashboard-property-label"
                 value={selectedHotelId}
-                label="Property"
+                label={t('manager.hotels.roomTypeManage.dashboard.filters.hotels')}
                 onChange={(event) => setSelectedHotelId(event.target.value)}
                 disabled={properties.length === 0}
               >
