@@ -19,6 +19,7 @@ from app.application.use_cases.create_inventory_hold import CreateInventoryHoldU
 from app.application.use_cases.create_promotion import CreatePromotionUseCase
 from app.application.use_cases.delete_promotion import DeletePromotionUseCase
 from app.application.use_cases.delete_property_image import DeletePropertyImageUseCase
+from app.application.use_cases.get_active_hotels import GetActiveHotelsUseCase
 from app.application.use_cases.get_featured_destinations import GetFeaturedDestinationsUseCase
 from app.application.use_cases.get_featured_properties import GetFeaturedPropertiesUseCase
 from app.application.use_cases.get_hotel_metrics import GetHotelMetricsUseCase
@@ -99,6 +100,13 @@ def get_detail_use_case(session: AsyncSession, cache: CachePort) -> GetPropertyD
 def get_list_amenities_use_case(session: AsyncSession) -> ListAmenitiesUseCase:
     repo = get_property_repository(session)
     return ListAmenitiesUseCase(repo)
+
+
+def get_active_hotels_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetActiveHotelsUseCase:
+    repo = get_property_repository(session)
+    return GetActiveHotelsUseCase(repo)
 
 
 def get_admin_user_role(

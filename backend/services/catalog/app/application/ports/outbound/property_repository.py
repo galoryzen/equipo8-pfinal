@@ -68,3 +68,10 @@ class PropertyRepository(ABC):
         Returns (items_as_dicts_with_enrichment, total_count).
         Each item includes: id (hotel_id), name, location, totalRooms, occupiedRooms, status, imageUrl, categories.
         """
+
+    @abstractmethod
+    async def get_active_hotels(self) -> list[dict]:
+        """Return all active hotels with just id and name.
+
+        Returns list of dicts with 'id' (UUID) and 'name' (str).
+        """

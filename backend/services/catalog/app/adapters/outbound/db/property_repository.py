@@ -621,3 +621,14 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
         return items, total
 
+    async def get_active_hotels(self) -> list[dict]:
+        """Return all active hotels with just id and name."""
+        stmt = (
+            select(Property.id, Property.name)
+            .where(Property.status == PropertyStatus.ACTIVE)
+            .order_by(Property.name)
+        )
+        result = await self._session.execute(stmt)
+        rows = result.all()
+        return [{"id": row[0], "name": row[1]} for row in rows]
+
