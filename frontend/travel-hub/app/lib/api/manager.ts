@@ -16,6 +16,12 @@ import {
 import { getMe } from './auth';
 import { formatApiErrorBody } from './catalog';
 
+export type {
+  CancellationPolicyTypeStr,
+  RoomTypeManagerItem,
+  RoomTypePromotionOut,
+} from '@/app/lib/types/manager';
+
 // ── Hotel list cache ──────────────────────────────────────────────────────────
 // Caches the full hotel list (page 1, 100 items) for 30 s so the detail view
 // can resolve hotel metadata instantly when navigating from the list page.

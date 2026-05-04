@@ -1,3 +1,5 @@
+import type { ManagerHotelItem } from '@/app/lib/types/manager';
+
 export interface GetAdminPropertiesResponse {
   items: ManagerHotelItem[];
   message: string;
