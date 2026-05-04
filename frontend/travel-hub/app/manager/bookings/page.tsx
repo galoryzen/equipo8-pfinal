@@ -386,9 +386,13 @@ export default function ManagerBookingsPage() {
             textTransform: 'none',
             fontWeight: 700,
             borderRadius: 2,
-            bgcolor: tokens.brand.accentOrange,
+            bgcolor: tokens.brand.accentOrangeContained,
+            color: '#FFFFFF',
             px: 2.5,
-            '&:hover': { bgcolor: tokens.brand.accentOrange, filter: 'brightness(0.95)' },
+            '&:hover': {
+              bgcolor: tokens.brand.accentOrangeContained,
+              filter: 'brightness(0.95)',
+            },
           }}
         >
           {t('manager.bookings.newBooking')}
@@ -522,7 +526,7 @@ export default function ManagerBookingsPage() {
                               sx={{
                                 fontSize: '0.8rem',
                                 fontWeight: 700,
-                                color: tokens.brand.accentOrange,
+                                color: tokens.brand.accentOrangeFg,
                                 mt: 0.25,
                               }}
                             >
@@ -632,7 +636,7 @@ export default function ManagerBookingsPage() {
           ) : (
             <BookingsStatCard
               icon={
-                <CheckCircleOutlineIcon sx={{ color: tokens.brand.accentOrange, fontSize: 22 }} />
+                <CheckCircleOutlineIcon sx={{ color: tokens.brand.accentOrangeFg, fontSize: 22 }} />
               }
               label={t('manager.bookings.stats.confirmed')}
               value={metrics.confirmedCount}
@@ -646,7 +650,11 @@ export default function ManagerBookingsPage() {
             <Skeleton variant="rounded" height={96} sx={{ borderRadius: 3 }} />
           ) : (
             <BookingsStatCard
-              icon={<HourglassEmptyOutlinedIcon sx={{ color: '#CA8A04', fontSize: 22 }} />}
+              icon={
+                <HourglassEmptyOutlinedIcon
+                  sx={{ color: tokens.dashboard.statusChip.pendingConfirmation.fg, fontSize: 22 }}
+                />
+              }
               label={t('manager.bookings.stats.pending')}
               value={metrics.pendingCount}
               iconBg="#FEF9C3"
