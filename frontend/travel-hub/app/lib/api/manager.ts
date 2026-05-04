@@ -21,6 +21,7 @@ import { formatApiErrorBody } from './catalog';
 // can resolve hotel metadata instantly when navigating from the list page.
 const HOTELS_TTL = 30_000;
 let _hotelsCacheSlot: { v: PaginatedResponse<ManagerHotelItem>; exp: number } | null = null;
+let _adminHotelsCacheSlot: { v: PaginatedResponse<ManagerHotelItem>; exp: number } | null = null;
 
 // ── API functions ─────────────────────────────────────────────────────────────
 
@@ -50,6 +51,14 @@ export async function getAdminHotels(
   page = 1,
   page_size = 100
 ): Promise<PaginatedResponse<ManagerHotelItem>> {
+  if (
+    page === 1 &&
+    page_size >= 100 &&
+    _adminHotelsCacheSlot &&
+    Date.now() < _adminHotelsCacheSlot.exp
+  ) {
+    return _adminHotelsCacheSlot.v;
+  }
   const res = await fetch(
     `${API_URL}/api/v1/catalog/admin/properties?page=${page}&page_size=${page_size}`,
     { credentials: 'include' }
@@ -59,6 +68,9 @@ export async function getAdminHotels(
     throw new Error(formatApiErrorBody(body, res.status));
   }
   const data = (await res.json()) as PaginatedResponse<ManagerHotelItem>;
+  if (page === 1 && page_size >= 100) {
+    _adminHotelsCacheSlot = { v: data, exp: Date.now() + HOTELS_TTL };
+  }
   return data;
 }
 
@@ -171,6 +183,80 @@ export async function updateRatePlanCancellationPolicy(
       credentials: 'include',
       body: JSON.stringify(payload),
     }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+const adminPropertyProfileBaseUrl = (propertyId: string) =>
+  `${API_URL}/api/v1/catalog/admin/properties/${encodeURIComponent(propertyId)}`;
+
+export async function getAdminHotelProfile(propertyId: string): Promise<HotelProfile> {
+  const res = await fetch(`${adminPropertyProfileBaseUrl(propertyId)}/profile`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function updateAdminHotelProfile(
+  propertyId: string,
+  payload: { description?: string | null; amenity_codes?: string[]; policy?: string }
+): Promise<HotelProfile> {
+  const res = await fetch(`${adminPropertyProfileBaseUrl(propertyId)}/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function addAdminHotelImage(
+  propertyId: string,
+  payload: { url: string; caption?: string }
+): Promise<ManagerPropertyImage> {
+  const res = await fetch(`${adminPropertyProfileBaseUrl(propertyId)}/images`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function deleteAdminHotelImage(propertyId: string, imageId: string): Promise<void> {
+  const res = await fetch(
+    `${adminPropertyProfileBaseUrl(propertyId)}/images/${encodeURIComponent(imageId)}`,
+    { method: 'DELETE', credentials: 'include' }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+}
+
+export async function setPrimaryAdminHotelImage(
+  propertyId: string,
+  imageId: string
+): Promise<ManagerPropertyImage[]> {
+  const res = await fetch(
+    `${adminPropertyProfileBaseUrl(propertyId)}/images/${encodeURIComponent(imageId)}/primary`,
+    { method: 'PATCH', credentials: 'include' }
   );
   if (!res.ok) {
     const body = await res.json().catch(() => null);

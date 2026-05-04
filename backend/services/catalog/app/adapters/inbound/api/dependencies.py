@@ -3,6 +3,7 @@ from uuid import UUID
 
 import httpx
 from fastapi import Cookie, Depends, Header, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.exceptions import HTTPException
 import logging
@@ -15,6 +16,7 @@ from app.adapters.outbound.db.property_repository import SqlAlchemyPropertyRepos
 from app.adapters.outbound.db.rate_plan_repository import SqlAlchemyRatePlanRepository
 from app.adapters.outbound.db.session import async_session
 from app.application.exceptions import UnauthorizedError
+from app.domain.models import Property
 from app.application.ports.outbound.cache_port import CachePort
 from app.application.use_cases.add_property_image import AddPropertyImageUseCase
 from app.application.use_cases.create_inventory_hold import CreateInventoryHoldUseCase
@@ -147,6 +149,19 @@ def require_admin_role(
 
     return True
 
+
+def get_is_admin_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> bool:
+    """True only for ADMIN callers; missing/invalid token or other roles -> False."""
+    try:
+        role = get_admin_user_role(authorization=authorization, access_token=access_token)
+    except UnauthorizedError:
+        return False
+    return role == "ADMIN"
+
+
 def get_list_admin_properties_use_case(
     session: AsyncSession = Depends(get_db_session),
 ) -> ListAdminPropertiesUseCase:
@@ -249,7 +264,7 @@ def require_manager_role(
 async def resolve_hotel_id(
     manager_hotel_id: UUID | None = Depends(get_manager_hotel_id),
     hotel_id_query: UUID | None = Query(None, alias="hotel_id"),
-    is_admin: bool = Depends(require_admin_role),
+    is_admin: bool = Depends(get_is_admin_role),
 ) -> UUID:
     if is_admin:
         if hotel_id_query is None:
@@ -261,6 +276,20 @@ async def resolve_hotel_id(
         return manager_hotel_id
 
     raise HTTPException(403, "Unauthorized")
+
+
+async def resolve_admin_property_hotel_id(
+    property_id: UUID,
+    _: bool = Depends(require_admin_role),
+    session: AsyncSession = Depends(get_db_session),
+) -> UUID:
+    """Resolve catalog ``hotel_id`` for a property. Admin JWT only."""
+    hid = (
+        await session.execute(select(Property.hotel_id).where(Property.id == property_id))
+    ).scalar_one_or_none()
+    if hid is None:
+        raise HTTPException(404, "Property not found")
+    return hid
 
 
 def get_manager_repository(session: AsyncSession) -> SqlAlchemyManagerRepository:

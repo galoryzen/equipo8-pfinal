@@ -5,14 +5,20 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import { getMe } from '@/app/lib/api/auth';
 import { getAmenityCatalog } from '@/app/lib/api/catalog';
-import { getPropertyDetail } from '@/app/lib/api/catalog';
 import {
+  addAdminHotelImage,
   addHotelImage,
+  deleteAdminHotelImage,
   deleteHotelImage,
+  getAdminHotelProfile,
+  getAdminHotels,
   getHotelProfile,
-  getHotels,
+  getManagerHotels,
+  setPrimaryAdminHotelImage,
   setPrimaryHotelImage,
+  updateAdminHotelProfile,
   updateHotelProfile,
 } from '@/app/lib/api/manager';
 import { HotelProfile, ManagerHotelItem, ManagerPropertyImage } from '@/app/lib/types/manager';
@@ -52,6 +58,7 @@ import {
   DialogTitle,
   Divider,
   IconButton,
+  Skeleton,
   Snackbar,
   Stack,
   TextField,
@@ -127,6 +134,135 @@ function SectionCard({
       <Divider sx={{ borderColor: tokens.border.subtle, mb: 2.5 }} />
       {children}
     </Box>
+  );
+}
+
+const skeletonBlock = { bgcolor: tokens.surface.subtle };
+
+function ManagerSettingsFormSkeleton({ t }: { t: (key: string) => string }) {
+  return (
+    <Stack spacing={3} role="status" aria-busy="true" aria-label={t('a11y.loading')}>
+      <SectionCard
+        title={t('manager.settings.description.title')}
+        subtitle={t('manager.settings.description.subtitle')}
+      >
+        <Stack direction="row" spacing={0.5} sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
+          {Array.from({ length: 9 }, (_, i) => (
+            <Skeleton
+              key={i}
+              variant="rounded"
+              width={32}
+              height={32}
+              animation="wave"
+              sx={{ ...skeletonBlock, borderRadius: 1 }}
+            />
+          ))}
+        </Stack>
+        <Skeleton
+          variant="rounded"
+          height={168}
+          animation="wave"
+          sx={{ ...skeletonBlock, borderRadius: '0 0 8px 8px' }}
+        />
+      </SectionCard>
+
+      <SectionCard
+        title={t('manager.settings.amenities.title')}
+        subtitle={t('manager.settings.amenities.subtitle')}
+      >
+        {[1, 2, 3].map((row) => (
+          <Box key={row} sx={{ mb: row < 3 ? 2.25 : 0 }}>
+            <Skeleton
+              variant="text"
+              width={160}
+              height={22}
+              animation="wave"
+              sx={{ ...skeletonBlock, mb: 1, maxWidth: '100%' }}
+            />
+            <Stack direction="row" flexWrap="wrap" gap={1}>
+              {[72, 96, 88, 78, 84, 68].map((w, i) => (
+                <Skeleton
+                  key={`${row}-${i}`}
+                  variant="rounded"
+                  width={w}
+                  height={36}
+                  animation="wave"
+                  sx={{ ...skeletonBlock, borderRadius: '10px' }}
+                />
+              ))}
+            </Stack>
+          </Box>
+        ))}
+      </SectionCard>
+
+      <SectionCard
+        title={t('manager.settings.policy.title')}
+        subtitle={t('manager.settings.policy.subtitle')}
+      >
+        <Stack direction="row" spacing={0.5} sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton
+              key={i}
+              variant="rounded"
+              width={32}
+              height={32}
+              animation="wave"
+              sx={{ ...skeletonBlock, borderRadius: 1 }}
+            />
+          ))}
+        </Stack>
+        <Skeleton
+          variant="rounded"
+          height={120}
+          animation="wave"
+          sx={{ ...skeletonBlock, borderRadius: '0 0 8px 8px' }}
+        />
+      </SectionCard>
+
+      <SectionCard
+        title={t('manager.settings.gallery.title')}
+        subtitle={t('manager.settings.gallery.subtitle')}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Skeleton
+            variant="rounded"
+            width={168}
+            height={36}
+            animation="wave"
+            sx={{ ...skeletonBlock, borderRadius: '10px' }}
+          />
+        </Box>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          }}
+        >
+          {Array.from({ length: 6 }, (_, i) => (
+            <Box
+              key={i}
+              sx={{
+                aspectRatio: '4/3',
+                width: '100%',
+                borderRadius: 2,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: tokens.border.subtle,
+              }}
+            >
+              <Skeleton
+                variant="rounded"
+                animation="wave"
+                width="100%"
+                height="100%"
+                sx={{ ...skeletonBlock, height: '100%', borderRadius: 0 }}
+              />
+            </Box>
+          ))}
+        </Box>
+      </SectionCard>
+    </Stack>
   );
 }
 
@@ -302,7 +438,10 @@ export default function ManagerSettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(true);
+  const [bootstrapComplete, setBootstrapComplete] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [propertyID, setPropertyID] = useState<string | null>(null);
   const [properties, setProperties] = useState<ManagerHotelItem[]>([]);
   const [profile, setProfile] = useState<HotelProfile | null>(null);
@@ -360,55 +499,84 @@ export default function ManagerSettingsPage() {
     );
   }, [description, policy, profile, selectedAmenityCodes]);
 
+  const isAdmin = role === 'ADMIN';
+
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      setIsLoading(true);
+    async function bootstrap() {
+      setListLoading(true);
       try {
-        const [hotelList, amenities] = await Promise.all([getHotels(1, 100), getAmenityCatalog()]);
+        const user = await getMe();
         if (cancelled) return;
-        setAmenityCatalog(amenities);
+        setRole(user?.role ?? null);
 
-        const items = hotelList.items ?? [];
-        setProperties(items);
-
-        const fromQuery = searchParams.get('id');
-        const initialId = fromQuery ?? items[0]?.id ?? null;
-
-        if (!initialId) {
-          setPropertyID(null);
-          setProfile(null);
+        if (user?.role === 'TRAVELER') {
+          setProperties([]);
+          setAmenityCatalog([]);
+          setSnack({ severity: 'error', message: t('manager.settings.errors.loadFailed') });
           return;
         }
 
-        setPropertyID(initialId);
-
-        const hoteld = items.find((h) => h.id === initialId);
-        setHotelID(hoteld?.hotelId);
-
-        if (!fromQuery) {
-          const next = new URLSearchParams(searchParams.toString());
-          next.set('id', initialId);
-          router.replace(`/manager/settings?${next.toString()}`);
-        }
+        const [hotelList, amenities] = await Promise.all([
+          user?.role === 'ADMIN' ? getAdminHotels(1, 100) : getManagerHotels(1, 100),
+          getAmenityCatalog(),
+        ]);
+        if (cancelled) return;
+        setAmenityCatalog(amenities);
+        setProperties(hotelList.items ?? []);
       } catch {
-        setSnack({ severity: 'error', message: t('manager.settings.errors.loadFailed') });
+        if (!cancelled) {
+          setSnack({ severity: 'error', message: t('manager.settings.errors.loadFailed') });
+        }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setListLoading(false);
+          setBootstrapComplete(true);
+        }
       }
     }
-    load();
+    void bootstrap();
     return () => {
       cancelled = true;
     };
-  }, [router, searchParams, t]);
+  }, [t]);
+
+  useEffect(() => {
+    if (!bootstrapComplete) return;
+
+    const items = properties;
+    if (items.length === 0) {
+      setPropertyID(null);
+      setHotelID(undefined);
+      return;
+    }
+
+    const fromQuery = searchParams.get('id');
+    const match = fromQuery ? items.find((p) => p.id === fromQuery) : undefined;
+    const targetId = match?.id ?? items[0]?.id ?? null;
+
+    setPropertyID(targetId);
+
+    const hRow = targetId ? items.find((p) => p.id === targetId) : undefined;
+    setHotelID(hRow?.hotelId);
+
+    if (targetId && searchParams.get('id') !== targetId) {
+      const next = new URLSearchParams(searchParams.toString());
+      next.set('id', targetId);
+      router.replace(`/manager/settings?${next.toString()}`);
+    }
+  }, [bootstrapComplete, properties, router, searchParams]);
 
   useEffect(() => {
     let cancelled = false;
+
     async function loadProfile(selectedId: string) {
+      setProfileLoading(true);
+      setProfile(null);
       try {
-        const property = await getPropertyDetail(selectedId);
-        const queryProperty = await getHotelProfile(selectedId, property.detail.hotel_id);
+        const queryProperty = isAdmin
+          ? await getAdminHotelProfile(selectedId)
+          : await getHotelProfile(selectedId, hotelID);
         if (cancelled) return;
 
         setProfile(queryProperty);
@@ -421,15 +589,17 @@ export default function ManagerSettingsPage() {
           setProfile(null);
           setSnack({ severity: 'error', message: t('manager.settings.errors.loadFailed') });
         }
+      } finally {
+        if (!cancelled) setProfileLoading(false);
       }
     }
 
-    if (!propertyID) return;
+    if (!bootstrapComplete || !propertyID || role === null) return;
     void loadProfile(propertyID);
     return () => {
       cancelled = true;
     };
-  }, [propertyID, t]);
+  }, [bootstrapComplete, propertyID, hotelID, isAdmin, role, t]);
 
   function resetEdits() {
     if (!profile) return;
@@ -443,15 +613,21 @@ export default function ManagerSettingsPage() {
     if (!propertyID) return;
     setSaving(true);
     try {
-      const updated = await updateHotelProfile(
-        propertyID,
-        {
-          description,
-          amenity_codes: [...selectedAmenityCodes],
-          policy,
-        },
-        hotelID
-      );
+      const updated = isAdmin
+        ? await updateAdminHotelProfile(propertyID, {
+            description,
+            amenity_codes: [...selectedAmenityCodes],
+            policy,
+          })
+        : await updateHotelProfile(
+            propertyID,
+            {
+              description,
+              amenity_codes: [...selectedAmenityCodes],
+              policy,
+            },
+            hotelID
+          );
       setProfile(updated);
       setImages(updated.images ?? []);
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.saved') });
@@ -465,7 +641,9 @@ export default function ManagerSettingsPage() {
   async function handleAddImage(payload: { url: string; caption?: string }) {
     if (!propertyID) return;
     try {
-      const img = await addHotelImage(propertyID, payload, hotelID);
+      const img = isAdmin
+        ? await addAdminHotelImage(propertyID, payload)
+        : await addHotelImage(propertyID, payload, hotelID);
       setImages((prev) => [...prev, img].sort((a, b) => a.display_order - b.display_order));
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.imageAdded') });
     } catch {
@@ -477,7 +655,11 @@ export default function ManagerSettingsPage() {
   async function handleDeleteImage(imageId: string): Promise<boolean> {
     if (!propertyID) return false;
     try {
-      await deleteHotelImage(propertyID, imageId, hotelID);
+      if (isAdmin) {
+        await deleteAdminHotelImage(propertyID, imageId);
+      } else {
+        await deleteHotelImage(propertyID, imageId, hotelID);
+      }
       setImages((prev) =>
         prev.filter((i) => i.id !== imageId).map((img, idx) => ({ ...img, display_order: idx }))
       );
@@ -492,7 +674,9 @@ export default function ManagerSettingsPage() {
   async function handleSetPrimary(imageId: string) {
     if (!propertyID) return;
     try {
-      const list = await setPrimaryHotelImage(propertyID, imageId, hotelID);
+      const list = isAdmin
+        ? await setPrimaryAdminHotelImage(propertyID, imageId)
+        : await setPrimaryHotelImage(propertyID, imageId, hotelID);
       setImages(list);
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.primaryUpdated') });
     } catch {
@@ -511,6 +695,18 @@ export default function ManagerSettingsPage() {
     }
   }
 
+  const selectedHotelName =
+    profile?.name ?? properties.find((p) => p.id === propertyID)?.name ?? '';
+
+  const profileMatchesSelection = Boolean(
+    profile && propertyID && String(profile.id) === propertyID
+  );
+  const showSettingsForm = Boolean(profileMatchesSelection && !profileLoading);
+  const showSwitchingPlaceholder = Boolean(
+    propertyID && profileLoading && !profileMatchesSelection
+  );
+  const showProfileLoadError = Boolean(propertyID && !profileLoading && !profileMatchesSelection);
+
   const pageHeaderTitle = (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       <Typography
@@ -525,27 +721,29 @@ export default function ManagerSettingsPage() {
       >
         {t('manager.settings.title')}
       </Typography>
-      <Box
-        sx={{
-          px: 1.25,
-          py: 0.5,
-          borderRadius: 999,
-          fontSize: '0.75rem',
-          fontWeight: 900,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          border: '1px solid',
-          borderColor: dirty ? tokens.brand.accentOrange : tokens.state.successBorder,
-          color: dirty ? tokens.brand.accentOrangeFg : tokens.state.successFg,
-          bgcolor: dirty ? tokens.brand.accentOrangeSoft : tokens.state.successBg,
-        }}
-      >
-        {dirty ? t('manager.settings.status.draft') : t('manager.settings.status.published')}
-      </Box>
+      {profile ? (
+        <Box
+          sx={{
+            px: 1.25,
+            py: 0.5,
+            borderRadius: 999,
+            fontSize: '0.75rem',
+            fontWeight: 900,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            border: '1px solid',
+            borderColor: dirty ? tokens.brand.accentOrange : tokens.state.successBorder,
+            color: dirty ? tokens.brand.accentOrangeFg : tokens.state.successFg,
+            bgcolor: dirty ? tokens.brand.accentOrangeSoft : tokens.state.successBg,
+          }}
+        >
+          {dirty ? t('manager.settings.status.draft') : t('manager.settings.status.published')}
+        </Box>
+      ) : null}
     </Box>
   );
 
-  if (isLoading) {
+  if (listLoading) {
     return (
       <Box
         sx={{
@@ -562,7 +760,7 @@ export default function ManagerSettingsPage() {
     );
   }
 
-  if (!propertyID || !profile) {
+  if (bootstrapComplete && (properties.length === 0 || !propertyID)) {
     return (
       <Box
         sx={{
@@ -618,7 +816,6 @@ export default function ManagerSettingsPage() {
           sectionLabel={t('manager.settings.breadcrumb.settings')}
           selectAriaLabel={t('manager.settings.breadcrumb.settings')}
           onPropertyChange={(nextId) => {
-            setPropertyID(nextId);
             const next = new URLSearchParams(searchParams.toString());
             next.set('id', nextId);
             router.replace(`/manager/settings?${next.toString()}`);
@@ -645,7 +842,7 @@ export default function ManagerSettingsPage() {
             href={`/manager/settings?id=${propertyID}`}
             sx={{ textTransform: 'none', fontWeight: 800, color: tokens.text.secondary, px: 0.75 }}
           >
-            {profile.name}
+            {selectedHotelName || '—'}
           </Button>
           <NavigateNextIcon
             aria-hidden="true"
@@ -659,11 +856,7 @@ export default function ManagerSettingsPage() {
           </Typography>
         </Box>
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          alignItems={{ sm: 'center' }}
-          justifyContent="space-between"
-        >
+        {showSwitchingPlaceholder ? (
           <Box>
             {pageHeaderTitle}
             <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.75 }}>
@@ -671,288 +864,343 @@ export default function ManagerSettingsPage() {
               <Typography
                 sx={{ fontSize: '0.875rem', fontWeight: 700, color: tokens.text.secondary }}
               >
-                {profile.name} | {profile.city}, {profile.country}
+                {selectedHotelName || '—'}
               </Typography>
             </Stack>
           </Box>
+        ) : profileMatchesSelection && profile ? (
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+          >
+            <Box>
+              {pageHeaderTitle}
+              <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.75 }}>
+                <LocationOnOutlinedIcon sx={{ fontSize: 18, color: tokens.text.muted }} />
+                <Typography
+                  sx={{ fontSize: '0.875rem', fontWeight: 700, color: tokens.text.secondary }}
+                >
+                  {profile.name} | {profile.city}, {profile.country}
+                </Typography>
+              </Stack>
+            </Box>
 
-          <Stack direction="row" spacing={1.25} sx={{ mt: { xs: 2, sm: 0 } }}>
-            <Button
-              type="button"
-              onClick={resetEdits}
-              disabled={!dirty || saving}
-              variant="outlined"
-              sx={{
-                textTransform: 'none',
-                fontWeight: 800,
-                borderRadius: '10px',
-                borderColor: tokens.border.subtle,
-                color: tokens.text.secondary,
-                '&:hover': { borderColor: tokens.border.subtleHover },
-              }}
-            >
-              {t('manager.settings.actions.cancel')}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={!dirty || saving}
-              variant="contained"
-              startIcon={<SaveOutlinedIcon />}
-              sx={{
-                bgcolor: tokens.brand.accentOrange,
-                color: 'white',
-                fontWeight: 900,
-                textTransform: 'none',
-                borderRadius: '10px',
-                boxShadow: 'none',
-                '&:hover': {
+            <Stack direction="row" spacing={1.25} sx={{ mt: { xs: 2, sm: 0 } }}>
+              <Button
+                type="button"
+                onClick={resetEdits}
+                disabled={!dirty || saving}
+                variant="outlined"
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 800,
+                  borderRadius: '10px',
+                  borderColor: tokens.border.subtle,
+                  color: tokens.text.secondary,
+                  '&:hover': { borderColor: tokens.border.subtleHover },
+                }}
+              >
+                {t('manager.settings.actions.cancel')}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={!dirty || saving}
+                variant="contained"
+                startIcon={<SaveOutlinedIcon />}
+                sx={{
                   bgcolor: tokens.brand.accentOrange,
-                  filter: 'brightness(0.95)',
+                  color: 'white',
+                  fontWeight: 900,
+                  textTransform: 'none',
+                  borderRadius: '10px',
                   boxShadow: 'none',
-                },
-              }}
-            >
-              {t('manager.settings.actions.saveChanges')}
-            </Button>
+                  '&:hover': {
+                    bgcolor: tokens.brand.accentOrange,
+                    filter: 'brightness(0.95)',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                {t('manager.settings.actions.saveChanges')}
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
+        ) : showProfileLoadError ? (
+          <Box>{pageHeaderTitle}</Box>
+        ) : (
+          <SectionCard
+            title={t('manager.settings.title')}
+            subtitle={t('manager.settings.errors.loadFailed')}
+          >
+            <Button
+              variant="contained"
+              onClick={() => router.push('/manager')}
+              sx={{ textTransform: 'none', fontWeight: 800, bgcolor: tokens.brand.accentOrange }}
+            >
+              {t('manager.hotels.admin.navbar.dashboard')}
+            </Button>
+          </SectionCard>
+        )}
       </Box>
 
-      <Stack spacing={3}>
-        <SectionCard
-          title={t('manager.settings.description.title')}
-          subtitle={t('manager.settings.description.subtitle')}
-        >
-          <RichTextToolbar tooltip={t('manager.settings.toolbar.comingSoon')} />
-          <TextField
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            multiline
-            minRows={6}
-            fullWidth
-            sx={{
-              '& .MuiOutlinedInput-root': { borderRadius: '0 0 8px 8px' },
-            }}
-          />
-        </SectionCard>
-
-        <SectionCard
-          title={t('manager.settings.amenities.title')}
-          subtitle={t('manager.settings.amenities.subtitle')}
-        >
-          <Stack spacing={2.25}>
-            {(
-              [
-                {
-                  key: 'PROPERTY_FEATURES' as const,
-                  labelKey: 'manager.settings.amenities.groups.propertyFeatures',
-                },
-                {
-                  key: 'LEISURE_WELLNESS' as const,
-                  labelKey: 'manager.settings.amenities.groups.leisureWellness',
-                },
-                {
-                  key: 'SERVICES' as const,
-                  labelKey: 'manager.settings.amenities.groups.services',
-                },
-              ] as const
-            ).map((group) => (
-              <Box key={group.key}>
-                <Typography
-                  sx={{
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    color: tokens.text.muted,
-                    mb: 1,
-                  }}
-                >
-                  {t(group.labelKey)}
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {(groupedAmenities[group.key] ?? []).map((a) => {
-                    const selected = selectedAmenityCodes.has(a.code);
-                    const translated = t(`manager.settings.amenities.items.${a.displayCode}`, {
-                      defaultValue: '',
-                    }) as string;
-                    const label = translated || a.name || a.displayCode || a.code;
-                    return (
-                      <AmenityToggle
-                        key={a.code}
-                        selected={selected}
-                        label={label}
-                        icon={AMENITY_ICON[a.displayCode] ?? <AddOutlinedIcon fontSize="small" />}
-                        onClick={() => {
-                          setSelectedAmenityCodes((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(a.code)) next.delete(a.code);
-                            else next.add(a.code);
-                            return next;
-                          });
-                        }}
-                      />
-                    );
-                  })}
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </SectionCard>
-
-        <SectionCard
-          title={t('manager.settings.policy.title')}
-          subtitle={t('manager.settings.policy.subtitle')}
-        >
-          <RichTextToolbar tooltip={t('manager.settings.toolbar.comingSoon')} />
-          <TextField
-            value={policy}
-            onChange={(e) => setPolicy(e.target.value)}
-            placeholder={t('manager.settings.policy.placeholder')}
-            multiline
-            minRows={4}
-            fullWidth
-            sx={{
-              '& .MuiOutlinedInput-root': { borderRadius: '0 0 8px 8px' },
-            }}
-          />
-        </SectionCard>
-
-        <SectionCard
-          title={t('manager.settings.gallery.title')}
-          subtitle={t('manager.settings.gallery.subtitle')}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-            <Button
-              type="button"
-              onClick={() => setAddDialogOpen(true)}
-              variant="contained"
-              startIcon={<ImageOutlinedIcon />}
-              sx={{
-                bgcolor: tokens.brand.accentOrangeSoft,
-                color: tokens.brand.accentOrangeFg,
-                textTransform: 'none',
-                fontWeight: 800,
-                borderRadius: '10px',
-                boxShadow: 'none',
-                '&:hover': { bgcolor: `${tokens.brand.accentOrange}26`, boxShadow: 'none' },
-              }}
-            >
-              {t('manager.settings.gallery.addNew')}
-            </Button>
-          </Box>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2,
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            }}
+      {showSettingsForm ? (
+        <Stack spacing={3}>
+          <SectionCard
+            title={t('manager.settings.description.title')}
+            subtitle={t('manager.settings.description.subtitle')}
           >
-            {images
-              .slice()
-              .sort((a, b) => a.display_order - b.display_order)
-              .map((img) => (
-                <Box
-                  key={img.id}
-                  sx={{
-                    position: 'relative',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    border: '1px solid',
-                    borderColor: tokens.border.subtle,
-                    aspectRatio: '4/3',
-                    bgcolor: tokens.surface.subtle,
-                    '&:hover .overlay': { opacity: 1 },
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.url}
-                    alt={img.caption ?? profile.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  />
-                  {img.display_order === 0 ? (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: 10,
-                        left: 10,
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 999,
-                        bgcolor: tokens.brand.accentOrangeFg,
-                        color: tokens.surface.paper,
-                        fontWeight: 900,
-                        fontSize: '0.72rem',
-                      }}
-                    >
-                      {t('manager.settings.gallery.primary')}
-                    </Box>
-                  ) : null}
-                  <Box
-                    className="overlay"
+            <RichTextToolbar tooltip={t('manager.settings.toolbar.comingSoon')} />
+            <TextField
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              multiline
+              minRows={6}
+              fullWidth
+              sx={{
+                '& .MuiOutlinedInput-root': { borderRadius: '0 0 8px 8px' },
+              }}
+            />
+          </SectionCard>
+
+          <SectionCard
+            title={t('manager.settings.amenities.title')}
+            subtitle={t('manager.settings.amenities.subtitle')}
+          >
+            <Stack spacing={2.25}>
+              {(
+                [
+                  {
+                    key: 'PROPERTY_FEATURES' as const,
+                    labelKey: 'manager.settings.amenities.groups.propertyFeatures',
+                  },
+                  {
+                    key: 'LEISURE_WELLNESS' as const,
+                    labelKey: 'manager.settings.amenities.groups.leisureWellness',
+                  },
+                  {
+                    key: 'SERVICES' as const,
+                    labelKey: 'manager.settings.amenities.groups.services',
+                  },
+                ] as const
+              ).map((group) => (
+                <Box key={group.key}>
+                  <Typography
                     sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 1,
-                      bgcolor: 'rgba(15,23,42,0.55)',
-                      opacity: 0,
-                      transition: 'opacity 180ms ease',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: tokens.text.muted,
+                      mb: 1,
                     }}
                   >
-                    {img.display_order !== 0 ? (
-                      <Tooltip title={t('manager.settings.gallery.actions.setPrimary')}>
-                        <IconButton
-                          onClick={() => handleSetPrimary(img.id)}
-                          sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.12)' }}
-                        >
-                          <StarBorderIcon />
-                        </IconButton>
-                      </Tooltip>
-                    ) : null}
-                    <Tooltip title={t('manager.settings.gallery.actions.delete')}>
-                      <IconButton
-                        onClick={() => setPendingDeleteImageId(img.id)}
-                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.12)' }}
-                      >
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    </Tooltip>
+                    {t(group.labelKey)}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {(groupedAmenities[group.key] ?? []).map((a) => {
+                      const selected = selectedAmenityCodes.has(a.code);
+                      const translated = t(`manager.settings.amenities.items.${a.displayCode}`, {
+                        defaultValue: '',
+                      }) as string;
+                      const label = translated || a.name || a.displayCode || a.code;
+                      return (
+                        <AmenityToggle
+                          key={a.code}
+                          selected={selected}
+                          label={label}
+                          icon={AMENITY_ICON[a.displayCode] ?? <AddOutlinedIcon fontSize="small" />}
+                          onClick={() => {
+                            setSelectedAmenityCodes((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(a.code)) next.delete(a.code);
+                              else next.add(a.code);
+                              return next;
+                            });
+                          }}
+                        />
+                      );
+                    })}
                   </Box>
                 </Box>
               ))}
+            </Stack>
+          </SectionCard>
 
-            <Button
-              type="button"
-              onClick={() => setAddDialogOpen(true)}
+          <SectionCard
+            title={t('manager.settings.policy.title')}
+            subtitle={t('manager.settings.policy.subtitle')}
+          >
+            <RichTextToolbar tooltip={t('manager.settings.toolbar.comingSoon')} />
+            <TextField
+              value={policy}
+              onChange={(e) => setPolicy(e.target.value)}
+              placeholder={t('manager.settings.policy.placeholder')}
+              multiline
+              minRows={4}
+              fullWidth
               sx={{
-                borderRadius: 2,
-                border: '1.5px dashed',
-                borderColor: tokens.border.subtleHover,
-                bgcolor: tokens.surface.subtle,
-                aspectRatio: '4/3',
+                '& .MuiOutlinedInput-root': { borderRadius: '0 0 8px 8px' },
+              }}
+            />
+          </SectionCard>
+
+          <SectionCard
+            title={t('manager.settings.gallery.title')}
+            subtitle={t('manager.settings.gallery.subtitle')}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button
+                type="button"
+                onClick={() => setAddDialogOpen(true)}
+                variant="contained"
+                startIcon={<ImageOutlinedIcon />}
+                sx={{
+                  bgcolor: tokens.brand.accentOrangeSoft,
+                  color: tokens.brand.accentOrangeFg,
+                  textTransform: 'none',
+                  fontWeight: 800,
+                  borderRadius: '10px',
+                  boxShadow: 'none',
+                  '&:hover': { bgcolor: `${tokens.brand.accentOrange}26`, boxShadow: 'none' },
+                }}
+              >
+                {t('manager.settings.gallery.addNew')}
+              </Button>
+            </Box>
+
+            <Box
+              sx={{
                 display: 'grid',
-                placeItems: 'center',
-                textTransform: 'none',
-                color: tokens.text.secondary,
-                fontWeight: 900,
+                gap: 2,
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
               }}
             >
-              <Stack spacing={0.5} alignItems="center">
-                <AddOutlinedIcon />
-                <Typography sx={{ fontWeight: 900 }}>
-                  {t('manager.settings.gallery.uploadImage')}
-                </Typography>
-              </Stack>
-            </Button>
-          </Box>
+              {images
+                .slice()
+                .sort((a, b) => a.display_order - b.display_order)
+                .map((img) => (
+                  <Box
+                    key={img.id}
+                    sx={{
+                      position: 'relative',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      border: '1px solid',
+                      borderColor: tokens.border.subtle,
+                      aspectRatio: '4/3',
+                      bgcolor: tokens.surface.subtle,
+                      '&:hover .overlay': { opacity: 1 },
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img.url}
+                      alt={img.caption ?? profile?.name ?? ''}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                    {img.display_order === 0 ? (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 10,
+                          left: 10,
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 999,
+                          bgcolor: tokens.brand.accentOrangeFg,
+                          color: tokens.surface.paper,
+                          fontWeight: 900,
+                          fontSize: '0.72rem',
+                        }}
+                      >
+                        {t('manager.settings.gallery.primary')}
+                      </Box>
+                    ) : null}
+                    <Box
+                      className="overlay"
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 1,
+                        bgcolor: 'rgba(15,23,42,0.55)',
+                        opacity: 0,
+                        transition: 'opacity 180ms ease',
+                      }}
+                    >
+                      {img.display_order !== 0 ? (
+                        <Tooltip title={t('manager.settings.gallery.actions.setPrimary')}>
+                          <IconButton
+                            onClick={() => handleSetPrimary(img.id)}
+                            sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.12)' }}
+                          >
+                            <StarBorderIcon />
+                          </IconButton>
+                        </Tooltip>
+                      ) : null}
+                      <Tooltip title={t('manager.settings.gallery.actions.delete')}>
+                        <IconButton
+                          onClick={() => setPendingDeleteImageId(img.id)}
+                          sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.12)' }}
+                        >
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Box>
+                ))}
+
+              <Button
+                type="button"
+                onClick={() => setAddDialogOpen(true)}
+                sx={{
+                  borderRadius: 2,
+                  border: '1.5px dashed',
+                  borderColor: tokens.border.subtleHover,
+                  bgcolor: tokens.surface.subtle,
+                  aspectRatio: '4/3',
+                  display: 'grid',
+                  placeItems: 'center',
+                  textTransform: 'none',
+                  color: tokens.text.secondary,
+                  fontWeight: 900,
+                }}
+              >
+                <Stack spacing={0.5} alignItems="center">
+                  <AddOutlinedIcon />
+                  <Typography sx={{ fontWeight: 900 }}>
+                    {t('manager.settings.gallery.uploadImage')}
+                  </Typography>
+                </Stack>
+              </Button>
+            </Box>
+          </SectionCard>
+        </Stack>
+      ) : showSwitchingPlaceholder ? (
+        <ManagerSettingsFormSkeleton t={t} />
+      ) : showProfileLoadError ? (
+        <SectionCard
+          title={t('manager.settings.title')}
+          subtitle={t('manager.settings.errors.loadFailed')}
+        >
+          <Button
+            variant="contained"
+            onClick={() => router.push('/manager')}
+            sx={{ textTransform: 'none', fontWeight: 800, bgcolor: tokens.brand.accentOrange }}
+          >
+            {t('manager.hotels.admin.navbar.dashboard')}
+          </Button>
         </SectionCard>
-      </Stack>
+      ) : null}
 
       <AddImageDialog
         open={addDialogOpen}
