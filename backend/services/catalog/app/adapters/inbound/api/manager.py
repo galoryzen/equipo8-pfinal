@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.inbound.api.dependencies import (
+    enforce_administrative_role,
     get_add_property_image_use_case,
     get_booking_property_stats,
     get_create_promotion_use_case,
@@ -51,7 +52,7 @@ from app.schemas.manager import (
 router = APIRouter()
 
 
-@router.get("/manager/hotels", response_model=ManagerHotelListOut)
+@router.get("/manager/hotels", response_model=ManagerHotelListOut, dependencies=[Depends(enforce_administrative_role)])
 async def list_manager_hotels(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
@@ -62,7 +63,7 @@ async def list_manager_hotels(
     return await use_case.execute(hotel_id=hotel_id, page=page, page_size=page_size)
 
 
-@router.get("/manager/hotels/{property_id}/metrics", response_model=HotelStatsOut)
+@router.get("/manager/hotels/{property_id}/metrics", response_model=HotelStatsOut, dependencies=[Depends(enforce_administrative_role)])
 async def get_hotel_metrics(
     property_id: UUID,
     session: AsyncSession = Depends(get_db_session),
@@ -72,7 +73,7 @@ async def get_hotel_metrics(
     return await use_case.execute(property_id=property_id)
 
 
-@router.get("/manager/hotels/{property_id}/room-types", response_model=RoomTypeManagerListOut)
+@router.get("/manager/hotels/{property_id}/room-types", response_model=RoomTypeManagerListOut, dependencies=[Depends(enforce_administrative_role)])
 async def list_room_types(
     property_id: UUID,
     page: int = Query(1, ge=1),
@@ -83,7 +84,7 @@ async def list_room_types(
     return await use_case.execute(property_id=property_id, page=page, page_size=page_size)
 
 
-@router.post("/manager/hotels/{property_id}/promotions", response_model=PromotionCreatedOut, status_code=201)
+@router.post("/manager/hotels/{property_id}/promotions", response_model=PromotionCreatedOut, status_code=201, dependencies=[Depends(enforce_administrative_role)])
 async def create_promotion(
     property_id: UUID,
     body: CreatePromotionIn,
@@ -96,6 +97,7 @@ async def create_promotion(
 @router.get(
     "/manager/room-types/{room_type_id}/promotion",
     response_model=RoomTypePromotionOut | None,
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def get_room_type_promotion(
     room_type_id: UUID,
@@ -105,7 +107,7 @@ async def get_room_type_promotion(
     return await use_case.execute(room_type_id=room_type_id)
 
 
-@router.delete("/manager/promotions/{promotion_id}", status_code=204)
+@router.delete("/manager/promotions/{promotion_id}", status_code=204, dependencies=[Depends(enforce_administrative_role)])
 async def delete_promotion(
     promotion_id: UUID,
     session: AsyncSession = Depends(get_db_session),
@@ -117,6 +119,7 @@ async def delete_promotion(
 @router.get(
     "/manager/rate-plans/{rate_plan_id}/cancellation-policy",
     response_model=RatePlanCancellationPolicyOut | None,
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def get_rate_plan_cancellation_policy(
     rate_plan_id: UUID,
@@ -129,6 +132,7 @@ async def get_rate_plan_cancellation_policy(
 @router.patch(
     "/manager/rate-plans/{rate_plan_id}/cancellation-policy",
     response_model=RatePlanCancellationPolicyOut,
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def update_rate_plan_cancellation_policy(
     rate_plan_id: UUID,
@@ -142,6 +146,7 @@ async def update_rate_plan_cancellation_policy(
 @router.get(
     "/manager/hotels/{property_id}/profile",
     response_model=HotelProfileOut,
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def get_hotel_profile(
     property_id: UUID,
@@ -155,6 +160,7 @@ async def get_hotel_profile(
 @router.patch(
     "/manager/hotels/{property_id}/profile",
     response_model=HotelProfileOut,
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def update_hotel_profile(
     property_id: UUID,
@@ -170,6 +176,7 @@ async def update_hotel_profile(
     "/manager/hotels/{property_id}/images",
     response_model=ManagerPropertyImageOut,
     status_code=201,
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def add_property_image(
     property_id: UUID,
@@ -184,6 +191,7 @@ async def add_property_image(
 @router.delete(
     "/manager/hotels/{property_id}/images/{image_id}",
     status_code=204,
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def delete_property_image(
     property_id: UUID,
@@ -198,6 +206,7 @@ async def delete_property_image(
 @router.patch(
     "/manager/hotels/{property_id}/images/{image_id}/primary",
     response_model=list[ManagerPropertyImageOut],
+    dependencies=[Depends(enforce_administrative_role)],
 )
 async def set_primary_property_image(
     property_id: UUID,

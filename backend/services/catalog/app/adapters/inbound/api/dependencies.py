@@ -212,6 +212,29 @@ def get_manager_hotel_id(
     except ValueError as exc:
         raise UnauthorizedError("Invalid hotel_id in token") from exc
 
+def enforce_administrative_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> None:
+    """Raise UnauthorizedError if the JWT does not have role=ADMIN."""
+    decoded_role = get_admin_user_role(authorization=authorization, access_token=access_token)
+    if decoded_role == "TRAVELER":
+        raise UnauthorizedError("Administrative role required")
+
+
+def require_manager_role(
+    authorization: str | None = Header(None),
+    access_token: str | None = Cookie(default=None),
+) -> None:
+    """Raise UnauthorizedError if the user is not a manager (HOTEL or AGENCY).
+
+    Explicitly rejects TRAVELER and ADMIN roles.
+    """
+    decoded_role = get_admin_user_role(authorization=authorization, access_token=access_token)
+    if decoded_role not in ("HOTEL", "AGENCY"):
+        raise UnauthorizedError("Manager role required (HOTEL or AGENCY)")
+
+
 
 def get_manager_repository(session: AsyncSession) -> SqlAlchemyManagerRepository:
     return SqlAlchemyManagerRepository(session)
