@@ -179,10 +179,19 @@ export async function updateRatePlanCancellationPolicy(
   return res.json();
 }
 
-export async function getHotelProfile(propertyId: string): Promise<HotelProfile> {
-  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile`, {
-    credentials: 'include',
-  });
+export async function getHotelProfile(propertyId: string, hotelId?: string): Promise<HotelProfile> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile?${params.toString()}`,
+    {
+      credentials: 'include',
+    }
+  );
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(formatApiErrorBody(body, res.status));
@@ -192,14 +201,24 @@ export async function getHotelProfile(propertyId: string): Promise<HotelProfile>
 
 export async function updateHotelProfile(
   propertyId: string,
-  payload: { description?: string | null; amenity_codes?: string[]; policy?: string }
+  payload: { description?: string | null; amenity_codes?: string[]; policy?: string },
+  hotelId?: string
 ): Promise<HotelProfile> {
-  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile?${params.toString()}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    }
+  );
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(formatApiErrorBody(body, res.status));
@@ -209,14 +228,24 @@ export async function updateHotelProfile(
 
 export async function addHotelImage(
   propertyId: string,
-  payload: { url: string; caption?: string }
+  payload: { url: string; caption?: string },
+  hotelId?: string
 ): Promise<ManagerPropertyImage> {
-  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images?${params.toString()}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    }
+  );
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(formatApiErrorBody(body, res.status));
@@ -224,9 +253,19 @@ export async function addHotelImage(
   return res.json();
 }
 
-export async function deleteHotelImage(propertyId: string, imageId: string): Promise<void> {
+export async function deleteHotelImage(
+  propertyId: string,
+  imageId: string,
+  hotelId?: string
+): Promise<void> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
   const res = await fetch(
-    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}`,
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}?${params.toString()}`,
     {
       method: 'DELETE',
       credentials: 'include',
@@ -240,10 +279,17 @@ export async function deleteHotelImage(propertyId: string, imageId: string): Pro
 
 export async function setPrimaryHotelImage(
   propertyId: string,
-  imageId: string
+  imageId: string,
+  hotelId?: string
 ): Promise<ManagerPropertyImage[]> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
   const res = await fetch(
-    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}/primary`,
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}/primary?${params.toString()}`,
     { method: 'PATCH', credentials: 'include' }
   );
   if (!res.ok) {

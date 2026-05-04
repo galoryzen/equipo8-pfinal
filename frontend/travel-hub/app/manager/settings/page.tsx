@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { getAmenityCatalog } from '@/app/lib/api/catalog';
+import { getPropertyDetail } from '@/app/lib/api/catalog';
 import {
   addHotelImage,
   deleteHotelImage,
@@ -302,8 +303,8 @@ export default function ManagerSettingsPage() {
   const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [hotelId, setHotelId] = useState<string | null>(null);
-  const [hotels, setHotels] = useState<ManagerHotelItem[]>([]);
+  const [propertyID, setPropertyID] = useState<string | null>(null);
+  const [properties, setProperties] = useState<ManagerHotelItem[]>([]);
   const [profile, setProfile] = useState<HotelProfile | null>(null);
   const [amenityCatalog, setAmenityCatalog] = useState<AmenityCatalogItem[]>([]);
 
@@ -317,6 +318,7 @@ export default function ManagerSettingsPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [pendingDeleteImageId, setPendingDeleteImageId] = useState<string | null>(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
+  const [hotelID, setHotelID] = useState<string | undefined>(undefined);
   const [snack, setSnack] = useState<{ severity: 'success' | 'error'; message: string } | null>(
     null
   );
@@ -368,18 +370,23 @@ export default function ManagerSettingsPage() {
         setAmenityCatalog(amenities);
 
         const items = hotelList.items ?? [];
-        setHotels(items);
+        setProperties(items);
 
         const fromQuery = searchParams.get('id');
         const initialId = fromQuery ?? items[0]?.id ?? null;
 
         if (!initialId) {
-          setHotelId(null);
+          setPropertyID(null);
           setProfile(null);
           return;
         }
 
-        setHotelId(initialId);
+        setPropertyID(initialId);
+        console.log('Hotel list', items);
+
+        const hoteld = items.find((h) => h.id === initialId);
+        setHotelID(hoteld?.hotelId);
+
         if (!fromQuery) {
           const next = new URLSearchParams(searchParams.toString());
           next.set('id', initialId);
@@ -401,13 +408,15 @@ export default function ManagerSettingsPage() {
     let cancelled = false;
     async function loadProfile(selectedId: string) {
       try {
-        const p = await getHotelProfile(selectedId);
+        const property = await getPropertyDetail(selectedId);
+        const queryProperty = await getHotelProfile(selectedId, property.detail.hotel_id);
         if (cancelled) return;
-        setProfile(p);
-        setDescription(p.description ?? '');
-        setPolicy(p.policy ?? '');
-        setSelectedAmenityCodes(new Set(p.amenity_codes ?? []));
-        setImages(p.images ?? []);
+
+        setProfile(queryProperty);
+        setDescription(queryProperty.description ?? '');
+        setPolicy(queryProperty.policy ?? '');
+        setSelectedAmenityCodes(new Set(queryProperty.amenity_codes ?? []));
+        setImages(queryProperty.images ?? []);
       } catch {
         if (!cancelled) {
           setProfile(null);
@@ -416,12 +425,12 @@ export default function ManagerSettingsPage() {
       }
     }
 
-    if (!hotelId) return;
-    void loadProfile(hotelId);
+    if (!propertyID) return;
+    void loadProfile(propertyID);
     return () => {
       cancelled = true;
     };
-  }, [hotelId, t]);
+  }, [propertyID, t]);
 
   function resetEdits() {
     if (!profile) return;
@@ -432,14 +441,18 @@ export default function ManagerSettingsPage() {
   }
 
   async function handleSave() {
-    if (!hotelId) return;
+    if (!propertyID) return;
     setSaving(true);
     try {
-      const updated = await updateHotelProfile(hotelId, {
-        description,
-        amenity_codes: [...selectedAmenityCodes],
-        policy,
-      });
+      const updated = await updateHotelProfile(
+        propertyID,
+        {
+          description,
+          amenity_codes: [...selectedAmenityCodes],
+          policy,
+        },
+        hotelID
+      );
       setProfile(updated);
       setImages(updated.images ?? []);
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.saved') });
@@ -451,9 +464,9 @@ export default function ManagerSettingsPage() {
   }
 
   async function handleAddImage(payload: { url: string; caption?: string }) {
-    if (!hotelId) return;
+    if (!propertyID) return;
     try {
-      const img = await addHotelImage(hotelId, payload);
+      const img = await addHotelImage(propertyID, payload, hotelID);
       setImages((prev) => [...prev, img].sort((a, b) => a.display_order - b.display_order));
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.imageAdded') });
     } catch {
@@ -463,9 +476,9 @@ export default function ManagerSettingsPage() {
   }
 
   async function handleDeleteImage(imageId: string): Promise<boolean> {
-    if (!hotelId) return false;
+    if (!propertyID) return false;
     try {
-      await deleteHotelImage(hotelId, imageId);
+      await deleteHotelImage(propertyID, imageId, hotelID);
       setImages((prev) =>
         prev.filter((i) => i.id !== imageId).map((img, idx) => ({ ...img, display_order: idx }))
       );
@@ -478,9 +491,9 @@ export default function ManagerSettingsPage() {
   }
 
   async function handleSetPrimary(imageId: string) {
-    if (!hotelId) return;
+    if (!propertyID) return;
     try {
-      const list = await setPrimaryHotelImage(hotelId, imageId);
+      const list = await setPrimaryHotelImage(propertyID, imageId, hotelID);
       setImages(list);
       setSnack({ severity: 'success', message: t('manager.settings.snackbar.primaryUpdated') });
     } catch {
@@ -550,7 +563,7 @@ export default function ManagerSettingsPage() {
     );
   }
 
-  if (!hotelId || !profile) {
+  if (!propertyID || !profile) {
     return (
       <Box
         sx={{
@@ -601,12 +614,12 @@ export default function ManagerSettingsPage() {
     >
       <Box component="header" sx={{ mb: 3 }}>
         <ManagerSettingsHotelSelect
-          hotels={hotels}
-          value={hotelId}
+          properties={properties}
+          value={propertyID}
           sectionLabel={t('manager.settings.breadcrumb.settings')}
           selectAriaLabel={t('manager.settings.breadcrumb.settings')}
-          onHotelChange={(nextId) => {
-            setHotelId(nextId);
+          onPropertyChange={(nextId) => {
+            setPropertyID(nextId);
             const next = new URLSearchParams(searchParams.toString());
             next.set('id', nextId);
             router.replace(`/manager/settings?${next.toString()}`);
@@ -630,7 +643,7 @@ export default function ManagerSettingsPage() {
           />
           <Button
             component={Link}
-            href={`/manager/settings?id=${hotelId}`}
+            href={`/manager/settings?id=${propertyID}`}
             sx={{ textTransform: 'none', fontWeight: 800, color: tokens.text.secondary, px: 0.75 }}
           >
             {profile.name}

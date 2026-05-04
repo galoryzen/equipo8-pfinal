@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { getActiveHotels } from '@/app/lib/api/activeHotels';
-import { getAdminProperties } from '@/app/lib/api/adminProperties';
 import { getMe } from '@/app/lib/api/auth';
 import UnauthorizedDashboard from '@/app/manager/components/UnauthorizedDashboard';
 import { useManagerDashboardData } from '@/app/manager/hooks/useDashboardData';

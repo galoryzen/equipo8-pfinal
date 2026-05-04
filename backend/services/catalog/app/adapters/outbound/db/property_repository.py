@@ -617,6 +617,7 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
                 "status": status,
                 "imageUrl": first_images.get(prop.id),
                 "categories": rt_counts.get(prop.id, 0),
+                "hotelId": prop.hotel_id,
             })
 
         return items, total

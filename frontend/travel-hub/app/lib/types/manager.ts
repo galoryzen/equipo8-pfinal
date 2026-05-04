@@ -9,6 +9,7 @@ export interface ManagerHotelItem {
   status: 'ACTIVE' | 'PENDING_REVIEW';
   imageUrl: string | null;
   categories: number;
+  hotelId: string;
 }
 
 export interface HotelStatsOut {

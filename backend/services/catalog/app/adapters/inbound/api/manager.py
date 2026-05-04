@@ -15,12 +15,12 @@ from app.adapters.inbound.api.dependencies import (
     get_hotel_profile_use_case,
     get_list_manager_hotels_use_case,
     get_list_room_types_availability_use_case,
-    get_manager_hotel_id,
     get_rate_plan_cancellation_policy_use_case,
     get_room_type_promotion_use_case,
     get_set_primary_property_image_use_case,
     get_update_cancellation_policy_use_case,
     get_update_hotel_profile_use_case,
+    resolve_hotel_id,
 )
 from app.application.use_cases.add_property_image import AddPropertyImageUseCase
 from app.application.use_cases.create_promotion import CreatePromotionUseCase
@@ -56,14 +56,18 @@ router = APIRouter()
 async def list_manager_hotels(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
-    hotel_id: UUID = Depends(get_manager_hotel_id),
+    hotel_id: UUID = Depends(resolve_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: ListManagerHotelsUseCase = get_list_manager_hotels_use_case(session)
     return await use_case.execute(hotel_id=hotel_id, page=page, page_size=page_size)
 
 
-@router.get("/manager/hotels/{property_id}/metrics", response_model=HotelStatsOut, dependencies=[Depends(enforce_administrative_role)])
+@router.get(
+    "/manager/hotels/{property_id}/metrics",
+    response_model=HotelStatsOut,
+    dependencies=[Depends(enforce_administrative_role)],
+)
 async def get_hotel_metrics(
     property_id: UUID,
     session: AsyncSession = Depends(get_db_session),
@@ -73,7 +77,11 @@ async def get_hotel_metrics(
     return await use_case.execute(property_id=property_id)
 
 
-@router.get("/manager/hotels/{property_id}/room-types", response_model=RoomTypeManagerListOut, dependencies=[Depends(enforce_administrative_role)])
+@router.get(
+    "/manager/hotels/{property_id}/room-types",
+    response_model=RoomTypeManagerListOut,
+    dependencies=[Depends(enforce_administrative_role)],
+)
 async def list_room_types(
     property_id: UUID,
     page: int = Query(1, ge=1),
@@ -84,7 +92,12 @@ async def list_room_types(
     return await use_case.execute(property_id=property_id, page=page, page_size=page_size)
 
 
-@router.post("/manager/hotels/{property_id}/promotions", response_model=PromotionCreatedOut, status_code=201, dependencies=[Depends(enforce_administrative_role)])
+@router.post(
+    "/manager/hotels/{property_id}/promotions",
+    response_model=PromotionCreatedOut,
+    status_code=201,
+    dependencies=[Depends(enforce_administrative_role)],
+)
 async def create_promotion(
     property_id: UUID,
     body: CreatePromotionIn,
@@ -107,7 +120,9 @@ async def get_room_type_promotion(
     return await use_case.execute(room_type_id=room_type_id)
 
 
-@router.delete("/manager/promotions/{promotion_id}", status_code=204, dependencies=[Depends(enforce_administrative_role)])
+@router.delete(
+    "/manager/promotions/{promotion_id}", status_code=204, dependencies=[Depends(enforce_administrative_role)]
+)
 async def delete_promotion(
     promotion_id: UUID,
     session: AsyncSession = Depends(get_db_session),
@@ -150,7 +165,7 @@ async def update_rate_plan_cancellation_policy(
 )
 async def get_hotel_profile(
     property_id: UUID,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
+    hotel_id: UUID = Depends(resolve_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: GetHotelProfileUseCase = get_hotel_profile_use_case(session)
@@ -165,7 +180,7 @@ async def get_hotel_profile(
 async def update_hotel_profile(
     property_id: UUID,
     body: UpdateHotelProfileIn,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
+    hotel_id: UUID = Depends(resolve_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: UpdateHotelProfileUseCase = get_update_hotel_profile_use_case(session)
@@ -181,7 +196,7 @@ async def update_hotel_profile(
 async def add_property_image(
     property_id: UUID,
     body: AddPropertyImageIn,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
+    hotel_id: UUID = Depends(resolve_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: AddPropertyImageUseCase = get_add_property_image_use_case(session)
@@ -196,7 +211,7 @@ async def add_property_image(
 async def delete_property_image(
     property_id: UUID,
     image_id: UUID,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
+    hotel_id: UUID = Depends(resolve_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: DeletePropertyImageUseCase = get_delete_property_image_use_case(session)
@@ -211,7 +226,7 @@ async def delete_property_image(
 async def set_primary_property_image(
     property_id: UUID,
     image_id: UUID,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
+    hotel_id: UUID = Depends(resolve_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: SetPrimaryPropertyImageUseCase = get_set_primary_property_image_use_case(session)

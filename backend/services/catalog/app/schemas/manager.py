@@ -24,6 +24,7 @@ class ManagerHotelItem(BaseModel):
     status: Literal["ACTIVE", "PENDING_REVIEW"]
     imageUrl: str | None
     categories: int
+    hotelId: UUID
 
 
 ManagerHotelListOut = PaginatedResponse[ManagerHotelItem]
