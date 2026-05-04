@@ -1,6 +1,7 @@
 import type { PaginatedResponse } from '@/app/lib/types/catalog';
 import type { RoomTypeIcon } from '@/app/manager/hotels/_data';
 
+import { getMe } from './auth';
 import { formatApiErrorBody } from './catalog';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
@@ -122,6 +123,37 @@ export async function getManagerHotels(
     _hotelsCacheSlot = { v: data, exp: Date.now() + HOTELS_TTL };
   }
   return data;
+}
+
+export async function getAdminHotels(
+  page = 1,
+  page_size = 100
+): Promise<PaginatedResponse<ManagerHotelItem>> {
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/admin/properties?page=${page}&page_size=${page_size}`,
+    { credentials: 'include' }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  const data = (await res.json()) as PaginatedResponse<ManagerHotelItem>;
+  return data;
+}
+
+export async function getHotels(
+  page = 1,
+  page_size = 100
+): Promise<PaginatedResponse<ManagerHotelItem>> {
+  const user = await getMe();
+
+  if (user?.role === 'TRAVELER') {
+    throw new Error('Unauthorized');
+  }
+
+  return user?.role === 'ADMIN'
+    ? getAdminHotels(page, page_size)
+    : getManagerHotels(page, page_size);
 }
 
 export async function getHotelMetrics(propertyId: string): Promise<HotelStatsOut> {

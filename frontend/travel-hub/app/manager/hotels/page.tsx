@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { type ManagerHotelItem, getManagerHotels } from '@/app/lib/api/manager';
+import { type ManagerHotelItem, getHotels } from '@/app/lib/api/manager';
 import { tokens } from '@/lib/theme/tokens';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
@@ -138,19 +138,26 @@ export default function ManagerHotelsPage() {
   useEffect(() => {
     if (selectedHotelId) return; // skip fetch when showing detail view
     let cancelled = false;
-    getManagerHotels()
-      .then((data) => {
+
+    (async () => {
+      try {
+        // Get user role first
         if (!cancelled) {
-          setHotels(data.items);
-          setLoading(false);
+          // Then fetch hotels using the appropriate endpoint based on role
+          const data = await getHotels(1, 100);
+          if (!cancelled) {
+            setHotels(data.items);
+            setLoading(false);
+          }
         }
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load hotels');
           setLoading(false);
         }
-      });
+      }
+    })();
+
     return () => {
       cancelled = true;
     };

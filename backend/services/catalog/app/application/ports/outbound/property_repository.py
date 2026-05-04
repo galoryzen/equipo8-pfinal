@@ -62,5 +62,9 @@ class PropertyRepository(ABC):
         """Min nightly price per property for the date range."""
 
     @abstractmethod
-    async def list_admin_properties(self, *, limit: int = 500) -> list[dict]:
-        """Admin list of hotel ids for dropdowns (hotel_id + name)."""
+    async def list_admin_properties(self, *, page: int, page_size: int) -> tuple[list[dict], int]:
+        """Admin list of all hotels (aggregated by hotel_id) with pagination.
+        
+        Returns (items_as_dicts_with_enrichment, total_count).
+        Each item includes: id (hotel_id), name, location, totalRooms, occupiedRooms, status, imageUrl, categories.
+        """

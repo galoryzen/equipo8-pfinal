@@ -13,7 +13,7 @@ import {
   addHotelImage,
   deleteHotelImage,
   getHotelProfile,
-  getManagerHotels,
+  getHotels,
   setPrimaryHotelImage,
   updateHotelProfile,
 } from '@/app/lib/api/manager';
@@ -365,7 +365,7 @@ export default function ManagerSettingsPage() {
     async function load() {
       setIsLoading(true);
       try {
-        const [hotelList, amenities] = await Promise.all([getManagerHotels(), getAmenityCatalog()]);
+        const [hotelList, amenities] = await Promise.all([getHotels(1, 100), getAmenityCatalog()]);
         if (cancelled) return;
         setAmenityCatalog(amenities);
 

@@ -65,7 +65,6 @@ async def list_manager_hotels(
 @router.get("/manager/hotels/{property_id}/metrics", response_model=HotelStatsOut)
 async def get_hotel_metrics(
     property_id: UUID,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     booking_stats = await get_booking_property_stats(property_id=property_id)
@@ -78,7 +77,6 @@ async def list_room_types(
     property_id: UUID,
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
-    hotel_id: UUID = Depends(get_manager_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: ListRoomTypesAvailabilityUseCase = get_list_room_types_availability_use_case(session)
@@ -89,7 +87,6 @@ async def list_room_types(
 async def create_promotion(
     property_id: UUID,
     body: CreatePromotionIn,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: CreatePromotionUseCase = get_create_promotion_use_case(session)
@@ -102,7 +99,6 @@ async def create_promotion(
 )
 async def get_room_type_promotion(
     room_type_id: UUID,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: GetRoomTypePromotionUseCase = get_room_type_promotion_use_case(session)
@@ -112,7 +108,6 @@ async def get_room_type_promotion(
 @router.delete("/manager/promotions/{promotion_id}", status_code=204)
 async def delete_promotion(
     promotion_id: UUID,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: DeletePromotionUseCase = get_delete_promotion_use_case(session)
@@ -125,7 +120,6 @@ async def delete_promotion(
 )
 async def get_rate_plan_cancellation_policy(
     rate_plan_id: UUID,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: GetRatePlanCancellationPolicyUseCase = get_rate_plan_cancellation_policy_use_case(session)
@@ -139,7 +133,6 @@ async def get_rate_plan_cancellation_policy(
 async def update_rate_plan_cancellation_policy(
     rate_plan_id: UUID,
     body: UpdateCancellationPolicyIn,
-    hotel_id: UUID = Depends(get_manager_hotel_id),
     session: AsyncSession = Depends(get_db_session),
 ):
     use_case: UpdateRatePlanCancellationPolicyUseCase = get_update_cancellation_policy_use_case(session)

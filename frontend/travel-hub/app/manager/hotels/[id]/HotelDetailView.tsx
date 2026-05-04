@@ -10,7 +10,7 @@ import {
   type RoomTypeManagerItem,
   getHotelMetrics,
   getHotelRoomTypes,
-  getManagerHotels,
+  getHotels,
 } from '@/app/lib/api/manager';
 import { tokens } from '@/lib/theme/tokens';
 import BedOutlinedIcon from '@mui/icons-material/BedOutlined';
@@ -189,7 +189,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getManagerHotels(1, 100), getHotelMetrics(hotelId), getHotelRoomTypes(hotelId)])
+    Promise.all([getHotels(1, 100), getHotelMetrics(hotelId), getHotelRoomTypes(hotelId)])
       .then(([hotelsData, metricsData, roomTypesData]) => {
         if (cancelled) return;
         const found = hotelsData.items.find((h) => h.id === hotelId) ?? null;
