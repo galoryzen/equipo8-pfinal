@@ -61,7 +61,12 @@
     "cancelSuccess": "Cancelación procesada.",
     "cancelFailed": "No se pudo cancelar. Intenta de nuevo.",
     "cancellationPolicyApplied": "Política de cancelación aplicada: {{type}}",
-    "cancellationPolicyHoursLimit": " · límite de {{hours}} h"
+    "cancellationPolicyHoursLimit": " · límite de {{hours}} h",
+    "refundAmount": "Monto reembolsado",
+    "refundType": {
+      "traveler_cancelled": "Reembolso por cancelación del viajero",
+      "hotel_rejected": "Reembolso por rechazo del hotel"
+    }
   },
   "recommended": {
     "title": "Recomendado para ti",
@@ -99,18 +104,35 @@
     },
     "community": {
       "title": "Comunidad",
-      "links": ["Blog de TravelHub", "Foro de la comunidad", "Guías de viaje"]
+      "links": [
+        "Blog de TravelHub",
+        "Foro de la comunidad",
+        "Guías de viaje"
+      ]
     },
     "hosting": {
       "title": "Anfitrión",
-      "links": ["Publica tu propiedad", "Recursos para anfitriones", "Foro de la comunidad"]
+      "links": [
+        "Publica tu propiedad",
+        "Recursos para anfitriones",
+        "Foro de la comunidad"
+      ]
     },
     "about": {
       "title": "Acerca de",
-      "links": ["Sala de prensa", "Novedades", "Empleo", "Inversionistas"]
+      "links": [
+        "Sala de prensa",
+        "Novedades",
+        "Empleo",
+        "Inversionistas"
+      ]
     },
     "copyright": "© 2026 TravelHub, Inc.",
-    "legal": ["Privacidad", "Términos", "Mapa del sitio"]
+    "legal": [
+      "Privacidad",
+      "Términos",
+      "Mapa del sitio"
+    ]
   },
   "priceRange": {
     "title": "Rango de precio",
