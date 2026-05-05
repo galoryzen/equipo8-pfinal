@@ -2,7 +2,7 @@
 
 import NextLink from 'next/link';
 
-import type { RoomTypeOut } from '@/app/lib/types/catalog';
+import type { RoomTypeOut, PropertyImageOut } from '@/app/lib/types/catalog';
 import { tokens as th } from '@/lib/theme/tokens';
 import BedIcon from '@mui/icons-material/Bed';
 import CheckIcon from '@mui/icons-material/Check';
@@ -26,6 +26,8 @@ interface RoomTypeCardProps {
   onRoomSelect: (info: SelectedRoomInfo) => void;
   /** The current user's own active CART booking_id for this room, if any */
   activeCartBookingId: string | null;
+  /** First image from the property for room card display */
+  propertyImage?: PropertyImageOut | null;
 }
 
 function cancellationLabel(type: string, t: (key: string) => string): string {
@@ -47,6 +49,7 @@ export default function RoomTypeCard({
   selectedRatePlanId,
   onRoomSelect,
   activeCartBookingId,
+  propertyImage,
 }: RoomTypeCardProps) {
   const { t } = useTranslation();
   const activePlans = room.rate_plans.filter((rp) => rp.min_price != null);
@@ -57,6 +60,7 @@ export default function RoomTypeCard({
   const displayPrice = room.min_price ?? cheapestPlan?.min_price ?? null;
   const hasDates = Boolean(checkin && checkout);
   const hasOwnCart = Boolean(activeCartBookingId);
+  const roomImage = propertyImage?.url;
 
   const resumeParams = activeCartBookingId
     ? new URLSearchParams({
@@ -82,20 +86,34 @@ export default function RoomTypeCard({
         transition: 'border-color 0.2s',
       }}
     >
-      {/* Room image placeholder */}
-      <Box
-        sx={{
-          width: { xs: '100%', sm: 200 },
-          minHeight: 160,
-          bgcolor: 'grey.200',
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <BedIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
-      </Box>
+      {/* Room image */}
+      {roomImage ? (
+        <Box
+          component="img"
+          src={roomImage}
+          alt={propertyImage?.caption ?? room.name}
+          sx={{
+            width: { xs: '100%', sm: 200 },
+            height: 160,
+            objectFit: 'cover',
+            flexShrink: 0,
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            width: { xs: '100%', sm: 200 },
+            minHeight: 160,
+            bgcolor: 'grey.200',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <BedIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
+        </Box>
+      )}
 
       {/* Content */}
       <Box sx={{ flex: 1, p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
