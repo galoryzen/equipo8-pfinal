@@ -17,8 +17,10 @@ export class PaymentConfirmationPage extends BasePage {
   private readonly TOTAL_PRICE = '[data-testid="traveler-confirmation-total-price"]';
   private readonly STATUS_CHIP = '[data-testid="traveler-confirmation-status-chip"]';
   private readonly IMAGE = '[data-testid="traveler-confirmation-image"]';
-  private readonly VIEW_MY_TRIPS_BUTTON = 'button:has-text("View My Trips"), button:has-text("Mis viajes")';
-  private readonly EXPLORE_MORE_BUTTON = 'button:has-text("Explore More"), button:has-text("Explorar más")';
+  private readonly VIEW_MY_TRIPS_BUTTON =
+    'button:has-text("View My Trips"), button:has-text("Mis viajes")';
+  private readonly EXPLORE_MORE_BUTTON =
+    'button:has-text("Explore More"), button:has-text("Explorar más")';
 
   /**
    * Wait for payment confirmation page to load

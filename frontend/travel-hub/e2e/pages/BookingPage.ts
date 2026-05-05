@@ -7,18 +7,15 @@ import { AdditionalGuest, CreditCardInfo, OwnerInfo } from './types';
  */
 export class BookingPage extends BasePage {
   // Locators
-  private readonly OWNER_FIRST_NAME =
-    '[data-testid="traveler-payment-first-name"]';
-  private readonly OWNER_LAST_NAME =
-    '[data-testid="traveler-payment-last-name"]';
+  private readonly OWNER_FIRST_NAME = '[data-testid="traveler-payment-first-name"]';
+  private readonly OWNER_LAST_NAME = '[data-testid="traveler-payment-last-name"]';
   private readonly OWNER_EMAIL = '[data-testid="traveler-payment-email"]';
-  private readonly OWNER_PHONE =
-    '[data-testid="traveler-payment-phone"]';
+  private readonly OWNER_PHONE = '[data-testid="traveler-payment-phone"]';
 
   private readonly ADDITIONAL_GUEST_FIRST_NAME = (idx: number) =>
     `[data-testid="traveler-payment-additional-first-name-${idx}"]`;
-  private readonly ADDITIONAL_GUEST_LAST_NAME =
-    (idx: number) => `[data-testid="traveler-payment-additional-last-name-${idx}"]`;
+  private readonly ADDITIONAL_GUEST_LAST_NAME = (idx: number) =>
+    `[data-testid="traveler-payment-additional-last-name-${idx}"]`;
 
   private readonly BOOKING_NOTES =
     'textarea[placeholder*="Notas"], textarea[placeholder*="Notes"], textarea[placeholder*="Comentarios"]';
@@ -97,7 +94,6 @@ export class BookingPage extends BasePage {
       await this.fillInput(this.OWNER_PHONE, phone);
     }
   }
-
 
   /**
    * Fill booking notes
@@ -218,8 +214,12 @@ export class BookingPage extends BasePage {
   /**
    * Proceed with booking - fill info and continue
    */
-   
-  async proceedWithBooking(ownerInfo: OwnerInfo, additionalGuests: AdditionalGuest[], creditCardInfo: CreditCardInfo) {
+
+  async proceedWithBooking(
+    ownerInfo: OwnerInfo,
+    additionalGuests: AdditionalGuest[],
+    creditCardInfo: CreditCardInfo
+  ) {
     await this.fillOwnerInformation(ownerInfo);
     await this.fillAdditionalGuestsInformation(additionalGuests);
     await this.fillCreditCardInformation(creditCardInfo);

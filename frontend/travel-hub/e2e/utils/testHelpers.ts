@@ -30,7 +30,11 @@ export function calculateNights(checkin: string, checkout: string): number {
  * Format dates for display (e.g., "May 11 - May 14").
  * Uses English locale to match booking page display format.
  */
-export function formatDateRange(checkin: string, checkout: string, includeYear: boolean = false): string {
+export function formatDateRange(
+  checkin: string,
+  checkout: string,
+  includeYear: boolean = false
+): string {
   const checkIn = parseISODate(checkin);
   const checkOut = parseISODate(checkout);
   const checkInMonth = checkIn.toLocaleString('en-US', { month: 'short' });
@@ -330,7 +334,6 @@ export async function clearBrowserData(page: Page): Promise<void> {
   // Clear session storage
   await page.evaluate(() => sessionStorage.clear());
 }
-
 
 /**
  * Get authentication token from storage

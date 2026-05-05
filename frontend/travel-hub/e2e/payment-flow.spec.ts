@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { expect, test } from '@playwright/test';
 
 import {
@@ -11,13 +12,10 @@ import {
 import { BookingPage } from './pages/BookingPage';
 import { HotelDetailsPage } from './pages/HotelDetailsPage';
 import { LoginPage } from './pages/LoginPage';
+import { PaymentConfirmationPage } from './pages/PaymentConfirmationPage';
 import { SearchPage } from './pages/SearchPage';
 import { AdditionalGuest, CreditCardInfo, OwnerInfo } from './pages/types';
 import { calculateNights, formatDateRange } from './utils/testHelpers';
-
-import { faker } from '@faker-js/faker';
-import { PaymentConfirmationPage } from './pages/PaymentConfirmationPage';
-
 
 /**
  * E2E Test Suite: Complete Payment Flow
@@ -141,19 +139,24 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
 
     expect(bookingSummary.room).toBe(DEFAULT_ROOM_NAME);
     expect(bookingSummary.dates?.toLocaleLowerCase()).toBe('📅 ' + formattedDates.toLowerCase());
-    expect(bookingSummary.guests_nights?.toLocaleLowerCase()).toBe((number_of_nights + ' nights • ' + DEFAULT_GUESTS_COUNT + ' guests').toLowerCase());
+    expect(bookingSummary.guests_nights?.toLocaleLowerCase()).toBe(
+      (number_of_nights + ' nights • ' + DEFAULT_GUESTS_COUNT + ' guests').toLowerCase()
+    );
 
     const ownerInfo: OwnerInfo = generateBookingOwnerInfo();
 
-    const additionalGuests: AdditionalGuest[] = Array.from({ length: ADDITIONAL_GUESTS_COUNT }, (_, i) => ({
-      id: i.toString(),
-      firstName: generateGuestInfo().firstName,
-      lastName: generateGuestInfo().lastName,
-    }));
+    const additionalGuests: AdditionalGuest[] = Array.from(
+      { length: ADDITIONAL_GUESTS_COUNT },
+      (_, i) => ({
+        id: i.toString(),
+        firstName: generateGuestInfo().firstName,
+        lastName: generateGuestInfo().lastName,
+      })
+    );
 
     const creditCardInfo: CreditCardInfo = {
       number: paymentInfo.cardNumber,
-      expiry: paymentInfo.expiryDate ,
+      expiry: paymentInfo.expiryDate,
       cvv: paymentInfo.cvv,
       name: paymentInfo.cardholderName,
     };
@@ -179,7 +182,9 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     expect(confirmationSummary.propertyName).toBe(destination.property);
 
     // Verify dates (check-in text contains the formatted date)
-    expect(confirmationSummary.checkinDate?.toLocaleLowerCase()).toContain(formatDateRange(dates.checkIn, dates.checkOut, true).toLowerCase());
+    expect(confirmationSummary.checkinDate?.toLocaleLowerCase()).toContain(
+      formatDateRange(dates.checkIn, dates.checkOut, true).toLowerCase()
+    );
 
     // Verify room name
     expect(confirmationSummary.roomName).toBe(DEFAULT_ROOM_NAME);
