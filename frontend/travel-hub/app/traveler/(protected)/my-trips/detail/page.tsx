@@ -50,9 +50,7 @@ function BookingDetailContent() {
     try {
       // CART → abandon (no refund); CONFIRMED → cancel (policy-gated, async refund).
       const updated =
-        detail.status === 'CART'
-          ? await abandonCart(detail.id)
-          : await cancelBooking(detail.id);
+        detail.status === 'CART' ? await abandonCart(detail.id) : await cancelBooking(detail.id);
       setDetail(updated as BookingDetail);
       setSnackbar({
         open: true,
