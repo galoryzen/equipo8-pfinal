@@ -43,7 +43,6 @@ export default function AmenityFilter({ amenities, selected, onChange }: Amenity
               <Checkbox
                 checked={selected.includes(a.code)}
                 onChange={() => handleToggle(a.code)}
-                inputProps={{ 'data-testid': `traveler-amenity-${a.code}` }}
                 sx={{
                   '&.Mui-checked': { color: 'primary.main' },
                 }}
