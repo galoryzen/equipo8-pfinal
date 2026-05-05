@@ -55,7 +55,13 @@
     "taxes": "Impuestos",
     "serviceFee": "Tarifa de servicio",
     "totalDue": "Total a pagar",
-    "nightlyBreakdown": "Detalle por noche"
+    "nightlyBreakdown": "Detalle por noche",
+    "cancelBooking": "Cancelar reserva",
+    "cancelBookingHint": "Confirmada: aplica la política. Carrito: abandona la reserva temporal (sin validación de política).",
+    "cancelSuccess": "Cancelación procesada.",
+    "cancelFailed": "No se pudo cancelar. Intenta de nuevo.",
+    "cancellationPolicyApplied": "Política de cancelación aplicada: {{type}}",
+    "cancellationPolicyHoursLimit": " · límite de {{hours}} h"
   },
   "recommended": {
     "title": "Recomendado para ti",

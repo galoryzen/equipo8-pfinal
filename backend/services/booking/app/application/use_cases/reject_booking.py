@@ -53,6 +53,8 @@ class RejectBookingUseCase:
                     booking_id=booking.id,
                     user_id=booking.user_id,
                     reason=reason,
+                    # Hotel rejection always refunds 100% regardless of the booking's policy.
+                    refund_percent=100,
                 ).model_dump(mode="json"),
             )
         )

@@ -4,7 +4,6 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from contracts.events.base import DomainEventEnvelope
 from contracts.events.booking import BOOKING_REJECTED
 
@@ -16,15 +15,18 @@ from app.domain.models import Payment, PaymentIntentStatus, PaymentTransactionSt
 from tests.conftest import make_payment_intent
 
 
-def _envelope(booking_id: uuid.UUID) -> DomainEventEnvelope:
-    return DomainEventEnvelope(
-        event_type=BOOKING_REJECTED,
-        payload={
-            "booking_id": str(booking_id),
-            "user_id": str(uuid.uuid4()),
-            "reason": "overbooked",
-        },
-    )
+def _envelope(
+    booking_id: uuid.UUID, *, include_refund_percent: bool = True
+) -> DomainEventEnvelope:
+    payload: dict = {
+        "booking_id": str(booking_id),
+        "user_id": str(uuid.uuid4()),
+        "reason": "overbooked",
+    }
+    if include_refund_percent:
+        # Booking service publishes 100 explicitly on rejection; mirror that here.
+        payload["refund_percent"] = 100
+    return DomainEventEnvelope(event_type=BOOKING_REJECTED, payload=payload)
 
 
 def _payment(intent_id: uuid.UUID, amount: Decimal = Decimal("150.00")) -> Payment:
@@ -56,6 +58,7 @@ async def test_refund_happy_path_creates_row_and_calls_gateway():
     payment = _payment(intent.id, Decimal("150.00"))
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock(return_value=payment)
     repo.find_refund_by_payment_id = AsyncMock(return_value=None)
@@ -81,6 +84,7 @@ async def test_refund_happy_path_creates_row_and_calls_gateway():
 @pytest.mark.asyncio
 async def test_refund_noop_when_no_intent_for_booking():
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=None)
     repo.add_refund = AsyncMock()
 
@@ -104,6 +108,7 @@ async def test_refund_noop_when_intent_not_succeeded(non_success_status):
     intent = make_payment_intent(booking_id=booking_id, status=non_success_status)
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock()
     repo.add_refund = AsyncMock()
@@ -122,6 +127,35 @@ async def test_refund_noop_when_intent_not_succeeded(non_success_status):
 @pytest.mark.asyncio
 async def test_refund_idempotent_when_refund_row_already_exists():
     booking_id = uuid.uuid4()
+    payment = _payment(uuid.uuid4())
+    existing_refund = Refund(
+        id=uuid.uuid4(),
+        payment_id=payment.id,
+        amount=payment.authorized_amount,
+        status="SUCCEEDED",
+        reason="hotel_rejected",
+        created_at=datetime.now(UTC).replace(tzinfo=None),
+    )
+
+    repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=existing_refund)
+    repo.add_refund = AsyncMock()
+
+    gateway = MagicMock()
+    gateway.refund_payment = MagicMock()
+
+    uc = RefundOnBookingRejectedUseCase(repo, gateway)
+    await uc.execute(_envelope(booking_id))
+
+    gateway.refund_payment.assert_not_called()
+    repo.add_refund.assert_not_awaited()
+    repo.get_intent_by_booking_id.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_refund_idempotent_when_refund_exists_by_payment_id_only():
+    """If booking-level lookup misses but payment already has a refund row, skip."""
+    booking_id = uuid.uuid4()
     intent = make_payment_intent(booking_id=booking_id, status=PaymentIntentStatus.SUCCEEDED)
     payment = _payment(intent.id)
     existing_refund = Refund(
@@ -134,6 +168,7 @@ async def test_refund_idempotent_when_refund_row_already_exists():
     )
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock(return_value=payment)
     repo.find_refund_by_payment_id = AsyncMock(return_value=existing_refund)
@@ -156,6 +191,7 @@ async def test_refund_noop_when_payment_row_missing_for_succeeded_intent():
     intent = make_payment_intent(booking_id=booking_id, status=PaymentIntentStatus.SUCCEEDED)
 
     repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
     repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
     repo.get_payment_by_intent_id = AsyncMock(return_value=None)
     repo.add_refund = AsyncMock()
@@ -168,3 +204,65 @@ async def test_refund_noop_when_payment_row_missing_for_succeeded_intent():
 
     gateway.refund_payment.assert_not_called()
     repo.add_refund.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_refund_full_100_percent_even_for_partial_policy_booking():
+    """Hotel rejection always refunds 100% — the booking's policy is irrelevant."""
+    booking_id = uuid.uuid4()
+    intent = make_payment_intent(
+        booking_id=booking_id,
+        status=PaymentIntentStatus.SUCCEEDED,
+        amount=Decimal("360.00"),
+    )
+    payment = _payment(intent.id, Decimal("360.00"))
+
+    repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
+    repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
+    repo.get_payment_by_intent_id = AsyncMock(return_value=payment)
+    repo.find_refund_by_payment_id = AsyncMock(return_value=None)
+    repo.add_refund = AsyncMock()
+
+    gateway = MagicMock()
+    gateway.refund_payment = MagicMock(
+        return_value=RefundOutcome(succeeded=True, reference="mock_refund_full")
+    )
+
+    uc = RefundOnBookingRejectedUseCase(repo, gateway)
+    await uc.execute(_envelope(booking_id))
+
+    gateway.refund_payment.assert_called_once_with(payment.id, Decimal("360.00"))
+    refund: Refund = repo.add_refund.await_args.args[0]
+    assert refund.amount == Decimal("360.00")
+
+
+@pytest.mark.asyncio
+async def test_refund_legacy_event_without_refund_percent_defaults_to_100():
+    """Backwards-compat: events queued before the field was added still refund 100%."""
+    booking_id = uuid.uuid4()
+    intent = make_payment_intent(
+        booking_id=booking_id,
+        status=PaymentIntentStatus.SUCCEEDED,
+        amount=Decimal("90.00"),
+    )
+    payment = _payment(intent.id, Decimal("90.00"))
+
+    repo = AsyncMock()
+    repo.find_refund_by_booking_id = AsyncMock(return_value=None)
+    repo.get_intent_by_booking_id = AsyncMock(return_value=intent)
+    repo.get_payment_by_intent_id = AsyncMock(return_value=payment)
+    repo.find_refund_by_payment_id = AsyncMock(return_value=None)
+    repo.add_refund = AsyncMock()
+
+    gateway = MagicMock()
+    gateway.refund_payment = MagicMock(
+        return_value=RefundOutcome(succeeded=True, reference="mock_refund_legacy")
+    )
+
+    uc = RefundOnBookingRejectedUseCase(repo, gateway)
+    await uc.execute(_envelope(booking_id, include_refund_percent=False))
+
+    gateway.refund_payment.assert_called_once_with(payment.id, Decimal("90.00"))
+    refund: Refund = repo.add_refund.await_args.args[0]
+    assert refund.amount == Decimal("90.00")

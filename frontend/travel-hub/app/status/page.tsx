@@ -24,10 +24,12 @@ export default function LandingPage() {
   );
 
   useEffect(() => {
+    let cancelled = false;
     SERVICES.forEach((svc, i) => {
       fetch(`${API_URL}/${svc.path}/health`)
         .then((res) => res.json())
         .then((data) => {
+          if (cancelled) return;
           setServices((prev) => {
             const next = [...prev];
             next[i] = { name: svc.name, status: 'ok', detail: JSON.stringify(data) };
@@ -35,6 +37,7 @@ export default function LandingPage() {
           });
         })
         .catch((err) => {
+          if (cancelled) return;
           setServices((prev) => {
             const next = [...prev];
             next[i] = { name: svc.name, status: 'error', detail: String(err) };
@@ -42,6 +45,9 @@ export default function LandingPage() {
           });
         });
     });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

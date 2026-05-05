@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -15,31 +16,37 @@ from app.schemas.booking import BookingDetailOut
 logger = logging.getLogger(__name__)
 
 
-class CancelCartBookingUseCase:
+class AbandonCartBookingUseCase:
     """Abandon a CART booking and release its inventory hold.
 
-    State transition (CART -> EXPIRED) is persisted first; the Catalog release
-    is attempted inline as a best-effort to free inventory immediately. If the
-    release fails, the reconcile job picks it up later. This means the user
-    never sees a 503 because Catalog is temporarily unavailable.
+    Only valid for CART status; any other state raises ``InvalidBookingStateError``.
+    Transitions to EXPIRED (not CANCELLED) — abandoned carts have no payment to refund,
+    so no ``BookingCancelled`` event is emitted.
 
-    EXPIRED (not CANCELLED) is the correct terminal for an abandoned cart —
-    CANCELLED is reserved for post-confirmation cancellations that require a
-    refund flow (not implemented in MVP).
+    Inventory release is best-effort inline; if Catalog is unavailable, the reconcile
+    job picks it up later. The user never sees a 503 from a Catalog outage.
     """
 
-    def __init__(self, repo: BookingRepository, catalog: CatalogInventoryPort):
+    def __init__(
+        self,
+        repo: BookingRepository,
+        catalog: CatalogInventoryPort,
+        clock: Callable[[], datetime] | None = None,
+    ):
         self._repo = repo
         self._catalog = catalog
+        self._now = clock or (lambda: datetime.now(UTC).replace(tzinfo=None))
 
     async def execute(self, booking_id: UUID, user_id: UUID) -> BookingDetailOut:
         booking = await self._repo.get_by_id_for_user(booking_id, user_id)
         if booking is None:
             raise BookingNotFoundError()
         if booking.status != BookingStatus.CART:
-            raise InvalidBookingStateError(f"Cannot cancel booking in state {booking.status.value}")
+            raise InvalidBookingStateError(
+                f"Cannot abandon cart in state {booking.status.value}"
+            )
 
-        now = datetime.now(UTC).replace(tzinfo=None)
+        now = self._now()
         booking.status = BookingStatus.EXPIRED
         booking.inventory_released = False
         booking.updated_at = now
@@ -61,11 +68,11 @@ class CancelCartBookingUseCase:
                 checkout=booking.checkout,
             )
             booking.inventory_released = True
-            booking.updated_at = datetime.now(UTC).replace(tzinfo=None)
+            booking.updated_at = self._now()
             await self._repo.save(booking)
         except CatalogUnavailableError:
             logger.warning(
-                "Inline release failed for booking %s on cancel — reconciler will retry",
+                "Inline release failed for cart %s on abandon — reconciler will retry",
                 booking.id,
             )
 

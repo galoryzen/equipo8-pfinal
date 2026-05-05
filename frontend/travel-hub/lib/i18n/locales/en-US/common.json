@@ -55,7 +55,13 @@
     "taxes": "Taxes",
     "serviceFee": "Service fee",
     "totalDue": "Total due",
-    "nightlyBreakdown": "Nightly breakdown"
+    "nightlyBreakdown": "Nightly breakdown",
+    "cancelBooking": "Cancel reservation",
+    "cancelBookingHint": "Confirmed: policy applies. Cart: abandons hold (no policy check).",
+    "cancelSuccess": "Cancellation processed.",
+    "cancelFailed": "Could not cancel. Please try again.",
+    "cancellationPolicyApplied": "Cancellation policy applied: {{type}}",
+    "cancellationPolicyHoursLimit": " · {{hours}}h limit"
   },
   "recommended": {
     "title": "Recommended for You",

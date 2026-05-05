@@ -182,7 +182,9 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
         </Stack>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {[guests, roomLabel, formatBookingRef(booking.id)].filter(Boolean).join(' · ')}
+          {[guests, roomLabel, booking.guest_name, formatBookingRef(booking.id)]
+            .filter(Boolean)
+            .join(' · ')}
         </Typography>
 
         <Box sx={{ flex: 1 }} />

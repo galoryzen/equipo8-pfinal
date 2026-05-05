@@ -17,10 +17,10 @@ import {
   ActiveCartConflictError,
   InventoryUnavailableError,
   RateUnavailableError,
-  cancelCartBooking,
+  abandonCart,
   createCartBooking,
   getBookingDetail,
-  listMyBookings,
+  getMyActiveCart,
 } from '@src/services/booking-service';
 import type { CartExtras, CartSnapshot, CreateCartBookingPayload } from '@src/types/booking';
 
@@ -155,19 +155,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         await resync(cached);
         return;
       }
-      // No local snapshot — try to rescue an active cart from the server.
+      // No local snapshot — try to rescue an active cart from the server via
+      // the dedicated endpoint. Carts are excluded from listMyBookings to avoid
+      // polluting trip listings.
       try {
-        const mine = await listMyBookings();
-        const activeCart = mine.find((b) => b.status === 'CART');
-        if (activeCart) {
-          const detail = await getBookingDetail(activeCart.id);
-          if (!isTerminalStatus(detail.status)) {
-            const extras = await resolveExtrasFromCatalog(
-              detail.property_id,
-              detail.room_type_id,
-            );
-            await persistAndSetCart({ ...detail, ...extras });
-          }
+        const detail = await getMyActiveCart();
+        if (detail && !isTerminalStatus(detail.status)) {
+          const extras = await resolveExtrasFromCatalog(
+            detail.property_id,
+            detail.room_type_id,
+          );
+          await persistAndSetCart({ ...detail, ...extras });
         }
       } catch {
         // Silencioso: si algo falla, arrancamos sin cart. El 409 al crear nuevo
@@ -227,9 +225,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cancelCart = useCallback(async (): Promise<void> => {
     if (!cart) return;
     try {
-      await cancelCartBooking(cart.id);
+      await abandonCart(cart.id);
     } catch (err) {
-      // 409 means it's already non-CART on the server (e.g. expired) — still clear locally.
+      // 409 means it's already non-CART on the server (expired, or advanced past CART
+      // — e.g. a stale local snapshot pointing at a CONFIRMED booking). Either way,
+      // clear local state; the server-side guard prevents accidental refunds.
       if (!axios.isAxiosError(err) || err.response?.status !== 409) throw err;
     }
     await clearCart();
