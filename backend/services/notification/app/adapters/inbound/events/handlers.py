@@ -13,6 +13,9 @@ from app.application.use_cases.send_booking_confirmation import (
 from app.application.use_cases.send_payment_failed import (
     SendPaymentFailedEmailUseCase,
 )
+from app.application.use_cases.send_payment_succeeded import (
+    SendPaymentSucceededEmailUseCase,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +52,27 @@ def make_payment_failed_handler(
             try:
                 repo = SqlAlchemyNotificationRepository(session)
                 use_case = SendPaymentFailedEmailUseCase(
+                    repo, user_contacts, email_sender
+                )
+                await use_case.execute(envelope)
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    return handle
+
+
+def make_payment_succeeded_handler(
+    session_factory: async_sessionmaker,
+    user_contacts: UserContactClient,
+    email_sender: EmailSender,
+):
+    async def handle(envelope: DomainEventEnvelope) -> None:
+        async with session_factory() as session:
+            try:
+                repo = SqlAlchemyNotificationRepository(session)
+                use_case = SendPaymentSucceededEmailUseCase(
                     repo, user_contacts, email_sender
                 )
                 await use_case.execute(envelope)

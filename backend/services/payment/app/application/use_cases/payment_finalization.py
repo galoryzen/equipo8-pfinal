@@ -72,6 +72,7 @@ class PaymentFinalizationService:
                     payment_intent_id=intent.id,
                     booking_id=intent.booking_id,
                     payment_id=charge.id,
+                    user_id=intent.user_id,
                     amount=intent.amount,
                     currency=intent.currency_code,
                 ).model_dump(mode="json"),
