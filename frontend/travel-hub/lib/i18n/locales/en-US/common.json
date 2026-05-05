@@ -279,8 +279,17 @@
     "upcoming": "Upcoming",
     "past": "Past",
     "noUpcoming": "No upcoming trips in this tab.",
-    "endOfTrips": "Fin de tus viajes {{tab}}.",
     "noPast": "No past trips yet.",
+    "noInCart": "No bookings in cart",
+    "endOfTrips": "Fin de tus viajes {{tab}}.",
+    "inCart": "In Cart",
+    "resume": "Resume",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "confirmDeleteTitle": "Delete booking hold?",
+    "confirmDeleteCart": "This will release your booking hold. This action cannot be undone.",
+    "deleteError": "Could not delete booking hold.",
+    "confirmDelete": "Delete",
     "card": {
       "locationNotAvailable": "Location not available",
       "noImage": "No image",
@@ -289,6 +298,8 @@
       "viewDetails": "View details",
       "hotelName": "Hotel"
     }
+  }
+}
   },
   "manager": {
     "pendingConfirmation": "Pending confirmation",
