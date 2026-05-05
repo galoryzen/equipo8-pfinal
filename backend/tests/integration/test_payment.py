@@ -12,7 +12,6 @@ from datetime import date, timedelta
 import asyncpg
 import httpx
 import pytest
-
 from helpers.polling import wait_for_booking_status, wait_for_db_row
 
 
@@ -195,7 +194,7 @@ async def test_payment_intent_endpoint_creates_intent(
         http_client,
         headers,
         booking_id,
-        expected={"PENDING_CONFIRMATION"},
+        expected={"CONFIRMED"},
         timeout=25.0,
     )
 
