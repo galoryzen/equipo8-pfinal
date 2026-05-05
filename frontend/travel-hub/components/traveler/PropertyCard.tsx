@@ -28,6 +28,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   return (
     <NextLink
       href={`/traveler/hotel?id=${property.id}`}
+      data-testid={`traveler-property-card-${property.id}`}
       style={{ textDecoration: 'none', display: 'block', height: '100%' }}
     >
       <Card
@@ -77,6 +78,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           >
             <Typography
               variant="subtitle1"
+              data-testid={`traveler-property-name-${property.id}`}
               sx={{
                 fontWeight: 600,
                 lineHeight: 1.3,

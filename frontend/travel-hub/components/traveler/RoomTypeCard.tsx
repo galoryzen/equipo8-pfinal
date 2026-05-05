@@ -70,6 +70,7 @@ export default function RoomTypeCard({
 
   return (
     <Box
+      data-testid={`traveler-room-card-${room.id}`}
       sx={{
         border: '1px solid',
         borderColor: borderColor(hasOwnCart, Boolean(selectedRatePlanId)),
@@ -109,7 +110,7 @@ export default function RoomTypeCard({
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1rem' }}>
-              {room.name}
+              <span data-testid={`traveler-room-name-${room.id}`}>{room.name}</span>
             </Typography>
             {hasOwnCart && (
               <Chip
@@ -181,6 +182,7 @@ export default function RoomTypeCard({
               variant="outlined"
               size="small"
               disableElevation
+              data-testid={`traveler-room-resume-${room.id}`}
               sx={{
                 borderRadius: 2,
                 textTransform: 'none',
@@ -236,6 +238,7 @@ export default function RoomTypeCard({
                       disableElevation
                       disabled={!hasDates}
                       startIcon={isSelected ? <CheckIcon sx={{ fontSize: 14 }} /> : undefined}
+                      data-testid={`traveler-room-select-${room.id}-${plan.id}`}
                       sx={{ borderRadius: 2, textTransform: 'none', px: 2 }}
                       onClick={() =>
                         onRoomSelect({

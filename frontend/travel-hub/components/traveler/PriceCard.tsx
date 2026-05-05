@@ -199,7 +199,7 @@ export default function PriceCard({
           type="date"
           size="small"
           value={checkin}
-          inputProps={{ min: today }}
+          inputProps={{ min: today, 'data-testid': 'traveler-hotel-checkin-input' }}
           onChange={(e) => handleCheckinChange(e.target.value)}
           InputLabelProps={{ shrink: true }}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
@@ -209,7 +209,7 @@ export default function PriceCard({
           type="date"
           size="small"
           value={checkout}
-          inputProps={{ min: checkin }}
+          inputProps={{ min: checkin, 'data-testid': 'traveler-hotel-checkout-input' }}
           onChange={(e) => handleCheckoutChange(e.target.value)}
           InputLabelProps={{ shrink: true }}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
@@ -223,7 +223,7 @@ export default function PriceCard({
         size="small"
         fullWidth
         value={guests}
-        inputProps={{ min: 1, max: 20 }}
+        inputProps={{ min: 1, max: 20, 'data-testid': 'traveler-hotel-guests-input' }}
         onChange={(e) => setGuests(Number(e.target.value))}
         sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
       />
@@ -235,6 +235,7 @@ export default function PriceCard({
         size="large"
         disableElevation
         disabled={authStatus === 'loading' || !canReserve}
+        data-testid="traveler-hotel-reserve-button"
         startIcon={
           authStatus === 'loading' ? (
             <CircularProgress aria-label={t('a11y.loading')} size={16} sx={{ color: 'white' }} />

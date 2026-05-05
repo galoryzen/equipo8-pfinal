@@ -159,7 +159,11 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
         <Typography variant="h6" color="error" gutterBottom>
           {error.message}
         </Typography>
-        <Button variant="outlined" onClick={() => fetchDetail(checkin, checkout)}>
+        <Button
+          variant="outlined"
+          onClick={() => fetchDetail(checkin, checkout)}
+          data-testid="traveler-hotel-retry-button"
+        >
           {t('common.tryAgain')}
         </Button>
       </Container>
@@ -172,220 +176,229 @@ export default function PropertyDetailView({ id }: PropertyDetailViewProps) {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Breadcrumb */}
-      <Breadcrumbs separator={<NavigateNextIcon fontSize="inherit" />} sx={{ mb: 2 }}>
-        <Link href="/traveler/search" underline="hover" color="text.secondary" variant="body2">
-          {detail.city.country}
-        </Link>
-        <Link href="/traveler/search" underline="hover" color="text.secondary" variant="body2">
-          {detail.city.name}
-        </Link>
-        <Typography variant="body2" color="text.primary" fontWeight={500}>
-          {detail.name}
-        </Typography>
-      </Breadcrumbs>
-
-      {/* Header row */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          mb: 2,
-          flexWrap: 'wrap',
-          gap: 1,
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h4"
-            component="h1"
-            fontWeight={700}
-            gutterBottom
-            sx={{ lineHeight: 1.2 }}
-          >
+      <Box data-testid="traveler-hotel-detail-view">
+        {/* Breadcrumb */}
+        <Breadcrumbs separator={<NavigateNextIcon fontSize="inherit" />} sx={{ mb: 2 }}>
+          <Link href="/traveler/search" underline="hover" color="text.secondary" variant="body2">
+            {detail.city.country}
+          </Link>
+          <Link href="/traveler/search" underline="hover" color="text.secondary" variant="body2">
+            {detail.city.name}
+          </Link>
+          <Typography variant="body2" color="text.primary" fontWeight={500}>
             {detail.name}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {detail.rating_avg != null ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <StarIcon sx={{ fontSize: 16, color: '#f59e0b' }} aria-hidden />
-                <Typography variant="body2" component="span" fontWeight={700}>
-                  {Number(detail.rating_avg).toFixed(1)}
-                </Typography>
-                <Typography
-                  component="span"
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ textDecoration: 'underline', textUnderlineOffset: 2 }}
-                >
-                  ({formatReviewCount(detail.review_count)})
-                </Typography>
-              </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary" component="span">
-                {t('propertyDetail.noRanking')}
-              </Typography>
-            )}
+        </Breadcrumbs>
+
+        {/* Header row */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            mb: 2,
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Box>
             <Typography
-              variant="body2"
-              color="text.secondary"
-              component="span"
-              sx={{ userSelect: 'none' }}
+              variant="h4"
+              component="h1"
+              fontWeight={700}
+              gutterBottom
+              sx={{ lineHeight: 1.2 }}
             >
-              |
+              {detail.name}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <LocationOnIcon sx={{ fontSize: 15, color: 'primary.main' }} aria-hidden />
-              <Typography variant="body2" color="text.secondary">
-                {detail.address ?? `${detail.city.name}, ${detail.city.country}`}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              {detail.rating_avg != null ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <StarIcon sx={{ fontSize: 16, color: '#f59e0b' }} aria-hidden />
+                  <Typography variant="body2" component="span" fontWeight={700}>
+                    {Number(detail.rating_avg).toFixed(1)}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textDecoration: 'underline', textUnderlineOffset: 2 }}
+                  >
+                    ({formatReviewCount(detail.review_count)})
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" component="span">
+                  {t('propertyDetail.noRanking')}
+                </Typography>
+              )}
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                component="span"
+                sx={{ userSelect: 'none' }}
+              >
+                |
               </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Image gallery */}
-      <Box sx={{ mb: 3 }}>
-        <ImageGallery images={detail.images} propertyName={detail.name} />
-      </Box>
-
-      {/* Policy chips */}
-      {(detail.default_cancellation_policy || detail.amenities.length > 0) && (
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
-          {detail.default_cancellation_policy?.type === 'FULL' && (
-            <Chip
-              icon={<CancelIcon />}
-              label={t('propertyDetail.amenities.freeCancellation')}
-              size="small"
-              sx={{ bgcolor: '#f0fdf4', color: '#166534', '& .MuiChip-icon': { color: '#16a34a' } }}
-            />
-          )}
-          {detail.amenities.some((a) => a.code.toLowerCase().includes('pool')) && (
-            <Chip
-              icon={<PoolIcon />}
-              label={t('propertyDetail.amenities.pool')}
-              size="small"
-              sx={{ bgcolor: '#eff6ff', color: '#1e40af' }}
-            />
-          )}
-          {detail.amenities.some((a) => a.code.toLowerCase().includes('breakfast')) && (
-            <Chip
-              icon={<FreeBreakfastIcon />}
-              label={t('propertyDetail.breakfast')}
-              size="small"
-              sx={{ bgcolor: '#fefce8', color: '#854d0e' }}
-            />
-          )}
-        </Box>
-      )}
-
-      {/* Two-column layout */}
-      <Grid container spacing={4}>
-        {/* Left column */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          {/* About */}
-          {detail.description && (
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                {t('propertyDetail.about')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
-                {detail.description}
-              </Typography>
-            </Box>
-          )}
-
-          <Divider sx={{ mb: 4 }} />
-
-          {/* Amenities */}
-          {detail.amenities.length > 0 && (
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                {t('propertyDetail.popularAmenities')}
-              </Typography>
-              <AmenityList amenities={detail.amenities} previewCount={6} />
-            </Box>
-          )}
-
-          {detail.amenities.length > 0 && <Divider sx={{ mb: 4 }} />}
-
-          {/* Available rooms */}
-          {detail.room_types.length > 0 && (
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                {t('propertyDetail.availableRooms')}
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {detail.room_types.map((room) => (
-                  <RoomTypeCard
-                    key={room.id}
-                    room={room}
-                    checkin={checkin}
-                    checkout={checkout}
-                    selectedRatePlanId={
-                      selectedRoom?.roomTypeId === room.id ? selectedRoom.ratePlanId : null
-                    }
-                    onRoomSelect={setSelectedRoom}
-                    activeCartBookingId={activeCartByRoomTypeId[room.id] ?? null}
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {detail.room_types.length > 0 && <Divider sx={{ mb: 4 }} />}
-
-          {/* Location placeholder */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              {t('propertyDetail.location')}
-            </Typography>
-            <Box
-              sx={{
-                height: 200,
-                bgcolor: 'grey.100',
-                borderRadius: 3,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
-                <LocationOnIcon sx={{ fontSize: 36, color: 'error.main' }} />
-                <Typography variant="body2" fontWeight={500}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <LocationOnIcon sx={{ fontSize: 15, color: 'primary.main' }} aria-hidden />
+                <Typography variant="body2" color="text.secondary">
                   {detail.address ?? `${detail.city.name}, ${detail.city.country}`}
                 </Typography>
               </Box>
             </Box>
           </Box>
+        </Box>
 
-          <Divider sx={{ mb: 4 }} />
+        {/* Image gallery */}
+        <Box sx={{ mb: 3 }}>
+          <ImageGallery images={detail.images} propertyName={detail.name} />
+        </Box>
 
-          {/* Reviews */}
-          {reviews && (
-            <Box sx={{ mb: 4 }}>
-              <ReviewSection
-                reviews={reviews}
-                ratingAvg={detail.rating_avg}
-                onLoadMore={handleLoadMoreReviews}
+        {/* Policy chips */}
+        {(detail.default_cancellation_policy || detail.amenities.length > 0) && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
+            {detail.default_cancellation_policy?.type === 'FULL' && (
+              <Chip
+                icon={<CancelIcon />}
+                label={t('propertyDetail.amenities.freeCancellation')}
+                size="small"
+                sx={{
+                  bgcolor: '#f0fdf4',
+                  color: '#166534',
+                  '& .MuiChip-icon': { color: '#16a34a' },
+                }}
               />
-            </Box>
-          )}
-        </Grid>
+            )}
+            {detail.amenities.some((a) => a.code.toLowerCase().includes('pool')) && (
+              <Chip
+                icon={<PoolIcon />}
+                label={t('propertyDetail.amenities.pool')}
+                size="small"
+                sx={{ bgcolor: '#eff6ff', color: '#1e40af' }}
+              />
+            )}
+            {detail.amenities.some((a) => a.code.toLowerCase().includes('breakfast')) && (
+              <Chip
+                icon={<FreeBreakfastIcon />}
+                label={t('propertyDetail.breakfast')}
+                size="small"
+                sx={{ bgcolor: '#fefce8', color: '#854d0e' }}
+              />
+            )}
+          </Box>
+        )}
 
-        {/* Right column — sticky price card */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <PriceCard
-            property={detail}
-            minPrice={minPrice}
-            selectedRoom={selectedRoom}
-            onDatesChange={handleDatesChange}
-          />
+        {/* Two-column layout */}
+        <Grid container spacing={4}>
+          {/* Left column */}
+          <Grid size={{ xs: 12, md: 8 }}>
+            {/* About */}
+            {detail.description && (
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  {t('propertyDetail.about')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+                  {detail.description}
+                </Typography>
+              </Box>
+            )}
+
+            <Divider sx={{ mb: 4 }} />
+
+            {/* Amenities */}
+            {detail.amenities.length > 0 && (
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  {t('propertyDetail.popularAmenities')}
+                </Typography>
+                <AmenityList amenities={detail.amenities} previewCount={6} />
+              </Box>
+            )}
+
+            {detail.amenities.length > 0 && <Divider sx={{ mb: 4 }} />}
+
+            {/* Available rooms */}
+            {detail.room_types.length > 0 && (
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  {t('propertyDetail.availableRooms')}
+                </Typography>
+                <Box
+                  data-testid="traveler-room-list"
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+                >
+                  {detail.room_types.map((room) => (
+                    <RoomTypeCard
+                      key={room.id}
+                      room={room}
+                      checkin={checkin}
+                      checkout={checkout}
+                      selectedRatePlanId={
+                        selectedRoom?.roomTypeId === room.id ? selectedRoom.ratePlanId : null
+                      }
+                      onRoomSelect={setSelectedRoom}
+                      activeCartBookingId={activeCartByRoomTypeId[room.id] ?? null}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {detail.room_types.length > 0 && <Divider sx={{ mb: 4 }} />}
+
+            {/* Location placeholder */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                {t('propertyDetail.location')}
+              </Typography>
+              <Box
+                sx={{
+                  height: 200,
+                  bgcolor: 'grey.100',
+                  borderRadius: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
+                  <LocationOnIcon sx={{ fontSize: 36, color: 'error.main' }} />
+                  <Typography variant="body2" fontWeight={500}>
+                    {detail.address ?? `${detail.city.name}, ${detail.city.country}`}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            <Divider sx={{ mb: 4 }} />
+
+            {/* Reviews */}
+            {reviews && (
+              <Box sx={{ mb: 4 }}>
+                <ReviewSection
+                  reviews={reviews}
+                  ratingAvg={detail.rating_avg}
+                  onLoadMore={handleLoadMoreReviews}
+                />
+              </Box>
+            )}
+          </Grid>
+
+          {/* Right column — sticky price card */}
+          <Grid size={{ xs: 12, md: 4 }}>
+            <PriceCard
+              property={detail}
+              minPrice={minPrice}
+              selectedRoom={selectedRoom}
+              onDatesChange={handleDatesChange}
+            />
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
     </Container>
   );
 }

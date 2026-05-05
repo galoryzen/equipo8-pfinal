@@ -215,6 +215,10 @@ export default function SearchBar({
                   {...params}
                   placeholder={t('search.searchDestination')}
                   variant="standard"
+                  inputProps={{
+                    ...params.inputProps,
+                    'data-testid': 'traveler-search-destination-input',
+                  }}
                   slotProps={{
                     input: {
                       ...params.InputProps,
@@ -251,6 +255,7 @@ export default function SearchBar({
         <Box
           ref={dateRef}
           onClick={() => setDateAnchor(dateRef.current)}
+          data-testid="traveler-search-dates-trigger"
           sx={{
             flex: 1,
             display: 'flex',
@@ -301,7 +306,12 @@ export default function SearchBar({
                 if (iso) onCheckinChange(iso);
               }}
               disablePast
-              slotProps={{ textField: { size: 'small' } }}
+              slotProps={{
+                textField: {
+                  size: 'small',
+                  inputProps: { 'data-testid': 'traveler-search-checkin-input' },
+                },
+              }}
             />
             <DatePicker
               label={t('search.checkOut')}
@@ -311,7 +321,12 @@ export default function SearchBar({
                 if (iso) onCheckoutChange(iso);
               }}
               minDate={toDate(checkin)}
-              slotProps={{ textField: { size: 'small' } }}
+              slotProps={{
+                textField: {
+                  size: 'small',
+                  inputProps: { 'data-testid': 'traveler-search-checkout-input' },
+                },
+              }}
             />
           </Box>
         </Popover>
@@ -325,6 +340,7 @@ export default function SearchBar({
             setGuestInput(String(guests));
             setGuestAnchor(guestRef.current);
           }}
+          data-testid="traveler-search-guests-trigger"
           sx={{
             flex: 0.7,
             display: 'flex',
@@ -365,6 +381,7 @@ export default function SearchBar({
             onBlur={commitGuests}
             placeholder="1"
             size="small"
+            inputProps={{ 'data-testid': 'traveler-search-guests-input' }}
             sx={{ minWidth: 120 }}
             helperText={t('search.guestsMinHelper')}
           />
@@ -377,6 +394,7 @@ export default function SearchBar({
             onClick={handleSearch}
             disabled={!selected}
             startIcon={<SearchIcon />}
+            data-testid="traveler-search-submit"
             sx={{
               bgcolor: 'primary.main',
               borderRadius: '999px',
@@ -398,6 +416,7 @@ export default function SearchBar({
             onClick={handleSearch}
             disabled={!selected}
             aria-label={t('search.searchButton')}
+            data-testid="traveler-search-submit-icon"
             sx={{
               bgcolor: 'primary.main',
               color: 'white',

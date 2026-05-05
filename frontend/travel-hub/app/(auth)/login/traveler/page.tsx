@@ -212,11 +212,13 @@ function TravelerLoginForm() {
                 Email address
               </Typography>
               <TextField
+                data-testid="traveler-login-email-field"
                 id="email"
                 type="email"
                 placeholder="name@example.com"
                 autoComplete="email"
                 fullWidth
+                inputProps={{ 'data-testid': 'traveler-login-email' }}
                 value={values.email}
                 onChange={handleChange('email')}
                 onBlur={handleBlur('email')}
@@ -256,6 +258,7 @@ function TravelerLoginForm() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 fullWidth
+                inputProps={{ 'data-testid': 'traveler-login-password' }}
                 value={values.password}
                 onChange={handleChange('password')}
                 onBlur={handleBlur('password')}
@@ -276,6 +279,7 @@ function TravelerLoginForm() {
                           edge="end"
                           size="small"
                           tabIndex={-1}
+                          data-testid="traveler-login-password-toggle"
                           sx={{ color: 'text.secondary', mr: '-4px' }}
                         >
                           {showPassword ? (
@@ -298,6 +302,7 @@ function TravelerLoginForm() {
               variant="contained"
               fullWidth
               disabled={loading || formIsInvalid}
+              data-testid="traveler-login-submit"
               endIcon={!loading && <ArrowForwardIcon sx={{ fontSize: '16px !important' }} />}
               sx={{
                 height: 52,
