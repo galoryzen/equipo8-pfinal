@@ -6,8 +6,12 @@ from uuid import uuid4
 import pytest
 from contracts.events.base import DomainEventEnvelope
 from contracts.events.booking import BOOKING_CONFIRMED, BookingConfirmedPayload
+from contracts.events.payment import PAYMENT_SUCCEEDED, PaymentSucceededPayload
 
-from app.adapters.inbound.events.handlers import make_booking_confirmed_handler
+from app.adapters.inbound.events.handlers import (
+    make_booking_confirmed_handler,
+    make_payment_succeeded_handler,
+)
 from app.application.ports.outbound.property_client import PropertySummary
 from app.application.ports.outbound.user_contact_client import UserContact
 
@@ -75,6 +79,52 @@ async def test_handler_rolls_back_and_reraises_on_failure():
     handler = make_booking_confirmed_handler(factory, contacts, properties, email_sender)
     with pytest.raises(RuntimeError, match="auth unreachable"):
         await handler(_envelope())
+
+    session.rollback.assert_awaited_once()
+    session.commit.assert_not_awaited()
+
+
+def _payment_succeeded_envelope():
+    payload = PaymentSucceededPayload(
+        payment_intent_id=uuid4(),
+        booking_id=uuid4(),
+        payment_id=uuid4(),
+        user_id=uuid4(),
+        amount=Decimal("150.00"),
+        currency="USD",
+    )
+    return DomainEventEnvelope(event_type=PAYMENT_SUCCEEDED, payload=payload.model_dump(mode="json"))
+
+
+@pytest.mark.asyncio
+async def test_payment_succeeded_handler_commits_on_success():
+    session = AsyncMock()
+    session.add = MagicMock()
+    factory = _session_factory_with(session)
+    contacts = AsyncMock()
+    contacts.get_contact.return_value = UserContact(id=uuid4(), full_name="Carlos", email="carlos@test.com")
+    email_sender = AsyncMock()
+    email_sender.send.return_value = "msg-ok"
+
+    handler = make_payment_succeeded_handler(factory, contacts, email_sender)
+    await handler(_payment_succeeded_envelope())
+
+    session.add.assert_called_once()
+    session.commit.assert_awaited_once()
+    session.rollback.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_payment_succeeded_handler_rolls_back_on_failure():
+    session = AsyncMock()
+    factory = _session_factory_with(session)
+    contacts = AsyncMock()
+    contacts.get_contact.side_effect = RuntimeError("auth unreachable")
+    email_sender = AsyncMock()
+
+    handler = make_payment_succeeded_handler(factory, contacts, email_sender)
+    with pytest.raises(RuntimeError, match="auth unreachable"):
+        await handler(_payment_succeeded_envelope())
 
     session.rollback.assert_awaited_once()
     session.commit.assert_not_awaited()
