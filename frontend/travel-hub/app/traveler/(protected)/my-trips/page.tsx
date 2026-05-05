@@ -29,10 +29,7 @@ export default function MyTripsPage() {
     const nonCart = bookings.filter((b) => b.status !== 'CART');
     return splitUpcomingPast(nonCart);
   }, [bookings]);
-  const inCart = useMemo(
-    () => bookings.filter((b) => b.status === 'CART'),
-    [bookings]
-  );
+  const inCart = useMemo(() => bookings.filter((b) => b.status === 'CART'), [bookings]);
   const shown = tab === 0 ? upcoming : tab === 1 ? past : inCart;
 
   return (
@@ -137,18 +134,18 @@ export default function MyTripsPage() {
                   : t('myTrips.noInCart', 'No bookings in cart')}
             </Typography>
           ) : (
-            <BookingList
-              bookings={shown}
-              propertyById={propertyById}
-              onCartAction={reload}
-            />
+            <BookingList bookings={shown} propertyById={propertyById} onCartAction={reload} />
           )}
 
           {bookings.length > 0 && (
             <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 6 }}>
               {t('myTrips.endOfTrips', {
                 tab:
-                  tab === 0 ? t('myTrips.upcoming') : tab === 1 ? t('myTrips.past') : t('myTrips.inCart', 'In Cart'),
+                  tab === 0
+                    ? t('myTrips.upcoming')
+                    : tab === 1
+                      ? t('myTrips.past')
+                      : t('myTrips.inCart', 'In Cart'),
               })}
             </Typography>
           )}

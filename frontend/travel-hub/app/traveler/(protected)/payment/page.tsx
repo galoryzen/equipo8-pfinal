@@ -12,8 +12,10 @@ import {
   getBookingDetail,
   saveBookingGuests,
 } from '@/app/lib/api/booking';
+import { COUNTRY_CODES } from '@/app/lib/constant';
 import type { CartBooking } from '@/app/lib/types/booking';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
+import { FormControl, MenuItem, Select } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import Backdrop from '@mui/material/Backdrop';
 import Box from '@mui/material/Box';
@@ -36,8 +38,6 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { FormControl, MenuItem, Select } from '@mui/material';
-import { COUNTRY_CODES } from '@/app/lib/constant';
 
 const LS_PREFIX = 'travelhub_cart_';
 
@@ -1242,11 +1242,11 @@ function PaymentPageContent() {
                   position: 'relative',
                   '&::after': imageUrl
                     ? {
-                      content: '""',
-                      position: 'absolute',
-                      inset: 0,
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)',
-                    }
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)',
+                      }
                     : {},
                 }}
               >

@@ -108,35 +108,18 @@
     },
     "community": {
       "title": "Comunidad",
-      "links": [
-        "Blog de TravelHub",
-        "Foro de la comunidad",
-        "Guías de viaje"
-      ]
+      "links": ["Blog de TravelHub", "Foro de la comunidad", "Guías de viaje"]
     },
     "hosting": {
       "title": "Anfitrión",
-      "links": [
-        "Publica tu propiedad",
-        "Recursos para anfitriones",
-        "Foro de la comunidad"
-      ]
+      "links": ["Publica tu propiedad", "Recursos para anfitriones", "Foro de la comunidad"]
     },
     "about": {
       "title": "Acerca de",
-      "links": [
-        "Sala de prensa",
-        "Novedades",
-        "Empleo",
-        "Inversionistas"
-      ]
+      "links": ["Sala de prensa", "Novedades", "Empleo", "Inversionistas"]
     },
     "copyright": "© 2026 TravelHub, Inc.",
-    "legal": [
-      "Privacidad",
-      "Términos",
-      "Mapa del sitio"
-    ]
+    "legal": ["Privacidad", "Términos", "Mapa del sitio"]
   },
   "priceRange": {
     "title": "Rango de precio",

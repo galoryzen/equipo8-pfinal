@@ -5,7 +5,12 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import { abandonCart, cancelBooking, getBookingDetail, getRefundByBookingId } from '@/app/lib/api/booking';
+import {
+  abandonCart,
+  cancelBooking,
+  getBookingDetail,
+  getRefundByBookingId,
+} from '@/app/lib/api/booking';
 import { formatBookingRef, formatTripDate } from '@/app/lib/myTrips/formatting';
 import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
 import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
@@ -192,13 +197,13 @@ function BookingDetailContent() {
             {formatTripDate(detail.checkout)}
           </Typography>
         </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary" fontWeight={600}>
-              {t('tripDetail.total')}
-            </Typography>
-            <Typography variant="body1" fontWeight={600}>
-              {totalPaid.toFixed(2)} {detail.currency_code}
-            </Typography>
+        <Box>
+          <Typography variant="caption" color="text.secondary" fontWeight={600}>
+            {t('tripDetail.total')}
+          </Typography>
+          <Typography variant="body1" fontWeight={600}>
+            {totalPaid.toFixed(2)} {detail.currency_code}
+          </Typography>
 
           {hasCostDetails && (
             <Accordion
@@ -302,9 +307,7 @@ function BookingDetailContent() {
                     {totalPaid.toFixed(2)} {detail.currency_code}
                   </Typography>
                 </Box>
-                <Tooltip
-                  title={t('tripDetail.refundTooltip')}
-                >
+                <Tooltip title={t('tripDetail.refundTooltip')}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
                     <Typography variant="body2" color="success.dark" sx={{ cursor: 'help' }}>
                       {t('tripDetail.refundIssued')}

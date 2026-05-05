@@ -2,7 +2,7 @@
 
 import NextLink from 'next/link';
 
-import type { RoomTypeOut, PropertyImageOut } from '@/app/lib/types/catalog';
+import type { PropertyImageOut, RoomTypeOut } from '@/app/lib/types/catalog';
 import { tokens as th } from '@/lib/theme/tokens';
 import BedIcon from '@mui/icons-material/Bed';
 import CheckIcon from '@mui/icons-material/Check';

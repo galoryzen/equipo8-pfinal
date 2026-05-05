@@ -96,47 +96,25 @@
   "footer": {
     "support": {
       "title": "Support",
-      "links": [
-        "Help Center",
-        "Safety information",
-        "Cancellation options",
-        "Report a concern"
-      ]
+      "links": ["Help Center", "Safety information", "Cancellation options", "Report a concern"]
     },
     "social": {
       "facebook": "Facebook"
     },
     "community": {
       "title": "Community",
-      "links": [
-        "TravelHub Blog",
-        "Community Forum",
-        "Travel Guides"
-      ]
+      "links": ["TravelHub Blog", "Community Forum", "Travel Guides"]
     },
     "hosting": {
       "title": "Hosting",
-      "links": [
-        "List your property",
-        "Host resources",
-        "Community forum"
-      ]
+      "links": ["List your property", "Host resources", "Community forum"]
     },
     "about": {
       "title": "About",
-      "links": [
-        "Newsroom",
-        "Learn about new features",
-        "Careers",
-        "Investors"
-      ]
+      "links": ["Newsroom", "Learn about new features", "Careers", "Investors"]
     },
     "copyright": "© 2026 TravelHub, Inc.",
-    "legal": [
-      "Privacy",
-      "Terms",
-      "Sitemap"
-    ]
+    "legal": ["Privacy", "Terms", "Sitemap"]
   },
   "priceRange": {
     "title": "Price range",

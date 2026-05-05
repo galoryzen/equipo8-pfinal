@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { abandonCart } from '@/app/lib/api/booking';
 import {
   estimateGuestLabel,
   formatBookingRef,
@@ -11,7 +14,6 @@ import {
   primaryPropertyId,
 } from '@/app/lib/myTrips/formatting';
 import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
-import { abandonCart } from '@/app/lib/api/booking';
 import type { BookingListItem } from '@/app/lib/types/booking';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
@@ -32,7 +34,6 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
 
 interface BookingCardProps {
   booking: BookingListItem;
@@ -280,7 +281,10 @@ export default function BookingCard({ booking, property, onCartAction }: Booking
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {t('myTrips.confirmDeleteCart', 'This will release your booking hold. This action cannot be undone.')}
+            {t(
+              'myTrips.confirmDeleteCart',
+              'This will release your booking hold. This action cannot be undone.'
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>

@@ -201,10 +201,9 @@ export async function checkoutBooking(
 }
 
 export async function getRefundByBookingId(bookingId: string): Promise<RefundDetail | null> {
-  const res = await fetch(
-    `${API_URL}/api/v1/payment/by-booking/${encodeURIComponent(bookingId)}`,
-    { credentials: 'include' }
-  );
+  const res = await fetch(`${API_URL}/api/v1/payment/by-booking/${encodeURIComponent(bookingId)}`, {
+    credentials: 'include',
+  });
   if (!res.ok) return null;
   return (await res.json()) ?? null;
 }

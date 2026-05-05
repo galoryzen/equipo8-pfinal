@@ -6,6 +6,7 @@ import Image from 'next/image';
 import NextLink from 'next/link';
 
 import { registerUser } from '@/app/lib/api/auth';
+import { COUNTRY_CODES } from '@/app/lib/constant';
 import { tokens as th } from '@/lib/theme/tokens';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -24,7 +25,6 @@ import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { COUNTRY_CODES } from '@/app/lib/constant';
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
@@ -54,7 +54,6 @@ function LogoIcon() {
     </svg>
   );
 }
-
 
 // Mirrors the backend Pydantic RegisterRequest validators
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
