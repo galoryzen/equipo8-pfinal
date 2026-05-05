@@ -1,6 +1,7 @@
 import {
   CartConflictError,
-  cancelCartBooking,
+  abandonCart,
+  cancelBooking,
   checkoutBooking,
   confirmBooking,
   createCartBooking,
@@ -82,7 +83,7 @@ describe('booking API uncovered flows', () => {
     expect(rejectOpts.credentials).toBe('include');
   });
 
-  it('cancelCartBooking sends POST with encoded id', async () => {
+  it('cancelBooking sends POST with encoded id', async () => {
     const detail: BookingDetail = {
       id: 'booking-id',
       status: 'CANCELLED',
@@ -106,11 +107,44 @@ describe('booking API uncovered flows', () => {
       json: () => Promise.resolve(detail),
     } as Response);
 
-    const result = await cancelCartBooking('booking/id');
+    const result = await cancelBooking('booking/id');
     const [url, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
 
     expect(result).toEqual(detail);
     expect(url).toContain('/api/v1/booking/bookings/booking%2Fid/cancel');
+    expect(options.method).toBe('POST');
+    expect(options.credentials).toBe('include');
+  });
+
+  it('abandonCart sends POST to /abandon-cart with encoded id', async () => {
+    const detail: BookingDetail = {
+      id: 'booking-id',
+      status: 'EXPIRED',
+      checkin: '2026-06-01',
+      checkout: '2026-06-02',
+      hold_expires_at: null,
+      total_amount: '0',
+      currency_code: 'USD',
+      property_id: 'p1',
+      room_type_id: 'r1',
+      rate_plan_id: 'rp1',
+      unit_price: '0',
+      policy_type_applied: 'STANDARD',
+      policy_hours_limit_applied: 24,
+      policy_refund_percent_applied: 100,
+      created_at: '2026-01-01',
+      updated_at: '2026-01-01',
+    };
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(detail),
+    } as Response);
+
+    const result = await abandonCart('booking/id');
+    const [url, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+
+    expect(result).toEqual(detail);
+    expect(url).toContain('/api/v1/booking/bookings/booking%2Fid/abandon-cart');
     expect(options.method).toBe('POST');
     expect(options.credentials).toBe('include');
   });

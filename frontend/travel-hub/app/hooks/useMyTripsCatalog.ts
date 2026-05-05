@@ -45,7 +45,7 @@ export function useMyTripsCatalog(): UseMyTripsCatalogState {
       setLoading(true);
       setError(null);
       try {
-        const { items: list } = await getMyBookings();
+        const { items: list } = await getMyBookings(1, 100);
         if (cancelled) return;
         setBookings(list);
         const ids = uniquePropertyIds(list);

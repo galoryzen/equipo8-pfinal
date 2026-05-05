@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   CartConflictError,
-  cancelCartBooking,
+  abandonCart,
   checkoutBooking,
   createCartBooking,
   getBookingDetail,
@@ -389,7 +389,7 @@ function PaymentPageContent() {
           setConflictBookingId(e.existingBookingId);
           // If another cart exists, attempt to replace it automatically.
           try {
-            await cancelCartBooking(e.existingBookingId);
+            await abandonCart(e.existingBookingId);
           } catch {
             // Best effort: retry create anyway in case the server already expired it.
           }

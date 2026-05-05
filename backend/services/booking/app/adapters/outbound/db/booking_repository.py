@@ -14,6 +14,8 @@ _ACTIVE_STATUSES = (
     BookingStatus.PENDING_CONFIRMATION,
 )
 _PAST_TERMINAL_STATUSES = (BookingStatus.CANCELLED, BookingStatus.REJECTED)
+# Trip listings hide CART (use GET /bookings/my-cart for in-progress rescue) and
+# EXPIRED (terminal-but-not-meaningful holds the user never paid for).
 _EXCLUDED_FROM_ALL = (BookingStatus.CART, BookingStatus.EXPIRED)
 
 class SqlAlchemyBookingRepository(BookingRepository):

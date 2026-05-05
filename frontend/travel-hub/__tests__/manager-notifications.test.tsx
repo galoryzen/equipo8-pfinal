@@ -28,7 +28,7 @@ function makePaginated(source: typeof mockBookings = mockBookings) {
     checkin: b.checkin,
     checkout: b.checkout,
     nights: b.nights,
-    guests: b.guests,
+    guests_count: b.guests,
     total_amount: b.totalAmount,
     currency_code: b.currency,
     created_at: b.createdAt,
