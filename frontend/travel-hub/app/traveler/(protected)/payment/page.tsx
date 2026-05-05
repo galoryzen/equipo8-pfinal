@@ -192,7 +192,6 @@ function PaymentPageContent() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
-  const [conflictBookingId, setConflictBookingId] = useState<string | null>(null);
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [expired, setExpired] = useState(false);
   const [isResumed, setIsResumed] = useState(false);
