@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   CartConflictError,
-  abandonCart,
   checkoutBooking,
   createCartBooking,
   getBookingDetail,
@@ -406,14 +405,26 @@ function PaymentPageContent() {
           newBooking = await createCartBooking(createPayload);
         } catch (e) {
           if (!(e instanceof CartConflictError)) throw e;
-          setConflictBookingId(e.existingBookingId);
-          // If another cart exists, attempt to replace it automatically.
+          // Conflict: auto-resume the existing booking instead of showing an error
           try {
-            await abandonCart(e.existingBookingId);
+            const existing = await getBookingDetail(e.existingBookingId);
+            if (!mountedRef.current) return;
+            localStorage.setItem(key, existing.id);
+            setIsResumed(true);
+            handleBookingResolved(
+              existing.id,
+              existing.hold_expires_at ?? '',
+              existing.status,
+              pricingFromBooking(existing)
+            );
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('booking_id', existing.id);
+            router.replace(`/traveler/payment?${params.toString()}`);
+            return;
           } catch {
-            // Best effort: retry create anyway in case the server already expired it.
+            // If we can't resume the existing booking, fall through to error
+            throw new Error('Could not resume existing reservation.');
           }
-          newBooking = await createCartBooking(createPayload);
         }
 
         if (!mountedRef.current) return;
@@ -430,9 +441,6 @@ function PaymentPageContent() {
         router.replace(`/traveler/payment?${params.toString()}`);
       } catch (e) {
         if (mountedRef.current) {
-          if (e instanceof CartConflictError) {
-            setConflictBookingId(e.existingBookingId);
-          }
           setInitError(e instanceof Error ? e.message : 'Could not create booking hold.');
           setLoading(false);
         }
@@ -611,6 +619,7 @@ function PaymentPageContent() {
     propertyName,
     roomName,
     avgUnitPrice,
+    selectedCountryCode,
   ]);
 
   if (loading) {
@@ -625,38 +634,12 @@ function PaymentPageContent() {
   }
 
   if (initError) {
-    const resumeParams = conflictBookingId
-      ? new URLSearchParams({
-          booking_id: conflictBookingId,
-          property_id: propertyId,
-          room_type_id: roomTypeId,
-          rate_plan_id: ratePlanId,
-          checkin,
-          checkout,
-          guests: String(guests),
-          currency,
-          property_name: propertyName,
-          room_name: roomName,
-          ...(imageUrl && { image_url: imageUrl }),
-        })
-      : null;
-
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
         <Alert severity="error" sx={{ mb: 3 }}>
           {initError}
         </Alert>
         <Stack spacing={2} direction="row" flexWrap="wrap">
-          {resumeParams && (
-            <Button
-              component={NextLink}
-              href={`/traveler/payment?${resumeParams.toString()}`}
-              variant="contained"
-              sx={{ textTransform: 'none' }}
-            >
-              {t('payment.resumeReservation')}
-            </Button>
-          )}
           <Button
             component={NextLink}
             href="/traveler/search"
@@ -977,30 +960,30 @@ function PaymentPageContent() {
                         slotProps={{
                           input: {
                             startAdornment: (
-                                <InputAdornment position="start" sx={{ pr: 0.5 }}>
-                                  <FormControl size="small" sx={{ minWidth: 110 }}>
-                                    <Select
-                                      value={selectedCountryCode}
-                                      onChange={(e) => setSelectedCountryCode(e.target.value)}
-                                      variant="standard"
-                                      disableUnderline
-                                      sx={{
-                                        fontSize: '0.875rem',
-                                        '& .MuiSelect-select': { py: 0.5, pl: 0.5 },
-                                      }}
-                                      data-testid="traveler-payment-country-code"
-                                    >
-                                      {COUNTRY_CODES.map((c, index) => (
-                                        <MenuItem key={index} value={c.dial}>
-                                          <Box component="span" sx={{ mr: 0.5 }}>
-                                            {c.flag}
-                                          </Box>
-                                          {c.code} {c.dial}
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
-                                  </FormControl>
-                                </InputAdornment>
+                              <InputAdornment position="start" sx={{ pr: 0.5 }}>
+                                <FormControl size="small" sx={{ minWidth: 110 }}>
+                                  <Select
+                                    value={selectedCountryCode}
+                                    onChange={(e) => setSelectedCountryCode(e.target.value)}
+                                    variant="standard"
+                                    disableUnderline
+                                    sx={{
+                                      fontSize: '0.875rem',
+                                      '& .MuiSelect-select': { py: 0.5, pl: 0.5 },
+                                    }}
+                                    data-testid="traveler-payment-country-code"
+                                  >
+                                    {COUNTRY_CODES.map((c, index) => (
+                                      <MenuItem key={index} value={c.dial}>
+                                        <Box component="span" sx={{ mr: 0.5 }}>
+                                          {c.flag}
+                                        </Box>
+                                        {c.code} {c.dial}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                              </InputAdornment>
                             ),
                           },
                         }}
@@ -1260,11 +1243,11 @@ function PaymentPageContent() {
                   position: 'relative',
                   '&::after': imageUrl
                     ? {
-                        content: '""',
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)',
-                      }
+                      content: '""',
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)',
+                    }
                     : {},
                 }}
               >
