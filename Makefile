@@ -23,6 +23,7 @@ help:
 	@echo "  make front-build          Static export build"
 	@echo "  make front-test           Vitest with coverage"
 	@echo "  make front-lint           ESLint"
+	@echo "  make front-e2e            Docker compose + Playwright"
 	@echo ""
 	@echo "── Mobile ───────────────────────────────────────"
 	@echo "  make mobile-install       npm install"
@@ -76,6 +77,9 @@ front-test:
 
 front-lint:
 	cd frontend/travel-hub && pnpm lint
+
+front-e2e:
+	cd frontend/travel-hub && pnpm e2e
 
 # ── Mobile ──────────────────────────────────────────────────
 

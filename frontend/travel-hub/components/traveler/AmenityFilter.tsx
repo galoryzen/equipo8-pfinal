@@ -56,6 +56,7 @@ export default function AmenityFilter({ amenities, selected, onChange }: Amenity
         <Button
           size="small"
           onClick={() => setShowAll(!showAll)}
+          data-testid="traveler-amenity-toggle"
           sx={{ textTransform: 'none', mt: 0.5 }}
         >
           {showAll ? t('amenityFilter.showLess') : t('amenityFilter.showMore')}

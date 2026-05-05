@@ -37,6 +37,7 @@ function formatDate(dateStr: string): string {
 function ConfirmationPageContent() {
   const searchParams = useSearchParams();
 
+  const bookingId = searchParams.get('booking_id') ?? '';
   const propertyName = searchParams.get('property_name') ?? 'Your Hotel';
   const roomName = searchParams.get('room_name') ?? 'Room';
   const imageUrl = searchParams.get('image_url') ?? '';
@@ -89,6 +90,7 @@ function ConfirmationPageContent() {
         <Card
           variant="outlined"
           sx={{ borderRadius: 3, mb: 3, textAlign: 'center', px: { xs: 3, sm: 6 }, py: 4 }}
+          data-testid="traveler-confirmation-status-card"
         >
           {/* Animated icon */}
           <Box
@@ -105,6 +107,7 @@ function ConfirmationPageContent() {
               mb: 3,
               color: 'primary.main',
             }}
+            data-testid="traveler-confirmation-status-icon"
           >
             <CheckBoxOutlinedIcon sx={{ fontSize: 40 }} />
           </Box>
@@ -116,6 +119,17 @@ function ConfirmationPageContent() {
             Almost there! We are finalising your booking with the property. Please wait a moment
             while we secure your stay.
           </Typography>
+
+          {bookingId && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 2 }}
+              data-testid="traveler-confirmation-booking-reference"
+            >
+              {bookingId}
+            </Typography>
+          )}
 
           {/* Progress bar */}
           <Box sx={{ mb: 1.5 }}>
@@ -146,6 +160,7 @@ function ConfirmationPageContent() {
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
               }}
+              data-testid="traveler-confirmation-image"
             >
               {!imageUrl && (
                 <Box
@@ -160,7 +175,7 @@ function ConfirmationPageContent() {
             </Box>
 
             {/* Details */}
-            <CardContent sx={{ p: 3, flex: 1 }}>
+            <CardContent sx={{ p: 3, flex: 1 }} data-testid="traveler-confirmation-details-card">
               <Box
                 sx={{
                   display: 'flex',
@@ -173,6 +188,7 @@ function ConfirmationPageContent() {
                 <Chip
                   label="PENDING CONFIRMATION"
                   size="small"
+                  data-testid="traveler-confirmation-status-chip"
                   sx={{
                     bgcolor: 'primary.50',
                     color: 'primary.main',
@@ -190,7 +206,12 @@ function ConfirmationPageContent() {
                 </Box>
               </Box>
 
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                sx={{ mb: 2 }}
+                data-testid="traveler-confirmation-property-name"
+              >
                 {propertyName}
               </Typography>
 
@@ -198,7 +219,11 @@ function ConfirmationPageContent() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <CalendarTodayOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                   <Box>
-                    <Typography variant="body2" fontWeight={600}>
+                    <Typography
+                      variant="body1"
+                      fontWeight={600}
+                      data-testid="traveler-confirmation-checkin"
+                    >
                       {checkin ? formatDate(checkin) : '—'}
                       {checkout ? ` – ${formatDate(checkout)}` : ''}
                     </Typography>
@@ -211,10 +236,18 @@ function ConfirmationPageContent() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <BedroomParentOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                   <Box>
-                    <Typography variant="body2" fontWeight={600}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      data-testid="traveler-confirmation-room-name"
+                    >
                       {roomName}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      data-testid="traveler-confirmation-guests"
+                    >
                       {guests} Adult{guests !== 1 ? 's' : ''}, 1 Bedroom
                     </Typography>
                   </Box>
@@ -311,7 +344,12 @@ function ConfirmationPageContent() {
                         {originalDisplayTotal.toFixed(2)}
                       </Typography>
                     )}
-                    <Typography variant="h6" fontWeight={800} color="primary.main">
+                    <Typography
+                      variant="h6"
+                      fontWeight={800}
+                      color="primary.main"
+                      data-testid="traveler-confirmation-total-price"
+                    >
                       {originalDisplayTotal != null ? 'Price with discount ' : ''}
                       {currencySymbol}
                       {displayTotal.toFixed(2)}
