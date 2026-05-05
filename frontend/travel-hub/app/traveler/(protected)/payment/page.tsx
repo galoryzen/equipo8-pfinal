@@ -218,7 +218,7 @@ function PaymentPageContent() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?.value || '+1');
+  const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?.dial ?? '+1');
 
   // Processing / snackbar
   const [isProcessing, setIsProcessing] = useState(false);
@@ -260,6 +260,22 @@ const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?
       phone.trim().length > 0,
     [firstName, lastName, email, phone]
   );
+
+  const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
+
+  const paymentDetailsValid = useMemo(() => {
+    if (paymentTab === 0) {
+      const digits = cardNumber.replace(/\s/g, '');
+      return (
+        digits.length === 16 &&
+        expiry.length === 5 &&
+        !expiryError &&
+        cvv.trim().length >= 3 &&
+        nameOnCard.trim().length > 0
+      );
+    }
+    return true;
+  }, [paymentTab, cardNumber, expiry, expiryError, cvv, nameOnCard]);
 
   const basePrice = cartPricing?.subtotal ?? 0;
   const originalBasePrice = cartPricing?.originalSubtotal ?? null;
@@ -480,7 +496,7 @@ const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?
             is_primary: true,
             full_name: `${firstName.trim()} ${lastName.trim()}`,
             email: email.trim(),
-            phone: phone.trim(),
+            phone: `${selectedCountryCode} ${phone.trim()}`,
           },
           ...additionalGuests.map((g) => ({
             is_primary: false,
@@ -596,8 +612,6 @@ const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?
     roomName,
     avgUnitPrice,
   ]);
-
-  const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
 
   if (loading) {
     return (
@@ -1140,7 +1154,6 @@ const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?
                     }}
                   >
                     <Tab label={t('payment.creditOrDebitCard')} />
-                    <Tab label={t('payment.paypal')} />
                   </Tabs>
 
                   {paymentTab === 0 ? (
@@ -1460,7 +1473,7 @@ const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?
                   variant="contained"
                   fullWidth
                   size="large"
-                  disabled={expired || !guestDetailsFilled || expiryError}
+                  disabled={expired || !guestDetailsFilled || !paymentDetailsValid}
                   onClick={handlePay}
                   data-testid="traveler-payment-submit"
                   sx={{ textTransform: 'none', fontWeight: 700, py: 1.5, borderRadius: 2 }}
