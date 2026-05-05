@@ -1,5 +1,5 @@
-import type { ManagerHotelItem } from '@/app/lib/api/manager';
-import { getManagerHotels } from '@/app/lib/api/manager';
+import { getHotels } from '@/app/lib/api/manager';
+import type { ManagerHotelItem } from '@/app/lib/types/manager';
 import ManagerHotelsPage from '@/app/manager/hotels/page';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/app/lib/api/manager', () => ({
-  getManagerHotels: vi.fn(),
+  getHotels: vi.fn(),
 }));
 
 const sampleHotel: ManagerHotelItem = {
@@ -34,14 +34,15 @@ const sampleHotel: ManagerHotelItem = {
   status: 'ACTIVE',
   imageUrl: null,
   categories: 3,
+  hotelId: 'hotel-99',
 };
 
 describe('ManagerHotelsPage', () => {
   beforeEach(() => {
     searchParamsRef.current = new URLSearchParams('');
     mockPush.mockClear();
-    vi.mocked(getManagerHotels).mockClear();
-    vi.mocked(getManagerHotels).mockResolvedValue({
+    vi.mocked(getHotels).mockClear();
+    vi.mocked(getHotels).mockResolvedValue({
       items: [sampleHotel],
       total: 1,
       page: 1,
@@ -58,7 +59,7 @@ describe('ManagerHotelsPage', () => {
   });
 
   it('shows an error message when the list fails to load', async () => {
-    vi.mocked(getManagerHotels).mockRejectedValue(new Error('network down'));
+    vi.mocked(getHotels).mockRejectedValue(new Error('network down'));
 
     renderWithI18n(<ManagerHotelsPage />);
 
@@ -72,6 +73,6 @@ describe('ManagerHotelsPage', () => {
 
     expect(await screen.findByTestId('hotel-detail-mock')).toBeTruthy();
     expect(screen.getByTestId('hotel-detail-mock').textContent).toBe('hotel-99');
-    expect(getManagerHotels).not.toHaveBeenCalled();
+    expect(getHotels).not.toHaveBeenCalled();
   });
 });

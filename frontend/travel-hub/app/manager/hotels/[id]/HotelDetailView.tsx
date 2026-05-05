@@ -4,14 +4,8 @@ import { useEffect, useId, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import {
-  type HotelStatsOut,
-  type ManagerHotelItem,
-  type RoomTypeManagerItem,
-  getHotelMetrics,
-  getHotelRoomTypes,
-  getManagerHotels,
-} from '@/app/lib/api/manager';
+import { getHotelMetrics, getHotelRoomTypes, getHotels } from '@/app/lib/api/manager';
+import { HotelStatsOut, ManagerHotelItem, RoomTypeManagerItem } from '@/app/lib/types/manager';
 import { tokens } from '@/lib/theme/tokens';
 import BedOutlinedIcon from '@mui/icons-material/BedOutlined';
 import BedroomChildOutlinedIcon from '@mui/icons-material/BedroomChildOutlined';
@@ -189,7 +183,7 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getManagerHotels(1, 100), getHotelMetrics(hotelId), getHotelRoomTypes(hotelId)])
+    Promise.all([getHotels(1, 100), getHotelMetrics(hotelId), getHotelRoomTypes(hotelId)])
       .then(([hotelsData, metricsData, roomTypesData]) => {
         if (cancelled) return;
         const found = hotelsData.items.find((h) => h.id === hotelId) ?? null;

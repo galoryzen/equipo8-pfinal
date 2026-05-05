@@ -4,17 +4,19 @@ from datetime import date
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
-from app.adapters.inbound.api.dependencies import get_manager_hotel_id
+from app.adapters.inbound.api.dependencies import enforce_administrative_role, get_manager_hotel_id
 from app.application.exceptions import PromotionError
 from app.main import app
 
 
 def _with_manager_hotel(client, fn):
     app.dependency_overrides[get_manager_hotel_id] = lambda: uuid4()
+    app.dependency_overrides[enforce_administrative_role] = lambda: None
     try:
         return fn()
     finally:
         app.dependency_overrides.pop(get_manager_hotel_id, None)
+        app.dependency_overrides.pop(enforce_administrative_role, None)
 
 
 class TestManagerHotelsEndpoints:
@@ -32,6 +34,7 @@ class TestManagerHotelsEndpoints:
                     "status": "ACTIVE",
                     "imageUrl": None,
                     "categories": 0,
+                    "hotelId": str(uuid4()),
                 }
             ],
             "total": 1,

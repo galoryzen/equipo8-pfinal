@@ -1,13 +1,14 @@
-import type {
+import { API_URL } from '@/app/lib/api/constants';
+import {
   BookingTrend,
   DashboardData,
+  DashboardFetchError,
   DashboardMetrics,
+  DashboardResponse,
   Metric,
   RecentActivityItem,
   UpcomingCheckin,
 } from '@/app/lib/types/dashboard';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
 export const EMPTY_DASHBOARD_DATA: DashboardData = {
   metrics: {
@@ -20,28 +21,6 @@ export const EMPTY_DASHBOARD_DATA: DashboardData = {
   recentActivity: [],
   upcomingCheckins: [],
 };
-
-type DashboardResponse = Partial<{
-  metrics?: Partial<DashboardMetrics>;
-  bookingTrends?: unknown[];
-  recentActivity?: unknown[];
-  upcomingCheckins?: unknown[];
-}>;
-
-export class DashboardFetchError extends Error {
-  readonly status?: number;
-  readonly kind: 'unauthorized' | 'network' | 'server';
-
-  constructor(
-    message: string,
-    opts: { status?: number; kind: 'unauthorized' | 'network' | 'server' }
-  ) {
-    super(message);
-    this.name = 'DashboardFetchError';
-    this.status = opts.status;
-    this.kind = opts.kind;
-  }
-}
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;

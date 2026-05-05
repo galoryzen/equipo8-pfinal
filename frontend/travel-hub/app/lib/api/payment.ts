@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
+import { API_URL } from '@/app/lib/api/constants';
+import { PaymentIntentResult } from '@/app/lib/types/payment';
 
 async function readErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
@@ -6,14 +7,6 @@ async function readErrorMessage(res: Response): Promise<string> {
     return String((body as { message: unknown }).message);
   }
   return `Error ${res.status}`;
-}
-
-export interface PaymentIntentResult {
-  payment_intent_id: string;
-  mock_payment_token: string;
-  amount: string;
-  currency_code: string;
-  webhook_signing_secret: string;
 }
 
 export async function createPaymentIntent(bookingId: string): Promise<PaymentIntentResult> {

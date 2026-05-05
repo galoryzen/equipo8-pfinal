@@ -12,11 +12,11 @@ describe('ManagerSettingsHotelSelect', () => {
   it('renders the section label and current hotel in the select', () => {
     render(
       <ManagerSettingsHotelSelect
-        hotels={hotels}
+        properties={hotels}
         value="h1"
         sectionLabel="Settings"
         selectAriaLabel="Choose hotel"
-        onHotelChange={vi.fn()}
+        onPropertyChange={vi.fn()}
       />
     );
 
@@ -31,11 +31,11 @@ describe('ManagerSettingsHotelSelect', () => {
 
     render(
       <ManagerSettingsHotelSelect
-        hotels={hotels}
+        properties={hotels}
         value="h1"
         sectionLabel="Settings"
         selectAriaLabel="Choose hotel"
-        onHotelChange={onHotelChange}
+        onPropertyChange={onHotelChange}
       />
     );
 
@@ -52,11 +52,11 @@ describe('ManagerSettingsHotelSelect', () => {
 
     render(
       <ManagerSettingsHotelSelect
-        hotels={hotels}
+        properties={hotels}
         value="h1"
         sectionLabel="Settings"
         selectAriaLabel="Choose hotel"
-        onHotelChange={onHotelChange}
+        onPropertyChange={onHotelChange}
       />
     );
 

@@ -1,104 +1,33 @@
+import { API_URL } from '@/app/lib/api/constants';
 import type { PaginatedResponse } from '@/app/lib/types/catalog';
-import type { RoomTypeIcon } from '@/app/manager/hotels/_data';
+import {
+  CreatePromotionPayload,
+  HotelProfile,
+  HotelStatsOut,
+  ManagerHotelItem,
+  ManagerPropertyImage,
+  PromotionCreatedOut,
+  RatePlanCancellationPolicy,
+  RoomTypeManagerItem,
+  RoomTypePromotionOut,
+  UpdateCancellationPolicyPayload,
+} from '@/app/lib/types/manager';
 
+import { getMe } from './auth';
 import { formatApiErrorBody } from './catalog';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
+export type {
+  CancellationPolicyTypeStr,
+  RoomTypeManagerItem,
+  RoomTypePromotionOut,
+} from '@/app/lib/types/manager';
 
 // ── Hotel list cache ──────────────────────────────────────────────────────────
 // Caches the full hotel list (page 1, 100 items) for 30 s so the detail view
 // can resolve hotel metadata instantly when navigating from the list page.
 const HOTELS_TTL = 30_000;
 let _hotelsCacheSlot: { v: PaginatedResponse<ManagerHotelItem>; exp: number } | null = null;
-
-// ── Types matching backend schemas ────────────────────────────────────────────
-
-export interface ManagerHotelItem {
-  id: string;
-  name: string;
-  location: string;
-  totalRooms: number;
-  occupiedRooms: number;
-  status: 'ACTIVE' | 'PENDING_REVIEW';
-  imageUrl: string | null;
-  categories: number;
-}
-
-export interface HotelStatsOut {
-  occupancyRate: number;
-  activeBookings: number;
-  monthlyRevenue: number;
-}
-
-export interface RoomTypeManagerItem {
-  id: string;
-  name: string;
-  icon: RoomTypeIcon;
-  available: number;
-  total: number;
-  rate_plan_id: string | null;
-}
-
-export interface RoomTypePromotionOut {
-  id: string;
-  rate_plan_id: string;
-  name: string;
-  discount_type: 'PERCENT' | 'FIXED';
-  discount_value: number;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
-}
-
-export interface CreatePromotionPayload {
-  rate_plan_id: string;
-  name: string;
-  discount_type: 'NONE' | 'PERCENT' | 'FIXED';
-  discount_value: number;
-  start_date: string;
-  end_date: string;
-}
-
-export interface PromotionCreatedOut {
-  id: string;
-  name: string;
-  discount_type: string;
-  discount_value: number;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
-}
-
-export type CancellationPolicyTypeStr = 'FULL' | 'PARTIAL' | 'NON_REFUNDABLE';
-
-export interface RatePlanCancellationPolicy {
-  type: CancellationPolicyTypeStr;
-  refund_percent: number | null;
-  hours_limit: number | null;
-}
-
-export interface UpdateCancellationPolicyPayload {
-  type: CancellationPolicyTypeStr;
-  refund_percent?: number;
-}
-
-export type ManagerPropertyImage = {
-  id: string;
-  url: string;
-  caption: string | null;
-  display_order: number;
-};
-
-export type HotelProfile = {
-  id: string;
-  name: string;
-  description: string | null;
-  city: string;
-  country: string;
-  amenity_codes: string[];
-  policy: string;
-  images: ManagerPropertyImage[];
-};
+let _adminHotelsCacheSlot: { v: PaginatedResponse<ManagerHotelItem>; exp: number } | null = null;
 
 // ── API functions ─────────────────────────────────────────────────────────────
 
@@ -122,6 +51,48 @@ export async function getManagerHotels(
     _hotelsCacheSlot = { v: data, exp: Date.now() + HOTELS_TTL };
   }
   return data;
+}
+
+export async function getAdminHotels(
+  page = 1,
+  page_size = 100
+): Promise<PaginatedResponse<ManagerHotelItem>> {
+  if (
+    page === 1 &&
+    page_size >= 100 &&
+    _adminHotelsCacheSlot &&
+    Date.now() < _adminHotelsCacheSlot.exp
+  ) {
+    return _adminHotelsCacheSlot.v;
+  }
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/admin/properties?page=${page}&page_size=${page_size}`,
+    { credentials: 'include' }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  const data = (await res.json()) as PaginatedResponse<ManagerHotelItem>;
+  if (page === 1 && page_size >= 100) {
+    _adminHotelsCacheSlot = { v: data, exp: Date.now() + HOTELS_TTL };
+  }
+  return data;
+}
+
+export async function getHotels(
+  page = 1,
+  page_size = 100
+): Promise<PaginatedResponse<ManagerHotelItem>> {
+  const user = await getMe();
+
+  if (user?.role === 'TRAVELER') {
+    throw new Error('Unauthorized');
+  }
+
+  return user?.role === 'ADMIN'
+    ? getAdminHotels(page, page_size)
+    : getManagerHotels(page, page_size);
 }
 
 export async function getHotelMetrics(propertyId: string): Promise<HotelStatsOut> {
@@ -226,8 +197,11 @@ export async function updateRatePlanCancellationPolicy(
   return res.json();
 }
 
-export async function getHotelProfile(propertyId: string): Promise<HotelProfile> {
-  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile`, {
+const adminPropertyProfileBaseUrl = (propertyId: string) =>
+  `${API_URL}/api/v1/catalog/admin/properties/${encodeURIComponent(propertyId)}`;
+
+export async function getAdminHotelProfile(propertyId: string): Promise<HotelProfile> {
+  const res = await fetch(`${adminPropertyProfileBaseUrl(propertyId)}/profile`, {
     credentials: 'include',
   });
   if (!res.ok) {
@@ -237,11 +211,11 @@ export async function getHotelProfile(propertyId: string): Promise<HotelProfile>
   return res.json();
 }
 
-export async function updateHotelProfile(
+export async function updateAdminHotelProfile(
   propertyId: string,
   payload: { description?: string | null; amenity_codes?: string[]; policy?: string }
 ): Promise<HotelProfile> {
-  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile`, {
+  const res = await fetch(`${adminPropertyProfileBaseUrl(propertyId)}/profile`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -254,11 +228,11 @@ export async function updateHotelProfile(
   return res.json();
 }
 
-export async function addHotelImage(
+export async function addAdminHotelImage(
   propertyId: string,
   payload: { url: string; caption?: string }
 ): Promise<ManagerPropertyImage> {
-  const res = await fetch(`${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images`, {
+  const res = await fetch(`${adminPropertyProfileBaseUrl(propertyId)}/images`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -271,9 +245,119 @@ export async function addHotelImage(
   return res.json();
 }
 
-export async function deleteHotelImage(propertyId: string, imageId: string): Promise<void> {
+export async function deleteAdminHotelImage(propertyId: string, imageId: string): Promise<void> {
   const res = await fetch(
-    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}`,
+    `${adminPropertyProfileBaseUrl(propertyId)}/images/${encodeURIComponent(imageId)}`,
+    { method: 'DELETE', credentials: 'include' }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+}
+
+export async function setPrimaryAdminHotelImage(
+  propertyId: string,
+  imageId: string
+): Promise<ManagerPropertyImage[]> {
+  const res = await fetch(
+    `${adminPropertyProfileBaseUrl(propertyId)}/images/${encodeURIComponent(imageId)}/primary`,
+    { method: 'PATCH', credentials: 'include' }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function getHotelProfile(propertyId: string, hotelId?: string): Promise<HotelProfile> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile?${params.toString()}`,
+    {
+      credentials: 'include',
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function updateHotelProfile(
+  propertyId: string,
+  payload: { description?: string | null; amenity_codes?: string[]; policy?: string },
+  hotelId?: string
+): Promise<HotelProfile> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/profile?${params.toString()}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function addHotelImage(
+  propertyId: string,
+  payload: { url: string; caption?: string },
+  hotelId?: string
+): Promise<ManagerPropertyImage> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images?${params.toString()}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function deleteHotelImage(
+  propertyId: string,
+  imageId: string,
+  hotelId?: string
+): Promise<void> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}?${params.toString()}`,
     {
       method: 'DELETE',
       credentials: 'include',
@@ -287,10 +371,17 @@ export async function deleteHotelImage(propertyId: string, imageId: string): Pro
 
 export async function setPrimaryHotelImage(
   propertyId: string,
-  imageId: string
+  imageId: string,
+  hotelId?: string
 ): Promise<ManagerPropertyImage[]> {
+  const params = new URLSearchParams();
+
+  if (hotelId) {
+    params.set('hotel_id', hotelId);
+  }
+
   const res = await fetch(
-    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}/primary`,
+    `${API_URL}/api/v1/catalog/manager/hotels/${propertyId}/images/${imageId}/primary?${params.toString()}`,
     { method: 'PATCH', credentials: 'include' }
   );
   if (!res.ok) {
