@@ -54,24 +54,6 @@ function LogoIcon() {
   );
 }
 
-const COUNTRY_CODES = [
-  { code: 'MX', dial: '+52', flag: '🇲🇽' },
-  { code: 'CO', dial: '+57', flag: '🇨🇴' },
-  { code: 'AR', dial: '+54', flag: '🇦🇷' },
-  { code: 'CL', dial: '+56', flag: '🇨🇱' },
-  { code: 'PE', dial: '+51', flag: '🇵🇪' },
-  { code: 'BR', dial: '+55', flag: '🇧🇷' },
-  { code: 'VE', dial: '+58', flag: '🇻🇪' },
-  { code: 'EC', dial: '+593', flag: '🇪🇨' },
-  { code: 'BO', dial: '+591', flag: '🇧🇴' },
-  { code: 'PY', dial: '+595', flag: '🇵🇾' },
-  { code: 'UY', dial: '+598', flag: '🇺🇾' },
-  { code: 'CR', dial: '+506', flag: '🇨🇷' },
-  { code: 'PA', dial: '+507', flag: '🇵🇦' },
-  { code: 'GT', dial: '+502', flag: '🇬🇹' },
-  { code: 'US', dial: '+1', flag: '🇺🇸' },
-  { code: 'ES', dial: '+34', flag: '🇪🇸' },
-];
 
 // Mirrors the backend Pydantic RegisterRequest validators
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;

@@ -37,6 +37,8 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
+import { FormControl, MenuItem, Select } from '@mui/material';
+import { COUNTRY_CODES } from '@/app/lib/constant';
 
 const LS_PREFIX = 'travelhub_cart_';
 
@@ -216,6 +218,7 @@ function PaymentPageContent() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?.value || '+1');
 
   // Processing / snackbar
   const [isProcessing, setIsProcessing] = useState(false);
@@ -890,16 +893,6 @@ function PaymentPageContent() {
                     <Typography variant="h6" fontWeight={700}>
                       👤 {t('payment.guestDetails')}
                     </Typography>
-                    <Button
-                      component={NextLink}
-                      href="/traveler/login"
-                      variant="text"
-                      size="small"
-                      data-testid="traveler-payment-login-link"
-                      sx={{ textTransform: 'none', color: 'primary.main', fontWeight: 600 }}
-                    >
-                      {t('payment.logIn')}
-                    </Button>
                   </Box>
 
                   {/* Primary guest */}
@@ -970,11 +963,30 @@ function PaymentPageContent() {
                         slotProps={{
                           input: {
                             startAdornment: (
-                              <InputAdornment position="start">
-                                <Typography variant="body2" color="text.secondary">
-                                  🇺🇸 +1
-                                </Typography>
-                              </InputAdornment>
+                                <InputAdornment position="start" sx={{ pr: 0.5 }}>
+                                  <FormControl size="small" sx={{ minWidth: 110 }}>
+                                    <Select
+                                      value={selectedCountryCode}
+                                      onChange={(e) => setSelectedCountryCode(e.target.value)}
+                                      variant="standard"
+                                      disableUnderline
+                                      sx={{
+                                        fontSize: '0.875rem',
+                                        '& .MuiSelect-select': { py: 0.5, pl: 0.5 },
+                                      }}
+                                      data-testid="traveler-payment-country-code"
+                                    >
+                                      {COUNTRY_CODES.map((c, index) => (
+                                        <MenuItem key={index} value={c.dial}>
+                                          <Box component="span" sx={{ mr: 0.5 }}>
+                                            {c.flag}
+                                          </Box>
+                                          {c.code} {c.dial}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
+                                </InputAdornment>
                             ),
                           },
                         }}
