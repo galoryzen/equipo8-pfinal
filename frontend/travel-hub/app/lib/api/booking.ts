@@ -24,9 +24,11 @@ async function readErrorMessage(res: Response): Promise<string> {
  */
 export async function getMyBookings(
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  status?: string
 ): Promise<PaginatedResponse<BookingListItem>> {
   const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (status) params.set('status', status);
   const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
     credentials: 'include',
   });

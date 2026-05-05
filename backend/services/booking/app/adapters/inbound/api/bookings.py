@@ -75,7 +75,7 @@ async def list_bookings(
     else:
         if not user_id:
             raise HTTPException(status_code=400, detail="user_id es requerido")
-        return await use_case.execute(user_id=UUID(user_id), scope=scope, page=page, page_size=page_size)
+        return await use_case.execute(user_id=UUID(user_id), scope=scope, status=status, page=page, page_size=page_size)
 
 
 @router.get("/bookings/my-cart", response_model=BookingDetailOut | None)

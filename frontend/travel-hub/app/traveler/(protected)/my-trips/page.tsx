@@ -22,11 +22,18 @@ import TripsEmptyState from '@/components/traveler/TripsEmptyState';
 
 export default function MyTripsPage() {
   const { t } = useTranslation();
-  const { bookings, propertyById, loading, error } = useMyTripsCatalog();
+  const { bookings, propertyById, loading, error, reload } = useMyTripsCatalog();
   const [tab, setTab] = useState(0);
 
-  const { upcoming, past } = useMemo(() => splitUpcomingPast(bookings), [bookings]);
-  const shown = tab === 0 ? upcoming : past;
+  const { upcoming, past } = useMemo(() => {
+    const nonCart = bookings.filter((b) => b.status !== 'CART');
+    return splitUpcomingPast(nonCart);
+  }, [bookings]);
+  const inCart = useMemo(
+    () => bookings.filter((b) => b.status === 'CART'),
+    [bookings]
+  );
+  const shown = tab === 0 ? upcoming : tab === 1 ? past : inCart;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
@@ -109,20 +116,39 @@ export default function MyTripsPage() {
                 </Box>
               }
             />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {t('myTrips.inCart', 'In Cart')}
+                  {inCart.length > 0 && (
+                    <Chip label={inCart.length} size="small" color="warning" sx={{ height: 22 }} />
+                  )}
+                </Box>
+              }
+            />
           </Tabs>
 
           {shown.length === 0 ? (
             <Typography color="text.secondary" sx={{ py: 4 }}>
-              {tab === 0 ? t('myTrips.noUpcoming') : t('myTrips.noPast')}
+              {tab === 0
+                ? t('myTrips.noUpcoming')
+                : tab === 1
+                  ? t('myTrips.noPast')
+                  : t('myTrips.noInCart', 'No bookings in cart')}
             </Typography>
           ) : (
-            <BookingList bookings={shown} propertyById={propertyById} />
+            <BookingList
+              bookings={shown}
+              propertyById={propertyById}
+              onCartAction={reload}
+            />
           )}
 
           {bookings.length > 0 && (
             <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 6 }}>
               {t('myTrips.endOfTrips', {
-                tab: tab === 0 ? t('myTrips.upcoming') : t('myTrips.past'),
+                tab:
+                  tab === 0 ? t('myTrips.upcoming') : tab === 1 ? t('myTrips.past') : t('myTrips.inCart', 'In Cart'),
               })}
             </Typography>
           )}
