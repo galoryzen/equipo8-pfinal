@@ -262,6 +262,7 @@ export default function PriceCard({
             currency: pricing?.currency_code ?? 'USD',
             property_name: property.name,
             room_name: selectedRoom.roomName,
+            ...(property.rating_avg != null && { review_score: property.rating_avg.toFixed(1) }),
           });
           requireAuth(`/traveler/booking?${params.toString()}`);
         }}

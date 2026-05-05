@@ -185,6 +185,7 @@ function PaymentPageContent() {
   const roomName = searchParams.get('room_name') ?? 'Room';
   const imageUrl = searchParams.get('image_url') ?? '';
   const bookingIdParam = searchParams.get('booking_id') ?? '';
+  const reviewScore = searchParams.get('review_score');
 
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
@@ -1262,7 +1263,7 @@ function PaymentPageContent() {
                     {propertyName}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-                    ★ 5.0
+                    {reviewScore ? `★ ${reviewScore}` : ''}
                   </Typography>
                 </Box>
               </Box>
