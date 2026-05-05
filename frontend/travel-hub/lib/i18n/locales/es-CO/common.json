@@ -66,7 +66,11 @@
     "refundType": {
       "traveler_cancelled": "Reembolso por cancelación del viajero",
       "hotel_rejected": "Reembolso por rechazo del hotel"
-    }
+    },
+    "refundIssued": "Reembolso emitido",
+    "totalPaid": "Total pagado",
+    "finalTotal": "Total final",
+    "refundTooltip": "Reembolso completo: incluye subtotal, impuestos y tarifa de servicio"
   },
   "recommended": {
     "title": "Recomendado para ti",

@@ -66,7 +66,11 @@
     "refundType": {
       "traveler_cancelled": "Refund due to traveler cancellation",
       "hotel_rejected": "Refund due to hotel rejection"
-    }
+    },
+    "refundIssued": "Refund issued",
+    "totalPaid": "Total paid",
+    "finalTotal": "Final total",
+    "refundTooltip": "Full refund: includes subtotal, taxes, and service fee"
   },
   "recommended": {
     "title": "Recommended for You",

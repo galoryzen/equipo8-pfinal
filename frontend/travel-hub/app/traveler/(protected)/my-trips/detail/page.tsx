@@ -137,7 +137,9 @@ function BookingDetailContent() {
   const canCancel = detail.status === 'CONFIRMED' || detail.status === 'CART';
   const hotel = propertyById[detail.property_id] ?? null;
   const roomName = hotel?.room_types?.find((r) => r.id === detail.room_type_id)?.name;
-  const grandTotal = detail.grand_total ?? detail.total_amount;
+  const refundAmount = refund?.status === 'SUCCEEDED' ? parseFloat(refund.amount) : 0;
+  const totalPaid = parseFloat(detail.grand_total ?? detail.total_amount);
+  const finalTotal = (totalPaid - refundAmount).toFixed(2);
   const taxes = detail.taxes ?? '0';
   const serviceFee = detail.service_fee ?? '0';
   const nights = detail.nights_breakdown ?? [];
@@ -190,13 +192,13 @@ function BookingDetailContent() {
             {formatTripDate(detail.checkout)}
           </Typography>
         </Box>
-        <Box>
-          <Typography variant="caption" color="text.secondary" fontWeight={600}>
-            {t('tripDetail.total')}
-          </Typography>
-          <Typography variant="body1" fontWeight={600}>
-            {grandTotal} {detail.currency_code}
-          </Typography>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              {t('tripDetail.total')}
+            </Typography>
+            <Typography variant="body1" fontWeight={600}>
+              {totalPaid.toFixed(2)} {detail.currency_code}
+            </Typography>
 
           {hasCostDetails && (
             <Accordion
@@ -254,7 +256,7 @@ function BookingDetailContent() {
                       {t('tripDetail.totalDue')}
                     </Typography>
                     <Typography variant="body2" fontWeight={700}>
-                      {grandTotal} {detail.currency_code}
+                      {totalPaid.toFixed(2)} {detail.currency_code}
                     </Typography>
                   </Box>
 
@@ -281,27 +283,47 @@ function BookingDetailContent() {
                       </Stack>
                     </>
                   )}
-                 </Stack>
-               </AccordionDetails>
-             </Accordion>
-           )}
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
+          )}
 
           {refund?.status === 'SUCCEEDED' && (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mt: 1 }}>
-              <Tooltip
-                title={
-                  refund.reason === 'traveler_cancelled'
-                    ? t('tripDetail.refundType.traveler_cancelled')
-                    : t('tripDetail.refundType.hotel_rejected')
-                }
-              >
-                <Typography variant="body2" color="text.secondary">
-                  {t('tripDetail.refundAmount')}
-                </Typography>
-              </Tooltip>
-              <Typography variant="body2" fontWeight={600} color="success.main">
-                -{refund.amount} {detail.currency_code}
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700} color="success.dark" sx={{ mb: 1 }}>
+                ✓ {t('tripDetail.refundIssued')}
               </Typography>
+              <Stack spacing={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('tripDetail.totalPaid')}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {totalPaid.toFixed(2)} {detail.currency_code}
+                  </Typography>
+                </Box>
+                <Tooltip
+                  title={t('tripDetail.refundTooltip')}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                    <Typography variant="body2" color="success.dark" sx={{ cursor: 'help' }}>
+                      {t('tripDetail.refundIssued')}
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600} color="success.dark">
+                      +{refund.amount} {detail.currency_code}
+                    </Typography>
+                  </Box>
+                </Tooltip>
+                <Divider />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                  <Typography variant="body2" fontWeight={700} color="success.dark">
+                    {t('tripDetail.finalTotal')}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} color="success.dark">
+                    {finalTotal} {detail.currency_code}
+                  </Typography>
+                </Box>
+              </Stack>
             </Box>
           )}
         </Box>
