@@ -7,12 +7,14 @@ import { BasePage } from './BasePage';
 export class HotelDetailsPage extends BasePage {
   // Locators
   private readonly HOTEL_NAME = '[data-testid="traveler-hotel-detail-view"] h1';
-  private readonly HOTEL_RATING = '[class*="rating"], [class*="stars"]';
+  private readonly HOTEL_RATING = '[data-testid="traveler-hotel-rating-value"]';
   private readonly HOTEL_PRICE = '[class*="price"], [class*="cost"]';
   private readonly HOTEL_DESCRIPTION = '[class*="description"]';
   private readonly AMENITIES_LIST = '[class*="amenities"], [class*="features"]';
   private readonly ROOM_CARD = '[data-testid^="traveler-room-card-"]';
   private readonly SELECT_ROOM_BUTTON = '[data-testid^="traveler-room-select-"]';
+  private readonly CHECK_IN_INPUT = '[data-testid="traveler-hotel-checkin-input"]';
+  private readonly CHECK_OUT_INPUT = '[data-testid="traveler-hotel-checkout-input"]';
   private readonly ROOM_PRICE = '[class*="room-price"], [class*="price"]';
   private readonly ROOM_CAPACITY = '[class*="capacity"], [class*="guests"]';
   private readonly ROOM_AMENITIES = '[class*="room-amenities"], [class*="features"]';
@@ -59,6 +61,20 @@ export class HotelDetailsPage extends BasePage {
    */
   async getRoomCount(): Promise<number> {
     return await this.page.locator(this.ROOM_CARD).count();
+  }
+
+  /**
+   * Get check-in date
+   */
+  async getCheckInDate(): Promise<string | null> {
+    return await this.page.locator(this.CHECK_IN_INPUT).inputValue();
+  }
+
+  /**
+   * Get check-out date
+   */
+  async getCheckOutDate(): Promise<string | null> {
+    return await this.page.locator(this.CHECK_OUT_INPUT).inputValue();
   }
 
   /**

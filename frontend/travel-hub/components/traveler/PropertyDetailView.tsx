@@ -225,7 +225,12 @@ export default function PropertyDetailView({
               {detail.rating_avg != null ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <StarIcon sx={{ fontSize: 16, color: '#f59e0b' }} aria-hidden />
-                  <Typography variant="body2" component="span" fontWeight={700}>
+                  <Typography 
+                    variant="body2" 
+                    component="span" 
+                    fontWeight={700}
+                    data-testid="traveler-hotel-rating-value"
+                  >
                     {Number(detail.rating_avg).toFixed(1)}
                   </Typography>
                   <Typography

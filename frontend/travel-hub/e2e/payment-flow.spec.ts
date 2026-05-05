@@ -13,6 +13,11 @@ import { HotelDetailsPage } from './pages/HotelDetailsPage';
 import { LoginPage } from './pages/LoginPage';
 import { PaymentPage } from './pages/PaymentPage';
 import { SearchPage } from './pages/SearchPage';
+import { AdditionalGuest, OwnerInfo } from './pages/types';
+import { calculateNights, formatDateRange } from './utils/testHelpers';
+
+import { faker } from '@faker-js/faker';
+
 
 /**
  * E2E Test Suite: Complete Payment Flow
@@ -28,6 +33,11 @@ import { SearchPage } from './pages/SearchPage';
  *
  * Uses Page Object Model (POM) architecture for maintainability and scalability
  */
+
+const DEFAULT_GUESTS_COUNT = 2;
+const ADDITIONAL_GUESTS_COUNT = 1;
+const DEFAULT_ROOM_INDEX = 0;
+const DEFAULT_ROOM_NAME = 'Estándar Vista al Mar';
 
 test.describe('E2E: Complete Booking & Payment Flow', () => {
   let loginPage: LoginPage;
@@ -79,7 +89,7 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
       destination.name,
       dates.checkIn,
       dates.checkOut,
-      2 // 2 guests
+      DEFAULT_GUESTS_COUNT
     );
 
     // Verify properties are displayed
@@ -99,44 +109,60 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     const hotelName = await hotelDetailsPage.getHotelName();
     expect(hotelName).toBeTruthy();
 
+    // Check check-in and check-out dates
+    const hotelCheckInDate = await hotelDetailsPage.getCheckInDate();
+    expect(hotelCheckInDate).toBe(dates.checkIn);
+
+    // Check check-out date
+    const hotelCheckOutDate = await hotelDetailsPage.getCheckOutDate();
+    expect(hotelCheckOutDate).toBe(dates.checkOut);
+
     const rating = await hotelDetailsPage.getHotelRating();
-    expect(rating).toContain('4'); // Expected rating around 4.6
-
-    // Verify amenities from seed data
-    const amenities = await hotelDetailsPage.getAmenities();
-    expect(amenities.length).toBeGreaterThan(0);
-
-    // ── STEP 4: Select room type ──
-    const roomCount = await hotelDetailsPage.getRoomCount();
-    expect(roomCount).toBeGreaterThan(0);
+    expect(rating).toBe('4.7');
 
     const roomNames = await hotelDetailsPage.getRoomNames();
-    expect(roomNames).toContain('Estándar Vista al Mar');
+    expect(roomNames).toContain(DEFAULT_ROOM_NAME);
 
     // Select first room (Standard room)
-    await hotelDetailsPage.selectRoomByIndex(0);
+    await hotelDetailsPage.selectRoomByIndex(DEFAULT_ROOM_INDEX);
 
     // Verify redirect to booking
+    await hotelDetailsPage.clickContinueButton();
     await hotelDetailsPage.waitForRedirectToBooking();
-    await bookingPage.waitForPageLoad();
+
+    console.log('checkIn', dates.checkIn);
+    console.log('checkOut', dates.checkOut);
+
+    // Calculate number of nights and format dates using utility functions
+    const number_of_nights = calculateNights(dates.checkIn, dates.checkOut);
+    const formattedDates = formatDateRange(dates.checkIn, dates.checkOut);
 
     // ── STEP 5: Fill booking information ──
     const bookingSummary = await bookingPage.getBookingSummary();
-    expect(bookingSummary.room).toBeTruthy();
-    expect(bookingSummary.checkIn).toBeTruthy();
-    expect(bookingSummary.checkOut).toBeTruthy();
+    expect(bookingSummary).toBeDefined();
+    expect(bookingSummary.room).toBeDefined();
+    expect(bookingSummary.dates).toBeDefined();
+    expect(bookingSummary.guests_nights).toBeDefined();
 
-    // Fill guest information
-    await bookingPage.fillGuestInformation({
+    expect(bookingSummary.room).toBe(DEFAULT_ROOM_NAME);
+    expect(bookingSummary.dates).toBe('📅 ' + formattedDates);
+    expect(bookingSummary.guests_nights).toBe(number_of_nights + ' Nights • ' + DEFAULT_GUESTS_COUNT + ' Guests');
+
+    const ownerInfo: OwnerInfo = {
       firstName: guestInfo.firstName,
       lastName: guestInfo.lastName,
       email: guestInfo.email,
       phone: guestInfo.phone,
-    });
+    };
 
-    // Agree to terms and continue to payment
-    await bookingPage.agreeToTerms();
-    await bookingPage.clickContinueToPayment();
+    const additionalGuests: AdditionalGuest[] = Array.from({ length: ADDITIONAL_GUESTS_COUNT }, (_, i) => ({
+      id: i.toString(),
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+    }));
+
+    // Proceed with booking
+    await bookingPage.proceedWithBooking(ownerInfo, additionalGuests);
 
     // Verify redirect to payment
     await paymentPage.waitForPageLoad();

@@ -98,7 +98,8 @@ try {
 
   await waitForUrl(loginUrl);
 
-  await runProcess('pnpm', ['exec', 'playwright', 'test', 'e2e/payment-flow.spec.ts'], {
+  // Add the --ui flag to the playwright command
+  await runProcess('pnpm', ['exec', 'playwright', 'test', '--ui', 'e2e/payment-flow.spec.ts'], {
     env: {
       PLAYWRIGHT_BASE_URL: frontendBaseUrl,
     },

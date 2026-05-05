@@ -1,4 +1,5 @@
 import { BasePage } from './BasePage';
+import { AdditionalGuest, OwnerInfo } from './types';
 
 /**
  * Page Object for Booking/Fill Data page
@@ -6,26 +7,28 @@ import { BasePage } from './BasePage';
  */
 export class BookingPage extends BasePage {
   // Locators
-  private readonly GUEST_FIRST_NAME =
-    'input[placeholder*="Nombre"], input[placeholder*="First name"]';
-  private readonly GUEST_LAST_NAME =
-    'input[placeholder*="Apellido"], input[placeholder*="Last name"]';
-  private readonly GUEST_EMAIL = 'input[type="email"]';
-  private readonly GUEST_PHONE =
-    'input[type="tel"], input[placeholder*="Teléfono"], input[placeholder*="Phone"]';
-  private readonly GUEST_COUNTRY =
-    'input[placeholder*="País"], input[placeholder*="Country"], select';
+  private readonly OWNER_FIRST_NAME =
+    '[data-testid="traveler-payment-first-name"]';
+  private readonly OWNER_LAST_NAME =
+    '[data-testid="traveler-payment-last-name"]';
+  private readonly OWNER_EMAIL = '[data-testid="traveler-payment-email"]';
+  private readonly OWNER_PHONE =
+    '[data-testid="traveler-payment-phone"]';
+
+  private readonly ADDITIONAL_GUEST_FIRST_NAME = (idx: number) =>
+    `[data-testid="traveler-payment-additional-first-name-${idx}"]`;
+  private readonly ADDITIONAL_GUEST_LAST_NAME =
+    (idx: number) => `[data-testid="traveler-payment-additional-last-name-${idx}"]`;
+
   private readonly BOOKING_NOTES =
     'textarea[placeholder*="Notas"], textarea[placeholder*="Notes"], textarea[placeholder*="Comentarios"]';
   private readonly SPECIAL_REQUESTS =
     'textarea[placeholder*="Solicitudes"], textarea[placeholder*="Requests"]';
-  private readonly BOOKING_SUMMARY = '[class*="summary"], [class*="order-summary"]';
-  private readonly CHECK_IN_DATE_DISPLAY = '[class*="check-in"], text=/Check-in|Entrada/i';
-  private readonly CHECK_OUT_DATE_DISPLAY = '[class*="check-out"], text=/Check-out|Salida/i';
-  private readonly ROOM_SELECTION_DISPLAY = '[class*="room"], [class*="selected-room"]';
+  private readonly BOOKING_SUMMARY = '[data-testid="traveler-payment-summary-card"]';
+  private readonly DATES_DISPLAY = '[data-testid="traveler-payment-summary-dates"]';
+  private readonly ROOM_NAME_DISPLAY = '[data-testid="traveler-payment-summary-room-name"]';
   private readonly TOTAL_PRICE_DISPLAY = '[class*="total"], [class*="price"]';
-  private readonly GUESTS_COUNT_DISPLAY = '[class*="guests"], [class*="number-guests"]';
-  private readonly NIGHTS_DISPLAY = '[class*="nights"], [class*="duration"]';
+  private readonly GUESTS_NIGHTS_DISPLAY = '[data-testid="traveler-payment-summary-guests-nights"]';
   private readonly CONTINUE_PAYMENT_BUTTON =
     'button:has-text("Continuar"), button:has-text("Siguiente"), button:has-text("Pagar"), button:has-text("Continue")';
   private readonly BACK_BUTTON = 'button:has-text("Atrás"), button:has-text("Back")';
@@ -37,25 +40,12 @@ export class BookingPage extends BasePage {
   private readonly AGREE_TERMS_LABEL = 'text=/Acepto|Agree|Términos/i';
 
   /**
-   * Wait for booking page to load
-   */
-  async waitForPageLoad() {
-    await this.waitForLoadingComplete();
-    // At least one input field should be visible
-    try {
-      await this.waitForVisible(this.GUEST_FIRST_NAME, 10000);
-    } catch {
-      await this.waitForVisible(this.GUEST_EMAIL, 10000);
-    }
-  }
-
-  /**
    * Fill guest first name
    */
   async fillFirstName(firstName: string) {
-    const input = this.page.locator(this.GUEST_FIRST_NAME).first();
+    const input = this.page.locator(this.OWNER_FIRST_NAME).first();
     if ((await input.count()) > 0) {
-      await this.fillInput(this.GUEST_FIRST_NAME, firstName);
+      await this.fillInput(this.OWNER_FIRST_NAME, firstName);
     }
   }
 
@@ -63,19 +53,33 @@ export class BookingPage extends BasePage {
    * Fill guest last name
    */
   async fillLastName(lastName: string) {
-    const input = this.page.locator(this.GUEST_LAST_NAME).first();
+    const input = this.page.locator(this.OWNER_LAST_NAME).first();
     if ((await input.count()) > 0) {
-      await this.fillInput(this.GUEST_LAST_NAME, lastName);
+      await this.fillInput(this.OWNER_LAST_NAME, lastName);
     }
+  }
+
+  /**
+   * Fill additional guest first name by index
+   */
+  async fillAdditionalGuestFirstName(firstName: string, idx: number) {
+    await this.fillInput(this.ADDITIONAL_GUEST_FIRST_NAME(idx), firstName);
+  }
+
+  /**
+   * Fill additional guest last name by index
+   */
+  async fillAdditionalGuestLastName(lastName: string, idx: number) {
+    await this.fillInput(this.ADDITIONAL_GUEST_LAST_NAME(idx), lastName);
   }
 
   /**
    * Fill guest email
    */
   async fillEmail(email: string) {
-    const input = this.page.locator(this.GUEST_EMAIL).first();
+    const input = this.page.locator(this.OWNER_EMAIL).first();
     if ((await input.count()) > 0) {
-      await this.fillInput(this.GUEST_EMAIL, email);
+      await this.fillInput(this.OWNER_EMAIL, email);
     }
   }
 
@@ -83,23 +87,12 @@ export class BookingPage extends BasePage {
    * Fill guest phone
    */
   async fillPhone(phone: string) {
-    const input = this.page.locator(this.GUEST_PHONE).first();
+    const input = this.page.locator(this.OWNER_PHONE).first();
     if ((await input.count()) > 0) {
-      await this.fillInput(this.GUEST_PHONE, phone);
+      await this.fillInput(this.OWNER_PHONE, phone);
     }
   }
 
-  /**
-   * Select guest country
-   */
-  async selectCountry(country: string) {
-    const input = this.page.locator(this.GUEST_COUNTRY).first();
-    if ((await input.count()) > 0) {
-      await this.fillInput(this.GUEST_COUNTRY, country);
-      await this.page.keyboard.press('ArrowDown');
-      await this.page.keyboard.press('Enter');
-    }
-  }
 
   /**
    * Fill booking notes
@@ -124,36 +117,34 @@ export class BookingPage extends BasePage {
   /**
    * Fill all guest information
    */
-  async fillGuestInformation(guestInfo: {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    country?: string;
-    notes?: string;
-    specialRequests?: string;
-  }) {
-    if (guestInfo.firstName) await this.fillFirstName(guestInfo.firstName);
-    if (guestInfo.lastName) await this.fillLastName(guestInfo.lastName);
-    if (guestInfo.email) await this.fillEmail(guestInfo.email);
-    if (guestInfo.phone) await this.fillPhone(guestInfo.phone);
-    if (guestInfo.country) await this.selectCountry(guestInfo.country);
-    if (guestInfo.notes) await this.fillNotes(guestInfo.notes);
-    if (guestInfo.specialRequests) await this.fillSpecialRequests(guestInfo.specialRequests);
+  async fillOwnerInformation(ownerInfo: OwnerInfo) {
+    if (ownerInfo.firstName) await this.fillFirstName(ownerInfo.firstName);
+    if (ownerInfo.lastName) await this.fillLastName(ownerInfo.lastName);
+    if (ownerInfo.email) await this.fillEmail(ownerInfo.email);
+    if (ownerInfo.phone) await this.fillPhone(ownerInfo.phone);
+    if (ownerInfo.notes) await this.fillNotes(ownerInfo.notes);
+  }
+
+  /**
+   * Fill additional guests information
+   */
+  async fillAdditionalGuestsInformation(additionalGuests: AdditionalGuest[]) {
+    for (let i = 0; i < additionalGuests.length; i++) {
+      await this.fillAdditionalGuestFirstName(additionalGuests[i].firstName, i);
+      await this.fillAdditionalGuestLastName(additionalGuests[i].lastName, i);
+    }
   }
 
   /**
    * Get booking summary information
    */
   async getBookingSummary() {
-    const summary = this.page.locator(this.BOOKING_SUMMARY).first();
+    const summary = this.page.locator(this.BOOKING_SUMMARY);
+
     return {
-      checkIn: await summary.locator(this.CHECK_IN_DATE_DISPLAY).first().textContent(),
-      checkOut: await summary.locator(this.CHECK_OUT_DATE_DISPLAY).first().textContent(),
-      room: await summary.locator(this.ROOM_SELECTION_DISPLAY).first().textContent(),
-      totalPrice: await summary.locator(this.TOTAL_PRICE_DISPLAY).first().textContent(),
-      guests: await summary.locator(this.GUESTS_COUNT_DISPLAY).first().textContent(),
-      nights: await summary.locator(this.NIGHTS_DISPLAY).first().textContent(),
+      room: await summary.locator(this.ROOM_NAME_DISPLAY).textContent(),
+      dates: await summary.locator(this.DATES_DISPLAY).textContent(),
+      guests_nights: await summary.locator(this.GUESTS_NIGHTS_DISPLAY).textContent(),
     };
   }
 
@@ -214,27 +205,21 @@ export class BookingPage extends BasePage {
   async verifyPageElements(): Promise<boolean> {
     return (
       (await this.isVisible(this.BOOKING_SUMMARY)) &&
-      ((await this.page.locator(this.GUEST_EMAIL).count()) > 0 ||
-        (await this.page.locator(this.GUEST_FIRST_NAME).count()) > 0)
+      ((await this.page.locator(this.OWNER_EMAIL).count()) > 0 ||
+        (await this.page.locator(this.OWNER_FIRST_NAME).count()) > 0)
     );
   }
 
   /**
    * Proceed with booking - fill info and continue
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async proceedWithBooking(guestInfo: any) {
-    await this.fillGuestInformation(guestInfo);
+   
+  async proceedWithBooking(ownerInfo: OwnerInfo, additionalGuests: AdditionalGuest[]) {
+    await this.fillOwnerInformation(ownerInfo);
+    await this.fillAdditionalGuestsInformation(additionalGuests);
     await this.agreeToTerms();
     await this.clickContinueToPayment();
     await this.waitForURL(/payment/);
-  }
-
-  /**
-   * Get total nights
-   */
-  async getTotalNights(): Promise<string | null> {
-    return await this.getText(this.NIGHTS_DISPLAY);
   }
 
   /**
@@ -262,7 +247,7 @@ export class BookingPage extends BasePage {
    * Verify guest information fields are pre-filled
    */
   async verifyPrefilledInformation(email: string): Promise<boolean> {
-    const emailValue = await this.page.locator(this.GUEST_EMAIL).first().inputValue();
+    const emailValue = await this.page.locator(this.OWNER_EMAIL).first().inputValue();
     return emailValue.includes(email);
   }
 }

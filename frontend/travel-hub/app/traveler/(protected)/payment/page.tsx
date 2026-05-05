@@ -655,7 +655,7 @@ function PaymentPageContent() {
   const countdownSeverity = remainingMs < 2 * 60 * 1000 ? 'error' : 'warning';
 
   return (
-    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 6 }}>
+    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 6 }} data-testid="traveler-payment-page">
       {/* ── Processing overlay ── */}
       <Backdrop
         open={isProcessing}
@@ -1028,6 +1028,7 @@ function PaymentPageContent() {
                                 fullWidth
                                 size="small"
                                 required
+                                inputProps={{ 'data-testid': `traveler-payment-additional-first-name-${idx}` }}
                               />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -1044,6 +1045,7 @@ function PaymentPageContent() {
                                 fullWidth
                                 size="small"
                                 required
+                                inputProps={{ 'data-testid': `traveler-payment-additional-last-name-${idx}` }}
                               />
                             </Grid>
                           </Grid>
@@ -1247,7 +1249,7 @@ function PaymentPageContent() {
                   />
                 )}
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                  <Typography variant="h6" fontWeight={700} sx={{ color: 'white' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: 'white' }} data-testid="traveler-payment-summary-property-name">
                     {propertyName}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
@@ -1256,7 +1258,7 @@ function PaymentPageContent() {
                 </Box>
               </Box>
 
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: 3 }} data-testid="traveler-payment-summary-card-content">
                 {/* Booking Summary */}
                 <Typography variant="overline" color="text.secondary" fontWeight={700}>
                   {t('payment.bookingSummary')}
@@ -1267,14 +1269,15 @@ function PaymentPageContent() {
                     variant="body2"
                     fontWeight={700}
                     sx={{ color: 'primary.main', mb: 0.5 }}
+                    data-testid="traveler-payment-summary-dates"
                   >
                     📅 {checkin ? formatDateShort(checkin) : '—'} –{' '}
                     {checkout ? formatDateShort(checkout) : '—'}
                   </Typography>
-                  <Typography variant="body1" fontWeight={600}>
+                  <Typography variant="body1" fontWeight={600} data-testid="traveler-payment-summary-room-name">
                     {roomName}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" data-testid="traveler-payment-summary-guests-nights">
                     {t('payment.night', { count: nights })} •{' '}
                     {t('payment.guest', { count: guests })}
                   </Typography>

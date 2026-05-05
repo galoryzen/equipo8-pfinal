@@ -6,6 +6,41 @@ import { Page } from '@playwright/test';
  */
 
 /**
+ * Parse ISO date string (YYYY-MM-DD) to Date object correctly.
+ * Appends T00:00:00 to interpret as local time, avoiding UTC timezone shift.
+ */
+export function parseISODate(isoDate: string): Date {
+  return new Date(isoDate + 'T00:00:00');
+}
+
+/**
+ * Calculate number of nights between check-in and check-out dates.
+ * @returns Number of nights (always >= 1)
+ */
+export function calculateNights(checkin: string, checkout: string): number {
+  const checkIn = parseISODate(checkin);
+  const checkOut = parseISODate(checkout);
+  checkIn.setHours(0, 0, 0, 0);
+  checkOut.setHours(0, 0, 0, 0);
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.max(1, Math.floor((checkOut.getTime() - checkIn.getTime()) / msPerDay));
+}
+
+/**
+ * Format dates for display (e.g., "May 11 - May 14").
+ * Uses English locale to match booking page display format.
+ */
+export function formatDateRange(checkin: string, checkout: string): string {
+  const checkIn = parseISODate(checkin);
+  const checkOut = parseISODate(checkout);
+  const checkInMonth = checkIn.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  const checkInDay = checkIn.getDate();
+  const checkOutMonth = checkOut.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  const checkOutDay = checkOut.getDate();
+  return `${checkInMonth} ${checkInDay} – ${checkOutMonth} ${checkOutDay}`;
+}
+
+/**
  * Wait for application to be fully loaded
  */
 export async function waitForAppReady(page: Page, timeout = 10000) {
