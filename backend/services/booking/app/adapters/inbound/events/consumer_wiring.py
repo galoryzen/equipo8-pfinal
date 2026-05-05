@@ -1,5 +1,5 @@
 from contracts.events.payment import PAYMENT_FAILED, PAYMENT_SUCCEEDED
-from shared.events import DomainEventConsumer, build_event_consumer
+from shared.events import DomainEventConsumer, build_event_consumer, build_event_publisher
 
 from app.adapters.inbound.events.handlers import make_payment_result_handler
 from app.adapters.outbound.db.session import async_session
@@ -16,7 +16,15 @@ def build_worker_consumer() -> DomainEventConsumer:
             f"got {settings.EVENT_CONSUMER_BACKEND!r}"
         )
 
-    handler = make_payment_result_handler(async_session)
+    events = build_event_publisher(
+        settings.EVENT_PUBLISHER_BACKEND,
+        rabbitmq_url=settings.RABBITMQ_URL,
+        eventbridge_bus_name=settings.EVENTBRIDGE_BUS_NAME,
+        eventbridge_region=settings.EVENTBRIDGE_REGION,
+        eventbridge_source=f"travelhub.{settings.SERVICE_NAME}",
+    )
+
+    handler = make_payment_result_handler(async_session, events)
 
     consumer = build_event_consumer(
         settings.EVENT_CONSUMER_BACKEND,

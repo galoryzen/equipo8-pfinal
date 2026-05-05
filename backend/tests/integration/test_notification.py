@@ -1,9 +1,9 @@
 """Notification integration test (OBJ-004 — 1 of 10-12).
 
-Drives a booking through the full happy path to PENDING_CONFIRMATION,
-hotel-manager confirms it, and asserts that the BookingConfirmed event is
-consumed by the Notification worker (a row appears in
-notifications.notification).
+Drives a booking through the full happy path to CONFIRMED via the auto-confirm
+orchestrator (PaymentSucceeded → PENDING_CONFIRMATION → CONFIRMED) and asserts
+that the BookingConfirmed event is consumed by the Notification worker (a row
+appears in notifications.notification).
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ from datetime import date
 import asyncpg
 import httpx
 import pytest
-
 from helpers.polling import wait_for_booking_status, wait_for_db_row
 
 
@@ -22,7 +21,6 @@ async def test_hotel_confirms_booking_creates_notification(
     http_client: httpx.AsyncClient,
     db_pool: asyncpg.Pool,
     traveler_token: str,
-    hotel_manager_token: str,
     auth_header: Callable[[str], dict[str, str]],
     seeded_property_id: str,
     seeded_room_type_id: str,
@@ -31,10 +29,8 @@ async def test_hotel_confirms_booking_creates_notification(
     created_booking_ids: list[str],
 ) -> None:
     traveler_headers = auth_header(traveler_token)
-    manager_headers = auth_header(hotel_manager_token)
 
-    # Step 1: traveler creates a cart on a property the manager owns
-    # (Cancún belongs to "Cadena del Sol" → roberto@cadenadelsol.com).
+    # Step 1: traveler creates a cart on a property.
     checkin, checkout = booking_dates
     resp = await http_client.post(
         "/api/v1/booking/bookings",
@@ -81,7 +77,7 @@ async def test_hotel_confirms_booking_creates_notification(
     )
     assert guests_resp.status_code in (200, 204), guests_resp.text
 
-    # Step 2: traveler checks out → reaches PENDING_CONFIRMATION via async flow
+    # Step 2: traveler checks out → booking auto-confirmed via PaymentSucceeded orchestration
     co = await http_client.post(
         f"/api/v1/booking/bookings/{booking_id}/checkout",
         headers=traveler_headers,
@@ -92,18 +88,11 @@ async def test_hotel_confirms_booking_creates_notification(
         http_client,
         traveler_headers,
         booking_id,
-        expected={"PENDING_CONFIRMATION"},
+        expected={"CONFIRMED"},
         timeout=25.0,
     )
 
-    # Step 3: hotel manager confirms.
-    confirm = await http_client.patch(
-        f"/api/v1/booking/bookings/{booking_id}/confirm",
-        headers=manager_headers,
-    )
-    assert confirm.status_code in (200, 204), confirm.text
-
-    # Step 4: BookingConfirmed event flows to Notification → row persisted.
+    # Step 3: BookingConfirmed event flows to Notification → row persisted.
     row = await wait_for_db_row(
         db_pool,
         """

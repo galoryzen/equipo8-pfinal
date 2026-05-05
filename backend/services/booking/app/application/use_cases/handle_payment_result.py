@@ -9,10 +9,11 @@ from contracts.events.payment import (
     PaymentFailedPayload,
     PaymentSucceededPayload,
 )
+from shared.events import DomainEventPublisher
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.application.use_cases.mark_booking_pending_confirmation import (
-    MarkBookingPendingConfirmationUseCase,
+from app.application.use_cases.confirm_booking_after_payment import (
+    ConfirmBookingAfterPaymentUseCase,
 )
 from app.domain.models import BookingStatus, new_status_history_row
 
@@ -22,14 +23,15 @@ logger = logging.getLogger(__name__)
 class HandlePaymentResultUseCase:
     """Dispatch a PaymentSucceeded or PaymentFailed event onto the booking domain."""
 
-    def __init__(self, repo: BookingRepository):
+    def __init__(self, repo: BookingRepository, events: DomainEventPublisher) -> None:
         self._repo = repo
-        self._mark = MarkBookingPendingConfirmationUseCase(repo)
+        self._events = events
+        self._orchestrate = ConfirmBookingAfterPaymentUseCase(repo, events)
 
     async def execute(self, envelope: DomainEventEnvelope) -> None:
         if envelope.event_type == PAYMENT_SUCCEEDED:
             payload = PaymentSucceededPayload.model_validate(envelope.payload)
-            await self._mark.execute(
+            await self._orchestrate.execute(
                 booking_id=payload.booking_id,
                 payment_intent_id=payload.payment_intent_id,
             )
@@ -49,9 +51,7 @@ class HandlePaymentResultUseCase:
     async def _record_payment_failed(self, payload: PaymentFailedPayload) -> None:
         reason = f"payment_failed:{payload.payment_intent_id}:{payload.reason}"
 
-        existing = await self._repo.find_last_status_history_by_reason(
-            payload.booking_id, reason
-        )
+        existing = await self._repo.find_last_status_history_by_reason(payload.booking_id, reason)
         if existing is not None:
             return
 
