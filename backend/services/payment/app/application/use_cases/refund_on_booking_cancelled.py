@@ -23,10 +23,15 @@ class RefundOnBookingCancelledUseCase:
 
     async def execute(self, envelope: DomainEventEnvelope) -> None:
         payload = BookingCancelledPayload.model_validate(envelope.payload)
-        logger.info("Processing BOOKING_CANCELLED for booking_id=%s", payload.booking_id)
+        logger.info(
+            "Processing BOOKING_CANCELLED for booking_id=%s refund_percent=%s",
+            payload.booking_id,
+            payload.refund_percent,
+        )
         await refund_eligible_payment_for_booking(
             self._repo,
             self._gateway,
             payload.booking_id,
             refund_reason=self._REFUND_REASON,
+            refund_percent=payload.refund_percent,
         )

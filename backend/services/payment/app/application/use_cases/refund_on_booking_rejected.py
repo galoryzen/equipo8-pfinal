@@ -24,9 +24,12 @@ class RefundOnBookingRejectedUseCase:
 
     async def execute(self, envelope: DomainEventEnvelope) -> None:
         payload = BookingRejectedPayload.model_validate(envelope.payload)
+        # Default of 100 in the payload schema covers any in-flight legacy events
+        # that were queued before refund_percent was added.
         await refund_eligible_payment_for_booking(
             self._repo,
             self._gateway,
             payload.booking_id,
             refund_reason="hotel_rejected",
+            refund_percent=payload.refund_percent,
         )

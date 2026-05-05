@@ -7,14 +7,13 @@ import { getPropertyDetail } from '@src/features/catalog/catalog-service';
 import { useAuth } from '@src/services/auth-context';
 import {
   ActiveCartConflictError,
-  cancelCartBooking,
+  abandonCart,
   createCartBooking,
   getBookingDetail,
-  listMyBookings,
+  getMyActiveCart,
 } from '@src/services/booking-service';
 import type {
   BookingDetail,
-  BookingListItem,
   CartBooking,
   CartExtras,
   CartSnapshot,
@@ -41,8 +40,8 @@ jest.mock('@src/services/booking-service', () => {
     ...original,
     createCartBooking: jest.fn(),
     getBookingDetail: jest.fn(),
-    cancelCartBooking: jest.fn(),
-    listMyBookings: jest.fn(),
+    abandonCart: jest.fn(),
+    getMyActiveCart: jest.fn(),
   };
 });
 
@@ -54,8 +53,8 @@ const mockedAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 const mockedUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockedCreate = createCartBooking as jest.MockedFunction<typeof createCartBooking>;
 const mockedGet = getBookingDetail as jest.MockedFunction<typeof getBookingDetail>;
-const mockedCancel = cancelCartBooking as jest.MockedFunction<typeof cancelCartBooking>;
-const mockedListMy = listMyBookings as jest.MockedFunction<typeof listMyBookings>;
+const mockedCancel = abandonCart as jest.MockedFunction<typeof abandonCart>;
+const mockedGetMyCart = getMyActiveCart as jest.MockedFunction<typeof getMyActiveCart>;
 const mockedGetPropertyDetail = getPropertyDetail as jest.MockedFunction<typeof getPropertyDetail>;
 
 const SNAPSHOT: CartSnapshot = {
@@ -159,7 +158,7 @@ describe('CartProvider', () => {
     mockedAsyncStorage.getItem.mockResolvedValue(null);
     mockedAsyncStorage.setItem.mockResolvedValue();
     mockedAsyncStorage.removeItem.mockResolvedValue();
-    mockedListMy.mockResolvedValue([]);
+    mockedGetMyCart.mockResolvedValue(null);
   });
 
   it('stays empty when user is not logged in', async () => {
@@ -252,19 +251,7 @@ describe('CartProvider', () => {
 
   it('rescues an active server cart on hydration when no local snapshot exists', async () => {
     authState({ isLoggedIn: true });
-    const listItem: BookingListItem = {
-      id: 'b1',
-      status: 'CART',
-      checkin: SNAPSHOT.checkin,
-      checkout: SNAPSHOT.checkout,
-      total_amount: SNAPSHOT.total_amount,
-      currency_code: SNAPSHOT.currency_code,
-      property_id: SNAPSHOT.property_id,
-      room_type_id: SNAPSHOT.room_type_id,
-      created_at: '2026-04-18T12:00:00',
-    };
-    mockedListMy.mockResolvedValueOnce([listItem]);
-    mockedGet.mockResolvedValueOnce(DETAIL_SERVER);
+    mockedGetMyCart.mockResolvedValueOnce(DETAIL_SERVER);
     mockedGetPropertyDetail.mockResolvedValueOnce(PROPERTY_DETAIL);
 
     const { result } = renderHook(() => useCart(), { wrapper });
@@ -275,23 +262,13 @@ describe('CartProvider', () => {
     expect(result.current.cart?.room_name).toBe('Rescued Room');
     // Hero image = first by display_order.
     expect(result.current.cart?.image_url).toBe('https://example.com/hero.jpg');
+    // No /bookings/{id} fetch needed — my-cart returns the full detail.
+    expect(mockedGet).not.toHaveBeenCalled();
   });
 
-  it('ignores expired/cancelled bookings when rescuing from server', async () => {
+  it('starts empty when server has no active cart', async () => {
     authState({ isLoggedIn: true });
-    mockedListMy.mockResolvedValueOnce([
-      {
-        id: 'b-old',
-        status: 'CANCELLED',
-        checkin: '2026-05-01',
-        checkout: '2026-05-04',
-        total_amount: '0',
-        currency_code: 'USD',
-        property_id: 'p1',
-        room_type_id: 'r1',
-        created_at: '2026-04-18T12:00:00',
-      },
-    ]);
+    mockedGetMyCart.mockResolvedValueOnce(null);
 
     const { result } = renderHook(() => useCart(), { wrapper });
 

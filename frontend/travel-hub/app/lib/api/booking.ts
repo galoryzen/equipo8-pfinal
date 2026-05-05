@@ -82,9 +82,24 @@ export async function createCartBooking(payload: CreateCartBookingPayload): Prom
   return res.json();
 }
 
-export async function cancelCartBooking(bookingId: string): Promise<BookingDetail> {
+export async function cancelBooking(bookingId: string): Promise<BookingDetail> {
   const res = await fetch(
     `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/cancel`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json();
+}
+
+export async function abandonCart(bookingId: string): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/abandon-cart`,
     {
       method: 'POST',
       credentials: 'include',

@@ -5,7 +5,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import { cancelCartBooking, getBookingDetail } from '@/app/lib/api/booking';
+import { abandonCart, cancelBooking, getBookingDetail } from '@/app/lib/api/booking';
 import { formatBookingRef, formatTripDate } from '@/app/lib/myTrips/formatting';
 import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
 import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
@@ -48,7 +48,11 @@ function BookingDetailContent() {
     if (!detail) return;
     setCancelling(true);
     try {
-      const updated = await cancelCartBooking(detail.id);
+      // CART → abandon (no refund); CONFIRMED → cancel (policy-gated, async refund).
+      const updated =
+        detail.status === 'CART'
+          ? await abandonCart(detail.id)
+          : await cancelBooking(detail.id);
       setDetail(updated as BookingDetail);
       setSnackbar({
         open: true,

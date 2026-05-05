@@ -94,9 +94,26 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
   return resp.data;
 }
 
-export async function cancelCartBooking(bookingId: string): Promise<BookingDetail> {
+/**
+ * Returns the user's active CART booking, or null if none exists. Carts are not
+ * part of `listMyBookings`; use this for the rescue path (no local snapshot,
+ * cross-device login, etc.).
+ */
+export async function getMyActiveCart(): Promise<BookingDetail | null> {
+  const resp = await api.get<BookingDetail | null>('/v1/booking/bookings/my-cart');
+  return resp.data ?? null;
+}
+
+export async function cancelBooking(bookingId: string): Promise<BookingDetail> {
   const resp = await api.post<BookingDetail>(
     `/v1/booking/bookings/${encodeURIComponent(bookingId)}/cancel`,
+  );
+  return resp.data;
+}
+
+export async function abandonCart(bookingId: string): Promise<BookingDetail> {
+  const resp = await api.post<BookingDetail>(
+    `/v1/booking/bookings/${encodeURIComponent(bookingId)}/abandon-cart`,
   );
   return resp.data;
 }

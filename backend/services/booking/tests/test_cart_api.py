@@ -8,7 +8,8 @@ from uuid import UUID
 from fastapi.testclient import TestClient
 
 from app.adapters.inbound.api.dependencies import (
-    get_cancel_cart_booking_use_case,
+    get_abandon_cart_booking_use_case,
+    get_cancel_booking_use_case,
     get_create_cart_booking_use_case,
 )
 from app.application.exceptions import (
@@ -138,15 +139,17 @@ class TestCreateCartEndpoint:
         assert resp.status_code == 422
 
 
-class TestCancelCartEndpoint:
+class TestCancelEndpoint:
+    """`/cancel` is for CONFIRMED bookings (policy-gated, async refund)."""
+
     def test_returns_200_with_cancelled_booking(self, client_authenticated):
         mock_uc = AsyncMock()
         mock_uc.execute.return_value = _sample_detail("CANCELLED")
-        app.dependency_overrides[get_cancel_cart_booking_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_cancel_booking_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/cancel")
         finally:
-            app.dependency_overrides.pop(get_cancel_cart_booking_use_case, None)
+            app.dependency_overrides.pop(get_cancel_booking_use_case, None)
 
         assert resp.status_code == 200
         body = resp.json()
@@ -156,11 +159,11 @@ class TestCancelCartEndpoint:
     def test_returns_404_when_booking_not_found(self, client_authenticated):
         mock_uc = AsyncMock()
         mock_uc.execute.side_effect = BookingNotFoundError()
-        app.dependency_overrides[get_cancel_cart_booking_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_cancel_booking_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/cancel")
         finally:
-            app.dependency_overrides.pop(get_cancel_cart_booking_use_case, None)
+            app.dependency_overrides.pop(get_cancel_booking_use_case, None)
 
         assert resp.status_code == 404
         assert resp.json()["code"] == "BOOKING_NOT_FOUND"
@@ -170,15 +173,74 @@ class TestCancelCartEndpoint:
         mock_uc.execute.side_effect = InvalidBookingStateError(
             "Cannot cancel booking in state PENDING_PAYMENT"
         )
-        app.dependency_overrides[get_cancel_cart_booking_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_cancel_booking_use_case] = lambda: mock_uc
         try:
             resp = client_authenticated.post(f"/api/v1/booking/bookings/{BOOKING_ID}/cancel")
         finally:
-            app.dependency_overrides.pop(get_cancel_cart_booking_use_case, None)
+            app.dependency_overrides.pop(get_cancel_booking_use_case, None)
 
         assert resp.status_code == 409
         assert resp.json()["code"] == "INVALID_BOOKING_STATE"
 
     def test_unauthenticated_request_is_rejected(self):
         resp = TestClient(app).post(f"/api/v1/booking/bookings/{BOOKING_ID}/cancel")
+        assert resp.status_code == 401
+
+
+class TestAbandonCartEndpoint:
+    """`/abandon-cart` is for CART bookings only (no refund event)."""
+
+    def test_returns_200_with_expired_booking(self, client_authenticated):
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail("EXPIRED")
+        app.dependency_overrides[get_abandon_cart_booking_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/abandon-cart"
+            )
+        finally:
+            app.dependency_overrides.pop(get_abandon_cart_booking_use_case, None)
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "EXPIRED"
+        assert body["id"] == str(BOOKING_ID)
+
+    def test_returns_404_when_booking_not_found(self, client_authenticated):
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = BookingNotFoundError()
+        app.dependency_overrides[get_abandon_cart_booking_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/abandon-cart"
+            )
+        finally:
+            app.dependency_overrides.pop(get_abandon_cart_booking_use_case, None)
+
+        assert resp.status_code == 404
+        assert resp.json()["code"] == "BOOKING_NOT_FOUND"
+
+    def test_returns_409_when_booking_already_advanced_past_cart(
+        self, client_authenticated
+    ):
+        """Stale local cart referencing a CONFIRMED booking must NOT abandon it."""
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = InvalidBookingStateError(
+            "Cannot abandon cart in state CONFIRMED"
+        )
+        app.dependency_overrides[get_abandon_cart_booking_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/abandon-cart"
+            )
+        finally:
+            app.dependency_overrides.pop(get_abandon_cart_booking_use_case, None)
+
+        assert resp.status_code == 409
+        assert resp.json()["code"] == "INVALID_BOOKING_STATE"
+
+    def test_unauthenticated_request_is_rejected(self):
+        resp = TestClient(app).post(
+            f"/api/v1/booking/bookings/{BOOKING_ID}/abandon-cart"
+        )
         assert resp.status_code == 401

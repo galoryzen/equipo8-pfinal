@@ -22,22 +22,21 @@ from app.schemas.booking import BookingDetailOut
 logger = logging.getLogger(__name__)
 
 
-class CancelCartBookingUseCase:
-    """Cancel a traveler booking: CART abandonment or CONFIRMED cancellation.
+class CancelBookingUseCase:
+    """Cancel a CONFIRMED booking (traveler-initiated, post-confirmation).
 
-    **CART:** policy validation is skipped so existing cart-abandon semantics stay
-    unchanged. Transition CART -> EXPIRED (not CANCELLED).
+    **Only CONFIRMED is cancellable.** PENDING_CONFIRMATION is in the hotel's hands;
+    the user must wait for confirm/reject. CART abandonment goes through
+    ``AbandonCartBookingUseCase`` instead.
 
-    **CONFIRMED:** domain cancellation policy is evaluated first; if allowed,
-    transition to CATALOG release path (same release_hold coordination as cart).
+    The cancellation policy on the booking is evaluated; if it forbids cancellation
+    at this time, ``CancellationNotAllowedError`` is raised and the booking remains
+    CONFIRMED.
 
-    EXPIRED remains the terminal for abandoned carts. CANCELLED is used for
-    post-confirmation traveler-initiated cancellation.
-
-    **Async refund (why not synchronous):** PSP refunds can be slow or flaky; keeping
-    cancel API synchronous only persists booking state and publishes ``BookingCancelled``.
-    The payment worker performs the refund so the HTTP request stays fast and failures
-    in the PSP do not roll back an already-valid cancellation (inventory + policy).
+    **Async refund (why not synchronous):** PSP refunds can be slow or flaky; the
+    cancel API only persists booking state and publishes ``BookingCancelled``. The
+    payment worker performs the refund so the HTTP request stays fast and PSP
+    failures do not roll back an already-valid cancellation (inventory + policy).
     """
 
     _CANCEL_EVENT_REASON = "traveler_cancelled"
@@ -46,8 +45,8 @@ class CancelCartBookingUseCase:
         self,
         repo: BookingRepository,
         catalog: CatalogInventoryPort,
+        events: DomainEventPublisher,
         clock: Callable[[], datetime] | None = None,
-        events: DomainEventPublisher | None = None,
     ):
         self._repo = repo
         self._catalog = catalog
@@ -58,36 +57,12 @@ class CancelCartBookingUseCase:
         booking = await self._repo.get_by_id_for_user(booking_id, user_id)
         if booking is None:
             raise BookingNotFoundError()
+        if booking.status != BookingStatus.CONFIRMED:
+            raise InvalidBookingStateError(
+                f"Cannot cancel booking in state {booking.status.value}"
+            )
 
         now = self._now()
-
-        if booking.status == BookingStatus.CART:
-            return await self._cancel_cart(booking, user_id, now)
-
-        if booking.status == BookingStatus.CONFIRMED:
-            return await self._cancel_confirmed(booking, user_id, now)
-
-        raise InvalidBookingStateError(f"Cannot cancel booking in state {booking.status.value}")
-
-    async def _cancel_cart(self, booking: Booking, user_id: UUID, now: datetime) -> BookingDetailOut:
-        booking.status = BookingStatus.EXPIRED
-        booking.inventory_released = False
-        booking.updated_at = now
-        await self._repo.save(booking)
-        await self._repo.add_status_history(
-            new_status_history_row(
-                booking.id,
-                from_status=BookingStatus.CART,
-                to_status=BookingStatus.EXPIRED,
-                reason="user_cancelled_cart",
-                changed_by=user_id,
-            )
-        )
-
-        await self._release_inventory_best_effort(booking)
-        return _to_detail(booking)
-
-    async def _cancel_confirmed(self, booking: Booking, user_id: UUID, now: datetime) -> BookingDetailOut:
         evaluation = evaluate_cancellation_policy(booking, at=now)
         if not evaluation.allowed:
             raise CancellationNotAllowedError(
@@ -109,26 +84,40 @@ class CancelCartBookingUseCase:
             )
         )
 
-        await self._publish_booking_cancelled_for_refund(booking)
-
+        await self._publish_booking_cancelled_for_refund(booking, evaluation.refund_percent)
         await self._release_inventory_best_effort(booking)
         return _to_detail(booking)
 
-    async def _publish_booking_cancelled_for_refund(self, booking: Booking) -> None:
+    async def _publish_booking_cancelled_for_refund(
+        self, booking: Booking, refund_percent: int
+    ) -> None:
         """Enqueue async refund via payment worker (``BookingCancelled`` event).
 
-        Does not await PSP refund; bus/publish errors are logged and do not roll back
-        the booking transition (inventory release still runs).
+        Bus/publish errors are logged and do not roll back the booking transition;
+        inventory release still runs.
         """
-        if self._events is None:
+        if refund_percent <= 0:
+            # Defensive: an allowed cancellation with zero refund means no money
+            # to return — skip publish so the worker doesn't record a $0 refund.
+            logger.error(
+                "Skipping BOOKING_CANCELLED publish for booking_id=%s: refund_percent=%s "
+                "(allowed cancellation with no refund — investigate policy data)",
+                booking.id,
+                refund_percent,
+            )
             return
-        logger.info("Publishing BOOKING_CANCELLED for booking_id=%s", booking.id)
+        logger.info(
+            "Publishing BOOKING_CANCELLED for booking_id=%s refund_percent=%s",
+            booking.id,
+            refund_percent,
+        )
         envelope = DomainEventEnvelope(
             event_type=BOOKING_CANCELLED,
             payload=BookingCancelledPayload(
                 booking_id=booking.id,
                 user_id=booking.user_id,
                 reason=self._CANCEL_EVENT_REASON,
+                refund_percent=refund_percent,
             ).model_dump(mode="json"),
         )
         try:

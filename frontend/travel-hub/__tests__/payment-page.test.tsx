@@ -48,13 +48,13 @@ vi.mock('@/app/lib/api/booking', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/app/lib/api/booking')>();
   return {
     ...mod,
-    cancelCartBooking: vi.fn(),
+    abandonCart: vi.fn(),
     createCartBooking: vi.fn(),
     getBookingDetail: vi.fn(),
   };
 });
 
-const mockCancel = vi.mocked(bookingApi.cancelCartBooking);
+const mockCancel = vi.mocked(bookingApi.abandonCart);
 const mockCreate = vi.mocked(bookingApi.createCartBooking);
 const mockDetail = vi.mocked(bookingApi.getBookingDetail);
 

@@ -14,8 +14,9 @@ _ACTIVE_STATUSES = (
     BookingStatus.PENDING_CONFIRMATION,
 )
 _PAST_TERMINAL_STATUSES = (BookingStatus.CANCELLED, BookingStatus.REJECTED)
-# EXPIRED rows are hidden from "My Trips". CART stays visible so travelers can resume or cancel holds.
-_EXCLUDED_FROM_ALL = (BookingStatus.EXPIRED,)
+# Trip listings hide CART (use GET /bookings/my-cart for in-progress rescue) and
+# EXPIRED (terminal-but-not-meaningful holds the user never paid for).
+_EXCLUDED_FROM_ALL = (BookingStatus.CART, BookingStatus.EXPIRED)
 
 class SqlAlchemyBookingRepository(BookingRepository):
     def __init__(self, session: AsyncSession):

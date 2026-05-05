@@ -848,6 +848,10 @@ INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_stat
   ('92000000-0000-0000-0000-00000000ca24', '90000000-0000-0000-0000-00000000ca02', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000001');
 
 -- Scenario C — CART (no policy gate on cancel → EXPIRED)
+-- Owned by Pablo (not Carlos): an active CART blocks the one-cart-at-a-time rule, and
+-- the integration suite logs in as Carlos to create new carts. Keeping this off Carlos
+-- avoids a 409 CART_ALREADY_EXISTS that breaks integration tests for the first 2 hours
+-- after re-seeding.
 INSERT INTO booking.booking (
   id, user_id, status, checkin, checkout, hold_expires_at, total_amount, currency_code,
   property_id, room_type_id, rate_plan_id, unit_price,
@@ -855,7 +859,7 @@ INSERT INTO booking.booking (
   inventory_released, guests_count
 ) VALUES (
   '90000000-0000-0000-0000-00000000ca03',
-  'a0000000-0000-0000-0000-000000000001',
+  'a0000000-0000-0000-0000-000000000004',
   'CART',
   CURRENT_DATE + INTERVAL '45 days',
   CURRENT_DATE + INTERVAL '48 days',
@@ -869,12 +873,12 @@ INSERT INTO booking.booking (
   FALSE, 1
 );
 INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
-  ('92000000-0000-0000-0000-00000000ca31', '90000000-0000-0000-0000-00000000ca03', NULL, 'CART', 'a0000000-0000-0000-0000-000000000001');
+  ('92000000-0000-0000-0000-00000000ca31', '90000000-0000-0000-0000-00000000ca03', NULL, 'CART', 'a0000000-0000-0000-0000-000000000004');
 
 INSERT INTO booking.guest (id, booking_id, is_primary, full_name, email, phone, created_at, updated_at) VALUES
   ('c0000000-0000-0000-0000-0000000ca0a1', '90000000-0000-0000-0000-00000000ca01', TRUE, 'TEST — Allowed cancellation', 'carlos@example.com', '+5215512345678', now(), now()),
   ('c0000000-0000-0000-0000-0000000ca0a2', '90000000-0000-0000-0000-00000000ca02', TRUE, 'TEST — Blocked cancellation',  'carlos@example.com', '+5215512345678', now(), now()),
-  ('c0000000-0000-0000-0000-0000000ca0a3', '90000000-0000-0000-0000-00000000ca03', TRUE, 'TEST — Cart booking',          'carlos@example.com', '+5215512345678', now(), now());
+  ('c0000000-0000-0000-0000-0000000ca0a3', '90000000-0000-0000-0000-00000000ca03', TRUE, 'TEST — Cart booking',          'pablo@example.com',  '+34612345678',   now(), now());
 
 -- =============================================
 -- payments
