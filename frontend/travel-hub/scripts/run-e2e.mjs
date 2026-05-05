@@ -98,7 +98,7 @@ try {
 
   await waitForUrl(loginUrl);
 
-  await runProcess('pnpm', ['exec', 'playwright', 'test', 'e2e'], {
+  await runProcess('pnpm', ['exec', 'playwright', 'test'], {
     env: {
       PLAYWRIGHT_BASE_URL: frontendBaseUrl,
     },
