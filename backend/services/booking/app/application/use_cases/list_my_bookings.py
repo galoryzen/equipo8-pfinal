@@ -114,9 +114,10 @@ class ListMyBookingsUseCase:
         page_size: int = 10,
     ) -> PaginatedBookingListOut:
         today = self._clock()
-        bookings, total = await self._repo.list_by_user_id(
-            user_id, scope=scope, status=status, today=today, page=page, page_size=page_size
-        )
+        kwargs: dict = {"scope": scope, "today": today, "page": page, "page_size": page_size}
+        if status is not None:
+            kwargs["status"] = status
+        bookings, total = await self._repo.list_by_user_id(user_id, **kwargs)
         items = await self._enrich(bookings)
         total_pages = max(1, -(-total // page_size))
         return PaginatedBookingListOut(
