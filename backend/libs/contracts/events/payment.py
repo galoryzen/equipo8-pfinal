@@ -21,6 +21,7 @@ class PaymentSucceededPayload(BaseModel):
     payment_intent_id: UUID
     booking_id: UUID
     payment_id: UUID
+    user_id: UUID
     amount: Decimal
     currency: str
 
