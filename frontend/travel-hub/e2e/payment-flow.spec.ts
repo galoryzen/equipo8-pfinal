@@ -3,20 +3,20 @@ import { expect, test } from '@playwright/test';
 import {
   TEST_DESTINATIONS,
   TEST_USERS,
+  generateBookingOwnerInfo,
   generateGuestInfo,
   generatePaymentInfo,
   getBookingDates,
 } from './fixtures/testData';
 import { BookingPage } from './pages/BookingPage';
-import { ConfirmationPage } from './pages/ConfirmationPage';
 import { HotelDetailsPage } from './pages/HotelDetailsPage';
 import { LoginPage } from './pages/LoginPage';
-import { PaymentPage } from './pages/PaymentPage';
 import { SearchPage } from './pages/SearchPage';
-import { AdditionalGuest, OwnerInfo } from './pages/types';
+import { AdditionalGuest, CreditCardInfo, OwnerInfo } from './pages/types';
 import { calculateNights, formatDateRange } from './utils/testHelpers';
 
 import { faker } from '@faker-js/faker';
+import { PaymentConfirmationPage } from './pages/PaymentConfirmationPage';
 
 
 /**
@@ -44,8 +44,7 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
   let searchPage: SearchPage;
   let hotelDetailsPage: HotelDetailsPage;
   let bookingPage: BookingPage;
-  let paymentPage: PaymentPage;
-  let confirmationPage: ConfirmationPage;
+  let paymentConfirmationPage: PaymentConfirmationPage;
 
   test.beforeEach(async ({ page }) => {
     // Initialize all page objects
@@ -53,8 +52,7 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     searchPage = new SearchPage(page);
     hotelDetailsPage = new HotelDetailsPage(page);
     bookingPage = new BookingPage(page);
-    paymentPage = new PaymentPage(page);
-    confirmationPage = new ConfirmationPage(page);
+    paymentConfirmationPage = new PaymentConfirmationPage(page);
   });
 
   test('should complete booking flow: Cancún property', async ({ page }) => {
@@ -130,9 +128,6 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     await hotelDetailsPage.clickContinueButton();
     await hotelDetailsPage.waitForRedirectToBooking();
 
-    console.log('checkIn', dates.checkIn);
-    console.log('checkOut', dates.checkOut);
-
     // Calculate number of nights and format dates using utility functions
     const number_of_nights = calculateNights(dates.checkIn, dates.checkOut);
     const formattedDates = formatDateRange(dates.checkIn, dates.checkOut);
@@ -145,77 +140,57 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     expect(bookingSummary.guests_nights).toBeDefined();
 
     expect(bookingSummary.room).toBe(DEFAULT_ROOM_NAME);
-    expect(bookingSummary.dates).toBe('📅 ' + formattedDates);
-    expect(bookingSummary.guests_nights).toBe(number_of_nights + ' Nights • ' + DEFAULT_GUESTS_COUNT + ' Guests');
+    expect(bookingSummary.dates?.toLocaleLowerCase()).toBe('📅 ' + formattedDates.toLowerCase());
+    expect(bookingSummary.guests_nights?.toLocaleLowerCase()).toBe((number_of_nights + ' nights • ' + DEFAULT_GUESTS_COUNT + ' guests').toLowerCase());
 
-    const ownerInfo: OwnerInfo = {
-      firstName: guestInfo.firstName,
-      lastName: guestInfo.lastName,
-      email: guestInfo.email,
-      phone: guestInfo.phone,
-    };
+    const ownerInfo: OwnerInfo = generateBookingOwnerInfo();
 
     const additionalGuests: AdditionalGuest[] = Array.from({ length: ADDITIONAL_GUESTS_COUNT }, (_, i) => ({
       id: i.toString(),
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
+      firstName: generateGuestInfo().firstName,
+      lastName: generateGuestInfo().lastName,
     }));
 
-    // Proceed with booking
-    await bookingPage.proceedWithBooking(ownerInfo, additionalGuests);
-
-    // Verify redirect to payment
-    await paymentPage.waitForPageLoad();
-
-    // ── STEP 6: Process payment ──
-    const paymentSummary = await paymentPage.getPaymentSummary();
-    expect(paymentSummary.totalAmount).toBeTruthy();
-
-    await paymentPage.fillPaymentInformation({
-      cardNumber: paymentInfo.cardNumber,
-      cardholderName: paymentInfo.cardholderName,
-      expiryDate: paymentInfo.expiryDate,
+    const creditCardInfo: CreditCardInfo = {
+      number: paymentInfo.cardNumber,
+      expiry: paymentInfo.expiryDate ,
       cvv: paymentInfo.cvv,
-      billingAddress: paymentInfo.billingAddress,
-      billingCity: paymentInfo.billingCity,
-      billingState: paymentInfo.billingState,
-      billingZip: paymentInfo.billingZip,
-      billingCountry: paymentInfo.billingCountry,
-    });
+      name: paymentInfo.cardholderName,
+    };
 
-    await paymentPage.clickPayNow();
+    // Proceed with booking
+    await bookingPage.proceedWithBooking(ownerInfo, additionalGuests, creditCardInfo);
 
-    // Wait for payment processing
-    await paymentPage.waitForSuccessPage();
-
-    // ── STEP 7: Verify confirmation ──
-    await confirmationPage.waitForPageLoad();
+    // ── STEP 6: Verify payment confirmation ──
+    await paymentConfirmationPage.waitForPageLoad();
 
     // Verify confirmation page is displayed
-    const isConfirmed = await confirmationPage.isConfirmationPageDisplayed();
+    const isConfirmed = await paymentConfirmationPage.isPageDisplayed();
     expect(isConfirmed).toBeTruthy();
 
     // Get booking reference
-    const bookingReference = await confirmationPage.getBookingReference();
+    const bookingReference = await paymentConfirmationPage.getBookingReference();
     expect(bookingReference).toBeTruthy();
 
-    // Verify booking details
-    const confirmationDetails = await confirmationPage.getBookingDetails();
-    expect(confirmationDetails.reference).toBeTruthy();
-    expect(confirmationDetails.hotelName).toBeTruthy();
-    expect(confirmationDetails.checkInDate).toBeTruthy();
-    expect(confirmationDetails.checkOutDate).toBeTruthy();
-    expect(confirmationDetails.totalPrice).toBeTruthy();
+    // Get full confirmation summary
+    const confirmationSummary = await paymentConfirmationPage.getConfirmationSummary();
 
-    // Verify check-in information is available
-    const checkInTime = await confirmationPage.getCheckInTime();
-    expect(checkInTime).toBeTruthy();
+    // Verify property name
+    expect(confirmationSummary.propertyName).toBe(destination.property);
 
-    const locationInfo = await confirmationPage.getLocationInfo();
-    expect(locationInfo).toBeTruthy();
+    // Verify dates (check-in text contains the formatted date)
+    expect(confirmationSummary.checkinDate?.toLocaleLowerCase()).toContain(formatDateRange(dates.checkIn, dates.checkOut, true).toLowerCase());
 
-    // Verify success
-    const isSuccessful = await confirmationPage.verifyBookingConfirmed();
-    expect(isSuccessful).toBeTruthy();
+    // Verify room name
+    expect(confirmationSummary.roomName).toBe(DEFAULT_ROOM_NAME);
+
+    // Verify guests count
+    expect(confirmationSummary.guests).toContain(String(DEFAULT_GUESTS_COUNT));
+
+    // Verify status is pending
+    expect(confirmationSummary.status?.toLocaleLowerCase()).toContain('pending');
+
+    // Verify total price is displayed
+    expect(confirmationSummary.totalPrice).toBeTruthy();
   });
 });

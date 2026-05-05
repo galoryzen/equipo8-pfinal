@@ -78,10 +78,34 @@ export function generateGuestInfo() {
   return {
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
-    email: faker.internet.email(),
-    phone: faker.phone.number('+1 (###) ###-####'),
-    country: faker.location.country(),
   };
+}
+
+/**
+ * Generate random booking owner information
+ * @returns {firstName: string, lastName: string, email: string, phone: string}
+ */
+export function generateBookingOwnerInfo() {
+  return {
+    firstName: faker.person.firstName(),
+    lastName: faker.person.lastName(),
+    email: faker.internet.email(),
+    phone: faker.phone.number({ style: 'human' }),
+  };
+}
+
+function generateCardExpiry() {
+  const now = new Date();
+
+  const future = faker.date.between({
+    from: now,
+    to: new Date(now.getFullYear() + 5, 11, 31),
+  });
+
+  const month = String(future.getMonth() + 1).padStart(2, '0');
+  const year = String(future.getFullYear()).slice(-2);
+
+  return `${month}/${year}`;
 }
 
 /**
@@ -90,10 +114,10 @@ export function generateGuestInfo() {
  */
 export function generatePaymentInfo() {
   return {
-    cardNumber: '4111111111111111', // Test Visa card
+    cardNumber: faker.finance.creditCardNumber(),
     cardholderName: faker.person.fullName().toUpperCase(),
-    expiryDate: '12/25',
-    cvv: '123',
+    expiryDate: generateCardExpiry(),
+    cvv: faker.finance.creditCardCVV(),
     billingAddress: faker.location.streetAddress(),
     billingCity: faker.location.city(),
     billingState: faker.location.state({ abbreviated: true }),

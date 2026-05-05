@@ -30,13 +30,18 @@ export function calculateNights(checkin: string, checkout: string): number {
  * Format dates for display (e.g., "May 11 - May 14").
  * Uses English locale to match booking page display format.
  */
-export function formatDateRange(checkin: string, checkout: string): string {
+export function formatDateRange(checkin: string, checkout: string, includeYear: boolean = false): string {
   const checkIn = parseISODate(checkin);
   const checkOut = parseISODate(checkout);
-  const checkInMonth = checkIn.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  const checkInMonth = checkIn.toLocaleString('en-US', { month: 'short' });
   const checkInDay = checkIn.getDate();
-  const checkOutMonth = checkOut.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  const checkOutMonth = checkOut.toLocaleString('en-US', { month: 'short' });
   const checkOutDay = checkOut.getDate();
+
+  if (includeYear) {
+    return `${checkInMonth} ${checkInDay}, ${checkIn.getFullYear()} – ${checkOutMonth} ${checkOutDay}, ${checkOut.getFullYear()}`;
+  }
+
   return `${checkInMonth} ${checkInDay} – ${checkOutMonth} ${checkOutDay}`;
 }
 
@@ -326,22 +331,6 @@ export async function clearBrowserData(page: Page): Promise<void> {
   await page.evaluate(() => sessionStorage.clear());
 }
 
-/**
- * Set authentication token in storage
- */
-export async function setAuthToken(
-  page: Page,
-  token: string,
-  storageKey = 'auth_token'
-): Promise<void> {
-  await page.evaluate(
-    (key, value) => {
-      localStorage.setItem(key, value);
-    },
-    storageKey,
-    token
-  );
-}
 
 /**
  * Get authentication token from storage
@@ -398,14 +387,13 @@ export async function getAllAttributeValues(
   attribute: string
 ): Promise<string[]> {
   return await page.evaluate(
-    (sel, attr) => {
+    ({ sel, attr }: { sel: string; attr: string }) => {
       const elements = document.querySelectorAll(sel);
       return Array.from(elements)
         .map((el) => el.getAttribute(attr))
         .filter((val) => val !== null) as string[];
     },
-    selector,
-    attribute
+    { sel: selector, attr: attribute }
   );
 }
 

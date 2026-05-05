@@ -11,3 +11,10 @@ export interface OwnerInfo {
   phone: string;
   notes?: string;
 }
+
+export interface CreditCardInfo {
+  number: string;
+  expiry: string;
+  cvv: string;
+  name: string;
+}

@@ -1,5 +1,5 @@
 import { BasePage } from './BasePage';
-import { AdditionalGuest, OwnerInfo } from './types';
+import { AdditionalGuest, CreditCardInfo, OwnerInfo } from './types';
 
 /**
  * Page Object for Booking/Fill Data page
@@ -29,8 +29,7 @@ export class BookingPage extends BasePage {
   private readonly ROOM_NAME_DISPLAY = '[data-testid="traveler-payment-summary-room-name"]';
   private readonly TOTAL_PRICE_DISPLAY = '[class*="total"], [class*="price"]';
   private readonly GUESTS_NIGHTS_DISPLAY = '[data-testid="traveler-payment-summary-guests-nights"]';
-  private readonly CONTINUE_PAYMENT_BUTTON =
-    'button:has-text("Continuar"), button:has-text("Siguiente"), button:has-text("Pagar"), button:has-text("Continue")';
+  private readonly CONTINUE_PAYMENT_BUTTON = '[data-testid="traveler-payment-submit"]';
   private readonly BACK_BUTTON = 'button:has-text("Atrás"), button:has-text("Back")';
   private readonly ERROR_MESSAGE = '[class*="error"], [class*="alert-error"]';
   private readonly LOADING_SPINNER =
@@ -38,6 +37,12 @@ export class BookingPage extends BasePage {
   private readonly FORM_SECTION = '[class*="form"], [class*="section"]';
   private readonly AGREE_TERMS_CHECKBOX = 'input[type="checkbox"]';
   private readonly AGREE_TERMS_LABEL = 'text=/Acepto|Agree|Términos/i';
+
+  // Credit card information
+  private readonly CREDIT_CARD_NUMBER = '[data-testid="traveler-payment-card-number"]';
+  private readonly CREDIT_CARD_EXPIRY = '[data-testid="traveler-payment-card-expiry"]';
+  private readonly CREDIT_CARD_CVV = '[data-testid="traveler-payment-card-cvv"]';
+  private readonly CREDIT_CARD_NAME = '[data-testid="traveler-payment-card-name"]';
 
   /**
    * Fill guest first name
@@ -149,6 +154,16 @@ export class BookingPage extends BasePage {
   }
 
   /**
+   * Fill credit card information
+   */
+  async fillCreditCardInformation(creditCardInfo: CreditCardInfo) {
+    if (creditCardInfo.number) await this.fillInput(this.CREDIT_CARD_NUMBER, creditCardInfo.number);
+    if (creditCardInfo.expiry) await this.fillInput(this.CREDIT_CARD_EXPIRY, creditCardInfo.expiry);
+    if (creditCardInfo.cvv) await this.fillInput(this.CREDIT_CARD_CVV, creditCardInfo.cvv);
+    if (creditCardInfo.name) await this.fillInput(this.CREDIT_CARD_NAME, creditCardInfo.name);
+  }
+
+  /**
    * Check if form has errors
    */
   async hasErrors(): Promise<boolean> {
@@ -171,16 +186,6 @@ export class BookingPage extends BasePage {
     }
 
     return messages;
-  }
-
-  /**
-   * Agree to terms and conditions
-   */
-  async agreeToTerms() {
-    const checkbox = this.page.locator(this.AGREE_TERMS_CHECKBOX).first();
-    if ((await checkbox.count()) > 0) {
-      await checkbox.check();
-    }
   }
 
   /**
@@ -214,12 +219,12 @@ export class BookingPage extends BasePage {
    * Proceed with booking - fill info and continue
    */
    
-  async proceedWithBooking(ownerInfo: OwnerInfo, additionalGuests: AdditionalGuest[]) {
+  async proceedWithBooking(ownerInfo: OwnerInfo, additionalGuests: AdditionalGuest[], creditCardInfo: CreditCardInfo) {
     await this.fillOwnerInformation(ownerInfo);
     await this.fillAdditionalGuestsInformation(additionalGuests);
-    await this.agreeToTerms();
+    await this.fillCreditCardInformation(creditCardInfo);
     await this.clickContinueToPayment();
-    await this.waitForURL(/payment/);
+    await this.waitForLoadingComplete();
   }
 
   /**
