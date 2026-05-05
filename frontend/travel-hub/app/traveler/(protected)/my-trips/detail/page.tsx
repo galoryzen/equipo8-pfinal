@@ -5,11 +5,11 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import { abandonCart, cancelBooking, getBookingDetail } from '@/app/lib/api/booking';
+import { abandonCart, cancelBooking, getBookingDetail, getRefundByBookingId } from '@/app/lib/api/booking';
 import { formatBookingRef, formatTripDate } from '@/app/lib/myTrips/formatting';
 import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
 import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
-import type { BookingDetail } from '@/app/lib/types/booking';
+import type { BookingDetail, RefundDetail } from '@/app/lib/types/booking';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -25,6 +25,7 @@ import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
@@ -35,6 +36,7 @@ function BookingDetailContent() {
 
   const [detail, setDetail] = useState<BookingDetail | null>(null);
   const [propertyById, setPropertyById] = useState<Record<string, PropertyDetail | null>>({});
+  const [refund, setRefund] = useState<RefundDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -87,6 +89,8 @@ function BookingDetailContent() {
         const map = await fetchPropertyDetailsMap([d.property_id]);
         if (cancelled) return;
         setPropertyById(map);
+        const refundData = await getRefundByBookingId(bookingId);
+        if (!cancelled) setRefund(refundData ?? null);
       } catch (e) {
         if (!cancelled) {
           setDetail(null);
@@ -277,9 +281,28 @@ function BookingDetailContent() {
                       </Stack>
                     </>
                   )}
-                </Stack>
-              </AccordionDetails>
-            </Accordion>
+                 </Stack>
+               </AccordionDetails>
+             </Accordion>
+           )}
+
+          {refund?.status === 'SUCCEEDED' && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mt: 1 }}>
+              <Tooltip
+                title={
+                  refund.reason === 'traveler_cancelled'
+                    ? t('tripDetail.refundType.traveler_cancelled')
+                    : t('tripDetail.refundType.hotel_rejected')
+                }
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {t('tripDetail.refundAmount')}
+                </Typography>
+              </Tooltip>
+              <Typography variant="body2" fontWeight={600} color="success.main">
+                -{refund.amount} {detail.currency_code}
+              </Typography>
+            </Box>
           )}
         </Box>
       </Stack>

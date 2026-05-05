@@ -104,3 +104,12 @@ def get_create_payment_intent_use_case(
 ) -> CreatePaymentIntentUseCase:
     repo = SqlAlchemyPaymentRepository(session)
     return CreatePaymentIntentUseCase(repo, booking)
+
+
+def get_refund_by_booking_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> "GetRefundByBookingUseCase":
+    from app.application.use_cases.get_refund_by_booking import GetRefundByBookingUseCase
+
+    repo = SqlAlchemyPaymentRepository(session)
+    return GetRefundByBookingUseCase(repo)
