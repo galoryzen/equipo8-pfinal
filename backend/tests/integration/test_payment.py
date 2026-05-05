@@ -162,10 +162,12 @@ async def test_payment_intent_endpoint_creates_intent(
     booking_dates: tuple[date, date],
     created_booking_ids: list[str],
 ) -> None:
-    """POST /payment-intents requires booking in PENDING_PAYMENT or
-    PENDING_CONFIRMATION. Drive the booking through a successful checkout
-    first, then call the explicit endpoint and assert it returns a 2xx
-    with intent fields, and the row exists in payments.payment_intent.
+    """Verify that a successful checkout creates a SUCCEEDED payment_intent row.
+
+    With the auto-confirm orchestrator the booking transitions:
+    PENDING_PAYMENT → PENDING_CONFIRMATION → CONFIRMED in a single event loop.
+    We wait for CONFIRMED and then assert that the corresponding
+    payments.payment_intent row was persisted with status SUCCEEDED.
     """
     headers = auth_header(traveler_token)
     checkin = date.today() + timedelta(days=14)
@@ -198,22 +200,18 @@ async def test_payment_intent_endpoint_creates_intent(
         timeout=25.0,
     )
 
-    resp = await http_client.post(
-        "/api/v1/payment/payment-intents",
-        headers={**headers, "Idempotency-Key": f"int-test-{booking_id}"},
-        json={"booking_id": booking_id},
+    # The checkout flow creates a payment_intent and processes it automatically.
+    # Verify the row was persisted with the expected terminal status.
+    intent_row = await wait_for_db_row(
+        db_pool,
+        """
+        select id, status from payments.payment_intent
+        where booking_id = $1::uuid order by created_at desc limit 1
+        """,
+        booking_id,
+        timeout=10.0,
     )
-    # The async checkout already created an intent; the explicit endpoint may
-    # either return 201 (new) or 200/409 (idempotent or stateful conflict on a
-    # SUCCEEDED intent). Any 2xx is fine — we just want a row to exist.
-    assert resp.status_code in (200, 201, 202), resp.text
-
-    # Persisted in payments.payment_intent
-    async with db_pool.acquire() as conn:
-        row = await conn.fetchrow(
-            "select id, status from payments.payment_intent where booking_id = $1::uuid "
-            "order by created_at desc limit 1",
-            booking_id,
-        )
-    assert row is not None, "payment_intent row not found for booking"
-    assert row["status"] in ("PENDING", "SUCCEEDED", "FAILED")
+    assert intent_row is not None, "payment_intent row not found for booking"
+    assert intent_row["status"] == "SUCCEEDED", (
+        f"expected intent.status=SUCCEEDED, got {intent_row['status']!r}"
+    )
