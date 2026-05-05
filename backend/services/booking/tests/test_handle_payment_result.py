@@ -4,9 +4,8 @@ from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
-
 from contracts.events.base import DomainEventEnvelope
-from contracts.events.payment import PAYMENT_SUCCEEDED, PAYMENT_FAILED
+from contracts.events.payment import PAYMENT_FAILED, PAYMENT_SUCCEEDED
 
 from app.application.use_cases.handle_payment_result import HandlePaymentResultUseCase
 from app.domain.models import Booking, BookingStatus, BookingStatusHistory, CancellationPolicyType
@@ -64,7 +63,8 @@ def _failed_envelope(booking_id: UUID, intent_id: UUID, reason: str = "card_decl
 
 
 @pytest.mark.asyncio
-async def test_payment_succeeded_delegates_to_mark_use_case():
+async def test_payment_succeeded_orchestrates_to_confirmed():
+    """PAYMENT_SUCCEEDED must drive booking all the way to CONFIRMED status."""
     bid = uuid4()
     intent_id = uuid4()
     future = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)
@@ -72,14 +72,17 @@ async def test_payment_succeeded_delegates_to_mark_use_case():
 
     repo = AsyncMock()
     repo.get_by_id = AsyncMock(return_value=b)
+    repo.check_inventory = AsyncMock(return_value=True)
 
-    uc = HandlePaymentResultUseCase(repo)
+    events = AsyncMock()
+    uc = HandlePaymentResultUseCase(repo, events)
     await uc.execute(_succeeded_envelope(bid, intent_id))
 
-    assert b.status == BookingStatus.PENDING_CONFIRMATION
+    assert b.status == BookingStatus.CONFIRMED
     assert b.confirmation_payment_intent_id == intent_id
     repo.save_and_record_status_history.assert_awaited_once()
     repo.save.assert_not_awaited()
+    events.publish.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -93,7 +96,8 @@ async def test_payment_failed_inserts_history_row():
     repo.get_by_id = AsyncMock(return_value=b)
     repo.add_status_history = AsyncMock()
 
-    uc = HandlePaymentResultUseCase(repo)
+    events = AsyncMock()
+    uc = HandlePaymentResultUseCase(repo, events)
     await uc.execute(_failed_envelope(bid, intent_id, reason="card_declined"))
 
     repo.add_status_history.assert_awaited_once()
@@ -123,7 +127,8 @@ async def test_payment_failed_idempotent_with_existing_reason():
     repo.add_status_history = AsyncMock()
     repo.get_by_id = AsyncMock()
 
-    uc = HandlePaymentResultUseCase(repo)
+    events = AsyncMock()
+    uc = HandlePaymentResultUseCase(repo, events)
     await uc.execute(_failed_envelope(bid, intent_id, reason="card_declined"))
 
     repo.add_status_history.assert_not_awaited()
@@ -140,7 +145,8 @@ async def test_payment_failed_unknown_booking_is_noop():
     repo.get_by_id = AsyncMock(return_value=None)
     repo.add_status_history = AsyncMock()
 
-    uc = HandlePaymentResultUseCase(repo)
+    events = AsyncMock()
+    uc = HandlePaymentResultUseCase(repo, events)
     await uc.execute(_failed_envelope(bid, intent_id))
 
     repo.add_status_history.assert_not_awaited()
@@ -149,7 +155,8 @@ async def test_payment_failed_unknown_booking_is_noop():
 @pytest.mark.asyncio
 async def test_unexpected_event_type_is_noop():
     repo = AsyncMock()
-    uc = HandlePaymentResultUseCase(repo)
+    events = AsyncMock()
+    uc = HandlePaymentResultUseCase(repo, events)
     envelope = DomainEventEnvelope(event_type="SomethingElse", payload={})
     await uc.execute(envelope)
 
