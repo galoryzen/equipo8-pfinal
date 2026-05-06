@@ -11,6 +11,7 @@ from datetime import date
 
 import httpx
 import pytest
+
 from helpers.polling import wait_for_booking_status
 
 
@@ -106,7 +107,7 @@ async def test_create_cart_booking(
     assert detail.json()["status"] == "CART"
 
 
-async def test_checkout_happy_path_transitions_to_confirmed(
+async def test_checkout_happy_path_transitions_to_pending_confirmation(
     http_client: httpx.AsyncClient,
     traveler_token: str,
     auth_header: Callable[[str], dict[str, str]],
@@ -118,7 +119,7 @@ async def test_checkout_happy_path_transitions_to_confirmed(
 ) -> None:
     """Validates the full async chain: Booking emits PaymentRequested →
     Payment authorizes via MockGateway → emits PaymentSucceeded → Booking
-    consumes and auto-confirms PENDING_PAYMENT → PENDING_CONFIRMATION → CONFIRMED.
+    consumes and transitions PENDING_PAYMENT → PENDING_CONFIRMATION.
     """
     headers = auth_header(traveler_token)
     body = await _create_cart(
@@ -145,10 +146,10 @@ async def test_checkout_happy_path_transitions_to_confirmed(
         http_client,
         headers,
         booking_id,
-        expected={"CONFIRMED"},
+        expected={"PENDING_CONFIRMATION"},
         timeout=25.0,
     )
-    assert final["status"] == "CONFIRMED"
+    assert final["status"] == "PENDING_CONFIRMATION"
 
 
 async def test_cancel_cart_marks_booking_cancelled(
