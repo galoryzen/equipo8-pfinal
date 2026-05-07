@@ -42,6 +42,18 @@ const DEFAULT_PROPS = {
 };
 
 describe('RoomTypeCard', () => {
+  describe('price display', () => {
+    it('shows starting from text', () => {
+      render(<RoomTypeCard {...DEFAULT_PROPS} />);
+      expect(screen.getByText('roomCard.startingFrom')).toBeTruthy();
+    });
+
+    it('displays min_price in price display', () => {
+      render(<RoomTypeCard {...DEFAULT_PROPS} />);
+      expect(screen.getByText('$100')).toBeTruthy();
+    });
+  });
+
   describe('normal state', () => {
     it('renders room name', () => {
       render(<RoomTypeCard {...DEFAULT_PROPS} />);
