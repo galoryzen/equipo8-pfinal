@@ -338,6 +338,30 @@
       "manageRooms": "Manage Rooms",
       "manageRoomsFor": "Manage rooms for {{hotelName}}",
       "backToHotels": "Back to hotels",
+      "common": {
+        "cancel": "Cancel",
+        "tryAgain": "Try again",
+        "unknownError": "Unknown error"
+      },
+      "pricingOffers": {
+        "title": "Pricing & Offers",
+        "discountLabel": "Discount to Apply (%)",
+        "discountHelper": "This discount will be applied to the base rate during the availability period."
+      },
+      "cancellationPolicy": {
+        "title": "Cancellation Policy",
+        "policyTypeLabel": "Policy Type",
+        "totallyRefundable": "Totally Refundable",
+        "totallyRefundableDesc": "Full refund if cancelled before the apply date.",
+        "partialRefundable": "Partial Refundable",
+        "partialRefundableDesc": "Specific percentage refunded upon cancellation.",
+        "nonRefundable": "Non-Refundable",
+        "nonRefundableDesc": "No refund issued regardless of when cancelled.",
+        "refundPctLabel": "Refund Percentage (%)",
+        "errorRefundPctRange": "Refund percentage must be between 1% and 99%.",
+        "applyDateLabel": "Cancellation Policy Apply Date",
+        "applyDateHelper": "The last date this policy can be exercised by the guest."
+      },
       "tableHeaders": {
         "hotelDetails": "Hotel Details",
         "location": "Location",
@@ -412,6 +436,36 @@
         "subtitle": "Configure availability, pricing, and cancellation policies for this room category.",
         "saveChanges": "Save Changes",
         "savedSuccess": "Promotion saved successfully.",
+        "noRatePlan": "No rate plan available for this room type.",
+        "common": {
+          "cancel": "Cancel",
+          "tryAgain": "Try again",
+          "unknownError": "Unknown error"
+        },
+        "availabilityPeriod": {
+          "title": "Availability Period",
+          "startLabel": "Start Date & Time",
+          "endLabel": "End Date & Time"
+        },
+        "pricingOffers": {
+          "title": "Pricing & Offers",
+          "discountLabel": "Discount to Apply (%)",
+          "discountHelper": "This discount will be applied to the base rate during the availability period."
+        },
+        "cancellationPolicy": {
+          "title": "Cancellation Policy",
+          "policyTypeLabel": "Policy Type",
+          "totallyRefundable": "Totally Refundable",
+          "totallyRefundableDesc": "Full refund if cancelled before the apply date.",
+          "partialRefundable": "Partial Refundable",
+          "partialRefundableDesc": "Specific percentage refunded upon cancellation.",
+          "nonRefundable": "Non-Refundable",
+          "nonRefundableDesc": "No refund issued regardless of when cancelled.",
+          "refundPctLabel": "Refund Percentage (%)",
+          "errorRefundPctRange": "Refund percentage must be between 1% and 99%.",
+          "applyDateLabel": "Cancellation Policy Apply Date",
+          "applyDateHelper": "The last date this policy can be exercised by the guest."
+        },
         "tariffTitle": "Manage Tariffs",
         "tariffSubtitle": "Define pricing and seasonal adjustments for {{name}}",
         "baseTariff": "Base Tariff",

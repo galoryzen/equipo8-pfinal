@@ -287,6 +287,11 @@
     "processingWarning": "Por favor no actualices la página ni hagas clic en atrás para evitar cargos duplicados."
   },
   "manager": {
+    "common": {
+      "cancel": "Cancelar",
+      "tryAgain": "Intentar de nuevo",
+      "unknownError": "Error desconocido"
+    },
     "pendingConfirmation": "Pendiente de confirmación",
     "confirmBooking": "Confirmar reserva",
     "confirmBookingTitle": "Confirmar reserva",
