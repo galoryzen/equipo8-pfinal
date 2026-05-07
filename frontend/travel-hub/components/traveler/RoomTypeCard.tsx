@@ -146,6 +146,9 @@ export default function RoomTypeCard({
           </Box>
           {displayPrice != null && (
             <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="caption" color="text.secondary" component="span">
+                {t('roomCard.startingFrom')}
+              </Typography>
               <Typography variant="h6" color="primary.main" fontWeight={700} component="span">
                 ${Number(displayPrice).toLocaleString()}
               </Typography>

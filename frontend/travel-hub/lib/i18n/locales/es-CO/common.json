@@ -200,6 +200,7 @@
   "roomCard": {
     "bookingInProgress": "Reserva en curso",
     "perNight": "/ noche",
+    "startingFrom": "Desde ",
     "guest_one": "{{count}} huésped",
     "guest_other": "{{count}} huéspedes",
     "ownHoldText": "Tienes una reserva activa en esta habitación.",

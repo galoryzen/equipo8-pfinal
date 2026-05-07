@@ -195,6 +195,7 @@
   "roomCard": {
     "bookingInProgress": "Booking in progress",
     "perNight": "/ night",
+    "startingFrom": "Starting from ",
     "guest_one": "{{count}} guest",
     "guest_other": "{{count}} guests",
     "ownHoldText": "You have an active hold on this room.",
