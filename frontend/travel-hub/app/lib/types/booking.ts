@@ -129,3 +129,10 @@ export interface BookingDetail {
   created_at: string;
   updated_at: string;
 }
+
+export interface RefundDetail {
+  amount: string;
+  status: string;
+  reason: 'traveler_cancelled' | 'hotel_rejected';
+  created_at: string;
+}

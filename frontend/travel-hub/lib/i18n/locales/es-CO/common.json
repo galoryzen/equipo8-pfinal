@@ -61,7 +61,16 @@
     "cancelSuccess": "Cancelación procesada.",
     "cancelFailed": "No se pudo cancelar. Intenta de nuevo.",
     "cancellationPolicyApplied": "Política de cancelación aplicada: {{type}}",
-    "cancellationPolicyHoursLimit": " · límite de {{hours}} h"
+    "cancellationPolicyHoursLimit": " · límite de {{hours}} h",
+    "refundAmount": "Monto reembolsado",
+    "refundType": {
+      "traveler_cancelled": "Reembolso por cancelación del viajero",
+      "hotel_rejected": "Reembolso por rechazo del hotel"
+    },
+    "refundIssued": "Reembolso emitido",
+    "totalPaid": "Total pagado",
+    "finalTotal": "Total final",
+    "refundTooltip": "Reembolso completo: incluye subtotal, impuestos y tarifa de servicio"
   },
   "recommended": {
     "title": "Recomendado para ti",
@@ -616,7 +625,16 @@
     "past": "Pasados",
     "noUpcoming": "No hay viajes próximos",
     "noPast": "No hay viajes pasados",
+    "noInCart": "No hay reservas en carrito",
     "endOfTrips": "Fin de tus viajes {{tab}}.",
+    "inCart": "En carrito",
+    "resume": "Continuar",
+    "delete": "Eliminar",
+    "deleting": "Eliminando...",
+    "confirmDeleteTitle": "¿Eliminar reserva en carrito?",
+    "confirmDeleteCart": "Esto liberará tu reserva temporal. Esta acción no se puede deshacer.",
+    "deleteError": "No se pudo eliminar la reserva.",
+    "confirmDelete": "Eliminar",
     "card": {
       "locationNotAvailable": "Ubicación no disponible",
       "noImage": "Sin imagen",

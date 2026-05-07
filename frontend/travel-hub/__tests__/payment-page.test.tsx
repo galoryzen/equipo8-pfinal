@@ -149,24 +149,38 @@ describe('TravelerPaymentPage', () => {
 
   it('replaces existing cart and continues when create returns conflict', async () => {
     const conflictError = new bookingApi.CartConflictError('Cart conflict', 'existing-cart-1');
-    mockCreate.mockRejectedValueOnce(conflictError).mockResolvedValueOnce(CART);
-    mockCancel.mockResolvedValue({
+    mockCreate.mockRejectedValueOnce(conflictError);
+    mockDetail.mockResolvedValue({
       id: 'existing-cart-1',
-      status: 'CANCELLED',
+      status: 'CART',
       checkin: '2026-05-01',
       checkout: '2026-05-02',
-      hold_expires_at: null,
-      total_amount: '0',
+      hold_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      total_amount: '200.00',
+      original_total_amount: null,
+      discount_percent: null,
       currency_code: 'USD',
-      property_id: 'p-old',
-      room_type_id: 'r-old',
-      rate_plan_id: 'rp-old',
-      unit_price: '0',
-      policy_type_applied: 'STANDARD',
-      policy_hours_limit_applied: 24,
-      policy_refund_percent_applied: 100,
-      created_at: '2026-01-01',
-      updated_at: '2026-01-01',
+      property_id: 'p1',
+      room_type_id: 'r1',
+      rate_plan_id: 'rp1',
+      unit_price: '100.00',
+      original_unit_price: null,
+      nights_breakdown: [
+        { day: '2026-05-01', price: '100.00', original_price: null },
+        { day: '2026-05-02', price: '100.00', original_price: null },
+      ],
+      taxes: '20.00',
+      service_fee: '10.00',
+      grand_total: '230.00',
+      original_taxes: null,
+      original_service_fee: null,
+      original_grand_total: null,
+      guests_count: 2,
+      guest_name: null,
+      property_name: 'Test Hotel',
+      room_name: 'Deluxe Suite',
+      image_url: '',
+      last_payment_attempt: null,
     });
 
     render(<TravelerPaymentPage />);
@@ -175,8 +189,8 @@ describe('TravelerPaymentPage', () => {
       expect(screen.getByText('payment.pageTitle')).toBeTruthy();
     });
 
-    expect(mockCancel).toHaveBeenCalledWith('existing-cart-1');
-    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(mockDetail).toHaveBeenCalledWith('existing-cart-1');
+    expect(mockCreate).toHaveBeenCalledTimes(1);
   });
 
   it('stores booking id in localStorage after creation', async () => {

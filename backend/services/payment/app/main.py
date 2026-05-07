@@ -11,6 +11,7 @@ from app.adapters.inbound.api.dependencies import (
 from app.adapters.inbound.api.error_handlers import register_error_handlers
 from app.adapters.inbound.api.health import router as health_router
 from app.adapters.inbound.api.payment_intents import router as payment_intents_router
+from app.adapters.inbound.api.refunds import router as refunds_router
 from app.adapters.outbound.db.session import engine
 from app.config import settings
 
@@ -39,3 +40,4 @@ app.add_middleware(
 register_error_handlers(app)
 app.include_router(health_router, prefix="/api/v1/payment")
 app.include_router(payment_intents_router, prefix="/api/v1/payment")
+app.include_router(refunds_router, prefix="/api/v1/payment")
