@@ -97,6 +97,7 @@ locals {
         { name = "NOTIFICATION_AWS_REGION", value = var.aws_region },
         { name = "NOTIFICATION_EMAIL_SENDER_BACKEND", value = "ses" },
         { name = "NOTIFICATION_SES_FROM_ADDRESS", value = var.ses_from_address },
+        { name = "NOTIFICATION_PUSH_SENDER_BACKEND", value = "expo" },
         { name = "NOTIFICATION_AUTH_SERVICE_URL", value = "http://auth.services.local:8000" },
         { name = "NOTIFICATION_CATALOG_SERVICE_URL", value = "http://catalog.services.local:8000" },
         { name = "NOTIFICATION_INTERNAL_SERVICE_TOKEN", value = var.internal_service_token },

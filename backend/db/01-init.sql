@@ -435,7 +435,7 @@ CREATE TABLE payments.refund (
 
 CREATE TABLE notifications.notification (
     id                   UUID PRIMARY KEY,
-    event_id             UUID NOT NULL UNIQUE,
+    event_id             UUID NOT NULL,
     booking_id           UUID NOT NULL REFERENCES booking.booking(id),
     user_id              UUID NOT NULL REFERENCES users.users(id),
     channel              notification_channel NOT NULL,
@@ -444,7 +444,8 @@ CREATE TABLE notifications.notification (
     to_email             VARCHAR,
     provider_message_id  VARCHAR,
     sent_at              TIMESTAMP,
-    created_at           TIMESTAMP NOT NULL DEFAULT now()
+    created_at           TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT uq_notification_event_channel UNIQUE (event_id, channel)
 );
 
 CREATE TABLE notifications.device_token (

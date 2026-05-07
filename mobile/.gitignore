@@ -34,6 +34,12 @@ yarn-error.*
 .env
 .env*.local
 
+# Firebase / FCM — environment-specific, must not be committed
+google-services.json
+GoogleService-Info.plist
+
+travelhub-firebase.json
+
 # test / coverage
 coverage/
 __snapshots__/

@@ -37,7 +37,7 @@ def _mocks():
 @pytest.mark.asyncio
 async def test_happy_path_sends_email_and_marks_sent():
     repo, contacts, sender = _mocks()
-    repo.exists_by_event_id.return_value = False
+    repo.exists_by_event_id_and_channel.return_value = False
     contacts.get_contact.return_value = UserContact(id=uuid4(), full_name="Carlos", email="carlos@test.com")
     sender.send.return_value = "msg-789"
 
@@ -67,7 +67,7 @@ async def test_happy_path_sends_email_and_marks_sent():
 @pytest.mark.asyncio
 async def test_skips_when_event_already_processed():
     repo, contacts, sender = _mocks()
-    repo.exists_by_event_id.return_value = True
+    repo.exists_by_event_id_and_channel.return_value = True
 
     envelope = _make_envelope()
     uc = SendPaymentSucceededEmailUseCase(repo, contacts, sender)
@@ -81,7 +81,7 @@ async def test_skips_when_event_already_processed():
 @pytest.mark.asyncio
 async def test_marks_failed_and_reraises_when_sender_errors():
     repo, contacts, sender = _mocks()
-    repo.exists_by_event_id.return_value = False
+    repo.exists_by_event_id_and_channel.return_value = False
     contacts.get_contact.return_value = UserContact(id=uuid4(), full_name="Carlos", email="carlos@test.com")
     sender.send.side_effect = RuntimeError("SES throttled")
 
