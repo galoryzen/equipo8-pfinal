@@ -7,14 +7,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   CartConflictError,
-  abandonCart,
   checkoutBooking,
   createCartBooking,
   getBookingDetail,
   saveBookingGuests,
 } from '@/app/lib/api/booking';
+import { COUNTRY_CODES } from '@/app/lib/constant';
 import type { CartBooking } from '@/app/lib/types/booking';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
+import { FormControl, MenuItem, Select } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import Backdrop from '@mui/material/Backdrop';
 import Box from '@mui/material/Box';
@@ -185,12 +186,12 @@ function PaymentPageContent() {
   const roomName = searchParams.get('room_name') ?? 'Room';
   const imageUrl = searchParams.get('image_url') ?? '';
   const bookingIdParam = searchParams.get('booking_id') ?? '';
+  const reviewScore = searchParams.get('review_score');
 
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
-  const [conflictBookingId, setConflictBookingId] = useState<string | null>(null);
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [expired, setExpired] = useState(false);
   const [isResumed, setIsResumed] = useState(false);
@@ -215,6 +216,7 @@ function PaymentPageContent() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?.dial ?? '+1');
 
   // Processing / snackbar
   const [isProcessing, setIsProcessing] = useState(false);
@@ -256,6 +258,22 @@ function PaymentPageContent() {
       phone.trim().length > 0,
     [firstName, lastName, email, phone]
   );
+
+  const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
+
+  const paymentDetailsValid = useMemo(() => {
+    if (paymentTab === 0) {
+      const digits = cardNumber.replace(/\s/g, '');
+      return (
+        digits.length === 16 &&
+        expiry.length === 5 &&
+        !expiryError &&
+        cvv.trim().length >= 3 &&
+        nameOnCard.trim().length > 0
+      );
+    }
+    return true;
+  }, [paymentTab, cardNumber, expiry, expiryError, cvv, nameOnCard]);
 
   const basePrice = cartPricing?.subtotal ?? 0;
   const originalBasePrice = cartPricing?.originalSubtotal ?? null;
@@ -386,14 +404,26 @@ function PaymentPageContent() {
           newBooking = await createCartBooking(createPayload);
         } catch (e) {
           if (!(e instanceof CartConflictError)) throw e;
-          setConflictBookingId(e.existingBookingId);
-          // If another cart exists, attempt to replace it automatically.
+          // Conflict: auto-resume the existing booking instead of showing an error
           try {
-            await abandonCart(e.existingBookingId);
+            const existing = await getBookingDetail(e.existingBookingId);
+            if (!mountedRef.current) return;
+            localStorage.setItem(key, existing.id);
+            setIsResumed(true);
+            handleBookingResolved(
+              existing.id,
+              existing.hold_expires_at ?? '',
+              existing.status,
+              pricingFromBooking(existing)
+            );
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('booking_id', existing.id);
+            router.replace(`/traveler/payment?${params.toString()}`);
+            return;
           } catch {
-            // Best effort: retry create anyway in case the server already expired it.
+            // If we can't resume the existing booking, fall through to error
+            throw new Error('Could not resume existing reservation.');
           }
-          newBooking = await createCartBooking(createPayload);
         }
 
         if (!mountedRef.current) return;
@@ -410,9 +440,6 @@ function PaymentPageContent() {
         router.replace(`/traveler/payment?${params.toString()}`);
       } catch (e) {
         if (mountedRef.current) {
-          if (e instanceof CartConflictError) {
-            setConflictBookingId(e.existingBookingId);
-          }
           setInitError(e instanceof Error ? e.message : 'Could not create booking hold.');
           setLoading(false);
         }
@@ -476,7 +503,7 @@ function PaymentPageContent() {
             is_primary: true,
             full_name: `${firstName.trim()} ${lastName.trim()}`,
             email: email.trim(),
-            phone: phone.trim(),
+            phone: `${selectedCountryCode} ${phone.trim()}`,
           },
           ...additionalGuests.map((g) => ({
             is_primary: false,
@@ -591,9 +618,8 @@ function PaymentPageContent() {
     propertyName,
     roomName,
     avgUnitPrice,
+    selectedCountryCode,
   ]);
-
-  const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
 
   if (loading) {
     return (
@@ -607,38 +633,12 @@ function PaymentPageContent() {
   }
 
   if (initError) {
-    const resumeParams = conflictBookingId
-      ? new URLSearchParams({
-          booking_id: conflictBookingId,
-          property_id: propertyId,
-          room_type_id: roomTypeId,
-          rate_plan_id: ratePlanId,
-          checkin,
-          checkout,
-          guests: String(guests),
-          currency,
-          property_name: propertyName,
-          room_name: roomName,
-          ...(imageUrl && { image_url: imageUrl }),
-        })
-      : null;
-
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
         <Alert severity="error" sx={{ mb: 3 }}>
           {initError}
         </Alert>
         <Stack spacing={2} direction="row" flexWrap="wrap">
-          {resumeParams && (
-            <Button
-              component={NextLink}
-              href={`/traveler/payment?${resumeParams.toString()}`}
-              variant="contained"
-              sx={{ textTransform: 'none' }}
-            >
-              {t('payment.resumeReservation')}
-            </Button>
-          )}
           <Button
             component={NextLink}
             href="/traveler/search"
@@ -889,16 +889,6 @@ function PaymentPageContent() {
                     <Typography variant="h6" fontWeight={700}>
                       👤 {t('payment.guestDetails')}
                     </Typography>
-                    <Button
-                      component={NextLink}
-                      href="/traveler/login"
-                      variant="text"
-                      size="small"
-                      data-testid="traveler-payment-login-link"
-                      sx={{ textTransform: 'none', color: 'primary.main', fontWeight: 600 }}
-                    >
-                      {t('payment.logIn')}
-                    </Button>
                   </Box>
 
                   {/* Primary guest */}
@@ -969,10 +959,29 @@ function PaymentPageContent() {
                         slotProps={{
                           input: {
                             startAdornment: (
-                              <InputAdornment position="start">
-                                <Typography variant="body2" color="text.secondary">
-                                  🇺🇸 +1
-                                </Typography>
+                              <InputAdornment position="start" sx={{ pr: 0.5 }}>
+                                <FormControl size="small" sx={{ minWidth: 110 }}>
+                                  <Select
+                                    value={selectedCountryCode}
+                                    onChange={(e) => setSelectedCountryCode(e.target.value)}
+                                    variant="standard"
+                                    disableUnderline
+                                    sx={{
+                                      fontSize: '0.875rem',
+                                      '& .MuiSelect-select': { py: 0.5, pl: 0.5 },
+                                    }}
+                                    data-testid="traveler-payment-country-code"
+                                  >
+                                    {COUNTRY_CODES.map((c, index) => (
+                                      <MenuItem key={index} value={c.dial}>
+                                        <Box component="span" sx={{ mr: 0.5 }}>
+                                          {c.flag}
+                                        </Box>
+                                        {c.code} {c.dial}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
                               </InputAdornment>
                             ),
                           },
@@ -1127,7 +1136,6 @@ function PaymentPageContent() {
                     }}
                   >
                     <Tab label={t('payment.creditOrDebitCard')} />
-                    <Tab label={t('payment.paypal')} />
                   </Tabs>
 
                   {paymentTab === 0 ? (
@@ -1262,7 +1270,7 @@ function PaymentPageContent() {
                     {propertyName}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-                    ★ 5.0
+                    {reviewScore ? `★ ${reviewScore}` : ''}
                   </Typography>
                 </Box>
               </Box>
@@ -1447,7 +1455,7 @@ function PaymentPageContent() {
                   variant="contained"
                   fullWidth
                   size="large"
-                  disabled={expired || !guestDetailsFilled || expiryError}
+                  disabled={expired || !guestDetailsFilled || !paymentDetailsValid}
                   onClick={handlePay}
                   data-testid="traveler-payment-submit"
                   sx={{ textTransform: 'none', fontWeight: 700, py: 1.5, borderRadius: 2 }}

@@ -355,6 +355,7 @@ export default function PropertyDetailView({
                       }
                       onRoomSelect={setSelectedRoom}
                       activeCartBookingId={activeCartByRoomTypeId[room.id] ?? null}
+                      propertyImage={detail.images[0] ?? null}
                     />
                   ))}
                 </Box>

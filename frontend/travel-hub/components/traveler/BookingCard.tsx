@@ -1,7 +1,11 @@
 'use client';
 
-import NextLink from 'next/link';
+import { useState } from 'react';
 
+import NextLink from 'next/link';
+import { useRouter } from 'next/navigation';
+
+import { abandonCart } from '@/app/lib/api/booking';
 import {
   estimateGuestLabel,
   formatBookingRef,
@@ -21,6 +25,11 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardMedia from '@mui/material/CardMedia';
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -29,6 +38,7 @@ import { useTranslation } from 'react-i18next';
 interface BookingCardProps {
   booking: BookingListItem;
   property: PropertyDetail | null | undefined;
+  onCartAction?: () => void;
 }
 
 function primaryImageUrl(property: PropertyDetail | null | undefined): string | null {
@@ -37,8 +47,10 @@ function primaryImageUrl(property: PropertyDetail | null | undefined): string | 
   return sorted[0]?.url ?? null;
 }
 
-export default function BookingCard({ booking, property }: BookingCardProps) {
+export default function BookingCard({ booking, property, onCartAction }: BookingCardProps) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
 
   const pid = primaryPropertyId(booking);
   const hotelName = property?.name ?? t('myTrips.card.hotelName');
@@ -52,6 +64,42 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
   const guests = estimateGuestLabel(booking, property ?? null);
   const roomLabel = getPrimaryRoomLabel(booking, property ?? null);
   const { label: statusLabel, color: statusColor } = statusChipProps(booking.status);
+
+  const isCart = booking.status === 'CART';
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handleResume = () => {
+    const params = new URLSearchParams({
+      booking_id: booking.id,
+      property_id: booking.property_id,
+      room_type_id: booking.room_type_id,
+      checkin: booking.checkin,
+      checkout: booking.checkout,
+      guests: String(booking.guests_count ?? 1),
+      currency: booking.currency_code,
+      property_name: property?.name ?? '',
+      room_name: roomLabel ?? '',
+      ...(imageUrl && { image_url: imageUrl }),
+    });
+    router.push(`/traveler/payment?${params.toString()}`);
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteDialogOpen(false);
+    setDeleting(true);
+    try {
+      await abandonCart(booking.id);
+      onCartAction?.();
+    } catch {
+      alert(t('myTrips.deleteError', 'Could not delete booking hold.'));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <Card
@@ -191,17 +239,68 @@ export default function BookingCard({ booking, property }: BookingCardProps) {
 
         <Divider sx={{ my: 0 }} />
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2 }}>
-          <Button
-            component={NextLink}
-            href={`/traveler/my-trips/detail/?bookingId=${encodeURIComponent(booking.id)}`}
-            variant="contained"
-            sx={{ textTransform: 'none', px: 3 }}
-          >
-            {t('myTrips.card.viewDetails')}
-          </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, gap: 1 }}>
+          {isCart ? (
+            <>
+              <Button
+                variant="outlined"
+                onClick={handleDeleteClick}
+                disabled={deleting}
+                sx={{ textTransform: 'none', px: 3 }}
+              >
+                {deleting ? t('myTrips.deleting', 'Deleting…') : t('myTrips.delete', 'Delete')}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleResume}
+                sx={{ textTransform: 'none', px: 3 }}
+              >
+                {t('myTrips.resume', 'Resume')}
+              </Button>
+            </>
+          ) : (
+            <Button
+              component={NextLink}
+              href={`/traveler/my-trips/detail/?bookingId=${encodeURIComponent(booking.id)}`}
+              variant="contained"
+              sx={{ textTransform: 'none', px: 3 }}
+            >
+              {t('myTrips.card.viewDetails')}
+            </Button>
+          )}
         </Box>
       </Box>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        aria-labelledby="delete-cart-dialog-title"
+      >
+        <DialogTitle id="delete-cart-dialog-title">
+          {t('myTrips.confirmDeleteTitle', 'Delete booking hold?')}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t(
+              'myTrips.confirmDeleteCart',
+              'This will release your booking hold. This action cannot be undone.'
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} sx={{ textTransform: 'none' }}>
+            {t('myTrips.cancel', 'Cancel')}
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            disabled={deleting}
+            sx={{ textTransform: 'none' }}
+          >
+            {deleting ? t('myTrips.deleting', 'Deleting…') : t('myTrips.delete', 'Delete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

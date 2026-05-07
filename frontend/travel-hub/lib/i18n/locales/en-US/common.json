@@ -61,7 +61,16 @@
     "cancelSuccess": "Cancellation processed.",
     "cancelFailed": "Could not cancel. Please try again.",
     "cancellationPolicyApplied": "Cancellation policy applied: {{type}}",
-    "cancellationPolicyHoursLimit": " · {{hours}}h limit"
+    "cancellationPolicyHoursLimit": " · {{hours}}h limit",
+    "refundAmount": "Refund amount",
+    "refundType": {
+      "traveler_cancelled": "Refund due to traveler cancellation",
+      "hotel_rejected": "Refund due to hotel rejection"
+    },
+    "refundIssued": "Refund issued",
+    "totalPaid": "Total paid",
+    "finalTotal": "Final total",
+    "refundTooltip": "Full refund: includes subtotal, taxes, and service fee"
   },
   "recommended": {
     "title": "Recommended for You",
@@ -279,8 +288,17 @@
     "upcoming": "Upcoming",
     "past": "Past",
     "noUpcoming": "No upcoming trips in this tab.",
-    "endOfTrips": "Fin de tus viajes {{tab}}.",
     "noPast": "No past trips yet.",
+    "noInCart": "No bookings in cart",
+    "endOfTrips": "Fin de tus viajes {{tab}}.",
+    "inCart": "In Cart",
+    "resume": "Resume",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "confirmDeleteTitle": "Delete booking hold?",
+    "confirmDeleteCart": "This will release your booking hold. This action cannot be undone.",
+    "deleteError": "Could not delete booking hold.",
+    "confirmDelete": "Delete",
     "card": {
       "locationNotAvailable": "Location not available",
       "noImage": "No image",

@@ -12,6 +12,7 @@ class BookingRepository(ABC):
         user_id: UUID,
         *,
         scope: BookingScope = BookingScope.ALL,
+        status: str | None = None,
         today: date | None = None,
         page: int = 1,
         page_size: int = 10,
@@ -23,6 +24,7 @@ class BookingRepository(ABC):
         - PAST: (status = CONFIRMED AND checkout < today)
           OR status in (CANCELLED, REJECTED). Ordered by checkout DESC.
         - ALL: everything except CART and EXPIRED. Ordered by checkin DESC.
+        - If status is provided, it further filters by exact status (e.g. "CART").
         Pagination is applied at the DB level via LIMIT/OFFSET.
         """
 

@@ -5,11 +5,16 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import { abandonCart, cancelBooking, getBookingDetail } from '@/app/lib/api/booking';
+import {
+  abandonCart,
+  cancelBooking,
+  getBookingDetail,
+  getRefundByBookingId,
+} from '@/app/lib/api/booking';
 import { formatBookingRef, formatTripDate } from '@/app/lib/myTrips/formatting';
 import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
 import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
-import type { BookingDetail } from '@/app/lib/types/booking';
+import type { BookingDetail, RefundDetail } from '@/app/lib/types/booking';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -25,6 +30,7 @@ import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
@@ -35,6 +41,7 @@ function BookingDetailContent() {
 
   const [detail, setDetail] = useState<BookingDetail | null>(null);
   const [propertyById, setPropertyById] = useState<Record<string, PropertyDetail | null>>({});
+  const [refund, setRefund] = useState<RefundDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -87,6 +94,8 @@ function BookingDetailContent() {
         const map = await fetchPropertyDetailsMap([d.property_id]);
         if (cancelled) return;
         setPropertyById(map);
+        const refundData = await getRefundByBookingId(bookingId);
+        if (!cancelled) setRefund(refundData ?? null);
       } catch (e) {
         if (!cancelled) {
           setDetail(null);
@@ -133,7 +142,9 @@ function BookingDetailContent() {
   const canCancel = detail.status === 'CONFIRMED' || detail.status === 'CART';
   const hotel = propertyById[detail.property_id] ?? null;
   const roomName = hotel?.room_types?.find((r) => r.id === detail.room_type_id)?.name;
-  const grandTotal = detail.grand_total ?? detail.total_amount;
+  const refundAmount = refund?.status === 'SUCCEEDED' ? parseFloat(refund.amount) : 0;
+  const totalPaid = parseFloat(detail.grand_total ?? detail.total_amount);
+  const finalTotal = (totalPaid - refundAmount).toFixed(2);
   const taxes = detail.taxes ?? '0';
   const serviceFee = detail.service_fee ?? '0';
   const nights = detail.nights_breakdown ?? [];
@@ -191,7 +202,7 @@ function BookingDetailContent() {
             {t('tripDetail.total')}
           </Typography>
           <Typography variant="body1" fontWeight={600}>
-            {grandTotal} {detail.currency_code}
+            {totalPaid.toFixed(2)} {detail.currency_code}
           </Typography>
 
           {hasCostDetails && (
@@ -250,7 +261,7 @@ function BookingDetailContent() {
                       {t('tripDetail.totalDue')}
                     </Typography>
                     <Typography variant="body2" fontWeight={700}>
-                      {grandTotal} {detail.currency_code}
+                      {totalPaid.toFixed(2)} {detail.currency_code}
                     </Typography>
                   </Box>
 
@@ -280,6 +291,43 @@ function BookingDetailContent() {
                 </Stack>
               </AccordionDetails>
             </Accordion>
+          )}
+
+          {refund?.status === 'SUCCEEDED' && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700} color="success.dark" sx={{ mb: 1 }}>
+                ✓ {t('tripDetail.refundIssued')}
+              </Typography>
+              <Stack spacing={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('tripDetail.totalPaid')}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {totalPaid.toFixed(2)} {detail.currency_code}
+                  </Typography>
+                </Box>
+                <Tooltip title={t('tripDetail.refundTooltip')}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                    <Typography variant="body2" color="success.dark" sx={{ cursor: 'help' }}>
+                      {t('tripDetail.refundIssued')}
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600} color="success.dark">
+                      +{refund.amount} {detail.currency_code}
+                    </Typography>
+                  </Box>
+                </Tooltip>
+                <Divider />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                  <Typography variant="body2" fontWeight={700} color="success.dark">
+                    {t('tripDetail.finalTotal')}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} color="success.dark">
+                    {finalTotal} {detail.currency_code}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
           )}
         </Box>
       </Stack>

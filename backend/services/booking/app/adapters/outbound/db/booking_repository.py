@@ -27,6 +27,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
         user_id: UUID,
         *,
         scope: BookingScope = BookingScope.ALL,
+        status: str | None = None,
         today: date | None = None,
         page: int = 1,
         page_size: int = 10,
@@ -34,7 +35,10 @@ class SqlAlchemyBookingRepository(BookingRepository):
         today = today or datetime.now(UTC).date()
         base_where = [Booking.user_id == user_id]
 
-        if scope is BookingScope.ACTIVE:
+        if status:
+            base_where += [Booking.status == status]
+            order = Booking.checkin.desc()
+        elif scope is BookingScope.ACTIVE:
             base_where += [Booking.status.in_(_ACTIVE_STATUSES), Booking.checkout >= today]
             order = Booking.checkin.asc()
         elif scope is BookingScope.PAST:
