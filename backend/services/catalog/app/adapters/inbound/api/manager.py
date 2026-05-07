@@ -20,6 +20,10 @@ from app.adapters.inbound.api.dependencies import (
     get_set_primary_property_image_use_case,
     get_update_cancellation_policy_use_case,
     get_update_hotel_profile_use_case,
+    get_room_tariffs_use_case,
+    get_update_base_tariff_use_case,
+    get_add_seasonal_tariff_use_case,
+    get_delete_seasonal_tariff_use_case,
     resolve_hotel_id,
 )
 from app.application.use_cases.add_property_image import AddPropertyImageUseCase
@@ -34,6 +38,10 @@ from app.application.use_cases.list_room_types_availability import ListRoomTypes
 from app.application.use_cases.set_primary_property_image import SetPrimaryPropertyImageUseCase
 from app.application.use_cases.update_hotel_profile import UpdateHotelProfileUseCase
 from app.application.use_cases.update_rate_plan_cancellation_policy import UpdateRatePlanCancellationPolicyUseCase
+from app.application.use_cases.get_room_tariffs import GetRoomTariffsUseCase
+from app.application.use_cases.update_base_tariff import UpdateBaseTariffUseCase
+from app.application.use_cases.add_seasonal_tariff import AddSeasonalTariffUseCase
+from app.application.use_cases.delete_seasonal_tariff import DeleteSeasonalTariffUseCase
 from app.schemas.manager import (
     AddPropertyImageIn,
     CreatePromotionIn,
@@ -47,6 +55,11 @@ from app.schemas.manager import (
     RoomTypePromotionOut,
     UpdateCancellationPolicyIn,
     UpdateHotelProfileIn,
+    RoomTariffsOut,
+    TariffBaseIn,
+    TariffBaseOut,
+    TariffSeasonalRuleIn,
+    TariffSeasonalRuleOut,
 )
 
 router = APIRouter()
@@ -231,3 +244,58 @@ async def set_primary_property_image(
 ):
     use_case: SetPrimaryPropertyImageUseCase = get_set_primary_property_image_use_case(session)
     return await use_case.execute(property_id=property_id, hotel_id=hotel_id, image_id=image_id)
+
+
+@router.get(
+    "/manager/room-types/{room_type_id}/tariffs",
+    response_model=RoomTariffsOut,
+    dependencies=[Depends(enforce_administrative_role)],
+)
+async def get_room_tariffs(
+    room_type_id: UUID,
+    session: AsyncSession = Depends(get_db_session),
+):
+    use_case: GetRoomTariffsUseCase = get_room_tariffs_use_case(session)
+    return await use_case.execute(room_type_id=room_type_id)
+
+
+@router.put(
+    "/manager/room-types/{room_type_id}/tariffs/base",
+    response_model=TariffBaseOut,
+    dependencies=[Depends(enforce_administrative_role)],
+)
+async def update_base_tariff(
+    room_type_id: UUID,
+    body: TariffBaseIn,
+    session: AsyncSession = Depends(get_db_session),
+):
+    use_case: UpdateBaseTariffUseCase = get_update_base_tariff_use_case(session)
+    return await use_case.execute(room_type_id=room_type_id, data=body)
+
+
+@router.post(
+    "/manager/room-types/{room_type_id}/tariffs/seasonal",
+    response_model=TariffSeasonalRuleOut,
+    status_code=201,
+    dependencies=[Depends(enforce_administrative_role)],
+)
+async def add_seasonal_tariff(
+    room_type_id: UUID,
+    body: TariffSeasonalRuleIn,
+    session: AsyncSession = Depends(get_db_session),
+):
+    use_case: AddSeasonalTariffUseCase = get_add_seasonal_tariff_use_case(session)
+    return await use_case.execute(room_type_id=room_type_id, data=body)
+
+
+@router.delete(
+    "/manager/tariffs/seasonal/{rule_id}",
+    status_code=204,
+    dependencies=[Depends(enforce_administrative_role)],
+)
+async def delete_seasonal_tariff(
+    rule_id: UUID,
+    session: AsyncSession = Depends(get_db_session),
+):
+    use_case: DeleteSeasonalTariffUseCase = get_delete_seasonal_tariff_use_case(session)
+    await use_case.execute(rule_id=rule_id)
