@@ -32,14 +32,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useTranslation } from 'react-i18next';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function toDateStr(d: Date | null): string {
   if (!d) return '';
   return d.toISOString().split('T')[0];
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SectionCard({
   icon,
@@ -135,7 +131,7 @@ export default function RoomTypeTariffView({
   roomType: RoomTypeManagerItem;
   onBack: () => void;
 }) {
-  // ── State ──────────────────────────────────────────────────────────────────
+  const { t } = useTranslation();
   const [tariffs, setTariffs] = useState<RoomTariffs | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingBase, setSavingBase] = useState(false);
@@ -193,14 +189,14 @@ export default function RoomTypeTariffView({
       });
       setSnack({
         open: true,
-        message: 'Base tariff updated and calendar synced!',
+        message: t('manager.hotels.roomTypeManage.tariffSavedSuccess'),
         severity: 'success',
       });
       await loadTariffs();
     } catch (err: unknown) {
       setSnack({
         open: true,
-        message: 'Failed to update base tariff',
+        message: t('manager.hotels.roomTypeManage.tariffError'),
         severity: 'error',
       });
     } finally {
@@ -210,7 +206,11 @@ export default function RoomTypeTariffView({
 
   async function handleAddRule() {
     if (!ruleName || !ruleStart || !ruleEnd) {
-      setSnack({ open: true, message: 'Please fill all rule fields', severity: 'error' });
+      setSnack({
+        open: true,
+        message: t('manager.hotels.roomTypeManage.fillAllFields'),
+        severity: 'error',
+      });
       return;
     }
     setAddingRule(true);
@@ -224,7 +224,7 @@ export default function RoomTypeTariffView({
       });
       setSnack({
         open: true,
-        message: 'Seasonal rule added and calendar synced!',
+        message: t('manager.hotels.roomTypeManage.ruleAddedSuccess'),
         severity: 'success',
       });
       setRuleName('');
@@ -232,7 +232,7 @@ export default function RoomTypeTariffView({
     } catch (err: unknown) {
       setSnack({
         open: true,
-        message: 'Failed to add seasonal rule',
+        message: t('manager.hotels.roomTypeManage.ruleAddError'),
         severity: 'error',
       });
     } finally {
@@ -243,10 +243,18 @@ export default function RoomTypeTariffView({
   async function handleDeleteRule(ruleId: string) {
     try {
       await deleteSeasonalTariff(ruleId);
-      setSnack({ open: true, message: 'Rule deleted and calendar synced!', severity: 'success' });
+      setSnack({
+        open: true,
+        message: t('manager.hotels.roomTypeManage.ruleDeletedSuccess'),
+        severity: 'success',
+      });
       await loadTariffs();
     } catch (err: unknown) {
-      setSnack({ open: true, message: 'Failed to delete rule', severity: 'error' });
+      setSnack({
+        open: true,
+        message: t('manager.hotels.roomTypeManage.ruleDeleteError'),
+        severity: 'error',
+      });
     }
   }
 
@@ -272,6 +280,7 @@ export default function RoomTypeTariffView({
         <Box component="nav" sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
           <Button
             onClick={onBack}
+            aria-label={t('manager.hotels.backToHotels')}
             sx={{
               textTransform: 'none',
               fontWeight: 600,
@@ -282,7 +291,7 @@ export default function RoomTypeTariffView({
               '&:hover': { bgcolor: 'transparent', color: tokens.text.primary },
             }}
           >
-            Hotels
+            {t('manager.hotels.title')}
           </Button>
           <NavigateNextIcon sx={{ fontSize: 18, color: tokens.text.muted, mx: 0.25 }} />
           <Button
@@ -301,7 +310,7 @@ export default function RoomTypeTariffView({
           </Button>
           <NavigateNextIcon sx={{ fontSize: 18, color: tokens.text.muted, mx: 0.25 }} />
           <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: tokens.text.primary }}>
-            {roomType.name} Tariffs
+            {roomType.name} {t('manager.hotels.roomTypeManage.tariffTitle')}
           </Typography>
         </Box>
 
@@ -309,10 +318,10 @@ export default function RoomTypeTariffView({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 900, color: tokens.text.primary }}>
-              Manage Tariffs
+              {t('manager.hotels.roomTypeManage.tariffTitle')}
             </Typography>
             <Typography sx={{ color: tokens.text.secondary }}>
-              Define pricing and seasonal adjustments for {roomType.name}
+              {t('manager.hotels.roomTypeManage.tariffSubtitle', { name: roomType.name })}
             </Typography>
           </Box>
           <Button
@@ -322,16 +331,21 @@ export default function RoomTypeTariffView({
             }
             onClick={handleSaveBase}
             disabled={savingBase}
+            aria-label={t('manager.hotels.roomTypeManage.saveBaseTariff')}
             sx={{
-              bgcolor: tokens.brand.accentOrange,
-              '&:hover': { bgcolor: tokens.brand.accentOrangeFg },
+              bgcolor: tokens.brand.accentOrangeSoft,
+              color: tokens.brand.accentOrangeFg,
+              '&:hover': {
+                bgcolor: tokens.brand.accentOrange,
+                color: 'white',
+              },
               textTransform: 'none',
               fontWeight: 700,
               borderRadius: 2,
               px: 3,
             }}
           >
-            Save Base Tariff
+            {t('manager.hotels.roomTypeManage.saveBaseTariff')}
           </Button>
         </Box>
 
@@ -339,7 +353,7 @@ export default function RoomTypeTariffView({
           {/* ── Section 1: Base Tariff ── */}
           <SectionCard
             icon={<TrendingUpIcon />}
-            title="Base Tariff"
+            title={t('manager.hotels.roomTypeManage.baseTariff')}
             iconColor={tokens.brand.accentOrange}
             iconBg={tokens.state.warningBg}
           >
@@ -347,30 +361,34 @@ export default function RoomTypeTariffView({
               sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}
             >
               <Box>
-                <Typography component="label" sx={LABEL_SX}>
-                  Base Price (USD)
+                <Typography component="label" htmlFor="base-price-input" sx={LABEL_SX}>
+                  {t('manager.hotels.roomTypeManage.basePrice')}
                 </Typography>
                 <OutlinedInput
+                  id="base-price-input"
                   value={basePrice}
                   onChange={(e) => setBasePrice(e.target.value)}
                   type="number"
                   startAdornment={<InputAdornment position="start">$</InputAdornment>}
                   sx={INPUT_SX}
+                  aria-label={t('manager.hotels.roomTypeManage.basePrice')}
                 />
               </Box>
               <Box>
-                <Typography component="label" sx={LABEL_SX}>
-                  Weekend Premium (%)
+                <Typography component="label" htmlFor="weekend-premium-input" sx={LABEL_SX}>
+                  {t('manager.hotels.roomTypeManage.weekendPremium')}
                 </Typography>
                 <OutlinedInput
+                  id="weekend-premium-input"
                   value={weekendPremium}
                   onChange={(e) => setWeekendPremium(e.target.value)}
                   type="number"
                   endAdornment={<InputAdornment position="end">%</InputAdornment>}
                   sx={INPUT_SX}
+                  aria-label={t('manager.hotels.roomTypeManage.weekendPremium')}
                 />
                 <Typography sx={{ fontSize: '0.75rem', color: tokens.text.muted, mt: 0.5 }}>
-                  Applied to Friday and Saturday nights
+                  {t('manager.hotels.roomTypeManage.weekendPremiumHint')}
                 </Typography>
               </Box>
             </Box>
@@ -379,7 +397,7 @@ export default function RoomTypeTariffView({
           {/* ── Section 2: Seasonal Rules ── */}
           <SectionCard
             icon={<CalendarTodayOutlinedIcon />}
-            title="Seasonal Adjustments"
+            title={t('manager.hotels.roomTypeManage.seasonalAdjustments')}
             iconColor={tokens.brand.primary}
             iconBg="#EFF6FF"
           >
@@ -405,22 +423,22 @@ export default function RoomTypeTariffView({
                   <Typography
                     sx={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}
                   >
-                    Rule Name
+                    {t('manager.hotels.roomTypeManage.ruleNameHeader')}
                   </Typography>
                   <Typography
                     sx={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}
                   >
-                    Period
+                    {t('manager.hotels.roomTypeManage.rulePeriodHeader')}
                   </Typography>
                   <Typography
                     sx={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}
                   >
-                    Type
+                    {t('manager.hotels.roomTypeManage.ruleTypeHeader')}
                   </Typography>
                   <Typography
                     sx={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}
                   >
-                    Value
+                    {t('manager.hotels.roomTypeManage.ruleValueHeader')}
                   </Typography>
                   <Box />
                 </Box>
@@ -449,7 +467,10 @@ export default function RoomTypeTariffView({
                     <IconButton
                       onClick={() => handleDeleteRule(rule.id)}
                       size="small"
-                      sx={{ color: '#DC2626' }}
+                      sx={{ color: tokens.state.errorFg }}
+                      aria-label={t('manager.hotels.roomTypeManage.deleteRuleTitle', {
+                        name: rule.name,
+                      })}
                     >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
@@ -459,7 +480,9 @@ export default function RoomTypeTariffView({
             )}
 
             {/* Add Rule Form */}
-            <Typography sx={{ ...LABEL_SX, mb: 2 }}>Add New Seasonal Rule</Typography>
+            <Typography sx={{ ...LABEL_SX, mb: 2 }}>
+              {t('manager.hotels.roomTypeManage.addRule')}
+            </Typography>
             <Box
               sx={{
                 display: 'grid',
@@ -469,21 +492,34 @@ export default function RoomTypeTariffView({
               }}
             >
               <Box>
-                <Typography variant="caption" sx={LABEL_SX}>
-                  Name
+                <Typography
+                  component="label"
+                  htmlFor="rule-name-input"
+                  variant="caption"
+                  sx={LABEL_SX}
+                >
+                  {t('manager.hotels.roomTypeManage.ruleName')}
                 </Typography>
                 <OutlinedInput
+                  id="rule-name-input"
                   value={ruleName}
                   onChange={(e) => setRuleName(e.target.value)}
-                  placeholder="Summer Peak"
+                  placeholder={t('manager.hotels.roomTypeManage.ruleNamePlaceholder')}
                   sx={INPUT_SX}
                 />
               </Box>
               <Box>
-                <Typography variant="caption" sx={LABEL_SX}>
-                  Start
+                <Typography
+                  component="label"
+                  htmlFor="rule-start-date"
+                  variant="caption"
+                  sx={LABEL_SX}
+                >
+                  {t('manager.hotels.roomTypeManage.ruleStart')}
                 </Typography>
                 <DatePicker
+                  id="rule-start-date"
+                  label={t('manager.hotels.roomTypeManage.ruleStart')}
                   value={ruleStart}
                   onChange={setRuleStart}
                   slotProps={{ textField: { sx: PICKER_TEXT_FIELD_SX } }}
@@ -491,42 +527,72 @@ export default function RoomTypeTariffView({
               </Box>
               <Box>
                 <Typography variant="caption" sx={LABEL_SX}>
-                  End
+                  {t('manager.hotels.roomTypeManage.ruleEnd')}
+                </Typography>
+                <Typography
+                  component="label"
+                  htmlFor="rule-end-date"
+                  variant="caption"
+                  sx={LABEL_SX}
+                >
+                  {t('manager.hotels.roomTypeManage.ruleEnd')}
                 </Typography>
                 <DatePicker
+                  id="rule-end-date"
+                  label={t('manager.hotels.roomTypeManage.ruleEnd')}
                   value={ruleEnd}
                   onChange={setRuleEnd}
                   slotProps={{ textField: { sx: PICKER_TEXT_FIELD_SX } }}
                 />
               </Box>
               <Box>
-                <Typography variant="caption" sx={LABEL_SX}>
-                  Type
+                <Typography
+                  component="label"
+                  htmlFor="rule-type-select"
+                  variant="caption"
+                  sx={LABEL_SX}
+                >
+                  {t('manager.hotels.roomTypeManage.ruleType')}
                 </Typography>
                 <Select
+                  id="rule-type-select"
+                  label={t('manager.hotels.roomTypeManage.ruleType')}
                   value={ruleType}
-                  onChange={(e) => setRuleType(e.target.value)}
+                  onChange={(e) => setRuleType(e.target.value as 'PERCENT' | 'FIXED')}
                   sx={INPUT_SX}
+                  title={t('manager.hotels.roomTypeManage.ruleType')}
                 >
-                  <MenuItem value="PERCENT">Percent %</MenuItem>
-                  <MenuItem value="FIXED">Fixed $</MenuItem>
+                  <MenuItem value="PERCENT">
+                    {t('manager.hotels.roomTypeManage.ruleTypePercent')}
+                  </MenuItem>
+                  <MenuItem value="FIXED">
+                    {t('manager.hotels.roomTypeManage.ruleTypeFixed')}
+                  </MenuItem>
                 </Select>
               </Box>
               <Box>
-                <Typography variant="caption" sx={LABEL_SX}>
-                  Value
+                <Typography
+                  component="label"
+                  htmlFor="rule-value-input"
+                  variant="caption"
+                  sx={LABEL_SX}
+                >
+                  {t('manager.hotels.roomTypeManage.ruleValue')}
                 </Typography>
                 <OutlinedInput
+                  id="rule-value-input"
                   value={ruleValue}
                   onChange={(e) => setRuleValue(e.target.value)}
                   type="number"
                   sx={INPUT_SX}
+                  aria-label={t('manager.hotels.roomTypeManage.ruleValue')}
                 />
               </Box>
               <Button
                 variant="contained"
                 onClick={handleAddRule}
                 disabled={addingRule}
+                aria-label={t('manager.hotels.roomTypeManage.addRuleButton')}
                 sx={{
                   minWidth: 48,
                   height: 48,

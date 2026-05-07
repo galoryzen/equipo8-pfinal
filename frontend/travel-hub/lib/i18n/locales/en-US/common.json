@@ -412,31 +412,36 @@
         "subtitle": "Configure availability, pricing, and cancellation policies for this room category.",
         "saveChanges": "Save Changes",
         "savedSuccess": "Promotion saved successfully.",
-        "noRatePlan": "No rate plan available for this room type.",
-        "availabilityPeriod": {
-          "title": "Availability Period",
-          "startLabel": "Start Date & Time",
-          "endLabel": "End Date & Time"
-        },
-        "pricingOffers": {
-          "title": "Pricing & Offers",
-          "discountLabel": "Discount to Apply (%)",
-          "discountHelper": "This discount will be applied to the base rate during the availability period."
-        },
-        "cancellationPolicy": {
-          "title": "Cancellation Policy",
-          "policyTypeLabel": "Policy Type",
-          "totallyRefundable": "Totally Refundable",
-          "totallyRefundableDesc": "Full refund if cancelled before the apply date.",
-          "partialRefundable": "Partial Refundable",
-          "partialRefundableDesc": "Specific percentage refunded upon cancellation.",
-          "nonRefundable": "Non-Refundable",
-          "nonRefundableDesc": "No refund issued regardless of when cancelled.",
-          "refundPctLabel": "Refund Percentage (%)",
-          "errorRefundPctRange": "Refund percentage must be between 1% and 99%.",
-          "applyDateLabel": "Cancellation Policy Apply Date",
-          "applyDateHelper": "The last date this policy can be exercised by the guest."
-        },
+        "tariffTitle": "Manage Tariffs",
+        "tariffSubtitle": "Define pricing and seasonal adjustments for {{name}}",
+        "baseTariff": "Base Tariff",
+        "basePrice": "Base Price (USD)",
+        "weekendPremium": "Weekend Premium (%)",
+        "weekendPremiumHint": "Applied to Friday and Saturday nights",
+        "saveBaseTariff": "Save Base Tariff",
+        "seasonalAdjustments": "Seasonal Adjustments",
+        "addRule": "Add New Seasonal Rule",
+        "ruleName": "Name",
+        "ruleNamePlaceholder": "e.g. Summer Peak",
+        "ruleStart": "Start",
+        "ruleEnd": "End",
+        "ruleType": "Type",
+        "ruleTypePercent": "Percent %",
+        "ruleTypeFixed": "Fixed $",
+        "ruleValue": "Value",
+        "ruleNameHeader": "Rule Name",
+        "rulePeriodHeader": "Period",
+        "ruleTypeHeader": "Type",
+        "ruleValueHeader": "Value",
+        "addRuleButton": "Add Rule",
+        "tariffSavedSuccess": "Base tariff updated and calendar synced!",
+        "ruleAddedSuccess": "Seasonal rule added and calendar synced!",
+        "ruleDeletedSuccess": "Rule deleted and calendar synced!",
+        "tariffError": "Failed to update base tariff",
+        "ruleAddError": "Failed to add seasonal rule",
+        "ruleDeleteError": "Failed to delete rule",
+        "fillAllFields": "Please fill all rule fields",
+        "deleteRuleTitle": "Delete rule {{name}}?",
         "dashboard": {
           "title": "Dashboard Overview",
           "subtitle": "Snapshot of your hotel performance for the selected period.",
@@ -494,6 +499,25 @@
           }
         }
       },
+      "pricingOffers": {
+        "title": "Pricing & Offers",
+        "discountLabel": "Discount to Apply (%)",
+        "discountHelper": "This discount will be applied to the base rate during the availability period."
+      },
+      "cancellationPolicy": {
+        "title": "Cancellation Policy",
+        "policyTypeLabel": "Policy Type",
+        "totallyRefundable": "Totally Refundable",
+        "totallyRefundableDesc": "Full refund if cancelled before the apply date.",
+        "partialRefundable": "Partial Refundable",
+        "partialRefundableDesc": "Specific percentage refunded upon cancellation.",
+        "nonRefundable": "Non-Refundable",
+        "nonRefundableDesc": "No refund issued regardless of when cancelled.",
+        "refundPctLabel": "Refund Percentage (%)",
+        "errorRefundPctRange": "Refund percentage must be between 1% and 99%.",
+        "applyDateLabel": "Cancellation Policy Apply Date",
+        "applyDateHelper": "The last date this policy can be exercised by the guest."
+      },
       "admin": {
         "navbar": {
           "title": "TravelHub Admin",
@@ -506,11 +530,6 @@
           "settings": "Settings",
           "logOut": "Log Out"
         }
-      },
-      "common": {
-        "cancel": "Cancel",
-        "unknownError": "Unknown error",
-        "tryAgain": "Try again"
       }
     },
     "settings": {
@@ -599,45 +618,50 @@
         "noHotels": "Your account is not associated with any hotel."
       }
     },
-    "reports": {
-      "title": "Revenue Reports",
-      "subtitle": "Generate revenue performance reports by period.",
-      "filters": {
-        "hotel": "Hotel",
-        "myHotel": "My hotel",
-        "from": "From",
-        "to": "To"
-      },
-      "kpis": {
-        "totalRevenue": "Total Revenue",
-        "adr": "ADR",
-        "occupancyRate": "Occupancy Rate"
-      },
-      "sections": {
-        "trends": "Revenue trends",
-        "byRoomType": "Revenue by room type"
-      },
-      "chart": {
-        "revenue": "Revenue",
-        "occupancy": "Occupancy"
-      },
-      "table": {
-        "roomType": "Room Type",
-        "unitsSold": "Units Sold",
-        "avgRate": "Avg Rate",
-        "totalRevenue": "Total Revenue",
-        "totalAggregatedRevenue": "Total Aggregated Revenue"
-      },
-      "actions": {
-        "generate": "Generate report",
-        "download": "Download report"
-      },
-      "states": {
-        "initial": "Select a hotel and date range, then click Generate report.",
-        "empty": "No report data available for the selected period.",
-        "error": "We could not load the report. Please try again.",
-        "hotelNotResolved": "We could not resolve your hotel profile. Please sign in again."
-      }
+    "common": {
+      "cancel": "Cancel",
+      "unknownError": "Unknown error",
+      "tryAgain": "Try again"
+    }
+  },
+  "reports": {
+    "title": "Revenue Reports",
+    "subtitle": "Generate revenue performance reports by period.",
+    "filters": {
+      "hotel": "Hotel",
+      "myHotel": "My hotel",
+      "from": "From",
+      "to": "To"
+    },
+    "kpis": {
+      "totalRevenue": "Total Revenue",
+      "adr": "ADR",
+      "occupancyRate": "Occupancy Rate"
+    },
+    "sections": {
+      "trends": "Revenue trends",
+      "byRoomType": "Revenue by room type"
+    },
+    "chart": {
+      "revenue": "Revenue",
+      "occupancy": "Occupancy"
+    },
+    "table": {
+      "roomType": "Room Type",
+      "unitsSold": "Units Sold",
+      "avgRate": "Avg Rate",
+      "totalRevenue": "Total Revenue",
+      "totalAggregatedRevenue": "Total Aggregated Revenue"
+    },
+    "actions": {
+      "generate": "Generate report",
+      "download": "Download report"
+    },
+    "states": {
+      "initial": "Select a hotel and date range, then click Generate report.",
+      "empty": "No report data available for the selected period.",
+      "error": "We could not load the report. Please try again.",
+      "hotelNotResolved": "We could not resolve your hotel profile. Please sign in again."
     }
   }
 }
