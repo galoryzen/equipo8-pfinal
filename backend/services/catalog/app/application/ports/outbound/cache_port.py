@@ -7,3 +7,9 @@ class CachePort(ABC):
 
     @abstractmethod
     async def set(self, key: str, value: str, ttl_seconds: int = 300) -> None: ...
+
+    @abstractmethod
+    async def delete(self, key: str) -> None: ...
+
+    @abstractmethod
+    async def delete_pattern(self, pattern: str) -> int: ...

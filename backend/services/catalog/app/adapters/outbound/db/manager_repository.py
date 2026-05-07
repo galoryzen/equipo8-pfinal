@@ -797,3 +797,9 @@ class SqlAlchemyManagerRepository(ManagerRepository):
             "adjustment_type": rule.adjustment_type.value,
             "adjustment_value": rule.adjustment_value,
         }
+
+    async def get_property_id_for_room_type(self, room_type_id: UUID) -> UUID | None:
+        stmt = select(RoomType.property_id).where(RoomType.id == room_type_id)
+        res = await self._session.execute(stmt)
+        result = res.scalar_one_or_none()
+        return result

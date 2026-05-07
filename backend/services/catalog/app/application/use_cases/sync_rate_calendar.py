@@ -18,7 +18,7 @@ class SyncRateCalendarUseCase:
 
         seasonal_rules = tariffs.get("seasonal_rules", [])
         base_price = base["base_price"]
-        weekend_premium_pct = base["weekend_premium"]
+        weekend_premium = base["weekend_premium"]
 
         # 2. Get all rate plans for this room type
         rate_plan_ids = await self._repo.list_rate_plans_for_room_type(room_type_id)
@@ -35,7 +35,7 @@ class SyncRateCalendarUseCase:
             # Apply weekend premium if Fri (4) or Sat (5) night
             # In Python, Monday is 0, Sunday is 6. Friday is 4, Saturday is 5.
             if day.weekday() in (4, 5):
-                price += base_price * (weekend_premium_pct / Decimal("100"))
+                price += base_price * weekend_premium / Decimal("100")
 
             # Apply seasonal rules (highest adjustment wins)
             # Find rules that apply to this day
@@ -52,7 +52,7 @@ class SyncRateCalendarUseCase:
                 rule_prices = []
                 for rule in active_rules:
                     if rule["adjustment_type"] == "PERCENT":
-                        adj_price = price + (price * (rule["adjustment_value"] / Decimal("100")))
+                        adj_price = price + (price * rule["adjustment_value"] / Decimal("100"))
                     else: # FIXED
                         adj_price = price + rule["adjustment_value"]
                     rule_prices.append(adj_price)

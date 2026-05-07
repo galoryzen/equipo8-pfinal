@@ -120,3 +120,7 @@ class ManagerRepository(ABC):
     @abstractmethod
     async def get_seasonal_rule(self, rule_id: UUID) -> dict | None:
         """Return a single seasonal rule by ID."""
+
+    @abstractmethod
+    async def get_property_id_for_room_type(self, room_type_id: UUID) -> UUID | None:
+        """Return the property_id for a given room_type_id."""

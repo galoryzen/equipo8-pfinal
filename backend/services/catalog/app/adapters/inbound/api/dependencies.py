@@ -392,16 +392,19 @@ def get_room_tariffs_use_case(session: AsyncSession) -> GetRoomTariffsUseCase:
 def get_update_base_tariff_use_case(session: AsyncSession) -> UpdateBaseTariffUseCase:
     repo = get_manager_repository(session)
     sync_use_case = get_sync_rate_calendar_use_case(session)
-    return UpdateBaseTariffUseCase(repo, sync_use_case)
+    cache = get_cache()
+    return UpdateBaseTariffUseCase(repo, sync_use_case, cache)
 
 
 def get_add_seasonal_tariff_use_case(session: AsyncSession) -> AddSeasonalTariffUseCase:
     repo = get_manager_repository(session)
     sync_use_case = get_sync_rate_calendar_use_case(session)
-    return AddSeasonalTariffUseCase(repo, sync_use_case)
+    cache = get_cache()
+    return AddSeasonalTariffUseCase(repo, sync_use_case, cache)
 
 
 def get_delete_seasonal_tariff_use_case(session: AsyncSession) -> DeleteSeasonalTariffUseCase:
     repo = get_manager_repository(session)
     sync_use_case = get_sync_rate_calendar_use_case(session)
-    return DeleteSeasonalTariffUseCase(repo, sync_use_case)
+    cache = get_cache()
+    return DeleteSeasonalTariffUseCase(repo, sync_use_case, cache)
