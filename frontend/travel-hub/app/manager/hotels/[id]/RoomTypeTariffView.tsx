@@ -518,7 +518,6 @@ export default function RoomTypeTariffView({
                   {t('manager.hotels.roomTypeManage.ruleStart')}
                 </Typography>
                 <DatePicker
-                  id="rule-start-date"
                   label={t('manager.hotels.roomTypeManage.ruleStart')}
                   value={ruleStart}
                   onChange={setRuleStart}
@@ -538,7 +537,6 @@ export default function RoomTypeTariffView({
                   {t('manager.hotels.roomTypeManage.ruleEnd')}
                 </Typography>
                 <DatePicker
-                  id="rule-end-date"
                   label={t('manager.hotels.roomTypeManage.ruleEnd')}
                   value={ruleEnd}
                   onChange={setRuleEnd}
