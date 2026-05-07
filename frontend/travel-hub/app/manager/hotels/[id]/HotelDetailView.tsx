@@ -25,6 +25,7 @@ import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Pagination from '@mui/material/Pagination';
@@ -33,6 +34,7 @@ import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
 import RoomTypeManageView from './RoomTypeManageView';
+import RoomTypeTariffView from './RoomTypeTariffView';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -179,6 +181,10 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'occupied'>('all');
   const [page, setPage] = useState(1);
 
+  const [activeView, setActiveView] = useState<'list' | 'promotions' | 'tariffs'>('list');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [manageMenuRoom, setManageMenuRoom] = useState<RoomTypeManagerItem | null>(null);
+
   // ── Load data ───────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -280,13 +286,30 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
     );
   }
 
-  if (selectedRoomType) {
+  if (activeView === 'promotions' && selectedRoomType) {
     return (
       <RoomTypeManageView
         hotelId={hotelId}
         hotelName={hotel.name}
         roomType={selectedRoomType}
-        onBack={() => setSelectedRoomType(null)}
+        onBack={() => {
+          setSelectedRoomType(null);
+          setActiveView('list');
+        }}
+      />
+    );
+  }
+
+  if (activeView === 'tariffs' && selectedRoomType) {
+    return (
+      <RoomTypeTariffView
+        hotelId={hotelId}
+        hotelName={hotel.name}
+        roomType={selectedRoomType}
+        onBack={() => {
+          setSelectedRoomType(null);
+          setActiveView('list');
+        }}
       />
     );
   }
@@ -642,7 +665,10 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
                   <Box role="cell" sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Button
                       size="small"
-                      onClick={() => setSelectedRoomType(rt)}
+                      onClick={(e) => {
+                        setAnchorEl(e.currentTarget);
+                        setManageMenuRoom(rt);
+                      }}
                       aria-label={t('manager.hotels.hotelDetail.roomManagement.manageRoomType', {
                         name: rt.name,
                       })}
@@ -671,6 +697,53 @@ export default function HotelDetailView({ hotelId }: { hotelId: string }) {
             )}
           </Box>
         </Box>
+
+        {/* Manage Menu */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={() => {
+            setAnchorEl(null);
+            setManageMenuRoom(null);
+          }}
+          elevation={4}
+          sx={{
+            '& .MuiPaper-root': {
+              borderRadius: 2,
+              minWidth: 160,
+              mt: 1,
+              border: `1px solid ${tokens.border.subtle}`,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            },
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              if (manageMenuRoom) {
+                setSelectedRoomType(manageMenuRoom);
+                setActiveView('promotions');
+              }
+              setAnchorEl(null);
+              setManageMenuRoom(null);
+            }}
+            sx={{ fontWeight: 600, fontSize: '0.875rem', py: 1.25 }}
+          >
+            {t('manager.hotels.hotelDetail.roomManagement.manageOptions.promotion', 'Promotion')}
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              if (manageMenuRoom) {
+                setSelectedRoomType(manageMenuRoom);
+                setActiveView('tariffs');
+              }
+              setAnchorEl(null);
+              setManageMenuRoom(null);
+            }}
+            sx={{ fontWeight: 600, fontSize: '0.875rem', py: 1.25 }}
+          >
+            {t('manager.hotels.hotelDetail.roomManagement.manageOptions.tariffs', 'Tariffs')}
+          </MenuItem>
+        </Menu>
 
         {/* Pagination footer */}
         <Box
