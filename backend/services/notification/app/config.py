@@ -21,6 +21,17 @@ class Settings(BaseSettings):
     EMAIL_SENDER_BACKEND: str = "logging"
     SES_FROM_ADDRESS: str = "noreply@travelhub.galoryzen.xyz"
 
+    # Push sender.
+    # Local: logging (no network call). Prod: expo (https://exp.host/--/api/v2/push/send).
+    PUSH_SENDER_BACKEND: str = "logging"
+    EXPO_ACCESS_TOKEN: str = ""
+
+    # JWT settings used to authenticate inbound API calls. Same secret/algorithm
+    # as the auth service issues — kept under the NOTIFICATION_ prefix for
+    # consistency with the rest of this service's config.
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+
     # Internal service-to-service calls (auth + catalog enrichment).
     AUTH_SERVICE_URL: str = "http://thub-auth:8000"
     CATALOG_SERVICE_URL: str = "http://thub-catalog:8000"

@@ -3,16 +3,17 @@ import uuid
 from datetime import UTC, datetime
 
 from contracts.events.base import DomainEventEnvelope
-from contracts.events.payment import PaymentFailedPayload
+from contracts.events.booking import BookingRejectedPayload
 
-from app.adapters.outbound.email.templates.payment_failed import (
-    PaymentFailedContext,
-    render_payment_failed,
+from app.adapters.outbound.email.templates.booking_rejected import (
+    BookingRejectedContext,
+    render_booking_rejected,
 )
 from app.application.ports.outbound.email_sender import EmailSender
 from app.application.ports.outbound.notification_repository import NotificationRepository
 from app.application.ports.outbound.user_contact_client import UserContactClient
 from app.domain.models import (
+    BOOKING_REJECTED_TYPE,
     Notification,
     NotificationChannel,
     NotificationStatus,
@@ -21,7 +22,7 @@ from app.domain.models import (
 logger = logging.getLogger(__name__)
 
 
-class SendPaymentFailedEmailUseCase:
+class SendBookingRejectedEmailUseCase:
     def __init__(
         self,
         repo: NotificationRepository,
@@ -37,14 +38,14 @@ class SendPaymentFailedEmailUseCase:
             logger.info("duplicate event_id skipped event_id=%s", envelope.event_id)
             return
 
-        payload = PaymentFailedPayload.model_validate(envelope.payload)
+        payload = BookingRejectedPayload.model_validate(envelope.payload)
         contact = await self._user_contacts.get_contact(payload.user_id)
 
-        subject, text, html = render_payment_failed(
-            PaymentFailedContext(
+        subject, text, html = render_booking_rejected(
+            BookingRejectedContext(
                 full_name=contact.full_name,
-                transaction_reference=str(payload.payment_intent_id),
-                suggested_action="Reintentar u otro método de pago",
+                reason=payload.reason,
+                refund_percent=payload.refund_percent,
             )
         )
 
@@ -54,7 +55,7 @@ class SendPaymentFailedEmailUseCase:
             booking_id=payload.booking_id,
             user_id=payload.user_id,
             channel=NotificationChannel.EMAIL,
-            type="PAYMENT_FAILED",
+            type=BOOKING_REJECTED_TYPE,
             status=NotificationStatus.PENDING,
             to_email=contact.email,
             created_at=datetime.now(UTC).replace(tzinfo=None),

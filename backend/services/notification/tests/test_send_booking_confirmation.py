@@ -43,7 +43,7 @@ def _mocks():
 @pytest.mark.asyncio
 async def test_happy_path_sends_email_and_marks_sent():
     repo, contacts, properties, sender = _mocks()
-    repo.exists_by_event_id.return_value = False
+    repo.exists_by_event_id_and_channel.return_value = False
     contacts.get_contact.return_value = UserContact(id=uuid4(), full_name="Ana", email="ana@test.com")
     properties.get_summary.return_value = PropertySummary(
         id=uuid4(),
@@ -80,7 +80,7 @@ async def test_happy_path_sends_email_and_marks_sent():
 @pytest.mark.asyncio
 async def test_skips_when_event_already_processed():
     repo, contacts, properties, sender = _mocks()
-    repo.exists_by_event_id.return_value = True
+    repo.exists_by_event_id_and_channel.return_value = True
 
     uc = SendBookingConfirmationEmailUseCase(repo, contacts, properties, sender)
     await uc.execute(_make_envelope())
@@ -94,7 +94,7 @@ async def test_skips_when_event_already_processed():
 @pytest.mark.asyncio
 async def test_marks_failed_and_reraises_when_sender_errors():
     repo, contacts, properties, sender = _mocks()
-    repo.exists_by_event_id.return_value = False
+    repo.exists_by_event_id_and_channel.return_value = False
     contacts.get_contact.return_value = UserContact(id=uuid4(), full_name="Ana", email="ana@test.com")
     properties.get_summary.return_value = PropertySummary(
         id=uuid4(),
@@ -117,7 +117,7 @@ async def test_marks_failed_and_reraises_when_sender_errors():
 @pytest.mark.asyncio
 async def test_renders_without_image_tag_when_property_has_no_image():
     repo, contacts, properties, sender = _mocks()
-    repo.exists_by_event_id.return_value = False
+    repo.exists_by_event_id_and_channel.return_value = False
     contacts.get_contact.return_value = UserContact(id=uuid4(), full_name="Ana", email="ana@test.com")
     properties.get_summary.return_value = PropertySummary(
         id=uuid4(),
@@ -139,7 +139,7 @@ async def test_renders_without_image_tag_when_property_has_no_image():
 @pytest.mark.asyncio
 async def test_enrichment_error_propagates_without_email_attempt():
     repo, contacts, properties, sender = _mocks()
-    repo.exists_by_event_id.return_value = False
+    repo.exists_by_event_id_and_channel.return_value = False
     contacts.get_contact.side_effect = NotificationEnrichmentError("auth 503")
 
     uc = SendBookingConfirmationEmailUseCase(repo, contacts, properties, sender)

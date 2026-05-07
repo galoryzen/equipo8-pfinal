@@ -5,16 +5,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.notification_repository import NotificationRepository
-from app.domain.models import Notification, NotificationStatus
+from app.domain.models import Notification, NotificationChannel, NotificationStatus
 
 
 class SqlAlchemyNotificationRepository(NotificationRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def exists_by_event_id(self, event_id: UUID) -> bool:
+    async def exists_by_event_id_and_channel(self, event_id: UUID, channel: NotificationChannel) -> bool:
         result = await self._session.execute(
-            select(Notification.id).where(Notification.event_id == event_id).limit(1)
+            select(Notification.id).where(Notification.event_id == event_id, Notification.channel == channel).limit(1)
         )
         return result.scalar_one_or_none() is not None
 
