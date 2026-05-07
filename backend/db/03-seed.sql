@@ -336,6 +336,26 @@ INSERT INTO catalog.rate_plan (id, room_type_id, name, is_active, cancellation_p
   ('70000000-0000-0000-0000-00000000000b', '60000000-0000-0000-0000-00000000000b', 'Tarifa Base',  true, '10000000-0000-0000-0000-000000000003'),
   ('70000000-0000-0000-0000-00000000000c', '60000000-0000-0000-0000-00000000000c', 'Tarifa Base',  true, '10000000-0000-0000-0000-000000000003');
 
+-- ── catalog.tariff_base ─────────────────────────────────
+INSERT INTO catalog.tariff_base (id, room_type_id, base_price, weekend_premium) VALUES
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000001', 120.00, 15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000002', 280.00, 20.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000003', 75.00,  10.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000004', 150.00, 10.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000005', 60.00,  15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000006', 130.00, 15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000007', 85.00,  20.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000008', 200.00, 20.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000009', 140.00, 10.00), -- Madrid Clásica
+  (gen_random_uuid(), '60000000-0000-0000-0000-00000000000a', 300.00, 10.00), -- Madrid Suite
+  (gen_random_uuid(), '60000000-0000-0000-0000-00000000000b', 90.00,  15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-00000000000c', 180.00, 15.00);
+
+-- ── catalog.tariff_seasonal_rule ────────────────────────
+INSERT INTO catalog.tariff_seasonal_rule (id, room_type_id, name, start_date, end_date, adjustment_type, adjustment_value) VALUES
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000001', 'Temporada Alta Invierno', '2026-12-15', '2027-01-15', 'PERCENT', 30.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000009', 'Verano Madrid', '2026-06-01', '2026-08-31', 'FIXED', 25.00);
+
 -- ── catalog.rate_calendar ───────────────────────────────
 -- 30 days of prices starting from today, using generate_series
 -- Prices vary by property tier (USD)

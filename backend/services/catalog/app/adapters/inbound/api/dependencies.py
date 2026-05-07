@@ -42,6 +42,11 @@ from app.application.use_cases.search_properties import SearchPropertiesUseCase
 from app.application.use_cases.set_primary_property_image import SetPrimaryPropertyImageUseCase
 from app.application.use_cases.update_hotel_profile import UpdateHotelProfileUseCase
 from app.application.use_cases.update_rate_plan_cancellation_policy import UpdateRatePlanCancellationPolicyUseCase
+from app.application.use_cases.get_room_tariffs import GetRoomTariffsUseCase
+from app.application.use_cases.update_base_tariff import UpdateBaseTariffUseCase
+from app.application.use_cases.add_seasonal_tariff import AddSeasonalTariffUseCase
+from app.application.use_cases.delete_seasonal_tariff import DeleteSeasonalTariffUseCase
+from app.application.use_cases.sync_rate_calendar import SyncRateCalendarUseCase
 
 # Singleton — created once, shared across requests
 _redis_cache: RedisCache | None = None
@@ -374,3 +379,32 @@ def get_set_primary_property_image_use_case(
     session: AsyncSession,
 ) -> SetPrimaryPropertyImageUseCase:
     return SetPrimaryPropertyImageUseCase(get_manager_repository(session))
+
+
+def get_sync_rate_calendar_use_case(session: AsyncSession) -> SyncRateCalendarUseCase:
+    return SyncRateCalendarUseCase(get_manager_repository(session))
+
+
+def get_room_tariffs_use_case(session: AsyncSession) -> GetRoomTariffsUseCase:
+    return GetRoomTariffsUseCase(get_manager_repository(session))
+
+
+def get_update_base_tariff_use_case(session: AsyncSession) -> UpdateBaseTariffUseCase:
+    repo = get_manager_repository(session)
+    sync_use_case = get_sync_rate_calendar_use_case(session)
+    cache = get_cache()
+    return UpdateBaseTariffUseCase(repo, sync_use_case, cache)
+
+
+def get_add_seasonal_tariff_use_case(session: AsyncSession) -> AddSeasonalTariffUseCase:
+    repo = get_manager_repository(session)
+    sync_use_case = get_sync_rate_calendar_use_case(session)
+    cache = get_cache()
+    return AddSeasonalTariffUseCase(repo, sync_use_case, cache)
+
+
+def get_delete_seasonal_tariff_use_case(session: AsyncSession) -> DeleteSeasonalTariffUseCase:
+    repo = get_manager_repository(session)
+    sync_use_case = get_sync_rate_calendar_use_case(session)
+    cache = get_cache()
+    return DeleteSeasonalTariffUseCase(repo, sync_use_case, cache)

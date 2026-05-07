@@ -87,3 +87,37 @@ export type HotelProfile = {
   policy: string;
   images: ManagerPropertyImage[];
 };
+
+export interface TariffBase {
+  room_type_id: string;
+  base_price: number;
+  weekend_premium: number;
+}
+
+export interface TariffSeasonalRule {
+  id: string;
+  room_type_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  adjustment_type: 'PERCENT' | 'FIXED';
+  adjustment_value: number;
+}
+
+export interface RoomTariffs {
+  base: TariffBase | null;
+  seasonal_rules: TariffSeasonalRule[];
+}
+
+export interface UpdateBaseTariffPayload {
+  base_price: number;
+  weekend_premium: number;
+}
+
+export interface AddSeasonalTariffPayload {
+  name: string;
+  start_date: string;
+  end_date: string;
+  adjustment_type: 'PERCENT' | 'FIXED';
+  adjustment_value: number;
+}

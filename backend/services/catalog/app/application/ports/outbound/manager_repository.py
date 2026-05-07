@@ -6,6 +6,8 @@ from app.schemas.manager import (
     CreatePromotionIn,
     UpdateCancellationPolicyIn,
     UpdateHotelProfileIn,
+    TariffBaseIn,
+    TariffSeasonalRuleIn,
 )
 
 
@@ -90,3 +92,35 @@ class ManagerRepository(ABC):
         self, property_id: UUID, hotel_id: UUID, image_id: UUID
     ) -> list[dict]:
         """Promote ``image_id`` to ``display_order=0`` and return the new ordered list."""
+
+    @abstractmethod
+    async def get_room_tariffs(self, room_type_id: UUID) -> dict:
+        """Return base tariff and seasonal rules for the given room type."""
+
+    @abstractmethod
+    async def update_base_tariff(self, room_type_id: UUID, data: "TariffBaseIn") -> dict:
+        """Upsert the base tariff for the given room type."""
+
+    @abstractmethod
+    async def add_seasonal_tariff(self, room_type_id: UUID, data: "TariffSeasonalRuleIn") -> dict:
+        """Add a new seasonal tariff rule."""
+
+    @abstractmethod
+    async def delete_seasonal_tariff(self, rule_id: UUID) -> None:
+        """Delete a seasonal tariff rule."""
+
+    @abstractmethod
+    async def list_rate_plans_for_room_type(self, room_type_id: UUID) -> list[UUID]:
+        """Return all rate plan IDs for a given room type (used for calendar sync)."""
+
+    @abstractmethod
+    async def update_rate_calendar(self, rate_plan_id: UUID, prices: list[dict]) -> None:
+        """Batch upsert prices in the rate_calendar table."""
+
+    @abstractmethod
+    async def get_seasonal_rule(self, rule_id: UUID) -> dict | None:
+        """Return a single seasonal rule by ID."""
+
+    @abstractmethod
+    async def get_property_id_for_room_type(self, room_type_id: UUID) -> UUID | None:
+        """Return the property_id for a given room_type_id."""

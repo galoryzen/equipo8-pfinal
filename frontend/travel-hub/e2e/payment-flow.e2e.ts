@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { expect, test } from '@playwright/test';
 
 import {
@@ -58,7 +57,6 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     const user = TEST_USERS.traveler;
     const destination = TEST_DESTINATIONS[0]; // Cancún
     const dates = getBookingDates(7, 10); // 7-10 days from now
-    const guestInfo = generateGuestInfo();
     const paymentInfo = generatePaymentInfo();
 
     // ── STEP 1: Login ──

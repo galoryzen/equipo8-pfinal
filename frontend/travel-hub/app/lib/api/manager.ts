@@ -1,6 +1,7 @@
 import { API_URL } from '@/app/lib/api/constants';
 import type { PaginatedResponse } from '@/app/lib/types/catalog';
 import {
+  AddSeasonalTariffPayload,
   CreatePromotionPayload,
   HotelProfile,
   HotelStatsOut,
@@ -8,8 +9,12 @@ import {
   ManagerPropertyImage,
   PromotionCreatedOut,
   RatePlanCancellationPolicy,
+  RoomTariffs,
   RoomTypeManagerItem,
   RoomTypePromotionOut,
+  TariffBase,
+  TariffSeasonalRule,
+  UpdateBaseTariffPayload,
   UpdateCancellationPolicyPayload,
 } from '@/app/lib/types/manager';
 
@@ -389,4 +394,66 @@ export async function setPrimaryHotelImage(
     throw new Error(formatApiErrorBody(body, res.status));
   }
   return res.json();
+}
+
+export async function getRoomTariffs(roomTypeId: string): Promise<RoomTariffs> {
+  const res = await fetch(`${API_URL}/api/v1/catalog/manager/room-types/${roomTypeId}/tariffs`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function updateBaseTariff(
+  roomTypeId: string,
+  payload: UpdateBaseTariffPayload
+): Promise<TariffBase> {
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/room-types/${roomTypeId}/tariffs/base`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function addSeasonalTariff(
+  roomTypeId: string,
+  payload: AddSeasonalTariffPayload
+): Promise<TariffSeasonalRule> {
+  const res = await fetch(
+    `${API_URL}/api/v1/catalog/manager/room-types/${roomTypeId}/tariffs/seasonal`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
+  return res.json();
+}
+
+export async function deleteSeasonalTariff(ruleId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/catalog/manager/tariffs/seasonal/${ruleId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(formatApiErrorBody(body, res.status));
+  }
 }

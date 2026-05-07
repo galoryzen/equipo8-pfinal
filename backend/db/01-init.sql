@@ -268,6 +268,29 @@ CREATE TABLE catalog.promotion (
 CREATE INDEX idx_promotion_plan_active
     ON catalog.promotion (rate_plan_id, is_active, start_date, end_date);
 
+CREATE TABLE catalog.tariff_base (
+    id              UUID PRIMARY KEY,
+    room_type_id    UUID NOT NULL REFERENCES catalog.room_type(id) UNIQUE,
+    base_price      DECIMAL(12,2) NOT NULL,
+    weekend_premium DECIMAL(5,2) NOT NULL,
+    created_at      TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE catalog.tariff_seasonal_rule (
+    id               UUID PRIMARY KEY,
+    room_type_id     UUID NOT NULL REFERENCES catalog.room_type(id),
+    name             VARCHAR NOT NULL,
+    start_date       DATE NOT NULL,
+    end_date         DATE NOT NULL,
+    adjustment_type  discount_type NOT NULL,
+    adjustment_value DECIMAL(12,2) NOT NULL,
+    created_at       TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at       TIMESTAMP NOT NULL DEFAULT now(),
+    CHECK (end_date >= start_date)
+);
+CREATE INDEX idx_tariff_seasonal_room ON catalog.tariff_seasonal_rule (room_type_id, start_date, end_date);
+
 CREATE TABLE catalog.review (
     id          UUID PRIMARY KEY,
     booking_id  UUID NOT NULL UNIQUE,
