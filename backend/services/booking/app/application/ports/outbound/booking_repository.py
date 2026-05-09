@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date, datetime
 from uuid import UUID
 
-from app.domain.models import Booking, BookingScope, BookingStatusHistory
+from app.domain.models import Booking, BookingScope, BookingStatus, BookingStatusHistory
 
 
 class BookingRepository(ABC):
@@ -36,9 +36,25 @@ class BookingRepository(ABC):
 
     @abstractmethod
     async def list_by_hotel(
-        self, hotel_id: UUID, status: str | None = None, page: int = 1, page_size: int = 10
+        self,
+        hotel_id: UUID,
+        *,
+        status: str | BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        room_type_id: UUID | None = None,
+        q: str | None = None,
+        page: int = 1,
+        page_size: int | None = 10,
     ) -> tuple[list[Booking], int]:
-        """Return (bookings_page, total_count) for a hotel, optionally filtered by status."""
+        """Return (bookings_page, total_count) for a hotel's properties.
+
+        Optional filters apply only when provided (AND semantics).
+        Stay dates use overlap semantics when both ``date_from`` and ``date_to``
+        are set: ``checkin <= date_to`` and ``checkout >= date_from``.
+        When only one bound is set, it constrains the corresponding edge.
+        ``page_size`` None disables pagination (all matching rows).
+        """
 
     @abstractmethod
     async def count_hotel_bookings_metrics(self, hotel_id: UUID, *, today: date) -> dict[str, int]:

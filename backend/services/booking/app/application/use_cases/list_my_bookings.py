@@ -1,7 +1,9 @@
 import asyncio
 import contextlib
+import csv
 from collections.abc import Callable
 from datetime import UTC, date, datetime
+from io import StringIO
 from uuid import UUID
 
 import httpx
@@ -50,10 +52,48 @@ async def _fetch_property_info(client: httpx.AsyncClient, property_id: UUID) -> 
     return None
 
 
+def _hotel_bookings_history_csv(items: list[BookingListItemOut]) -> bytes:
+    buf = StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "Booking reference",
+            "Booking date",
+            "Guest name",
+            "Guest email",
+            "Check-in",
+            "Check-out",
+            "Room type",
+            "Property",
+            "Amount",
+            "Currency",
+            "Status",
+        ]
+    )
+    for it in items:
+        writer.writerow(
+            [
+                it.display_reference,
+                it.created_at.date().isoformat() if it.created_at else "",
+                it.guest_name or "",
+                it.guest_email or "",
+                it.checkin.isoformat(),
+                it.checkout.isoformat(),
+                it.room_type_name or "",
+                it.property_name or "",
+                str(it.total_amount),
+                it.currency_code,
+                it.status,
+            ]
+        )
+    return buf.getvalue().encode("utf-8-sig")
+
+
 def _map_booking_to_list_item(
     booking: Booking,
     prop_info: dict | None,
     guest_name: str | None,
+    guest_email: str | None = None,
     *,
     for_hotel_portal: bool = False,
     today: date | None = None,
@@ -111,6 +151,7 @@ def _map_booking_to_list_item(
         nights=nights,
         guest_name=guest_name,
         guests_count=booking.guests_count,
+        guest_email=guest_email,
         actual_checkin_at=actual_out,
         can_register_check_in=can_register,
         actual_checkout_at=actual_checkout_out,
@@ -149,7 +190,7 @@ class ListMyBookingsUseCase:
         try:
             results, guest_map = await asyncio.gather(
                 asyncio.gather(*[_fetch_property_info(client, pid) for pid in unique_pids]),
-                self._guest_repo.get_primary_names_for_bookings(booking_ids)
+                self._guest_repo.get_primary_contact_for_bookings(booking_ids)
                 if self._guest_repo is not None
                 else asyncio.sleep(0, result={}),
             )
@@ -158,22 +199,30 @@ class ListMyBookingsUseCase:
                 await client.aclose()
 
         prop_map: dict[UUID, dict | None] = dict(zip(unique_pids, results, strict=False))
-        return [
-            _map_booking_to_list_item(
-                b,
-                prop_map.get(b.property_id),
-                guest_map.get(b.id),
-                for_hotel_portal=for_hotel_portal,
-                today=today,
+        rows: list[BookingListItemOut] = []
+        for b in bookings:
+            gname: str | None = None
+            gemail: str | None = None
+            contact = guest_map.get(b.id)
+            if contact:
+                gname, gemail = contact
+            rows.append(
+                _map_booking_to_list_item(
+                    b,
+                    prop_map.get(b.property_id),
+                    gname,
+                    guest_email=gemail,
+                    for_hotel_portal=for_hotel_portal,
+                    today=today,
+                )
             )
-            for b in bookings
-        ]
+        return rows
 
     async def execute(
         self,
         user_id: UUID,
         scope: BookingScope = BookingScope.ALL,
-        status: str | None = None,
+        status: BookingStatus | None = None,
         page: int = 1,
         page_size: int = 10,
     ) -> PaginatedBookingListOut:
@@ -190,7 +239,7 @@ class ListMyBookingsUseCase:
 
     async def execute_admin(
         self,
-        status: str | None = None,
+        status: BookingStatus | None = None,
         page: int = 1,
         page_size: int = 10,
     ) -> PaginatedBookingListOut:
@@ -204,16 +253,51 @@ class ListMyBookingsUseCase:
     async def execute_hotel(
         self,
         hotel_id: UUID,
-        status: str | None = None,
+        status: BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        room_type_id: UUID | None = None,
+        q: str | None = None,
         page: int = 1,
         page_size: int = 10,
     ) -> PaginatedBookingListOut:
         today = self._clock()
         bookings, total = await self._repo.list_by_hotel(
-            hotel_id=hotel_id, status=status, page=page, page_size=page_size
+            hotel_id,
+            status=status,
+            date_from=date_from,
+            date_to=date_to,
+            room_type_id=room_type_id,
+            q=q,
+            page=page,
+            page_size=page_size,
         )
         items = await self._enrich(bookings, for_hotel_portal=True, today=today)
         total_pages = max(1, -(-total // page_size))
         return PaginatedBookingListOut(
             items=items, total=total, page=page, page_size=page_size, total_pages=total_pages
         )
+
+    async def execute_hotel_export_csv(
+        self,
+        hotel_id: UUID,
+        *,
+        status: BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        room_type_id: UUID | None = None,
+        q: str | None = None,
+    ) -> bytes:
+        today = self._clock()
+        bookings, _total = await self._repo.list_by_hotel(
+            hotel_id,
+            status=status,
+            date_from=date_from,
+            date_to=date_to,
+            room_type_id=room_type_id,
+            q=q,
+            page=1,
+            page_size=None,
+        )
+        items = await self._enrich(bookings, for_hotel_portal=True, today=today)
+        return _hotel_bookings_history_csv(items)

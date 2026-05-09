@@ -176,7 +176,7 @@ class TestBookingsEndpoints:
             app.dependency_overrides.pop(get_current_user_info, None)
 
         assert resp.status_code == 200
-        assert str(mock_uc.execute_hotel.await_args.kwargs["hotel_id"]) == hotel_id
+        assert str(mock_uc.execute_hotel.await_args.args[0]) == hotel_id
 
     def test_list_hotel_role_without_hotel_id_returns_400(self, client_authenticated):
         mock_uc = AsyncMock()

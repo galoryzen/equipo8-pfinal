@@ -169,7 +169,14 @@ class TestListMyBookingsUseCase:
         out = await uc.execute_hotel(hotel_id=hotel_id)
 
         repo.list_by_hotel.assert_awaited_once_with(
-            hotel_id=hotel_id, status=None, page=1, page_size=10
+            hotel_id,
+            status=None,
+            date_from=None,
+            date_to=None,
+            room_type_id=None,
+            q=None,
+            page=1,
+            page_size=10,
         )
         assert len(out.items) == 1
         assert out.items[0].can_register_check_in is False
@@ -246,6 +253,99 @@ class TestListMyBookingsUseCase:
         out = await uc.execute_hotel(hotel_id=hotel_id)
         assert out.items[0].room_type_name == "Suite Ocean"
         assert out.items[0].display_reference == "#00000011"
+
+    async def test_execute_hotel_forwards_filters_to_repository(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([], 0)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
+        d0 = date(2026, 6, 1)
+        d1 = date(2026, 6, 30)
+        rt = UUID("60000000-0000-0000-0000-000000000099")
+        await uc.execute_hotel(
+            hotel_id,
+            status=BookingStatus.CONFIRMED,
+            date_from=d0,
+            date_to=d1,
+            room_type_id=rt,
+            q="alice",
+            page=2,
+            page_size=20,
+        )
+        repo.list_by_hotel.assert_awaited_once_with(
+            hotel_id,
+            status=BookingStatus.CONFIRMED,
+            date_from=d0,
+            date_to=d1,
+            room_type_id=rt,
+            q="alice",
+            page=2,
+            page_size=20,
+        )
+
+    async def test_execute_hotel_export_calls_repository_without_pagination(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([], 0)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
+        await uc.execute_hotel_export_csv(hotel_id)
+        repo.list_by_hotel.assert_awaited_once_with(
+            hotel_id,
+            status=None,
+            date_from=None,
+            date_to=None,
+            room_type_id=None,
+            q=None,
+            page=1,
+            page_size=None,
+        )
+
+    async def test_list_items_include_guest_email_when_guest_repo_returns_it(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        bid = UUID("90000000-0000-0000-0000-000000000001")
+        b = _booking(bid, uid, BookingStatus.CONFIRMED, date(2026, 5, 1), date(2026, 5, 4))
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b], 1)
+        guest_repo = AsyncMock()
+        guest_repo.get_primary_contact_for_bookings.return_value = {
+            bid: ("Jane Doe", "jane@example.com")
+        }
+        uc = ListMyBookingsUseCase(
+            repo,
+            guest_repo=guest_repo,
+            clock=_clock,
+            catalog_http_client=_mock_catalog_client(),
+        )
+        out = await uc.execute_hotel(hotel_id=hotel_id)
+        assert out.items[0].guest_name == "Jane Doe"
+        assert out.items[0].guest_email == "jane@example.com"
+
+    async def test_execute_hotel_export_csv_contains_expected_columns(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        bid = UUID("90000000-0000-0000-0000-000000000001")
+        b = _booking(bid, uid, BookingStatus.CONFIRMED, date(2026, 5, 1), date(2026, 5, 4))
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b], 1)
+        guest_repo = AsyncMock()
+        guest_repo.get_primary_contact_for_bookings.return_value = {
+            bid: ("Jane Doe", "jane@example.com")
+        }
+        uc = ListMyBookingsUseCase(
+            repo,
+            guest_repo=guest_repo,
+            clock=_clock,
+            catalog_http_client=_mock_catalog_client(),
+        )
+        raw = await uc.execute_hotel_export_csv(hotel_id)
+        text = raw.decode("utf-8-sig")
+        assert "Booking reference" in text
+        assert "Guest email" in text
+        assert "Currency" in text
+        assert "Jane Doe" in text
+        assert "jane@example.com" in text
+        assert "#00000001" in text
 
     async def test_pagination_metadata_is_correct(self):
         uid = UUID("a0000000-0000-0000-0000-000000000001")

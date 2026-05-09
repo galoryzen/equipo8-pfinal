@@ -387,6 +387,44 @@
           ]
         },
         {
+          "name": "Hotel — list bookings (filtros)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/booking/bookings?status=CONFIRMED&date_from=2026-06-01&date_to=2026-06-30&room_type_id=60000000-0000-0000-0000-000000000001&q=guest&page=1&page_size=20",
+            "description": "Historial hotel partner: filtros opcionales ``status``, ``date_from``, ``date_to`` (solape de estadía), ``room_type_id``, ``q`` (huésped / email / referencia), más ``page`` y ``page_size`` (máx. 100). Requiere JWT rol HOTEL/MANAGER con ``hotel_id`` en el token."
+          }
+        },
+        {
+          "name": "Hotel — export bookings CSV",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/booking/bookings/export?status=CONFIRMED&date_from=2026-06-01&date_to=2026-06-30&q=",
+            "description": "Exporta todas las filas que cumplen los mismos filtros que el listado (sin paginar). Respuesta ``text/csv`` con adjunto ``travelhub-bookings-history.csv``. Solo HOTEL/MANAGER."
+          }
+        },
+        {
           "name": "Get booking detail",
           "request": {
             "auth": {
