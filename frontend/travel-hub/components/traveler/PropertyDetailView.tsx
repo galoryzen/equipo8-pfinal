@@ -100,13 +100,13 @@ export default function PropertyDetailView({
           review_page_size: 4,
         });
         setDetail(data.detail);
-        setReviews((prev) =>
-          rPage === 1
-            ? data.reviews
-            : prev
-              ? { ...data.reviews, items: [...prev.items, ...data.reviews.items] }
-              : data.reviews
-        );
+        setReviews((prev) => {
+          if (rPage === 1) return data.reviews;
+          if (!prev) return data.reviews;
+          const seen = new Set(prev.items.map((r) => r.id));
+          const appended = data.reviews.items.filter((r) => !seen.has(r.id));
+          return { ...data.reviews, items: [...prev.items, ...appended] };
+        });
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to load property'));
       } finally {

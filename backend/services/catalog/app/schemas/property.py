@@ -39,6 +39,7 @@ class PropertySummary(BaseModel):
     image: ImageSummary | None = None
     min_price: Decimal | None = None
     original_min_price: Decimal | None = None
+    distance_to_poi_km: Decimal | None = None
     amenities: list[AmenitySummary] = []
 
 

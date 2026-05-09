@@ -92,7 +92,7 @@ export async function searchProperties(
   if (filters.min_price != null) params.set('min_price', String(filters.min_price));
   if (filters.max_price != null) params.set('max_price', String(filters.max_price));
   if (filters.amenities) params.set('amenities', filters.amenities);
-  if (filters.sort_by) params.set('sort_by', filters.sort_by);
+  params.set('sort_by', filters.sort_by ?? 'relevance');
   if (filters.page) params.set('page', String(filters.page));
   if (filters.page_size) params.set('page_size', String(filters.page_size));
 

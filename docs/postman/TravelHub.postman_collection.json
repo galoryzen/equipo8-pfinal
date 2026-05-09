@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-travelhub-2026",
     "name": "TravelHub — API local (gateway)",
-    "description": "Colección para probar microservicios detrás del gateway nginx (puerto 8080).\n\n**Uso:** importar en Postman. Variable `baseUrl` = `http://localhost:8080` por defecto.\n\n**Auth:** Ejecuta primero *Login* o *Register*; Postman guardará la cookie `access_token` para *Get me* en la misma sesión (mismo dominio/puerto). Los endpoints de **Booking** y **Payment** aceptan `Authorization: Bearer` (variable `accessToken`): copia el valor de la cookie `access_token` tras el login (Postman → Cookies) o pégalo manualmente.\n\n**Catalog:** *Search properties* requiere checkin, checkout y guests.\n\n**Booking:** listado y detalle de reservas del viajero autenticado (`property_id` enlaza con catálogo para nombre/imagen, etc.).\n\n**Payment (mock PSP):** para *Create payment intent* usa login **María** (`maria@example.com` / `travelhub`) y `bookingIdPayable` por defecto (`90000000-0000-0000-0000-000000000002`, `PENDING_CONFIRMATION`). Tras crear intención, copia respuesta a variables `paymentIntentId`, `webhookSecret` y el token a `mockPaymentToken` para *Confirm* y *Webhook mock*.\n\n**Notification:** solo health en esta colección.",
+    "description": "Colección para probar microservicios detrás del gateway nginx (puerto 8080).\n\n**Uso:** importar en Postman. Variable `baseUrl` = `http://localhost:8080` por defecto.\n\n**Auth:** Ejecuta primero *Login* o *Register*; Postman guardará la cookie `access_token` para *Get me* en la misma sesión (mismo dominio/puerto). Los endpoints de **Booking** y **Payment** aceptan `Authorization: Bearer` (variable `accessToken`): copia el valor de la cookie `access_token` tras el login (Postman → Cookies) o pégalo manualmente.\n\n**Catalog:** *Search properties* requiere ``checkin``, ``checkout``, ``guests`` y ``city_id``. Orden por defecto: ``sort_by=relevance`` (ranking multi-factor: precio, rating, popularidad, distancia a POI). Usa *Cities search* para obtener ``cancunCityId``. Fechas de estancia deben caer en la ventana de disponibilidad del seed (aprox. 30 días desde la fecha del servidor en ``rate_calendar``).\n\n**Booking:** listado y detalle de reservas del viajero autenticado (`property_id` enlaza con catálogo para nombre/imagen, etc.).\n\n**Payment (mock PSP):** para *Create payment intent* usa login **María** (`maria@example.com` / `travelhub`) y `bookingIdPayable` por defecto (`90000000-0000-0000-0000-000000000002`, `PENDING_CONFIRMATION`). Tras crear intención, copia respuesta a variables `paymentIntentId`, `webhookSecret` y el token a `mockPaymentToken` para *Confirm* y *Webhook mock*.\n\n**Notification:** solo health en esta colección.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -68,6 +68,21 @@
     {
       "key": "webhookIdempotencyKey",
       "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancunCityId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "searchCheckIn",
+      "value": "2026-05-10",
+      "type": "string"
+    },
+    {
+      "key": "searchCheckOut",
+      "value": "2026-05-14",
       "type": "string"
     },
     {
@@ -228,7 +243,35 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin=2026-04-15&checkout=2026-04-20&guests=2&sort_by=popularity&page=1&page_size=20"
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&sort_by=relevance&page=1&page_size=20",
+            "description": "Búsqueda con ranking inteligente (default). **Antes:** ejecuta *Cities search* con `q=canc` y copia el `id` de Cancún en la variable `cancunCityId`. Ajusta `searchCheckIn` / `searchCheckOut` a fechas dentro de los próximos ~30 días respecto al **día del servidor** donde corre Postgres (el seed usa `CURRENT_DATE` en inventario y tarifas).\n\n**Orden esperado entre las tres propiedades “didácticas” de Cancún:** primero **Hotel Luna al Beso del Malecón** (muchas reseñas ~5★ + popularidad alta + muy cerca del POI), luego **Sol Viral Carretera Cancún** (barato + popularidad altísima + lejos pero con km), luego **Resort Marea de Oro — sin km al POI** (rating bajo + popularidad semilla baja + distancia NULL penalizada; no debe superar al penthouse 5★ por un solo eje)."
+          }
+        },
+        {
+          "name": "Search properties — filter pool + relevance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&amenities=pool&sort_by=relevance&page=1&page_size=20",
+            "description": "`amenities=pool` + `sort_by=relevance`. **Penthouse Arena Dorada Cancún** (~5.0★, caro, ~24 km al POI) suele quedar **por debajo** de **Hotel Luna al Beso** (~4.85★ pero más cerca y más popular). Con `sort_by=rating` ese orden puede invertirse entre ambos. **Luna Maya** suele quedar atrás sin km al POI. Compara con el request siguiente (`sort_by=rating`)."
+          }
+        },
+        {
+          "name": "Search properties — Cancún pool + rating (contraste)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&amenities=pool&sort_by=rating&page=1&page_size=20",
+            "description": "Mismos filtros que *pool + relevance*, pero `sort_by=rating`. **Penthouse Arena Dorada** y **Sol Caribe** suelen ir con **~5.0★** (por encima de **Luna Beso ~4.85**). El desempate es `property_id` entre empates de promedio — el orden global difiere del de `sort_by=relevance`, donde Luna Beso suele superar al penthouse."
+          }
+        },
+        {
+          "name": "Search properties — missing POI distance (relevance)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&sort_by=relevance&page=1&page_size=50",
+            "description": "**Dato faltante:** **Resort Marea de Oro — sin km al POI** tiene `distance_to_poi_km` NULL; en relevancia la dimensión distancia se **penaliza** (no cuenta como “neutral”) para no empatar con propiedades georreferenciadas. Respuesta 200 con `items` ordenados; Marea de Oro suele quedar al final entre las tres didácticas. Verifica que el JSON no rompe y que `distance_to_poi_km` puede ser `null` en ítems."
           }
         },
         {

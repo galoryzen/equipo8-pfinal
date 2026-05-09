@@ -90,7 +90,7 @@ INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address,
    (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
    'Blvd. Kukulcán Km 12.5, Zona Hotelera, 77500 Cancún',
    '15:00', '12:00', '+52 998 555 0101', 'reservas@solcaribe.mx', 'https://solcaribe.mx',
-   'ACTIVE', 4.60, 124, 920.00,
+   'ACTIVE', 5.00, 124, 920.00,
    '10000000-0000-0000-0000-000000000001'),
 
   ('30000000-0000-0000-0000-000000000002',
@@ -488,7 +488,7 @@ FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') A
 INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment) VALUES
   -- Cancún reviews
   ('80000000-0000-0000-0000-000000000001', '99000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 5, 'Increíble resort, la playa es espectacular y el servicio de primera.'),
-  ('80000000-0000-0000-0000-000000000002', '99000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 4, 'Muy buena experiencia. La piscina infinita es hermosa.'),
+  ('80000000-0000-0000-0000-000000000002', '99000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 5, 'Muy buena experiencia. La piscina infinita es hermosa.'),
   ('80000000-0000-0000-0000-000000000003', '99000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-000000000001', 5, 'Best vacation ever! The beach is pristine.'),
   -- CDMX reviews
   ('80000000-0000-0000-0000-000000000004', '99000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002', 4, 'Excelente ubicación, a pasos de todo. Habitación cómoda.'),
@@ -1394,6 +1394,226 @@ INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, commen
    '30000000-0000-0000-0000-000000000007', 4, 'Dashboard dinámico: buena ubicación y limpieza.', now() - INTERVAL '3 days'),
   ('b7e00000-0000-4000-8000-000000000003', 'b8e00000-0000-4000-8000-000000000005', 'a0000000-0000-0000-0000-000000000005',
    '30000000-0000-0000-0000-000000000003', 3, 'Dashboard dinámico: estancia correcta.', now() - INTERVAL '12 days');
+
+-- ── Cancún: hospedajes didácticos (relevancia vs calificación / distancia / precio) ──
+-- 1) Sol Viral… — barato, rating ~4.0, popularidad altísima, lejos (~22 km) con km en catálogo
+-- 2) Hotel Luna al Beso… — “ganador relevancia”: ~4.85★ (muchas reseñas), popularidad alta, **muy cerca** (~1.5 km)
+-- 3) Penthouse Arena Dorada… — **~5.0★** (pocas reseñas perfectas) pero caro, lejos (~24 km), baja popularidad → suele ir **arriba por rating**, **abajo por relevancia** vs Luna Beso
+-- 4) Resort Marea de Oro — rating bajo, popularidad **baja** en semilla, **sin** km al POI (NULL); no competir con penthouse solo por “demanda”
+INSERT INTO catalog.property (
+  id, hotel_id, name, description, city_id, address, check_in_time, check_out_time,
+  phone, email, website, status, rating_avg, review_count, popularity_score, distance_to_poi_km,
+  default_cancellation_policy_id
+) VALUES
+  ('30000000-0000-0000-0000-000000000008',
+   'e0000000-0000-0000-0000-000000000001',
+   'Sol Viral Carretera Cancún',
+   'Lo más barato de la zona: se llena por TikTok y colas en recepción. Está lejos del corredor turístico de referencia (~22 km), así que el ranking puede premiar precio y popularidad aunque el viaje al POI sea largo.',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Km 22 Carr. Tulum, Cancún', '15:00', '12:00', '+52 998 555 9008', 'sol.viral.carretera@travelhub.test', NULL,
+   'ACTIVE', 4.00, 0, 1500.00, 22.00,
+   '10000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-000000000009',
+   'e0000000-0000-0000-0000-000000000002',
+   'Hotel Luna al Beso del Malecón',
+   'Boutique de Hoteles Luna a dos calles del malecón: precio medio, piscina, muchísimas reseñas positivas y popularidad alta. Muy cerca del punto de interés de referencia (~1.5 km) — caso “ganador” en relevancia frente a competencia sin km o más lejana.',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Av. Bonampak 14, Zona Hotelera, Cancún', '15:00', '12:00', '+52 998 555 9009', 'luna.beso.malecon@travelhub.test', NULL,
+   'ACTIVE', 4.85, 0, 1180.00, 1.50,
+   '10000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000b',
+   'e0000000-0000-0000-0000-000000000001',
+   'Penthouse Arena Dorada Cancún',
+   'Suites exclusivas con calificación media perfecta entre pocos huéspedes: excelente para ordenar por **calificación**, pero tarifa alta, lejos del POI de referencia y poca “masa” de demanda frente al Luna al Beso — peor en **relevancia**.',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Blvd. Kukulcán Km 18, Zona Hotelera, Cancún', '15:00', '12:00', '+52 998 555 900b', 'penthouse.arena@travelhub.test', NULL,
+   'ACTIVE', 5.00, 0, 260.00, 24.50,
+   '10000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000a',
+   'e0000000-0000-0000-0000-000000000001',
+   'Resort Marea de Oro — sin km al POI',
+   'All inclusive caro con mala reputación en reseñas y poca conversión en el buscador (popularidad semilla baja): sirve para **dato faltante en distancia** sin “ganar” el ranking solo por un score de demanda artificial. Sin km al POI en catálogo (NULL es penalizado en distancia).',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Blvd. Kukulcán Km 8.5, Cancún', '15:00', '12:00', '+52 998 555 900a', 'marea.oro@travelhub.test', NULL,
+   'ACTIVE', 3.00, 0, 165.00, NULL,
+   '10000000-0000-0000-0000-000000000001');
+
+INSERT INTO catalog.property_image (id, property_id, url, caption, display_order) VALUES
+  ('40000000-0000-0000-0000-000000000016', '30000000-0000-0000-0000-000000000008', 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=500&fit=crop', 'Entrada', 0),
+  ('40000000-0000-0000-0000-000000000017', '30000000-0000-0000-0000-000000000009', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=500&fit=crop', 'Terraza', 0),
+  ('40000000-0000-0000-0000-000000000018', '30000000-0000-0000-0000-00000000000a', 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&h=500&fit=crop', 'Lobby', 0),
+  ('40000000-0000-0000-0000-000000000019', '30000000-0000-0000-0000-00000000000b', 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=500&fit=crop', 'Suite penthouse', 0);
+
+INSERT INTO catalog.property_amenity (property_id, amenity_id) VALUES
+  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000002'),
+  ('30000000-0000-0000-0000-00000000000a', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000a', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-00000000000b', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000b', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-00000000000b', '20000000-0000-0000-0000-000000000002');
+
+INSERT INTO catalog.property_policy (id, property_id, category, description) VALUES
+  ('50000000-0000-0000-0000-000000000015', '30000000-0000-0000-0000-000000000008', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000016', '30000000-0000-0000-0000-000000000009', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000017', '30000000-0000-0000-0000-00000000000a', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000018', '30000000-0000-0000-0000-00000000000b', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000019', '30000000-0000-0000-0000-00000000000b', 'CHECK_OUT', 'Check-out 12:00');
+
+INSERT INTO catalog.room_type (id, property_id, name, description, capacity) VALUES
+  ('60000000-0000-0000-0000-00000000000f', '30000000-0000-0000-0000-000000000008', 'Estándar Campestre', 'Habitación sencilla; el precio por noche es el más bajo del trío.', 2),
+  ('60000000-0000-0000-0000-000000000010', '30000000-0000-0000-0000-000000000009', 'Estándar Cerca del Malecón', 'Habitación cómoda con precio intermedio frente a la competencia.', 2),
+  ('60000000-0000-0000-0000-000000000011', '30000000-0000-0000-0000-00000000000a', 'Estándar Premium', 'Habitación con tarifa alta para contrastar precio en el ranking.', 2),
+  ('60000000-0000-0000-0000-000000000012', '30000000-0000-0000-0000-00000000000b', 'Suite Penthouse Arena', 'Suite amplia con tarifa premium para contrastar precio vs relevancia.', 2);
+
+INSERT INTO catalog.room_type_amenity (room_type_id, amenity_id) VALUES
+  ('60000000-0000-0000-0000-00000000000f', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-00000000000f', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000002'),
+  ('60000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000002');
+
+INSERT INTO catalog.rate_plan (id, room_type_id, name, is_active, cancellation_policy_id) VALUES
+  ('70000000-0000-0000-0000-00000000000f', '60000000-0000-0000-0000-00000000000f', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001'),
+  ('70000000-0000-0000-0000-000000000010', '60000000-0000-0000-0000-000000000010', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001'),
+  ('70000000-0000-0000-0000-000000000011', '60000000-0000-0000-0000-000000000011', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001'),
+  ('70000000-0000-0000-0000-000000000012', '60000000-0000-0000-0000-000000000012', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001');
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-00000000000f', d::date, 'USD', 52.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-000000000010', d::date, 'USD', 128.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-000000000011', d::date, 'USD', 215.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-000000000012', d::date, 'USD', 288.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-00000000000f', d::date, 6
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-000000000010', d::date, 6
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-000000000011', d::date, 6
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-000000000012', d::date, 4
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment) VALUES
+  ('ca0e0000-0000-4000-8000-000000000001', 'cb0e0000-0000-4000-8000-000000000001', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000008', 4, 'Baratísimo; hay que manejar lejos de la zona hotelera.'),
+  ('ca0e0000-0000-4000-8000-000000000002', 'cb0e0000-0000-4000-8000-000000000002', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000008', 4, 'Cola eterna en check-in pero vale la pena el precio.'),
+  ('ca0e0000-0000-4000-8000-000000000003', 'cb0e0000-0000-4000-8000-000000000003', 'a0000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000008', 4, 'Lo vimos en redes y sí, es real: económico y ruidoso.'),
+  ('ca0e0000-0000-4000-8000-000000000004', 'cb0e0000-0000-4000-8000-000000000004', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000009', 5, 'Ubicación impecable; caminas al malecón en minutos.'),
+  ('ca0e0000-0000-4000-8000-000000000005', 'cb0e0000-0000-4000-8000-000000000005', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000009', 5, 'Piscina chiquita pero el trato y la limpieza 10/10.'),
+  ('ca0e0000-0000-4000-8000-000000000006', 'cb0e0000-0000-4000-8000-000000000006', 'a0000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000009', 5, 'Volvería solo por la cercanía al mar y las reseñas no mienten.'),
+  ('ca0e0000-0000-4000-8000-000000000007', 'cb0e0000-0000-4000-8000-000000000007', 'a0000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-00000000000a', 3, 'Carísimo para lo que recibimos; el buffet repetitivo.'),
+  ('ca0e0000-0000-4000-8000-000000000008', 'cb0e0000-0000-4000-8000-000000000008', 'a0000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-00000000000a', 3, 'Mucho marketing en Instagram; la habitación olía a humedad.'),
+  ('ca0e0000-0000-4000-8000-000000000009', 'cb0e0000-0000-4000-8000-000000000009', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-00000000000a', 3, 'Marketing agresivo; en la práctica poca gente vuelve a reservar aquí.');
+
+-- ── Relevancia (Cancún): contraste **relevancia vs calificación** + distancia POI ──
+-- Sol Caribe (001): promedio reseñas **5.0**; Luna Beso (009): **~4.85** (100 reseñas con algo de 4★).
+-- Penthouse Arena Dorada (00b): **5.0** con pocas reseñas, caro y lejos → suele ir **arriba de 009 por rating**, **debajo por relevancia**.
+--   · `sort_by=rating`: entre 001 / 00b / 009 manda el promedio y luego `property_id` (001 y 00b suelen encima de 009).
+--   · `sort_by=relevance`: **009** suele superar a **00b** (precio, distancia, popularidad).
+-- Luna Maya (007): sin km al POI → penalizado en relevancia frente a hoteles georreferenciados.
+UPDATE catalog.property
+SET distance_to_poi_km = 6.85, popularity_score = 910.00
+WHERE id = '30000000-0000-0000-0000-000000000001';
+
+UPDATE catalog.property
+SET distance_to_poi_km = NULL, popularity_score = 195.00
+WHERE id = '30000000-0000-0000-0000-000000000007';
+
+-- Reseñas sintéticas (booking_id único; sin FK a booking). Rotación de usuarios semilla.
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000009'::uuid,
+  CASE WHEN n <= 15 THEN 4 ELSE 5 END,
+  'Huésped frecuente: ubicación y servicio impecables (demo relevancia).'
+FROM generate_series(1, 97) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000001'::uuid,
+  5,
+  'Estancia reciente (semilla volumen Sol Caribe, 5★ para demo calificación vs relevancia).'
+FROM generate_series(1, 47) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000007'::uuid,
+  4,
+  'Buena relación calidad-precio; poca historia de reseñas (demo Luna Maya).'
+FROM generate_series(1, 19) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000008'::uuid,
+  4,
+  'Fila y ruido, pero cumple el precio (demo Sol Viral).'
+FROM generate_series(1, 37) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-00000000000b'::uuid,
+  5,
+  'Suite impecable; pocos comentarios pero todos 5★ (demo rating > relevancia vs Luna Beso).'
+FROM generate_series(1, 25) AS n;
 
 -- Re-ancla reservas de check-in físico (095–097) al día corriente del servidor para alinearlas
 -- con las pestañas del manager que filtran por fecha local del API (checkin = hoy).

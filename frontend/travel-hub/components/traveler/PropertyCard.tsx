@@ -136,6 +136,20 @@ export default function PropertyCard({ property, checkin, checkout, guests }: Pr
               {property.city.name}, {property.city.country}
             </Typography>
           </Box>
+          {property.distance_to_poi_km != null &&
+            !Number.isNaN(Number(property.distance_to_poi_km)) && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mt: 0.25 }}
+              >
+                {t('propertyCard.poiDistance', {
+                  km: Number(property.distance_to_poi_km).toLocaleString(undefined, {
+                    maximumFractionDigits: 1,
+                  }),
+                })}
+              </Typography>
+            )}
 
           {/* Amenities */}
           {property.amenities.length > 0 && (

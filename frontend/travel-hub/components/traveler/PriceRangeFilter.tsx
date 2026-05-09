@@ -59,7 +59,7 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
 
   return (
     <Box>
-      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+      <Typography id="price-range-filter-heading" variant="subtitle1" fontWeight={600} gutterBottom>
         {t('priceRange.title')}
       </Typography>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
@@ -70,6 +70,11 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
         onChange={handleSliderChange}
         onChangeCommitted={handleSliderChangeCommitted}
         valueLabelDisplay="auto"
+        aria-labelledby="price-range-filter-heading"
+        getAriaLabel={(index) =>
+          index === 0 ? t('priceRange.sliderMinThumb') : t('priceRange.sliderMaxThumb')
+        }
+        getAriaValueText={(value) => t('priceRange.sliderValueText', { value })}
         min={0}
         max={2000}
         step={10}

@@ -154,6 +154,7 @@ CREATE TABLE catalog.property (
     rating_avg                      DECIMAL(3,2) DEFAULT 0,
     review_count                    INT NOT NULL DEFAULT 0,
     popularity_score                DECIMAL(8,2) NOT NULL DEFAULT 0,
+    distance_to_poi_km              DECIMAL(8,2),
     default_cancellation_policy_id  UUID REFERENCES catalog.cancellation_policy(id),
     created_at                      TIMESTAMP NOT NULL DEFAULT now(),
     updated_at                      TIMESTAMP NOT NULL DEFAULT now()

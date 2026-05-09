@@ -4,6 +4,7 @@ from uuid import UUID
 
 from app.application.ports.outbound.cache_port import CachePort
 from app.application.ports.outbound.property_repository import PropertyRepository
+from app.domain.ranking.property_ranking import rank_properties
 from app.schemas.common import PaginatedResponse
 from app.schemas.property import PropertySummary
 
@@ -25,7 +26,7 @@ class SearchPropertiesUseCase:
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         amenity_codes: list[str] | None = None,
-        sort_by: str = "popularity",
+        sort_by: str = "relevance",
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[PropertySummary]:
@@ -52,6 +53,10 @@ class SearchPropertiesUseCase:
             page=page,
             page_size=page_size,
         )
+        if sort_by == "relevance":
+            ranked = rank_properties(items)
+            start = (page - 1) * page_size
+            items = ranked[start : start + page_size]
         summaries = [PropertySummary.model_validate(item) for item in items]
         empty_msg = self.EMPTY_RESULTS_MESSAGE if total == 0 else None
         response = PaginatedResponse.build(summaries, total, page, page_size, message=empty_msg)

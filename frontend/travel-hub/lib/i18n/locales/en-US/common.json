@@ -121,7 +121,10 @@
     "caption": "Nightly prices before fees and taxes",
     "min": "Min",
     "max": "Max",
-    "minGreaterThanMax": "Min cannot be greater than max"
+    "minGreaterThanMax": "Min cannot be greater than max",
+    "sliderMinThumb": "Minimum nightly price filter",
+    "sliderMaxThumb": "Maximum nightly price filter",
+    "sliderValueText": "{{value}} US dollars per night"
   },
   "amenityFilter": {
     "title": "Amenities",
@@ -133,10 +136,13 @@
     "perNight": "/ night",
     "reviews_one": "{{count}} review",
     "reviews_other": "{{count}} reviews",
-    "reviewsShort": "{{count}}k reviews"
+    "reviewsShort": "{{count}}k reviews",
+    "poiDistance": "~{{km}} km from tourist area"
   },
   "searchPage": {
     "sort": "Sort",
+    "recommended": "Recommended",
+    "recommendedBadge": "Sorted by relevance",
     "price": "Price",
     "rating": "Rating",
     "allStays": "All stays",

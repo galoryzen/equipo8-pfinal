@@ -17,6 +17,14 @@ describe('PriceRangeFilter', () => {
     expect(screen.getByLabelText('Max')).toBeTruthy();
   });
 
+  it('gives each range thumb an accessible name (axe: form elements must have labels)', () => {
+    renderWithI18n(<PriceRangeFilter onApply={vi.fn()} />);
+    const thumbs = screen.getAllByRole('slider');
+    expect(thumbs).toHaveLength(2);
+    expect(thumbs[0].getAttribute('aria-label')).toBe('Minimum nightly price filter');
+    expect(thumbs[1].getAttribute('aria-label')).toBe('Maximum nightly price filter');
+  });
+
   it('calls onApply with price values on blur', () => {
     const onApply = vi.fn();
     renderWithI18n(<PriceRangeFilter minPrice={100} maxPrice={500} onApply={onApply} />);
