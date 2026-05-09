@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   addSeasonalTariff,
@@ -160,11 +160,7 @@ export default function RoomTypeTariffView({
   });
 
   // ── Load data ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    loadTariffs();
-  }, [roomType.id]);
-
-  async function loadTariffs() {
+  const loadTariffs = useCallback(async () => {
     try {
       const data = await getRoomTariffs(roomType.id);
       setTariffs(data);
@@ -177,7 +173,11 @@ export default function RoomTypeTariffView({
     } finally {
       setLoading(false);
     }
-  }
+  }, [roomType.id]);
+
+  useEffect(() => {
+    void loadTariffs();
+  }, [loadTariffs]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleSaveBase() {
@@ -193,7 +193,7 @@ export default function RoomTypeTariffView({
         severity: 'success',
       });
       await loadTariffs();
-    } catch (err: unknown) {
+    } catch {
       setSnack({
         open: true,
         message: t('manager.hotels.roomTypeManage.tariffError'),
@@ -229,7 +229,7 @@ export default function RoomTypeTariffView({
       });
       setRuleName('');
       await loadTariffs();
-    } catch (err: unknown) {
+    } catch {
       setSnack({
         open: true,
         message: t('manager.hotels.roomTypeManage.ruleAddError'),
@@ -249,7 +249,7 @@ export default function RoomTypeTariffView({
         severity: 'success',
       });
       await loadTariffs();
-    } catch (err: unknown) {
+    } catch {
       setSnack({
         open: true,
         message: t('manager.hotels.roomTypeManage.ruleDeleteError'),

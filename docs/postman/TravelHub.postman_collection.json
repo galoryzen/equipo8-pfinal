@@ -69,6 +69,41 @@
       "key": "webhookIdempotencyKey",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "bookingIdCheckInEligible",
+      "value": "90000000-0000-0000-0000-000000000095",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckInFuture",
+      "value": "90000000-0000-0000-0000-000000000096",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckInOtherHotel",
+      "value": "90000000-0000-0000-0000-000000000097",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutEligible",
+      "value": "9f000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutFuture",
+      "value": "9f000000-0000-0000-0000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutOtherHotel",
+      "value": "9f000000-0000-0000-0000-000000000003",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutIdempotent",
+      "value": "9f000000-0000-0000-0000-000000000004",
+      "type": "string"
     }
   ],
   "item": [
@@ -365,6 +400,208 @@
               "body": "{\n  \"code\": \"BOOKING_NOT_FOUND\",\n  \"message\": \"Booking not found\",\n  \"trace_id\": null\n}"
             }
           ]
+        },
+        {
+          "name": "Check-in hotel (seed 095–097)",
+          "description": "En **Auth** → *Login* con `roberto@cadenadelsol.com` / `travelhub`; copia el JWT a la variable `accessToken`. Las reservas 095/096/097 se crean en el seed con `CURRENT_DATE` (recrear volumen o re-ejecutar seed si las fechas quedaron viejas). Andrea (`andrea@hotelesluna.com`) sirve para probar 404 en 097.",
+          "item": [
+            {
+              "name": "List hotel bookings (can_register_check_in)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings"
+              }
+            },
+            {
+              "name": "Hotel — detalle elegible (095)",
+              "description": "Respuesta incluye can_register_check_in true y actual_checkin_at null cuando la reserva es CONFIRMED, checkin ≤ hoy y pertenece al hotel del token.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}"
+              }
+            },
+            {
+              "name": "Hotel — registrar check-in OK",
+              "description": "Ajusta actual_arrival_at a un instante válido (ISO 8601). Tras éxito: status CHECKED_IN, actual_checkin_at informado, historial hotel_check_in.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_arrival_at\": \"2026-05-03T16:45:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}/check-in"
+              }
+            },
+            {
+              "name": "Hotel — check-in 422 (falta hora de llegada)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{}" },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}/check-in"
+              }
+            },
+            {
+              "name": "Hotel — check-in no elegible (096 check-in futuro)",
+              "description": "Esperado 409 INVALID_BOOKING_STATE mientras la fecha programada de check-in sea posterior a hoy.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_arrival_at\": \"2026-12-01T14:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInFuture}}/check-in"
+              }
+            },
+            {
+              "name": "Hotel — detalle 097 otra cadena (404 con Roberto)",
+              "description": "Reserva en propiedad de Hoteles Luna; con token de Roberto debe responder 404 BOOKING_NOT_FOUND.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInOtherHotel}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check-out hotel (seed 9f)",
+          "description": "Reservas `9f…` en el seed: 001 elegible (CHECKED_IN, checkout ≤ hoy), 002 checkout futuro (409), 003 otra cadena (404 con Roberto), 004 ya CHECKED_OUT (200 idempotente). Login `roberto@cadenadelsol.com` / `travelhub`. Ajusta `actual_departure_at` a un instante ≤ ahora y ≥ check-in real.",
+          "item": [
+            {
+              "name": "Hotel — list (can_register_check_out)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings"
+              }
+            },
+            {
+              "name": "Hotel — registrar check-out OK (9f001)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T11:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutEligible}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out 422 (body vacío)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{}" },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutEligible}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out 409 checkout futuro (9f002)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutFuture}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out 404 otra cadena (9f003, Roberto)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutOtherHotel}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out no checked-in (095 CONFIRMED)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out idempotente (9f004 ya CHECKED_OUT)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutIdempotent}}/check-out"
+              }
+            }
+          ]
         }
       ]
     },
@@ -425,6 +662,25 @@
               "body": "{\n  \"detail\": \"Las métricas de hotel requieren una cuenta vinculada a un hotel.\"\n}"
             }
           ]
+        },
+        {
+          "name": "Hotel bookings tab metrics",
+          "description": "Conteos globales para las tarjetas inferiores de **Bookings** (confirmadas, pendientes, llegadas hoy, canceladas). Mismo alcance de hotel que `/dashboard/metrics` (`hotel_id` en token; **ADMIN** debe pasar `hotel_id` en query).",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/booking/dashboard/bookings-metrics"
+          }
         },
         {
           "name": "Revenue report by period",

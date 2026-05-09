@@ -52,7 +52,7 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
                     -- DDL actual (01-init.sql) no incluye booking_item; 1 habitación por fila de booking.
                     1::int AS qty
                   FROM booking.booking b
-                  WHERE b.status = 'CONFIRMED'
+                  WHERE b.status IN ('CONFIRMED', 'CHECKED_IN')
                     AND b.property_id IN (SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid))
                     AND b.checkin < CAST(:period_end_exclusive AS date)
                     AND b.checkout > CAST(:date_from AS date)
@@ -69,7 +69,7 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
                     )::int AS overlap_nights,
                     1::int AS qty
                   FROM booking.booking b
-                  WHERE b.status IN ('CONFIRMED', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION')
+                  WHERE b.status IN ('CONFIRMED', 'CHECKED_IN', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION')
                     AND b.property_id IN (SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid))
                     AND b.checkin < CAST(:period_end_exclusive AS date)
                     AND b.checkout > CAST(:date_from AS date)
@@ -287,3 +287,23 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
             )
             for row in rows
         ]
+
+    async def count_checked_in_stays_currently_at_hotel(self, hotel_id: UUID) -> tuple[int, int]:
+        sql = text(
+            """
+            SELECT
+              COUNT(*)::int AS stays,
+              COALESCE(SUM(b.guests_count), 0)::int AS guests
+            FROM booking.booking b
+            WHERE b.property_id IN (
+              SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid)
+            )
+              AND b.status = 'CHECKED_IN'
+              AND b.checkin <= CURRENT_DATE
+              AND b.checkout > CURRENT_DATE
+            """
+        )
+        row = (
+            await self._session.execute(sql, {"hotel_id": str(hotel_id)})
+        ).one()
+        return int(row.stays or 0), int(row.guests or 0)

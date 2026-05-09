@@ -50,6 +50,10 @@ export interface BookingListItem {
   property_id: string;
   room_type_id: string;
   created_at: string;
+  /** Short display handle from the API (last segment of the booking id). */
+  display_reference?: string;
+  /** Human-readable room type when catalog enrichment succeeds. */
+  room_type_name?: string | null;
   /** Enriched by the booking service from the catalog on list requests. */
   property_name?: string | null;
   image_url?: string | null;
@@ -57,6 +61,16 @@ export interface BookingListItem {
   /** Primary guest name from booking service (optional). */
   guest_name?: string | null;
   guests_count?: number | null;
+  /** When the API exposes a guest avatar URL, use it in the hotel bookings table. */
+  guest_image_url?: string | null;
+  /** ISO 8601 — set when the hotel partner registered physical check-in. */
+  actual_checkin_at?: string | null;
+  /** Server-computed; do not derive in the UI. */
+  can_register_check_in?: boolean;
+  /** ISO 8601 — set when the hotel partner registered physical check-out. */
+  actual_checkout_at?: string | null;
+  /** Server-computed; do not derive in the UI. */
+  can_register_check_out?: boolean;
 }
 
 export interface PendingConfirmationBookingItem extends BookingListItem {
@@ -126,6 +140,10 @@ export interface BookingDetail {
   original_service_fee?: string | null;
   original_grand_total?: string | null;
   last_payment_attempt?: LastPaymentAttempt | null;
+  actual_checkin_at?: string | null;
+  can_register_check_in?: boolean;
+  actual_checkout_at?: string | null;
+  can_register_check_out?: boolean;
   created_at: string;
   updated_at: string;
 }

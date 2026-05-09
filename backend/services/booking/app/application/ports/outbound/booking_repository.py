@@ -19,9 +19,9 @@ class BookingRepository(ABC):
     ) -> tuple[list[Booking], int]:
         """Return (bookings_page, total_count) for a user filtered by scope.
 
-        - ACTIVE: status in (CONFIRMED, PENDING_PAYMENT, PENDING_CONFIRMATION)
+        - ACTIVE: status in (CONFIRMED, CHECKED_IN, PENDING_PAYMENT, PENDING_CONFIRMATION)
           AND checkout >= today. Ordered by checkin ASC (upcoming first).
-        - PAST: (status = CONFIRMED AND checkout < today)
+        - PAST: (status in (CONFIRMED, CHECKED_IN) AND checkout < today)
           OR status in (CANCELLED, REJECTED). Ordered by checkout DESC.
         - ALL: everything except CART and EXPIRED. Ordered by checkin DESC.
         - If status is provided, it further filters by exact status (e.g. "CART").
@@ -41,8 +41,20 @@ class BookingRepository(ABC):
         """Return (bookings_page, total_count) for a hotel, optionally filtered by status."""
 
     @abstractmethod
+    async def count_hotel_bookings_metrics(self, hotel_id: UUID, *, today: date) -> dict[str, int]:
+        """Aggregate counts for the hotel portal Bookings tab (not paginated).
+
+        Keys: ``confirmed_count``, ``pending_count``, ``check_ins_today_count``,
+        ``cancelled_count``. Scoped to properties owned by ``hotel_id``.
+        """
+
+    @abstractmethod
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         """Return booking if it exists and belongs to user_id."""
+
+    @abstractmethod
+    async def get_by_id_for_hotel(self, booking_id: UUID, hotel_id: UUID) -> Booking | None:
+        """Return booking if it exists and belongs to a property owned by hotel_id."""
 
     @abstractmethod
     async def get_by_id(self, booking_id: UUID) -> Booking | None:
@@ -121,6 +133,6 @@ class BookingRepository(ABC):
         """Return active booking count and current-month revenue for a property.
 
         Returns a dict with keys: active_bookings (int), monthly_revenue (float).
-        Active bookings = CONFIRMED bookings where checkout >= today.
-        Monthly revenue = sum of total_amount for CONFIRMED bookings created this month.
+        Active bookings = CONFIRMED or CHECKED_IN bookings where checkout >= today.
+        Monthly revenue = sum of total_amount for CONFIRMED/CHECKED_IN bookings created this month.
         """

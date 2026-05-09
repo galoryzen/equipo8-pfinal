@@ -323,6 +323,86 @@
     "notifications": "Notifications",
     "pendingBookingsToday": "You have {{count}} bookings pending confirmation today.",
     "noPendingBookings": "No pending bookings.",
+    "bookings": {
+      "title": "Bookings management",
+      "subtitle": "Manage and track all guest reservations from a central hub.",
+      "newBooking": "New booking",
+      "table": {
+        "bookingGuest": "Booking & guest",
+        "roomType": "Room / property",
+        "checkin": "Check-in",
+        "checkout": "Check-out",
+        "status": "Status",
+        "amount": "Amount",
+        "actions": "Actions",
+        "guestFallback": "Guest",
+        "roomFallback": "—",
+        "roomTypeSubline": "Room type · {{id}}",
+        "roomTypeUnavailable": "Room type unavailable"
+      },
+      "tabs": {
+        "all": "All bookings",
+        "checkinToday": "Check-ins today",
+        "checkoutToday": "Check-outs today",
+        "pending": "Pending",
+        "cancelled": "Cancelled"
+      },
+      "actions": {
+        "open": "Open actions",
+        "menuLabel": "Actions",
+        "registerCheckIn": "Register check-in",
+        "registerCheckOut": "Register check-out",
+        "checkOut": "Check-out",
+        "checkOutUnavailableHint": "Available when the booking has a recorded check-in and the scheduled check-out date is today or earlier.",
+        "editDetails": "Edit details",
+        "cancelBooking": "Cancel booking",
+        "comingSoon": "Coming soon",
+        "disabledNotImplemented": "Available in a future story",
+        "disabledByState": "Action not available for the current booking status"
+      },
+      "stats": {
+        "confirmed": "Confirmed",
+        "pending": "Pending",
+        "checkinsToday": "Check-ins (today)",
+        "cancelled": "Cancelled",
+        "loadError": "Could not load booking metrics."
+      },
+      "status": {
+        "checkedInDone": "Checked in",
+        "checkedOutDone": "Checked out"
+      },
+      "pagination": "Showing {{from}}–{{to}} of {{total}} bookings",
+      "empty": "No bookings in this view.",
+      "loadError": "Could not load bookings.",
+      "checkIn": {
+        "title": "Register check-in",
+        "arrivalLabel": "Actual arrival time",
+        "confirm": "Confirm check-in",
+        "success": "Check-in registered successfully.",
+        "errors": {
+          "required": "Actual arrival time is required.",
+          "future": "Arrival time cannot be in the future.",
+          "forbidden": "You do not have permission to register check-in for this booking.",
+          "notFound": "The booking does not exist or does not belong to this hotel.",
+          "conflict": "Check-in cannot be registered for this booking. Verify status or dates.",
+          "validation": "The arrival time entered is not valid."
+        }
+      },
+      "checkOut": {
+        "title": "Register check-out",
+        "departureLabel": "Actual departure time",
+        "confirm": "Confirm check-out",
+        "success": "Check-out registered successfully.",
+        "errors": {
+          "required": "Actual departure time is required.",
+          "future": "Departure time cannot be in the future.",
+          "forbidden": "You do not have permission to register check-out for this booking.",
+          "notFound": "The booking does not exist or does not belong to this hotel.",
+          "conflict": "Check-out cannot be registered for this booking. Verify status or dates.",
+          "validation": "The departure time entered is not valid."
+        }
+      }
+    },
     "noAvailability": "Not enough availability. You can offer an upgrade, change dates, or decline the booking.",
     "hotels": {
       "title": "My Hotels",
@@ -581,7 +661,8 @@
             "confirmed": "Confirmed",
             "pending_payment": "Pending payment",
             "pending_confirmation": "Pending confirmation",
-            "cancelled": "Cancelled"
+            "cancelled": "Cancelled",
+            "checked_in": "Checked in"
           },
           "activity": {
             "booking_confirmed": "Booking confirmed",

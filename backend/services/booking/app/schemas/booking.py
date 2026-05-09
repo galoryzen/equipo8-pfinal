@@ -23,6 +23,26 @@ class CheckoutBookingIn(BaseModel):
     force_decline: bool = False
 
 
+class RegisterGuestCheckOutIn(BaseModel):
+    """Instante real de salida del huésped (obligatorio).
+
+    ISO 8601 con ``Z`` u offset; el servicio normaliza a UTC (timestamp naive interno).
+    """
+
+    actual_departure_at: datetime = Field(..., description="Fecha y hora reales de salida del huésped")
+
+
+class RegisterGuestCheckInIn(BaseModel):
+    """Instante real de llegada del huésped (obligatorio).
+
+    ISO 8601 con ``Z`` u offset; el servicio normaliza a UTC (timestamp naive interno).
+    No puede ser futuro respecto al servidor ni anterior al día de check-in programado
+    (validación en caso de uso → 409 ``INVALID_BOOKING_STATE``).
+    """
+
+    actual_arrival_at: datetime = Field(..., description="Fecha y hora reales de llegada del huésped")
+
+
 class LastPaymentAttemptOut(BaseModel):
     outcome: Literal["failed"]
     reason: str
@@ -47,11 +67,23 @@ class BookingListItemOut(BaseModel):
     property_id: UUID
     room_type_id: UUID
     created_at: datetime
+    display_reference: str = Field(
+        ...,
+        description="Short human-facing booking handle (no raw UUID prefix); unique per id.",
+    )
+    room_type_name: str | None = Field(
+        default=None,
+        description="Resolved from catalog property detail when available.",
+    )
     image_url: str | None = None
     property_name: str | None = None
     nights: int | None = None
     guest_name: str | None = None
     guests_count: int | None = None
+    actual_checkin_at: datetime | None = None
+    can_register_check_in: bool = False
+    actual_checkout_at: datetime | None = None
+    can_register_check_out: bool = False
 
 
 class GuestIn(BaseModel):
@@ -109,6 +141,10 @@ class BookingDetailOut(BaseModel):
     original_service_fee: Decimal | None = None
     original_grand_total: Decimal | None = None
     last_payment_attempt: LastPaymentAttemptOut | None = None
+    actual_checkin_at: datetime | None = None
+    can_register_check_in: bool = False
+    actual_checkout_at: datetime | None = None
+    can_register_check_out: bool = False
     created_at: datetime
     updated_at: datetime
 

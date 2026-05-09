@@ -13,6 +13,11 @@ export const tokens = {
     primaryOnLight: '#0369A1',
     /** Manager selected nav accent */
     accentOrange: '#EC5B13',
+    /**
+     * Filled buttons (white text) — darker than accentOrange so contrast ≥ 4.5:1
+     * (WCAG AA) vs #FFFFFF.
+     */
+    accentOrangeContained: '#C2410C',
     /** Darker orange for text/icons on light orange backgrounds */
     accentOrangeFg: '#9A3412',
     /** 10% alpha background for accentOrange */
