@@ -61,7 +61,6 @@ export interface BookingListItem {
   /** Primary guest name from booking service (optional). */
   guest_name?: string | null;
   guests_count?: number | null;
-  guest_name?: string | null;
   /** When the API exposes a guest avatar URL, use it in the hotel bookings table. */
   guest_image_url?: string | null;
   /** ISO 8601 — set when the hotel partner registered physical check-in. */

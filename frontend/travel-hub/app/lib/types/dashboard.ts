@@ -49,6 +49,10 @@ export type DashboardError = {
 
 export type DashboardResponse = Partial<{
   metrics?: Partial<DashboardMetrics>;
+  checkedInCount?: unknown;
+  checked_in_count?: unknown;
+  checkedInGuests?: unknown;
+  checked_in_guests?: unknown;
   bookingTrends?: unknown[];
   recentActivity?: unknown[];
   upcomingCheckins?: unknown[];
