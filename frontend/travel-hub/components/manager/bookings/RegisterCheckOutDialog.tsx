@@ -39,7 +39,7 @@ export default function RegisterCheckOutDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const maxLocal = useMemo(() => formatForDatetimeLocal(new Date()), [open]);
+  const maxLocal = formatForDatetimeLocal(new Date());
 
   const minLocal = useMemo(() => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(scheduledCheckout.trim());

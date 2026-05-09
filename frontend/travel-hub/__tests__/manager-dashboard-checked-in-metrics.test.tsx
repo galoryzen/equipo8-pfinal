@@ -37,6 +37,11 @@ vi.mock('@/app/manager/hooks/useDashboardData', () => ({
     loading: false,
     error: null,
   }),
+  useManagerDashboardData: () => ({
+    data: dataWithCheckedInExtras,
+    loading: false,
+    error: null,
+  }),
 }));
 
 describe('ManagerDashboardPage — no bookings-story metric cards', () => {
