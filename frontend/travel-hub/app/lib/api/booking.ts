@@ -31,7 +31,18 @@ async function readErrorMessage(res: Response): Promise<string> {
     const code = 'code' in body ? String((body as { code: unknown }).code) : '';
     if (msg) return code ? `${msg} (${code})` : msg;
   }
-  return `Error ${res.status}`;
+  return formatApiErrorBody(body, res.status);
+}
+
+/** Thrown by partner list/export when the booking API returns a non-OK status. */
+export class BookingApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'BookingApiError';
+    this.status = status;
+  }
 }
 
 export interface HotelBookingsMetrics {
@@ -52,31 +63,104 @@ export async function fetchHotelBookingsMetrics(): Promise<HotelBookingsMetrics>
   return res.json() as Promise<HotelBookingsMetrics>;
 }
 
+export type PartnerBookingsListFilters = {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+  room_type_id?: string;
+  q?: string;
+};
+
+export type PartnerBookingsExportFilters = Omit<PartnerBookingsListFilters, 'page' | 'page_size'>;
+
+function appendPartnerBookingQuery(params: URLSearchParams, options?: PartnerBookingsListFilters) {
+  const page = options?.page ?? 1;
+  const page_size = options?.page_size ?? 10;
+  params.set('page', String(page));
+  params.set('page_size', String(page_size));
+  if (options?.status) params.set('status', options.status);
+  if (options?.date_from) params.set('date_from', options.date_from);
+  if (options?.date_to) params.set('date_to', options.date_to);
+  if (options?.room_type_id) params.set('room_type_id', options.room_type_id);
+  const q = options?.q?.trim();
+  if (q) params.set('q', q);
+}
+
 /**
  * Lists bookings for the current session: traveler (own), hotel partner (property
  * scope), or admin (all) — same `/bookings` route, role resolved by the gateway.
  */
-export async function listPartnerBookings(options?: {
-  status?: string;
-  page?: number;
-  page_size?: number;
-}): Promise<PaginatedResponse<BookingListItem>> {
-  const page = options?.page ?? 1;
-  const page_size = options?.page_size ?? 10;
-  const params = new URLSearchParams({
-    page: String(page),
-    page_size: String(page_size),
-  });
-  if (options?.status) {
-    params.set('status', options.status);
-  }
+export async function listPartnerBookings(
+  options?: PartnerBookingsListFilters
+): Promise<PaginatedResponse<BookingListItem>> {
+  const params = new URLSearchParams();
+  appendPartnerBookingQuery(params, options);
   const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
     credentials: 'include',
   });
   if (!res.ok) {
-    throw new Error(await readErrorMessage(res));
+    throw new BookingApiError(await readErrorMessage(res), res.status);
   }
   return res.json();
+}
+
+function parseContentDispositionFilename(disposition: string | null): string | null {
+  if (!disposition) return null;
+  const star = /filename\*=(?:UTF-8'')?([^;\n]+)/i.exec(disposition);
+  if (star?.[1]) return decodeURIComponent(star[1].trim().replace(/^["']|["']$/g, ''));
+  const quoted = /filename="([^"]+)"/i.exec(disposition);
+  if (quoted?.[1]) return quoted[1].trim();
+  const plain = /filename=([^;\n]+)/i.exec(disposition);
+  if (plain?.[1]) return plain[1].trim().replace(/^["']|["']$/g, '');
+  return null;
+}
+
+/** Fetches CSV bytes and suggested filename (from Content-Disposition when present). */
+export async function fetchPartnerBookingsExportBlob(
+  filters?: PartnerBookingsExportFilters
+): Promise<{ blob: Blob; filename: string }> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.date_from) params.set('date_from', filters.date_from);
+  if (filters?.date_to) params.set('date_to', filters.date_to);
+  if (filters?.room_type_id) params.set('room_type_id', filters.room_type_id);
+  const q = filters?.q?.trim();
+  if (q) params.set('q', q);
+  const qs = params.toString();
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings/export${qs ? `?${qs}` : ''}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new BookingApiError(await readErrorMessage(res), res.status);
+  }
+  const blob = await res.blob();
+  const filename =
+    parseContentDispositionFilename(res.headers.get('Content-Disposition')) ??
+    'travelhub-bookings-history.csv';
+  return { blob, filename };
+}
+
+/** Triggers a browser download for a CSV blob (client-only). */
+export function triggerCsvDownload(blob: Blob, filename: string): void {
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+/** Hotel partner export: same filters as list, without pagination query params. */
+export async function exportPartnerBookingsCsv(
+  filters?: PartnerBookingsExportFilters
+): Promise<void> {
+  const { blob, filename } = await fetchPartnerBookingsExportBlob(filters);
+  triggerCsvDownload(blob, filename);
 }
 
 /**

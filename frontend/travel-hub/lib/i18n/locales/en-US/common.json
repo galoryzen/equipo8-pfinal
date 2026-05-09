@@ -344,7 +344,9 @@
         "guestFallback": "Guest",
         "roomFallback": "—",
         "roomTypeSubline": "Room type · {{id}}",
-        "roomTypeUnavailable": "Room type unavailable"
+        "roomTypeUnavailable": "Room type unavailable",
+        "bookingDate": "Booking date",
+        "guestEmailHint": "Guest email"
       },
       "tabs": {
         "all": "All bookings",
@@ -380,6 +382,21 @@
       "pagination": "Showing {{from}}–{{to}} of {{total}} bookings",
       "empty": "No bookings in this view.",
       "loadError": "Could not load bookings.",
+      "history": {
+        "loadError": "Could not load booking history.",
+        "exportError": "Could not export booking history.",
+        "exportSuccess": "Booking history exported.",
+        "filtersInvalid": "Please review the selected filters.",
+        "exportCsv": "Export CSV",
+        "exportDisabledTabs": "Switch to a main list tab to export with filters.",
+        "searchPlaceholder": "Search guest, email or booking ref…",
+        "statusAll": "All statuses",
+        "dateFrom": "Stay from",
+        "dateTo": "Stay to",
+        "roomTypeAll": "All room types",
+        "clearFilters": "Clear filters",
+        "exporting": "Exporting…"
+      },
       "checkIn": {
         "title": "Register check-in",
         "arrivalLabel": "Actual arrival time",

@@ -5,10 +5,13 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 import Link from 'next/link';
 
 import {
+  BookingApiError,
   type HotelBookingsMetrics,
+  exportPartnerBookingsCsv,
   fetchHotelBookingsMetrics,
   listPartnerBookings,
 } from '@/app/lib/api/booking';
+import { getHotelRoomTypes, getManagerHotels } from '@/app/lib/api/manager';
 import type { BookingListItem } from '@/app/lib/types/booking';
 import { tokens } from '@/lib/theme/tokens';
 import AddIcon from '@mui/icons-material/Add';
@@ -26,11 +29,15 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
+import InputLabel from '@mui/material/InputLabel';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Pagination from '@mui/material/Pagination';
+import Select from '@mui/material/Select';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
@@ -41,6 +48,7 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tabs from '@mui/material/Tabs';
+import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
@@ -49,6 +57,17 @@ import RegisterCheckInDialog from '@/components/manager/bookings/RegisterCheckIn
 import RegisterCheckOutDialog from '@/components/manager/bookings/RegisterCheckOutDialog';
 
 type TabKey = 'all' | 'checkin_today' | 'checkout_today' | 'pending' | 'cancelled';
+
+const BOOKING_STATUS_FILTER_VALUES = [
+  'CONFIRMED',
+  'PENDING_CONFIRMATION',
+  'PENDING_PAYMENT',
+  'CHECKED_IN',
+  'CHECKED_OUT',
+  'CANCELLED',
+  'REJECTED',
+  'EXPIRED',
+] as const;
 
 function formatLocalYmd(d: Date): string {
   const y = d.getFullYear();
@@ -250,7 +269,80 @@ export default function ManagerBookingsPage() {
     severity: 'success',
   });
 
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const [filterStatusAll, setFilterStatusAll] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [roomTypeId, setRoomTypeId] = useState('');
+  const [catalogRoomTypes, setCatalogRoomTypes] = useState<{ id: string; name: string }[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
+
   const isClientTab = tab === 'checkin_today' || tab === 'checkout_today';
+
+  const effectiveStatus = useMemo(() => {
+    const tabDerived =
+      tab === 'pending' ? 'PENDING_CONFIRMATION' : tab === 'cancelled' ? 'CANCELLED' : undefined;
+    return tabDerived ?? (filterStatusAll || undefined);
+  }, [tab, filterStatusAll]);
+
+  const exportFilters = useMemo(
+    () => ({
+      status: effectiveStatus,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+      room_type_id: roomTypeId || undefined,
+      q: debouncedQ || undefined,
+    }),
+    [effectiveStatus, dateFrom, dateTo, roomTypeId, debouncedQ]
+  );
+
+  const roomTypeSelectOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    catalogRoomTypes.forEach((x) => map.set(x.id, x.name));
+    rows.forEach((b) => {
+      const label = b.room_type_name?.trim();
+      if (label && !map.has(b.room_type_id)) map.set(b.room_type_id, label);
+    });
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [catalogRoomTypes, rows]);
+
+  const hasAdvancedFilters = Boolean(
+    searchInput.trim() || filterStatusAll || dateFrom || dateTo || roomTypeId
+  );
+
+  const pageSize = 10;
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 400);
+    return () => window.clearTimeout(id);
+  }, [searchInput]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const hotels = await getManagerHotels(1, 100);
+        const map = new Map<string, string>();
+        for (const h of hotels.items) {
+          try {
+            const rt = await getHotelRoomTypes(h.id, 1, 200);
+            for (const r of rt.items) map.set(r.id, r.name);
+          } catch {
+            /* skip property */
+          }
+        }
+        if (!cancelled) {
+          setCatalogRoomTypes([...map.entries()].map(([bid, name]) => ({ id: bid, name })));
+        }
+      } catch {
+        if (!cancelled) setCatalogRoomTypes([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadMetrics = useCallback(async () => {
     setMetricsLoading(true);
@@ -280,13 +372,15 @@ export default function ManagerBookingsPage() {
         setTotal(filtered.length);
         setTotalPages(1);
       } else {
-        const status =
-          tab === 'pending'
-            ? 'PENDING_CONFIRMATION'
-            : tab === 'cancelled'
-              ? 'CANCELLED'
-              : undefined;
-        const res = await listPartnerBookings({ status, page, page_size: 10 });
+        const res = await listPartnerBookings({
+          status: effectiveStatus,
+          page,
+          page_size: pageSize,
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined,
+          room_type_id: roomTypeId || undefined,
+          q: debouncedQ || undefined,
+        });
         setRows(res.items);
         setTotal(res.total);
         setTotalPages(Math.max(1, res.total_pages));
@@ -295,11 +389,24 @@ export default function ManagerBookingsPage() {
       setRows([]);
       setTotal(0);
       setTotalPages(1);
-      setError(e instanceof Error ? e.message : t('manager.bookings.loadError'));
+      const msg =
+        e instanceof BookingApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : t('manager.bookings.history.loadError');
+      setError(msg);
+      if (e instanceof BookingApiError && e.status === 422) {
+        setSnack({
+          open: true,
+          message: t('manager.bookings.history.filtersInvalid'),
+          severity: 'error',
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [tab, page, isClientTab, t]);
+  }, [tab, page, isClientTab, t, effectiveStatus, dateFrom, dateTo, roomTypeId, debouncedQ]);
 
   useEffect(() => {
     void load();
@@ -311,6 +418,10 @@ export default function ManagerBookingsPage() {
 
   useEffect(() => {
     setPage(1);
+  }, [tab, debouncedQ, filterStatusAll, dateFrom, dateTo, roomTypeId]);
+
+  useEffect(() => {
+    if (tab !== 'all') setFilterStatusAll('');
   }, [tab]);
 
   const statusLabel = useCallback(
@@ -329,7 +440,38 @@ export default function ManagerBookingsPage() {
     [t]
   );
 
-  const pageSize = 10;
+  const clearFilters = () => {
+    setSearchInput('');
+    setDebouncedQ('');
+    setFilterStatusAll('');
+    setDateFrom('');
+    setDateTo('');
+    setRoomTypeId('');
+  };
+
+  const handleExportCsv = useCallback(async () => {
+    if (isClientTab) return;
+    setExportLoading(true);
+    try {
+      await exportPartnerBookingsCsv(exportFilters);
+      setSnack({
+        open: true,
+        message: t('manager.bookings.history.exportSuccess'),
+        severity: 'success',
+      });
+    } catch (e) {
+      const msg =
+        e instanceof BookingApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : t('manager.bookings.history.exportError');
+      setSnack({ open: true, message: msg, severity: 'error' });
+    } finally {
+      setExportLoading(false);
+    }
+  }, [exportFilters, isClientTab, t]);
+
   const fromIdx = total === 0 ? 0 : isClientTab ? 1 : (page - 1) * pageSize + 1;
   const toIdx = total === 0 ? 0 : isClientTab ? total : Math.min(page * pageSize, total);
 
@@ -430,6 +572,128 @@ export default function ManagerBookingsPage() {
             <Tab label={t('manager.bookings.tabs.cancelled')} />
           </Tabs>
 
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1.5}
+            useFlexGap
+            flexWrap="wrap"
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            sx={{ mb: 2 }}
+          >
+            <TextField
+              size="small"
+              placeholder={t('manager.bookings.history.searchPlaceholder')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              disabled={isClientTab}
+              inputProps={{
+                'data-testid': 'bookings-search-input',
+                'aria-label': t('manager.bookings.history.searchPlaceholder'),
+              }}
+              sx={{ minWidth: { xs: '100%', md: 240 }, flex: { xs: '1 1 100%', md: '0 1 240px' } }}
+            />
+            <FormControl
+              size="small"
+              sx={{ minWidth: 170 }}
+              disabled={isClientTab || tab !== 'all'}
+              data-testid="bookings-status-filter"
+            >
+              <InputLabel id="bookings-status-filter-label">
+                {t('manager.bookings.table.status')}
+              </InputLabel>
+              <Select
+                labelId="bookings-status-filter-label"
+                label={t('manager.bookings.table.status')}
+                value={filterStatusAll}
+                onChange={(e) => setFilterStatusAll(String(e.target.value))}
+              >
+                <MenuItem value="">
+                  <em>{t('manager.bookings.history.statusAll')}</em>
+                </MenuItem>
+                {BOOKING_STATUS_FILTER_VALUES.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {statusLabel(s)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              type="date"
+              size="small"
+              label={t('manager.bookings.history.dateFrom')}
+              InputLabelProps={{ shrink: true }}
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              disabled={isClientTab}
+              inputProps={{ 'data-testid': 'bookings-date-from' }}
+              sx={{ minWidth: 150 }}
+            />
+            <TextField
+              type="date"
+              size="small"
+              label={t('manager.bookings.history.dateTo')}
+              InputLabelProps={{ shrink: true }}
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              disabled={isClientTab}
+              inputProps={{ 'data-testid': 'bookings-date-to' }}
+              sx={{ minWidth: 150 }}
+            />
+            <FormControl
+              size="small"
+              sx={{ minWidth: 200 }}
+              disabled={isClientTab}
+              data-testid="bookings-room-type-filter"
+            >
+              <InputLabel id="bookings-room-type-label">
+                {t('manager.bookings.table.roomType')}
+              </InputLabel>
+              <Select
+                labelId="bookings-room-type-label"
+                label={t('manager.bookings.table.roomType')}
+                value={roomTypeId}
+                onChange={(e) => setRoomTypeId(String(e.target.value))}
+              >
+                <MenuItem value="">
+                  <em>{t('manager.bookings.history.roomTypeAll')}</em>
+                </MenuItem>
+                {roomTypeSelectOptions.map(([id, name]) => (
+                  <MenuItem key={id} value={id}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              size="small"
+              variant="text"
+              disabled={isClientTab || !hasAdvancedFilters}
+              onClick={clearFilters}
+            >
+              {t('manager.bookings.history.clearFilters')}
+            </Button>
+            <Tooltip title={isClientTab ? t('manager.bookings.history.exportDisabledTabs') : ''}>
+              <span>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  disabled={isClientTab || exportLoading}
+                  onClick={() => void handleExportCsv()}
+                  data-testid="bookings-export-csv"
+                >
+                  {exportLoading ? (
+                    <>
+                      <CircularProgress size={16} sx={{ mr: 1 }} />
+                      {t('manager.bookings.history.exporting')}
+                    </>
+                  ) : (
+                    t('manager.bookings.history.exportCsv')
+                  )}
+                </Button>
+              </span>
+            </Tooltip>
+          </Stack>
+
           {error ? (
             <Alert severity="error" sx={{ mb: 2 }} role="alert">
               {error}
@@ -441,6 +705,9 @@ export default function ManagerBookingsPage() {
               <TableRow>
                 <TableCell sx={{ fontWeight: 800 }}>
                   {t('manager.bookings.table.bookingGuest')}
+                </TableCell>
+                <TableCell sx={{ fontWeight: 800 }}>
+                  {t('manager.bookings.table.bookingDate')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 800 }}>
                   {t('manager.bookings.table.roomType')}
@@ -464,7 +731,7 @@ export default function ManagerBookingsPage() {
               {loading
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`sk-${i}`}>
-                      <TableCell colSpan={7}>
+                      <TableCell colSpan={8}>
                         <Skeleton variant="text" height={28} />
                       </TableCell>
                     </TableRow>
@@ -472,7 +739,7 @@ export default function ManagerBookingsPage() {
                 : null}
               {!loading && rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={8}>
                     <Typography
                       sx={{ py: 3, color: tokens.dashboard.mutedText, textAlign: 'center' }}
                     >
@@ -532,9 +799,22 @@ export default function ManagerBookingsPage() {
                             >
                               {bookingRef}
                             </Typography>
+                            {b.guest_email?.trim() ? (
+                              <Typography
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  color: tokens.text.secondary,
+                                  fontWeight: 600,
+                                  mt: 0.25,
+                                }}
+                              >
+                                {b.guest_email.trim()}
+                              </Typography>
+                            ) : null}
                           </Box>
                         </Stack>
                       </TableCell>
+                      <TableCell>{formatShortDate(b.created_at)}</TableCell>
                       <TableCell>
                         <Typography
                           sx={{ fontWeight: 700, color: tokens.text.primary, fontSize: '0.9rem' }}

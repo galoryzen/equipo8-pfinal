@@ -326,7 +326,9 @@
         "guestFallback": "Huésped",
         "roomFallback": "—",
         "roomTypeSubline": "Tipo de habitación · {{id}}",
-        "roomTypeUnavailable": "Tipo de habitación no disponible"
+        "roomTypeUnavailable": "Tipo de habitación no disponible",
+        "bookingDate": "Fecha de reserva",
+        "guestEmailHint": "Correo del huésped"
       },
       "tabs": {
         "all": "Todas las reservas",
@@ -362,6 +364,21 @@
       "pagination": "Mostrando {{from}}–{{to}} de {{total}} reservas",
       "empty": "No hay reservas en esta vista.",
       "loadError": "No se pudieron cargar las reservas.",
+      "history": {
+        "loadError": "No fue posible cargar el historial de reservas.",
+        "exportError": "No fue posible exportar el historial.",
+        "exportSuccess": "Historial de reservas exportado.",
+        "filtersInvalid": "Revisa los filtros seleccionados.",
+        "exportCsv": "Exportar CSV",
+        "exportDisabledTabs": "Usa una pestaña principal del listado para exportar con filtros.",
+        "searchPlaceholder": "Buscar huésped, email o referencia…",
+        "statusAll": "Todos los estados",
+        "dateFrom": "Estadía desde",
+        "dateTo": "Estadía hasta",
+        "roomTypeAll": "Todos los tipos",
+        "clearFilters": "Limpiar filtros",
+        "exporting": "Exportando…"
+      },
       "checkIn": {
         "title": "Registrar check-in",
         "arrivalLabel": "Hora real de llegada",

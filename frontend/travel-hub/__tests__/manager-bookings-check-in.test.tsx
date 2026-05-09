@@ -30,8 +30,26 @@ vi.mock('@/app/lib/api/booking', async () => {
     fetchHotelBookingsMetrics: vi.fn(),
     registerGuestCheckIn: vi.fn(),
     registerBookingCheckOut: vi.fn(),
+    exportPartnerBookingsCsv: vi.fn(),
   };
 });
+
+vi.mock('@/app/lib/api/manager', () => ({
+  getManagerHotels: vi.fn().mockResolvedValue({
+    items: [],
+    total: 0,
+    page: 1,
+    page_size: 100,
+    total_pages: 0,
+  }),
+  getHotelRoomTypes: vi.fn().mockResolvedValue({
+    items: [],
+    total: 0,
+    page: 1,
+    page_size: 100,
+    total_pages: 0,
+  }),
+}));
 
 function todayYmd(): string {
   const d = new Date();

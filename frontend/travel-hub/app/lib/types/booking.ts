@@ -60,6 +60,8 @@ export interface BookingListItem {
   nights?: number | null;
   /** Primary guest name from booking service (optional). */
   guest_name?: string | null;
+  /** Primary guest email when supplied by the booking service (hotel list). */
+  guest_email?: string | null;
   guests_count?: number | null;
   /** When the API exposes a guest avatar URL, use it in the hotel bookings table. */
   guest_image_url?: string | null;
