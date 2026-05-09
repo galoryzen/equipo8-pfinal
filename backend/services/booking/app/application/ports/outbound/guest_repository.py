@@ -14,6 +14,12 @@ class GuestRepository(ABC):
         """Return a map booking_id -> primary guest full_name (best-effort)."""
 
     @abstractmethod
+    async def get_primary_contact_for_bookings(
+        self, booking_ids: list[UUID]
+    ) -> dict[UUID, tuple[str | None, str | None]]:
+        """Return booking_id -> (primary full_name, primary email_or_None)."""
+
+    @abstractmethod
     async def replace_guests_for_booking(
         self, booking_id: UUID, guests: list[Guest]
     ) -> list[Guest]:

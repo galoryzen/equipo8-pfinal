@@ -79,6 +79,10 @@ class BookingListItemOut(BaseModel):
     property_name: str | None = None
     nights: int | None = None
     guest_name: str | None = None
+    guest_email: str | None = Field(
+        default=None,
+        description="Primary guest email when captured on the booking.",
+    )
     guests_count: int | None = None
     actual_checkin_at: datetime | None = None
     can_register_check_in: bool = False
