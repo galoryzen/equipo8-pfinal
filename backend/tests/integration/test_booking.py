@@ -175,7 +175,7 @@ async def test_cancel_cart_marks_booking_cancelled(
     created_booking_ids.append(booking_id)
 
     resp = await http_client.post(
-        f"/api/v1/booking/bookings/{booking_id}/cancel",
+        f"/api/v1/booking/bookings/{booking_id}/abandon-cart",
         headers=headers,
     )
     assert resp.status_code in (200, 204), resp.text
@@ -184,5 +184,5 @@ async def test_cancel_cart_marks_booking_cancelled(
         f"/api/v1/booking/bookings/{booking_id}", headers=headers
     )
     assert detail.status_code == 200, detail.text
-    # Per cancel_cart_booking.py, abandoned carts go to EXPIRED (not CANCELLED).
+    # Per abandon_cart_booking.py, abandoned carts go to EXPIRED (not CANCELLED).
     assert detail.json()["status"] == "EXPIRED"

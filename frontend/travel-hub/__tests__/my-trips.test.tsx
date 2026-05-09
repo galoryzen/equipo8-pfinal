@@ -7,6 +7,10 @@ import BookingCard from '@/components/traveler/BookingCard';
 import BookingList from '@/components/traveler/BookingList';
 import TripsEmptyState from '@/components/traveler/TripsEmptyState';
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>

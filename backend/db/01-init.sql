@@ -49,7 +49,7 @@ CREATE TYPE policy_category AS ENUM ('CHECK_IN','CHECK_OUT','PETS','SMOKING','CH
 CREATE TYPE discount_type AS ENUM ('PERCENT','FIXED');
 
 -- booking
-CREATE TYPE booking_status AS ENUM ('CART','PENDING_PAYMENT','PENDING_CONFIRMATION','CONFIRMED','REJECTED','CANCELLED','EXPIRED');
+CREATE TYPE booking_status AS ENUM ('CART','PENDING_PAYMENT','PENDING_CONFIRMATION','CONFIRMED','CHECKED_IN','CHECKED_OUT','REJECTED','CANCELLED','EXPIRED');
 
 -- payments
 CREATE TYPE payment_status AS ENUM ('PENDING','AUTHORIZED','CAPTURED','FAILED','CANCELLED');
@@ -269,6 +269,29 @@ CREATE TABLE catalog.promotion (
 CREATE INDEX idx_promotion_plan_active
     ON catalog.promotion (rate_plan_id, is_active, start_date, end_date);
 
+CREATE TABLE catalog.tariff_base (
+    id              UUID PRIMARY KEY,
+    room_type_id    UUID NOT NULL REFERENCES catalog.room_type(id) UNIQUE,
+    base_price      DECIMAL(12,2) NOT NULL,
+    weekend_premium DECIMAL(5,2) NOT NULL,
+    created_at      TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE catalog.tariff_seasonal_rule (
+    id               UUID PRIMARY KEY,
+    room_type_id     UUID NOT NULL REFERENCES catalog.room_type(id),
+    name             VARCHAR NOT NULL,
+    start_date       DATE NOT NULL,
+    end_date         DATE NOT NULL,
+    adjustment_type  discount_type NOT NULL,
+    adjustment_value DECIMAL(12,2) NOT NULL,
+    created_at       TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at       TIMESTAMP NOT NULL DEFAULT now(),
+    CHECK (end_date >= start_date)
+);
+CREATE INDEX idx_tariff_seasonal_room ON catalog.tariff_seasonal_rule (room_type_id, start_date, end_date);
+
 CREATE TABLE catalog.review (
     id          UUID PRIMARY KEY,
     booking_id  UUID NOT NULL UNIQUE,
@@ -398,6 +421,12 @@ CREATE TABLE payments.webhook_event (
 ALTER TABLE booking.booking
     ADD COLUMN confirmation_payment_intent_id UUID REFERENCES payments.payment_intent(id);
 
+ALTER TABLE booking.booking
+    ADD COLUMN actual_checkin_at TIMESTAMP;
+
+ALTER TABLE booking.booking
+    ADD COLUMN actual_checkout_at TIMESTAMP;
+
 CREATE TABLE payments.refund (
     id          UUID PRIMARY KEY,
     payment_id  UUID NOT NULL REFERENCES payments.payment(id),
@@ -413,7 +442,7 @@ CREATE TABLE payments.refund (
 
 CREATE TABLE notifications.notification (
     id                   UUID PRIMARY KEY,
-    event_id             UUID NOT NULL UNIQUE,
+    event_id             UUID NOT NULL,
     booking_id           UUID NOT NULL REFERENCES booking.booking(id),
     user_id              UUID NOT NULL REFERENCES users.users(id),
     channel              notification_channel NOT NULL,
@@ -422,7 +451,8 @@ CREATE TABLE notifications.notification (
     to_email             VARCHAR,
     provider_message_id  VARCHAR,
     sent_at              TIMESTAMP,
-    created_at           TIMESTAMP NOT NULL DEFAULT now()
+    created_at           TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT uq_notification_event_channel UNIQUE (event_id, channel)
 );
 
 CREATE TABLE notifications.device_token (

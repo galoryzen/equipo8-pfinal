@@ -1,8 +1,9 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
 from app.application.exceptions import BookingNotFoundError
+from app.application.hotel_booking_flags import hotel_can_register_check_out
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
 from app.domain.models import (
@@ -37,10 +38,24 @@ class GetBookingDetailUseCase:
         self._repo = repo
         self._guest_repo = guest_repo
 
-    async def execute(self, booking_id: UUID, user_id: UUID) -> BookingDetailOut:
-        booking = await self._repo.get_by_id_for_user(booking_id, user_id)
+    async def execute(
+        self,
+        booking_id: UUID,
+        user_id: UUID,
+        *,
+        viewer_role: str | None = None,
+        hotel_id: UUID | None = None,
+        today: date | None = None,
+    ) -> BookingDetailOut:
+        if viewer_role in ("HOTEL", "MANAGER") and hotel_id is not None:
+            booking = await self._repo.get_by_id_for_hotel(booking_id, hotel_id)
+        else:
+            booking = await self._repo.get_by_id_for_user(booking_id, user_id)
         if booking is None:
             raise BookingNotFoundError()
+
+        today_eff = today if today is not None else datetime.now(UTC).date()
+        viewer_is_hotel = viewer_role in ("HOTEL", "MANAGER") and hotel_id is not None
 
         now_naive = datetime.now(UTC).replace(tzinfo=None)
         if (
@@ -65,7 +80,13 @@ class GetBookingDetailUseCase:
             guests = await self._guest_repo.list_by_booking(booking.id)
 
         last_payment_attempt = await self._load_last_payment_attempt(booking.id)
-        return _to_detail(booking, guests, last_payment_attempt)
+        return _to_detail(
+            booking,
+            guests,
+            last_payment_attempt,
+            viewer_is_hotel=viewer_is_hotel,
+            today=today_eff,
+        )
 
     async def _load_last_payment_attempt(
         self, booking_id: UUID
@@ -118,6 +139,9 @@ def _to_detail(
     booking: Booking,
     guests: list[Guest],
     last_payment_attempt: LastPaymentAttemptOut | None = None,
+    *,
+    viewer_is_hotel: bool = False,
+    today: date | None = None,
 ) -> BookingDetailOut:
     nights_breakdown = _nights_breakdown_from_booking(booking)
     original_total: Decimal | None = None
@@ -131,6 +155,25 @@ def _to_detail(
     original_taxes: Decimal | None = None
     original_service_fee: Decimal | None = None
     original_grand_total: Decimal | None = None
+    today_eff = today or datetime.now(UTC).date()
+    can_register_check_in = (
+        viewer_is_hotel
+        and booking.status == BookingStatus.CONFIRMED
+        and booking.checkin <= today_eff
+        and booking.actual_checkin_at is None
+    )
+    actual_checkin_out: datetime | None = None
+    if booking.actual_checkin_at is not None:
+        actual_checkin_out = booking.actual_checkin_at.replace(tzinfo=UTC)
+
+    actual_checkout_out: datetime | None = None
+    if booking.actual_checkout_at is not None:
+        actual_checkout_out = booking.actual_checkout_at.replace(tzinfo=UTC)
+
+    can_register_check_out = hotel_can_register_check_out(
+        booking, today=today_eff, viewer_is_hotel=viewer_is_hotel
+    )
+
     if original_total is not None and original_total > 0 and booking.total_amount < original_total:
         discount_percent = (Decimal("1") - (booking.total_amount / original_total)) * Decimal("100")
         discount_percent = discount_percent.quantize(Decimal("0.01"))
@@ -177,6 +220,10 @@ def _to_detail(
         original_service_fee=original_service_fee,
         original_grand_total=original_grand_total,
         last_payment_attempt=last_payment_attempt,
+        actual_checkin_at=actual_checkin_out,
+        can_register_check_in=can_register_check_in,
+        actual_checkout_at=actual_checkout_out,
+        can_register_check_out=can_register_check_out,
         created_at=booking.created_at,
         updated_at=booking.updated_at,
     )

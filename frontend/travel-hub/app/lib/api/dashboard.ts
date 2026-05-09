@@ -1,13 +1,14 @@
-import type {
+import { API_URL } from '@/app/lib/api/constants';
+import {
   BookingTrend,
   DashboardData,
+  DashboardFetchError,
   DashboardMetrics,
+  DashboardResponse,
   Metric,
   RecentActivityItem,
   UpcomingCheckin,
 } from '@/app/lib/types/dashboard';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
 export const EMPTY_DASHBOARD_DATA: DashboardData = {
   metrics: {
@@ -16,32 +17,12 @@ export const EMPTY_DASHBOARD_DATA: DashboardData = {
     occupancyRate: { value: 0, variation: 0 },
     averageRating: { value: 0, variation: 0 },
   },
+  checkedInCount: 0,
+  checkedInGuests: 0,
   bookingTrends: [],
   recentActivity: [],
   upcomingCheckins: [],
 };
-
-type DashboardResponse = Partial<{
-  metrics?: Partial<DashboardMetrics>;
-  bookingTrends?: unknown[];
-  recentActivity?: unknown[];
-  upcomingCheckins?: unknown[];
-}>;
-
-export class DashboardFetchError extends Error {
-  readonly status?: number;
-  readonly kind: 'unauthorized' | 'network' | 'server';
-
-  constructor(
-    message: string,
-    opts: { status?: number; kind: 'unauthorized' | 'network' | 'server' }
-  ) {
-    super(message);
-    this.name = 'DashboardFetchError';
-    this.status = opts.status;
-    this.kind = opts.kind;
-  }
-}
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -133,9 +114,21 @@ function normalizeUpcomingCheckins(items: unknown[] | undefined): UpcomingChecki
     .filter((item): item is UpcomingCheckin => item !== null);
 }
 
+function readRootInt(
+  payload: DashboardResponse | null,
+  camel: keyof DashboardResponse,
+  snake: keyof DashboardResponse
+): number {
+  if (!payload) return 0;
+  const raw = (payload[camel] ?? payload[snake]) as unknown;
+  return toFiniteNumber(raw, 0);
+}
+
 function normalizeDashboardData(payload: DashboardResponse | null): DashboardData {
   return {
     metrics: normalizeMetrics(payload),
+    checkedInCount: readRootInt(payload, 'checkedInCount', 'checked_in_count'),
+    checkedInGuests: readRootInt(payload, 'checkedInGuests', 'checked_in_guests'),
     bookingTrends: normalizeBookingTrends(payload?.bookingTrends),
     recentActivity: normalizeRecentActivity(payload?.recentActivity),
     upcomingCheckins: normalizeUpcomingCheckins(payload?.upcomingCheckins),

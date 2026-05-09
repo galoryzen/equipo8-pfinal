@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from uuid import UUID
+from decimal import Decimal
 
 from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,12 +27,17 @@ from app.domain.models import (
     RatePlan,
     RoomType,
     RoomTypeStatus,
+    TariffBase,
+    TariffSeasonalRule,
+    RateCalendar,
 )
 from app.schemas.manager import (
     AddPropertyImageIn,
     CreatePromotionIn,
     UpdateCancellationPolicyIn,
     UpdateHotelProfileIn,
+    TariffBaseIn,
+    TariffSeasonalRuleIn,
 )
 
 
@@ -639,3 +645,161 @@ class SqlAlchemyManagerRepository(ManagerRepository):
         self._renumber_images(new_order)
         await self._session.commit()
         return [self._serialize_image(img) for img in new_order]
+
+    # ── Tariffs ──────────────────────────────────────────────────────────────
+
+    async def get_room_tariffs(self, room_type_id: UUID) -> dict:
+        # Load base tariff
+        stmt_base = select(TariffBase).where(TariffBase.room_type_id == room_type_id)
+        res_base = await self._session.execute(stmt_base)
+        base = res_base.scalar_one_or_none()
+
+        # Load seasonal rules
+        stmt_seasonal = select(TariffSeasonalRule).where(TariffSeasonalRule.room_type_id == room_type_id).order_by(TariffSeasonalRule.start_date)
+        res_seasonal = await self._session.execute(stmt_seasonal)
+        seasonal = list(res_seasonal.scalars().all())
+
+        return {
+            "base": {
+                "room_type_id": base.room_type_id,
+                "base_price": base.base_price,
+                "weekend_premium": base.weekend_premium,
+            } if base else None,
+            "seasonal_rules": [
+                {
+                    "id": rule.id,
+                    "room_type_id": rule.room_type_id,
+                    "name": rule.name,
+                    "start_date": rule.start_date,
+                    "end_date": rule.end_date,
+                    "adjustment_type": rule.adjustment_type.value,
+                    "adjustment_value": rule.adjustment_value,
+                } for rule in seasonal
+            ]
+        }
+
+    async def update_base_tariff(self, room_type_id: UUID, data: TariffBaseIn) -> dict:
+        stmt = select(TariffBase).where(TariffBase.room_type_id == room_type_id)
+        res = await self._session.execute(stmt)
+        base = res.scalar_one_or_none()
+
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        if base is None:
+            base = TariffBase(
+                id=uuid.uuid4(),
+                room_type_id=room_type_id,
+                base_price=data.base_price,
+                weekend_premium=data.weekend_premium,
+                created_at=now,
+                updated_at=now,
+            )
+            self._session.add(base)
+        else:
+            base.base_price = data.base_price
+            base.weekend_premium = data.weekend_premium
+            base.updated_at = now
+
+        await self._session.commit()
+        await self._session.refresh(base)
+
+        return {
+            "room_type_id": base.room_type_id,
+            "base_price": base.base_price,
+            "weekend_premium": base.weekend_premium,
+        }
+
+    async def add_seasonal_tariff(self, room_type_id: UUID, data: TariffSeasonalRuleIn) -> dict:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        rule = TariffSeasonalRule(
+            id=uuid.uuid4(),
+            room_type_id=room_type_id,
+            name=data.name,
+            start_date=data.start_date,
+            end_date=data.end_date,
+            adjustment_type=DiscountType[data.adjustment_type],
+            adjustment_value=data.adjustment_value,
+            created_at=now,
+            updated_at=now,
+        )
+        self._session.add(rule)
+        await self._session.commit()
+        await self._session.refresh(rule)
+
+        return {
+            "id": rule.id,
+            "room_type_id": rule.room_type_id,
+            "name": rule.name,
+            "start_date": rule.start_date,
+            "end_date": rule.end_date,
+            "adjustment_type": rule.adjustment_type.value,
+            "adjustment_value": rule.adjustment_value,
+        }
+
+    async def delete_seasonal_tariff(self, rule_id: UUID) -> None:
+        stmt = select(TariffSeasonalRule).where(TariffSeasonalRule.id == rule_id)
+        res = await self._session.execute(stmt)
+        rule = res.scalar_one_or_none()
+        if rule:
+            await self._session.delete(rule)
+            await self._session.commit()
+
+    async def list_rate_plans_for_room_type(self, room_type_id: UUID) -> list[UUID]:
+        stmt = select(RatePlan.id).where(RatePlan.room_type_id == room_type_id)
+        res = await self._session.execute(stmt)
+        return list(res.scalars().all())
+
+    async def update_rate_calendar(self, rate_plan_id: UUID, prices: list[dict]) -> None:
+        # We'll use a simple approach: for each day, update if exists, else insert.
+        # In a real system, we'd use a bulk upsert (INSERT ... ON CONFLICT).
+        # For simplicity in this dev environment, we'll do it day by day or clear and re-insert.
+        # Clearing and re-inserting might lose history if we had any, but here it's likely fine.
+        
+        days = [p["day"] for p in prices]
+        if not days:
+            return
+
+        # Clear existing entries for these days
+        from sqlalchemy import delete
+        stmt_del = delete(RateCalendar).where(
+            RateCalendar.rate_plan_id == rate_plan_id,
+            RateCalendar.day.in_(days)
+        )
+        await self._session.execute(stmt_del)
+
+        # Insert new ones
+        now = datetime.utcnow()
+        for p in prices:
+            cal = RateCalendar(
+                id=uuid.uuid4(),
+                rate_plan_id=rate_plan_id,
+                day=p["day"],
+                currency_code="USD",
+                price_amount=p["price_amount"],
+                created_at=now,
+                updated_at=now
+            )
+            self._session.add(cal)
+        await self._session.commit()
+
+    async def get_seasonal_rule(self, rule_id: UUID) -> dict | None:
+        stmt = select(TariffSeasonalRule).where(TariffSeasonalRule.id == rule_id)
+        res = await self._session.execute(stmt)
+        rule = res.scalar_one_or_none()
+        if not rule:
+            return None
+        return {
+            "id": rule.id,
+            "room_type_id": rule.room_type_id,
+            "name": rule.name,
+            "start_date": rule.start_date,
+            "end_date": rule.end_date,
+            "adjustment_type": rule.adjustment_type.value,
+            "adjustment_value": rule.adjustment_value,
+        }
+
+    async def get_property_id_for_room_type(self, room_type_id: UUID) -> UUID | None:
+        stmt = select(RoomType.property_id).where(RoomType.id == room_type_id)
+        res = await self._session.execute(stmt)
+        result = res.scalar_one_or_none()
+        return result

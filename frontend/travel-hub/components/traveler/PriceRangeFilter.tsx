@@ -99,7 +99,7 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
           value={range[0]}
           onChange={handleMinChange}
           onBlur={handleBlur}
-          inputProps={{ min: 0 }}
+          inputProps={{ min: 0, 'data-testid': 'traveler-price-min-input' }}
           slotProps={{
             input: {
               startAdornment: <InputAdornment position="start">$</InputAdornment>,
@@ -114,7 +114,7 @@ export default function PriceRangeFilter({ minPrice, maxPrice, onApply }: PriceR
           value={range[1]}
           onChange={handleMaxChange}
           onBlur={handleBlur}
-          inputProps={{ min: 0 }}
+          inputProps={{ min: 0, 'data-testid': 'traveler-price-max-input' }}
           slotProps={{
             input: {
               startAdornment: <InputAdornment position="start">$</InputAdornment>,

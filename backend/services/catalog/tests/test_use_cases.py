@@ -393,8 +393,8 @@ class TestGetPropertyDetail:
         )
 
         room = result["detail"]["room_types"][0]
-        # model_dump(mode="json") serializa Decimal como string
-        assert room["min_price"] == "150.00"
+        # model_dump(mode="json") serializa Decimal como string; min_price por habitación está en cada rate plan (RoomTypeOut no expone aggregate).
+        assert room["rate_plans"][0]["min_price"] == "150.00"
 
     async def test_result_is_cached_on_second_call(self, mock_property_repo, mock_cache):
         """On cache hit, repo should NOT be called."""
@@ -597,8 +597,6 @@ class TestPromotionApplication:
         assert plan["original_min_price"] == "100.00"
         assert plan["promotion"]["discount_type"] == "PERCENT"
         assert plan["promotion"]["discount_value"] == "15"
-        # RoomType.min_price should reflect the discounted price too
-        assert result["detail"]["room_types"][0]["min_price"] == "85.00"
 
     async def test_fixed_promotion_subtracts_amount(self, mock_property_repo, mock_cache):
         prop = _make_fake_property()

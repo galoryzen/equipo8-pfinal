@@ -22,6 +22,9 @@ interface PriceCardProps {
   property: PropertyDetail;
   minPrice: number | null;
   selectedRoom: SelectedRoomInfo | null;
+  initialCheckin?: string;
+  initialCheckout?: string;
+  initialGuests?: number;
   onDatesChange?: (checkin: string, checkout: string) => void;
 }
 
@@ -42,15 +45,18 @@ export default function PriceCard({
   property,
   minPrice,
   selectedRoom,
+  initialCheckin,
+  initialCheckout,
+  initialGuests,
   onDatesChange,
 }: PriceCardProps) {
   const { today, tomorrow } = getDefaultDates();
   const { authStatus, requireAuth } = useAuthAction();
   const { t } = useTranslation();
 
-  const [checkin, setCheckin] = useState(today);
-  const [checkout, setCheckout] = useState(tomorrow);
-  const [guests, setGuests] = useState(2);
+  const [checkin, setCheckin] = useState(initialCheckin || today);
+  const [checkout, setCheckout] = useState(initialCheckout || tomorrow);
+  const [guests, setGuests] = useState(initialGuests || 2);
 
   const nights = nightsBetween(checkin, checkout);
 
@@ -199,7 +205,7 @@ export default function PriceCard({
           type="date"
           size="small"
           value={checkin}
-          inputProps={{ min: today }}
+          inputProps={{ min: today, 'data-testid': 'traveler-hotel-checkin-input' }}
           onChange={(e) => handleCheckinChange(e.target.value)}
           InputLabelProps={{ shrink: true }}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
@@ -209,7 +215,7 @@ export default function PriceCard({
           type="date"
           size="small"
           value={checkout}
-          inputProps={{ min: checkin }}
+          inputProps={{ min: checkin, 'data-testid': 'traveler-hotel-checkout-input' }}
           onChange={(e) => handleCheckoutChange(e.target.value)}
           InputLabelProps={{ shrink: true }}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
@@ -223,7 +229,7 @@ export default function PriceCard({
         size="small"
         fullWidth
         value={guests}
-        inputProps={{ min: 1, max: 20 }}
+        inputProps={{ min: 1, max: 20, 'data-testid': 'traveler-hotel-guests-input' }}
         onChange={(e) => setGuests(Number(e.target.value))}
         sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
       />
@@ -235,6 +241,7 @@ export default function PriceCard({
         size="large"
         disableElevation
         disabled={authStatus === 'loading' || !canReserve}
+        data-testid="traveler-hotel-reserve-button"
         startIcon={
           authStatus === 'loading' ? (
             <CircularProgress aria-label={t('a11y.loading')} size={16} sx={{ color: 'white' }} />
@@ -255,6 +262,7 @@ export default function PriceCard({
             currency: pricing?.currency_code ?? 'USD',
             property_name: property.name,
             room_name: selectedRoom.roomName,
+            ...(property.rating_avg != null && { review_score: String(property.rating_avg) }),
           });
           requireAuth(`/traveler/booking?${params.toString()}`);
         }}

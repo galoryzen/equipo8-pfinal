@@ -2,7 +2,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, func as sa_func, or_, select, text
+from sqlalchemy import and_, case, func as sa_func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
@@ -10,10 +10,13 @@ from app.domain.models import Booking, BookingScope, BookingStatus, BookingStatu
 
 _ACTIVE_STATUSES = (
     BookingStatus.CONFIRMED,
+    BookingStatus.CHECKED_IN,
     BookingStatus.PENDING_PAYMENT,
     BookingStatus.PENDING_CONFIRMATION,
 )
 _PAST_TERMINAL_STATUSES = (BookingStatus.CANCELLED, BookingStatus.REJECTED)
+# Trip listings hide CART (use GET /bookings/my-cart for in-progress rescue) and
+# EXPIRED (terminal-but-not-meaningful holds the user never paid for).
 _EXCLUDED_FROM_ALL = (BookingStatus.CART, BookingStatus.EXPIRED)
 
 class SqlAlchemyBookingRepository(BookingRepository):
@@ -25,6 +28,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
         user_id: UUID,
         *,
         scope: BookingScope = BookingScope.ALL,
+        status: str | None = None,
         today: date | None = None,
         page: int = 1,
         page_size: int = 10,
@@ -32,14 +36,21 @@ class SqlAlchemyBookingRepository(BookingRepository):
         today = today or datetime.now(UTC).date()
         base_where = [Booking.user_id == user_id]
 
-        if scope is BookingScope.ACTIVE:
+        if status:
+            base_where += [Booking.status == status]
+            order = Booking.checkin.desc()
+        elif scope is BookingScope.ACTIVE:
             base_where += [Booking.status.in_(_ACTIVE_STATUSES), Booking.checkout >= today]
             order = Booking.checkin.asc()
         elif scope is BookingScope.PAST:
             base_where += [
                 or_(
-                    and_(Booking.status == BookingStatus.CONFIRMED, Booking.checkout < today),
+                    and_(
+                        Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN)),
+                        Booking.checkout < today,
+                    ),
                     Booking.status.in_(_PAST_TERMINAL_STATUSES),
+                    Booking.status == BookingStatus.CHECKED_OUT,
                 )
             ]
             order = Booking.checkout.desc()
@@ -112,13 +123,86 @@ class SqlAlchemyBookingRepository(BookingRepository):
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
 
+    async def count_hotel_bookings_metrics(self, hotel_id: UUID, *, today: date) -> dict[str, int]:
+        hotel_filter = text(
+            "booking.booking.property_id IN "
+            "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
+        )
+        excluded_checkin = (
+            BookingStatus.CANCELLED,
+            BookingStatus.REJECTED,
+            BookingStatus.EXPIRED,
+            BookingStatus.CART,
+        )
+        stmt = (
+            select(
+                sa_func.coalesce(
+                    sa_func.sum(case((Booking.status == BookingStatus.CONFIRMED, 1), else_=0)),
+                    0,
+                ),
+                sa_func.coalesce(
+                    sa_func.sum(
+                        case(
+                            (
+                                Booking.status.in_(
+                                    (BookingStatus.PENDING_CONFIRMATION, BookingStatus.PENDING_PAYMENT)
+                                ),
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ),
+                sa_func.coalesce(
+                    sa_func.sum(
+                        case(
+                            (
+                                and_(
+                                    Booking.checkin == today,
+                                    Booking.status != BookingStatus.CHECKED_OUT,
+                                    Booking.status.not_in(excluded_checkin),
+                                ),
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ),
+                sa_func.coalesce(
+                    sa_func.sum(case((Booking.status == BookingStatus.CANCELLED, 1), else_=0)),
+                    0,
+                ),
+            )
+            .select_from(Booking)
+            .where(hotel_filter)
+            .params(hotel_id=str(hotel_id))
+        )
+        row = (await self._session.execute(stmt)).one()
+        return {
+            "confirmed_count": int(row[0]),
+            "pending_count": int(row[1]),
+            "check_ins_today_count": int(row[2]),
+            "cancelled_count": int(row[3]),
+        }
+
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
-    async def get_by_id(self, booking_id: UUID) -> Booking | None:
-        stmt = select(Booking).where(Booking.id == booking_id)
+    async def get_by_id_for_hotel(self, booking_id: UUID, hotel_id: UUID) -> Booking | None:
+        hotel_filter = text(
+            "booking.booking.property_id IN "
+            "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
+        )
+        stmt = (
+            select(Booking)
+            .where(Booking.id == booking_id)
+            .where(hotel_filter)
+            .params(hotel_id=str(hotel_id))
+        )
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
@@ -248,7 +332,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
 
         active_stmt = select(sa_func.count(Booking.id)).where(
             Booking.property_id == property_id,
-            Booking.status == BookingStatus.CONFIRMED,
+            Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN)),
             Booking.checkout >= today,
         )
         active_result = await self._session.execute(active_stmt)
@@ -256,7 +340,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
 
         revenue_stmt = select(sa_func.coalesce(sa_func.sum(Booking.total_amount), Decimal("0"))).where(
             Booking.property_id == property_id,
-            Booking.status == BookingStatus.CONFIRMED,
+            Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN)),
             Booking.created_at >= month_start,
         )
         revenue_result = await self._session.execute(revenue_stmt)

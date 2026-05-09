@@ -20,6 +20,7 @@ locals {
     "PaymentFailed",
     "BookingRejected",
     "BookingConfirmed",
+    "BookingCancelled",
   ])
 
   # event_type -> [worker keys] derived from local.worker_queues (sqs.tf)

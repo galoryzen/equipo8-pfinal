@@ -24,6 +24,7 @@ class ManagerHotelItem(BaseModel):
     status: Literal["ACTIVE", "PENDING_REVIEW"]
     imageUrl: str | None
     categories: int
+    hotelId: UUID
 
 
 ManagerHotelListOut = PaginatedResponse[ManagerHotelItem]
@@ -159,3 +160,40 @@ class AddPropertyImageIn(BaseModel):
 
     url: str
     caption: str | None = None
+
+
+# ── Tariffs ───────────────────────────────────────────────
+
+
+class TariffBaseOut(BaseModel):
+    room_type_id: UUID
+    base_price: Decimal
+    weekend_premium: Decimal
+
+
+class TariffBaseIn(BaseModel):
+    base_price: Decimal
+    weekend_premium: Decimal
+
+
+class TariffSeasonalRuleOut(BaseModel):
+    id: UUID
+    room_type_id: UUID
+    name: str
+    start_date: date
+    end_date: date
+    adjustment_type: Literal["PERCENT", "FIXED"]
+    adjustment_value: Decimal
+
+
+class TariffSeasonalRuleIn(BaseModel):
+    name: str
+    start_date: date
+    end_date: date
+    adjustment_type: Literal["PERCENT", "FIXED"]
+    adjustment_value: Decimal
+
+
+class RoomTariffsOut(BaseModel):
+    base: TariffBaseOut | None
+    seasonal_rules: list[TariffSeasonalRuleOut]

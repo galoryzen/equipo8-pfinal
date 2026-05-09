@@ -1,29 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
-
-export interface RegisterPayload {
-  email: string;
-  username: string;
-  phone: string;
-  country_code: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  id: string;
-  email: string;
-  role: string;
-  hotel_id?: string | null;
-}
-
-export interface UserProfileResponse {
-  id: string;
-  email: string;
-  full_name?: string | null;
-  phone?: string | null;
-  role?: string | null;
-  country_code?: string | null;
-  hotel_id?: string | null;
-}
+import { API_URL } from '@/app/lib/api/constants';
+import { AuthResponse, RegisterPayload, UserProfileResponse } from '@/app/lib/types/auth';
 
 // ── getMe cache ───────────────────────────────────────────────────────────────
 // Deduplicates concurrent calls and caches the result for 30 s so navigating

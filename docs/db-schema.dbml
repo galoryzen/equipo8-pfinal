@@ -286,6 +286,31 @@ Table catalog.promotion {
   }
 }
 
+Table catalog.tariff_base {
+  id uuid [pk]
+  room_type_id uuid [not null, unique]
+  base_price decimal(12,2) [not null]
+  weekend_premium decimal(5,2) [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table catalog.tariff_seasonal_rule {
+  id uuid [pk]
+  room_type_id uuid [not null]
+  name varchar [not null]
+  start_date date [not null]
+  end_date date [not null]
+  adjustment_type discount_type [not null]
+  adjustment_value decimal(12,2) [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (room_type_id, start_date, end_date)
+  }
+}
+
 Table catalog.amenity {
   id uuid [pk]
   code varchar [not null, unique]
@@ -328,6 +353,8 @@ Ref: catalog.promotion.rate_plan_id > catalog.rate_plan.id
 Ref: catalog.room_type_amenity.room_type_id > catalog.room_type.id
 Ref: catalog.room_type_amenity.amenity_id > catalog.amenity.id
 Ref: catalog.room_type_image.room_type_id > catalog.room_type.id
+Ref: catalog.tariff_base.room_type_id > catalog.room_type.id
+Ref: catalog.tariff_seasonal_rule.room_type_id > catalog.room_type.id
 Ref: catalog.review.user_id > users.users.id
 Ref: catalog.review.property_id > catalog.property.id
 
@@ -340,6 +367,8 @@ Enum booking_status {
   PENDING_PAYMENT
   PENDING_CONFIRMATION
   CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
   REJECTED
   CANCELLED
   EXPIRED
@@ -351,6 +380,8 @@ Table booking.booking {
   status booking_status [not null]
   checkin date [not null]
   checkout date [not null]
+  actual_checkin_at timestamp
+  actual_checkout_at timestamp
   hold_expires_at timestamp
   total_amount decimal(12,2) [not null]
   currency_code char(3) [not null]

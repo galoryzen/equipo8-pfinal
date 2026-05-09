@@ -25,5 +25,23 @@ class RedisCache(CachePort):
         except aioredis.RedisError:
             logger.warning("Redis SET failed for key %s", key, exc_info=True)
 
+    async def delete_pattern(self, pattern: str) -> int:
+        try:
+            keys = []
+            async for key in self._redis.scan_iter(match=pattern):
+                keys.append(key)
+            if keys:
+                return await self._redis.delete(*keys)
+            return 0
+        except aioredis.RedisError:
+            logger.warning("Redis DELETE pattern failed for %s", pattern, exc_info=True)
+            return 0
+
+    async def delete(self, key: str) -> None:
+        try:
+            await self._redis.delete(key)
+        except aioredis.RedisError:
+            logger.warning("Redis DELETE failed for key %s", key, exc_info=True)
+
     async def close(self) -> None:
         await self._redis.aclose()

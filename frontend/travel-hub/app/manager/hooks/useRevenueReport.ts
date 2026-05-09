@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 
+import { EMPTY_REVENUE_REPORT_DATA, getRevenueReport } from '@/app/lib/api/reports';
 import {
-  EMPTY_REVENUE_REPORT_DATA,
+  RevenueReportData,
+  RevenueReportError,
   RevenueReportFetchError,
-  getRevenueReport,
-} from '@/app/lib/api/reports';
-import type { RevenueReportData, RevenueReportError } from '@/app/lib/types/reports';
+} from '@/app/lib/types/reports';
 
 export function useRevenueReport() {
   const [data, setData] = useState<RevenueReportData>(EMPTY_REVENUE_REPORT_DATA);

@@ -18,6 +18,4 @@ def build_email_sender(
         if not aws_region:
             raise ValueError("aws_region is required for backend='ses'")
         return SesEmailSender(from_address=from_address, region=aws_region)
-    raise ValueError(
-        f"Unsupported email backend {backend!r}; must be one of {sorted(_SUPPORTED_BACKENDS)}"
-    )
+    raise ValueError(f"Unsupported email backend {backend!r}; must be one of {sorted(_SUPPORTED_BACKENDS)}")

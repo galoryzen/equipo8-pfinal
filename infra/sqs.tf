@@ -14,10 +14,10 @@ locals {
       events = ["PaymentSucceeded", "PaymentFailed"]
     }
     payment = {
-      events = ["PaymentRequested", "BookingRejected"]
+      events = ["PaymentRequested", "BookingRejected", "BookingCancelled"]
     }
     notification = {
-      events = ["BookingConfirmed", "PaymentFailed"]
+      events = ["BookingConfirmed", "BookingRejected", "PaymentFailed"]
     }
   }
 }

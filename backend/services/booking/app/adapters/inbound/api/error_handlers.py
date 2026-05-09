@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.application.exceptions import (
     BookingNotFoundError,
+    CancellationNotAllowedError,
     CatalogUnavailableError,
     CheckoutGuestsIncompleteError,
     ConflictingActiveCartError,
@@ -52,6 +53,17 @@ def register_error_handlers(app: FastAPI) -> None:
             content={
                 "code": "INVALID_BOOKING_STATE",
                 "message": str(exc) or "Operation not allowed in current booking state",
+                "trace_id": request.headers.get("x-request-id"),
+            },
+        )
+
+    @app.exception_handler(CancellationNotAllowedError)
+    async def cancellation_not_allowed_handler(request: Request, exc: CancellationNotAllowedError):
+        return JSONResponse(
+            status_code=409,
+            content={
+                "code": "CANCELLATION_NOT_ALLOWED",
+                "message": str(exc) or "Cancellation is not allowed under the current policy",
                 "trace_id": request.headers.get("x-request-id"),
             },
         )

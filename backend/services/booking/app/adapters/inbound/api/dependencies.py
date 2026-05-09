@@ -17,17 +17,23 @@ from app.application.exceptions import InvalidTokenError
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
 from app.application.ports.outbound.catalog_pricing_port import CatalogPricingPort
 from app.application.ports.outbound.token_port import TokenPort
-from app.application.use_cases.cancel_cart_booking import CancelCartBookingUseCase
-from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
+from app.application.use_cases.abandon_cart_booking import AbandonCartBookingUseCase
+from app.application.use_cases.cancel_booking import CancelBookingUseCase
 from app.application.use_cases.checkout_booking import CheckoutBookingUseCase
+from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
+from app.application.use_cases.get_admin_hotel_revenue_report import GetAdminHotelRevenueReportUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
+from app.application.use_cases.get_hotel_bookings_metrics import GetHotelBookingsMetricsUseCase
 from app.application.use_cases.get_hotel_dashboard_metrics import GetHotelDashboardMetricsUseCase
 from app.application.use_cases.get_hotel_revenue_report import GetHotelRevenueReportUseCase
-from app.application.use_cases.get_admin_hotel_revenue_report import GetAdminHotelRevenueReportUseCase
+from app.application.use_cases.get_my_active_cart import GetMyActiveCartUseCase
+from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
 from app.application.use_cases.reject_booking import RejectBookingUseCase
+from app.application.use_cases.register_guest_check_in import RegisterGuestCheckInUseCase
+from app.application.use_cases.register_guest_check_out import RegisterGuestCheckOutUseCase
 from app.application.use_cases.save_booking_guests import SaveBookingGuestsUseCase
 from app.config import settings
 
@@ -120,12 +126,28 @@ def get_create_cart_booking_use_case(
     return CreateCartBookingUseCase(repo, catalog, pricing)
 
 
-def get_cancel_cart_booking_use_case(
+def get_abandon_cart_booking_use_case(
     session: AsyncSession = Depends(get_db_session),
     catalog: CatalogInventoryPort = Depends(get_catalog_client),
-) -> CancelCartBookingUseCase:
+) -> AbandonCartBookingUseCase:
     repo = SqlAlchemyBookingRepository(session)
-    return CancelCartBookingUseCase(repo, catalog)
+    return AbandonCartBookingUseCase(repo, catalog)
+
+
+def get_my_active_cart_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetMyActiveCartUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return GetMyActiveCartUseCase(repo)
+
+
+def get_cancel_booking_use_case(
+    session: AsyncSession = Depends(get_db_session),
+    catalog: CatalogInventoryPort = Depends(get_catalog_client),
+    events: DomainEventPublisher = Depends(get_event_publisher),
+) -> CancelBookingUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return CancelBookingUseCase(repo, catalog, events=events)
 
 def get_list_my_bookings_use_case(
     session: AsyncSession = Depends(get_db_session),
@@ -142,6 +164,22 @@ def get_booking_detail_use_case(
     repo = SqlAlchemyBookingRepository(session)
     guest_repo = SqlAlchemyGuestRepository(session)
     return GetBookingDetailUseCase(repo, guest_repo)
+
+
+def get_register_guest_check_in_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> RegisterGuestCheckInUseCase:
+    booking_repo = SqlAlchemyBookingRepository(session)
+    guest_repo = SqlAlchemyGuestRepository(session)
+    return RegisterGuestCheckInUseCase(booking_repo, guest_repo)
+
+
+def get_register_guest_check_out_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> RegisterGuestCheckOutUseCase:
+    booking_repo = SqlAlchemyBookingRepository(session)
+    guest_repo = SqlAlchemyGuestRepository(session)
+    return RegisterGuestCheckOutUseCase(booking_repo, guest_repo)
 
 
 def get_save_booking_guests_use_case(
@@ -220,6 +258,13 @@ def get_hotel_dashboard_metrics_use_case(
 ) -> GetHotelDashboardMetricsUseCase:
     repo = SqlAlchemyDashboardMetricsRepository(session)
     return GetHotelDashboardMetricsUseCase(repo)
+
+
+def get_hotel_bookings_metrics_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetHotelBookingsMetricsUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return GetHotelBookingsMetricsUseCase(repo)
 
 
 def get_hotel_revenue_report_use_case(

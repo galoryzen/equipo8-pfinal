@@ -1,3 +1,5 @@
+import { formatApiErrorBody } from '@/app/lib/api/catalog';
+import { API_URL } from '@/app/lib/api/constants';
 import type {
   BookingDetail,
   BookingListItem,
@@ -6,26 +8,68 @@ import type {
   GuestPayload,
   PaginatedResponse,
   PendingConfirmationBookingItem,
+  RefundDetail,
 } from '@/app/lib/types/booking';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
+/** HTTP error with status for hotel booking actions (check-in, etc.). */
+export class ApiHttpError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+
+  constructor(message: string, status: number, body: unknown) {
+    super(message);
+    this.name = 'ApiHttpError';
+    this.status = status;
+    this.body = body;
+  }
+}
 
 async function readErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
-  if (body && typeof body === 'object' && 'message' in body) {
-    return String((body as { message: unknown }).message);
+  if (body && typeof body === 'object') {
+    const msg = 'message' in body ? String((body as { message: unknown }).message) : '';
+    const code = 'code' in body ? String((body as { code: unknown }).code) : '';
+    if (msg) return code ? `${msg} (${code})` : msg;
   }
   return `Error ${res.status}`;
 }
 
+export interface HotelBookingsMetrics {
+  confirmedCount: number;
+  pendingCount: number;
+  checkInsTodayCount: number;
+  cancelledCount: number;
+}
+
+/** Hotel-wide aggregates for the manager Bookings stat cards (not paginated). */
+export async function fetchHotelBookingsMetrics(): Promise<HotelBookingsMetrics> {
+  const res = await fetch(`${API_URL}/api/v1/booking/dashboard/bookings-metrics`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json() as Promise<HotelBookingsMetrics>;
+}
+
 /**
- * Lists bookings for the authenticated traveler (cookie `access_token`, same origin).
+ * Lists bookings for the current session: traveler (own), hotel partner (property
+ * scope), or admin (all) — same `/bookings` route, role resolved by the gateway.
  */
-export async function getMyBookings(
-  page = 1,
-  pageSize = 10
-): Promise<PaginatedResponse<BookingListItem>> {
-  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+export async function listPartnerBookings(options?: {
+  status?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<PaginatedResponse<BookingListItem>> {
+  const page = options?.page ?? 1;
+  const page_size = options?.page_size ?? 10;
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(page_size),
+  });
+  if (options?.status) {
+    params.set('status', options.status);
+  }
   const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
     credentials: 'include',
   });
@@ -33,6 +77,17 @@ export async function getMyBookings(
     throw new Error(await readErrorMessage(res));
   }
   return res.json();
+}
+
+/**
+ * Lists bookings for the authenticated traveler (cookie `access_token`, same origin).
+ */
+export async function getMyBookings(
+  page = 1,
+  pageSize = 10,
+  status?: string
+): Promise<PaginatedResponse<BookingListItem>> {
+  return listPartnerBookings({ page, page_size: pageSize, status });
 }
 
 export async function getBookingDetail(bookingId: string): Promise<BookingDetail> {
@@ -81,9 +136,24 @@ export async function createCartBooking(payload: CreateCartBookingPayload): Prom
   return res.json();
 }
 
-export async function cancelCartBooking(bookingId: string): Promise<BookingDetail> {
+export async function cancelBooking(bookingId: string): Promise<BookingDetail> {
   const res = await fetch(
     `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/cancel`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json();
+}
+
+export async function abandonCart(bookingId: string): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/abandon-cart`,
     {
       method: 'POST',
       credentials: 'include',
@@ -179,4 +249,54 @@ export async function checkoutBooking(
     throw new Error(await readErrorMessage(res));
   }
   return res.json();
+}
+
+/** Registers physical guest check-in for a hotel booking (HOTEL / MANAGER roles). */
+export async function registerGuestCheckIn(
+  bookingId: string,
+  payload: { actual_arrival_at: string }
+): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/check-in`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiHttpError(formatApiErrorBody(body, res.status), res.status, body);
+  }
+  return body as BookingDetail;
+}
+
+/** Registers physical guest check-out for a hotel booking (HOTEL / MANAGER roles). */
+export async function registerBookingCheckOut(
+  bookingId: string,
+  payload: { actual_departure_at: string }
+): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/check-out`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiHttpError(formatApiErrorBody(body, res.status), res.status, body);
+  }
+  return body as BookingDetail;
+}
+
+export async function getRefundByBookingId(bookingId: string): Promise<RefundDetail | null> {
+  const res = await fetch(`${API_URL}/api/v1/payment/by-booking/${encodeURIComponent(bookingId)}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) return null;
+  return (await res.json()) ?? null;
 }

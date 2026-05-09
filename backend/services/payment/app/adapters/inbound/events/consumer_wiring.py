@@ -1,4 +1,4 @@
-from contracts.events.booking import BOOKING_REJECTED
+from contracts.events.booking import BOOKING_CANCELLED, BOOKING_REJECTED
 from contracts.events.payment import PAYMENT_REQUESTED
 from shared.events import (
     DomainEventConsumer,
@@ -7,6 +7,7 @@ from shared.events import (
 )
 
 from app.adapters.inbound.events.handlers import (
+    make_booking_cancelled_handler,
     make_booking_rejected_handler,
     make_payment_requested_handler,
 )
@@ -35,6 +36,7 @@ def build_worker_consumer() -> DomainEventConsumer:
     gateway = MockPaymentGateway()
     payment_requested_handler = make_payment_requested_handler(async_session, publisher, gateway)
     booking_rejected_handler = make_booking_rejected_handler(async_session, gateway)
+    booking_cancelled_handler = make_booking_cancelled_handler(async_session, gateway)
 
     consumer = build_event_consumer(
         settings.EVENT_CONSUMER_BACKEND,
@@ -45,4 +47,5 @@ def build_worker_consumer() -> DomainEventConsumer:
     )
     consumer.subscribe(PAYMENT_REQUESTED, payment_requested_handler)
     consumer.subscribe(BOOKING_REJECTED, booking_rejected_handler)
+    consumer.subscribe(BOOKING_CANCELLED, booking_cancelled_handler)
     return consumer

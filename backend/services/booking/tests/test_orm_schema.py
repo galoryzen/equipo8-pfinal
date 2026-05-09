@@ -36,3 +36,4 @@ def test_booking_has_flat_room_columns():
     assert "room_type_id" in cols
     assert "rate_plan_id" in cols
     assert "unit_price" in cols
+    assert "actual_checkin_at" in cols

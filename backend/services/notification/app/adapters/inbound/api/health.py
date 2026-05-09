@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Response
 
-from app.config import settings
 from app.adapters.outbound.db.session import check_db
+from app.config import settings
 
 router = APIRouter()
 

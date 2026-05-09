@@ -1,8 +1,5 @@
-import {
-  DashboardFetchError,
-  EMPTY_DASHBOARD_DATA,
-  getHotelDashboardMetrics,
-} from '@/app/lib/api/dashboard';
+import { EMPTY_DASHBOARD_DATA, getHotelDashboardMetrics } from '@/app/lib/api/dashboard';
+import { DashboardFetchError } from '@/app/lib/types/dashboard';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('dashboard API', () => {

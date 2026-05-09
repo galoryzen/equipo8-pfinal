@@ -7,14 +7,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   CartConflictError,
-  cancelCartBooking,
   checkoutBooking,
   createCartBooking,
   getBookingDetail,
   saveBookingGuests,
 } from '@/app/lib/api/booking';
+import { COUNTRY_CODES } from '@/app/lib/constant';
 import type { CartBooking } from '@/app/lib/types/booking';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
+import { FormControl, MenuItem, Select } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import Backdrop from '@mui/material/Backdrop';
 import Box from '@mui/material/Box';
@@ -184,12 +185,13 @@ function PaymentPageContent() {
   const propertyName = searchParams.get('property_name') ?? 'Your Hotel';
   const roomName = searchParams.get('room_name') ?? 'Room';
   const imageUrl = searchParams.get('image_url') ?? '';
+  const bookingIdParam = searchParams.get('booking_id') ?? '';
+  const reviewScore = searchParams.get('review_score');
 
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
-  const [conflictBookingId, setConflictBookingId] = useState<string | null>(null);
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [expired, setExpired] = useState(false);
   const [isResumed, setIsResumed] = useState(false);
@@ -214,6 +216,7 @@ function PaymentPageContent() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]?.dial ?? '+1');
 
   // Processing / snackbar
   const [isProcessing, setIsProcessing] = useState(false);
@@ -255,6 +258,22 @@ function PaymentPageContent() {
       phone.trim().length > 0,
     [firstName, lastName, email, phone]
   );
+
+  const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
+
+  const paymentDetailsValid = useMemo(() => {
+    if (paymentTab === 0) {
+      const digits = cardNumber.replace(/\s/g, '');
+      return (
+        digits.length === 16 &&
+        expiry.length === 5 &&
+        !expiryError &&
+        cvv.trim().length >= 3 &&
+        nameOnCard.trim().length > 0
+      );
+    }
+    return true;
+  }, [paymentTab, cardNumber, expiry, expiryError, cvv, nameOnCard]);
 
   const basePrice = cartPricing?.subtotal ?? 0;
   const originalBasePrice = cartPricing?.originalSubtotal ?? null;
@@ -385,14 +404,26 @@ function PaymentPageContent() {
           newBooking = await createCartBooking(createPayload);
         } catch (e) {
           if (!(e instanceof CartConflictError)) throw e;
-          setConflictBookingId(e.existingBookingId);
-          // If another cart exists, attempt to replace it automatically.
+          // Conflict: auto-resume the existing booking instead of showing an error
           try {
-            await cancelCartBooking(e.existingBookingId);
+            const existing = await getBookingDetail(e.existingBookingId);
+            if (!mountedRef.current) return;
+            localStorage.setItem(key, existing.id);
+            setIsResumed(true);
+            handleBookingResolved(
+              existing.id,
+              existing.hold_expires_at ?? '',
+              existing.status,
+              pricingFromBooking(existing)
+            );
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('booking_id', existing.id);
+            router.replace(`/traveler/payment?${params.toString()}`);
+            return;
           } catch {
-            // Best effort: retry create anyway in case the server already expired it.
+            // If we can't resume the existing booking, fall through to error
+            throw new Error('Could not resume existing reservation.');
           }
-          newBooking = await createCartBooking(createPayload);
         }
 
         if (!mountedRef.current) return;
@@ -409,9 +440,6 @@ function PaymentPageContent() {
         router.replace(`/traveler/payment?${params.toString()}`);
       } catch (e) {
         if (mountedRef.current) {
-          if (e instanceof CartConflictError) {
-            setConflictBookingId(e.existingBookingId);
-          }
           setInitError(e instanceof Error ? e.message : 'Could not create booking hold.');
           setLoading(false);
         }
@@ -475,7 +503,7 @@ function PaymentPageContent() {
             is_primary: true,
             full_name: `${firstName.trim()} ${lastName.trim()}`,
             email: email.trim(),
-            phone: phone.trim(),
+            phone: `${selectedCountryCode} ${phone.trim()}`,
           },
           ...additionalGuests.map((g) => ({
             is_primary: false,
@@ -590,9 +618,8 @@ function PaymentPageContent() {
     propertyName,
     roomName,
     avgUnitPrice,
+    selectedCountryCode,
   ]);
-
-  const expiryError = expiry.length === 5 && isExpiryInPast(expiry);
 
   if (loading) {
     return (
@@ -606,38 +633,12 @@ function PaymentPageContent() {
   }
 
   if (initError) {
-    const resumeParams = conflictBookingId
-      ? new URLSearchParams({
-          booking_id: conflictBookingId,
-          property_id: propertyId,
-          room_type_id: roomTypeId,
-          rate_plan_id: ratePlanId,
-          checkin,
-          checkout,
-          guests: String(guests),
-          currency,
-          property_name: propertyName,
-          room_name: roomName,
-          ...(imageUrl && { image_url: imageUrl }),
-        })
-      : null;
-
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
         <Alert severity="error" sx={{ mb: 3 }}>
           {initError}
         </Alert>
         <Stack spacing={2} direction="row" flexWrap="wrap">
-          {resumeParams && (
-            <Button
-              component={NextLink}
-              href={`/traveler/payment?${resumeParams.toString()}`}
-              variant="contained"
-              sx={{ textTransform: 'none' }}
-            >
-              {t('payment.resumeReservation')}
-            </Button>
-          )}
           <Button
             component={NextLink}
             href="/traveler/search"
@@ -654,7 +655,7 @@ function PaymentPageContent() {
   const countdownSeverity = remainingMs < 2 * 60 * 1000 ? 'error' : 'warning';
 
   return (
-    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 6 }}>
+    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 6 }} data-testid="traveler-payment-page">
       {/* ── Processing overlay ── */}
       <Backdrop
         open={isProcessing}
@@ -876,7 +877,7 @@ function PaymentPageContent() {
             <Stack spacing={3}>
               {/* Guest Details */}
               <Card variant="outlined" sx={{ borderRadius: 2 }}>
-                <CardContent sx={{ p: 3 }}>
+                <CardContent sx={{ p: 3 }} data-testid="traveler-payment-guest-card">
                   <Box
                     sx={{
                       display: 'flex',
@@ -888,15 +889,6 @@ function PaymentPageContent() {
                     <Typography variant="h6" fontWeight={700}>
                       👤 {t('payment.guestDetails')}
                     </Typography>
-                    <Button
-                      component={NextLink}
-                      href="/traveler/login"
-                      variant="text"
-                      size="small"
-                      sx={{ textTransform: 'none', color: 'primary.main', fontWeight: 600 }}
-                    >
-                      {t('payment.logIn')}
-                    </Button>
                   </Box>
 
                   {/* Primary guest */}
@@ -922,6 +914,7 @@ function PaymentPageContent() {
                         fullWidth
                         size="small"
                         required
+                        inputProps={{ 'data-testid': 'traveler-payment-first-name' }}
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
@@ -932,6 +925,7 @@ function PaymentPageContent() {
                         fullWidth
                         size="small"
                         required
+                        inputProps={{ 'data-testid': 'traveler-payment-last-name' }}
                       />
                     </Grid>
                     <Grid size={12}>
@@ -943,6 +937,7 @@ function PaymentPageContent() {
                         fullWidth
                         size="small"
                         required
+                        inputProps={{ 'data-testid': 'traveler-payment-email' }}
                         error={email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}
                         helperText={
                           email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -960,13 +955,33 @@ function PaymentPageContent() {
                         fullWidth
                         size="small"
                         required
+                        inputProps={{ 'data-testid': 'traveler-payment-phone' }}
                         slotProps={{
                           input: {
                             startAdornment: (
-                              <InputAdornment position="start">
-                                <Typography variant="body2" color="text.secondary">
-                                  🇺🇸 +1
-                                </Typography>
+                              <InputAdornment position="start" sx={{ pr: 0.5 }}>
+                                <FormControl size="small" sx={{ minWidth: 110 }}>
+                                  <Select
+                                    value={selectedCountryCode}
+                                    onChange={(e) => setSelectedCountryCode(e.target.value)}
+                                    variant="standard"
+                                    disableUnderline
+                                    sx={{
+                                      fontSize: '0.875rem',
+                                      '& .MuiSelect-select': { py: 0.5, pl: 0.5 },
+                                    }}
+                                    data-testid="traveler-payment-country-code"
+                                  >
+                                    {COUNTRY_CODES.map((c, index) => (
+                                      <MenuItem key={index} value={c.dial}>
+                                        <Box component="span" sx={{ mr: 0.5 }}>
+                                          {c.flag}
+                                        </Box>
+                                        {c.code} {c.dial}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
                               </InputAdornment>
                             ),
                           },
@@ -1022,6 +1037,9 @@ function PaymentPageContent() {
                                 fullWidth
                                 size="small"
                                 required
+                                inputProps={{
+                                  'data-testid': `traveler-payment-additional-first-name-${idx}`,
+                                }}
                               />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -1038,6 +1056,9 @@ function PaymentPageContent() {
                                 fullWidth
                                 size="small"
                                 required
+                                inputProps={{
+                                  'data-testid': `traveler-payment-additional-last-name-${idx}`,
+                                }}
                               />
                             </Grid>
                           </Grid>
@@ -1074,6 +1095,7 @@ function PaymentPageContent() {
                   pointerEvents: guestDetailsFilled ? 'auto' : 'none',
                   transition: 'opacity 0.2s',
                 }}
+                data-testid="traveler-payment-method-card"
               >
                 <CardContent sx={{ p: 3 }}>
                   <Box
@@ -1105,6 +1127,7 @@ function PaymentPageContent() {
                   <Tabs
                     value={paymentTab}
                     onChange={(_, v) => setPaymentTab(v)}
+                    data-testid="traveler-payment-method-tabs"
                     sx={{
                       mb: 3,
                       borderBottom: 1,
@@ -1113,7 +1136,6 @@ function PaymentPageContent() {
                     }}
                   >
                     <Tab label={t('payment.creditOrDebitCard')} />
-                    <Tab label={t('payment.paypal')} />
                   </Tabs>
 
                   {paymentTab === 0 ? (
@@ -1129,7 +1151,10 @@ function PaymentPageContent() {
                         }}
                         fullWidth
                         size="small"
-                        inputProps={{ maxLength: 19 }}
+                        inputProps={{
+                          maxLength: 19,
+                          'data-testid': 'traveler-payment-card-number',
+                        }}
                       />
                       <Grid container spacing={2}>
                         <Grid size={{ xs: 12, sm: 6 }}>
@@ -1143,7 +1168,10 @@ function PaymentPageContent() {
                             }}
                             fullWidth
                             size="small"
-                            inputProps={{ maxLength: 5 }}
+                            inputProps={{
+                              maxLength: 5,
+                              'data-testid': 'traveler-payment-card-expiry',
+                            }}
                             error={expiryError}
                             helperText={expiryError ? t('payment.expiryInPast') : undefined}
                           />
@@ -1156,7 +1184,10 @@ function PaymentPageContent() {
                             onChange={(e) => setCvv(e.target.value)}
                             fullWidth
                             size="small"
-                            inputProps={{ maxLength: 4 }}
+                            inputProps={{
+                              maxLength: 4,
+                              'data-testid': 'traveler-payment-card-cvv',
+                            }}
                             type="password"
                           />
                         </Grid>
@@ -1168,6 +1199,7 @@ function PaymentPageContent() {
                         onChange={(e) => setNameOnCard(e.target.value)}
                         fullWidth
                         size="small"
+                        inputProps={{ 'data-testid': 'traveler-payment-card-name' }}
                       />
                     </Stack>
                   ) : (
@@ -1194,6 +1226,7 @@ function PaymentPageContent() {
             <Card
               variant="outlined"
               sx={{ borderRadius: 2, overflow: 'hidden', position: 'sticky', top: 16 }}
+              data-testid="traveler-payment-summary-card"
             >
               {/* Hotel image */}
               <Box
@@ -1228,16 +1261,21 @@ function PaymentPageContent() {
                   />
                 )}
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                  <Typography variant="h6" fontWeight={700} sx={{ color: 'white' }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={700}
+                    sx={{ color: 'white' }}
+                    data-testid="traveler-payment-summary-property-name"
+                  >
                     {propertyName}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-                    ★ 5.0
+                    {reviewScore ? `★ ${reviewScore}` : ''}
                   </Typography>
                 </Box>
               </Box>
 
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: 3 }} data-testid="traveler-payment-summary-card-content">
                 {/* Booking Summary */}
                 <Typography variant="overline" color="text.secondary" fontWeight={700}>
                   {t('payment.bookingSummary')}
@@ -1248,23 +1286,44 @@ function PaymentPageContent() {
                     variant="body2"
                     fontWeight={700}
                     sx={{ color: 'primary.main', mb: 0.5 }}
+                    data-testid="traveler-payment-summary-dates"
                   >
                     📅 {checkin ? formatDateShort(checkin) : '—'} –{' '}
                     {checkout ? formatDateShort(checkout) : '—'}
                   </Typography>
-                  <Typography variant="body1" fontWeight={600}>
+                  <Typography
+                    variant="body1"
+                    fontWeight={600}
+                    data-testid="traveler-payment-summary-room-name"
+                  >
                     {roomName}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    data-testid="traveler-payment-summary-guests-nights"
+                  >
                     {t('payment.night', { count: nights })} •{' '}
                     {t('payment.guest', { count: guests })}
                   </Typography>
+                  {bookingIdParam && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      sx={{ mt: 0.5 }}
+                      data-testid="traveler-payment-booking-reference"
+                    >
+                      {bookingIdParam}
+                    </Typography>
+                  )}
                   <Button
                     component={NextLink}
                     href={propertyId ? `/traveler/hotel?id=${propertyId}` : '/traveler/search'}
                     variant="text"
                     size="small"
                     startIcon={<CreateOutlinedIcon fontSize="small" />}
+                    data-testid="traveler-payment-edit-booking"
                     sx={{
                       textTransform: 'none',
                       p: 0,
@@ -1354,7 +1413,12 @@ function PaymentPageContent() {
                         Price ${originalDisplayTotal.toFixed(2)}
                       </Typography>
                     )}
-                    <Typography variant="h5" fontWeight={800} color="primary.main">
+                    <Typography
+                      variant="h5"
+                      fontWeight={800}
+                      color="primary.main"
+                      data-testid="traveler-payment-total-amount"
+                    >
                       {originalDisplayTotal != null ? 'Price with discount ' : ''}$
                       {displayTotal.toFixed(2)}
                     </Typography>
@@ -1391,8 +1455,9 @@ function PaymentPageContent() {
                   variant="contained"
                   fullWidth
                   size="large"
-                  disabled={expired || !guestDetailsFilled || expiryError}
+                  disabled={expired || !guestDetailsFilled || !paymentDetailsValid}
                   onClick={handlePay}
+                  data-testid="traveler-payment-submit"
                   sx={{ textTransform: 'none', fontWeight: 700, py: 1.5, borderRadius: 2 }}
                 >
                   🔒 {t('payment.payButton', { amount: displayTotal.toFixed(2) })}

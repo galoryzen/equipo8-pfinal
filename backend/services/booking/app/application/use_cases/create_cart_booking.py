@@ -114,6 +114,7 @@ class CreateCartBookingUseCase:
             status=BookingStatus.CART,
             checkin=payload.checkin,
             checkout=payload.checkout,
+            actual_checkin_at=None,
             hold_expires_at=now + timedelta(minutes=_HOLD_MINUTES),
             total_amount=total,
             currency_code=pricing_result.currency_code,

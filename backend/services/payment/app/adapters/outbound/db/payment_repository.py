@@ -77,3 +77,12 @@ class SqlAlchemyPaymentRepository(PaymentRepository):
             select(Refund).where(Refund.payment_id == payment_id).limit(1)
         )
         return result.scalars().one_or_none()
+
+    async def find_refund_by_booking_id(self, booking_id: UUID) -> Refund | None:
+        result = await self._session.execute(
+            select(Refund)
+            .join(Payment, Refund.payment_id == Payment.id)
+            .where(Payment.booking_id == booking_id)
+            .limit(1)
+        )
+        return result.scalars().one_or_none()

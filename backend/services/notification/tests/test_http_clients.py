@@ -68,9 +68,7 @@ async def test_auth_client_raises_on_5xx(httpx_client):
 async def test_auth_client_raises_on_network_error(httpx_client):
     user_id = uuid4()
     async with respx.mock(base_url=AUTH_URL) as mock:
-        mock.get(f"/internal/users/{user_id}/contact").mock(
-            side_effect=httpx.ConnectError("refused")
-        )
+        mock.get(f"/internal/users/{user_id}/contact").mock(side_effect=httpx.ConnectError("refused"))
         client = HttpAuthClient(httpx_client, AUTH_URL, TOKEN)
 
         with pytest.raises(NotificationEnrichmentError, match="unavailable"):
@@ -134,9 +132,7 @@ async def test_catalog_client_raises_when_404(httpx_client):
 async def test_catalog_client_raises_on_network_error(httpx_client):
     prop_id = uuid4()
     async with respx.mock(base_url=CATALOG_URL) as mock:
-        mock.get(f"/internal/properties/{prop_id}/summary").mock(
-            side_effect=httpx.ConnectError("refused")
-        )
+        mock.get(f"/internal/properties/{prop_id}/summary").mock(side_effect=httpx.ConnectError("refused"))
         client = HttpCatalogClient(httpx_client, CATALOG_URL, TOKEN)
 
         with pytest.raises(NotificationEnrichmentError, match="unavailable"):
