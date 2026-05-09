@@ -1,11 +1,11 @@
 import pytest
 
-from contracts.events.booking import BOOKING_REJECTED
+from contracts.events.booking import BOOKING_CANCELLED, BOOKING_REJECTED
 from contracts.events.payment import PAYMENT_REQUESTED
 from shared.events.rabbitmq_consumer import RabbitMQEventConsumer
 
 
-def test_build_worker_consumer_registers_payment_requested_and_booking_rejected(monkeypatch):
+def test_build_worker_consumer_registers_payment_and_booking_handlers(monkeypatch):
     from app.config import settings
 
     monkeypatch.setattr(settings, "EVENT_CONSUMER_BACKEND", "rabbitmq")
@@ -20,6 +20,7 @@ def test_build_worker_consumer_registers_payment_requested_and_booking_rejected(
     assert isinstance(consumer, RabbitMQEventConsumer)
     assert PAYMENT_REQUESTED in consumer._handlers
     assert BOOKING_REJECTED in consumer._handlers
+    assert BOOKING_CANCELLED in consumer._handlers
 
 
 def test_build_worker_consumer_rejects_logging_backend(monkeypatch):

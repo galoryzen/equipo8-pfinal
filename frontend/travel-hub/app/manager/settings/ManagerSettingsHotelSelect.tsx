@@ -9,19 +9,19 @@ export type ManagerSettingsHotelOption = {
 };
 
 export type ManagerSettingsHotelSelectProps = {
-  hotels: ManagerSettingsHotelOption[];
+  properties: ManagerSettingsHotelOption[];
   value: string | null;
   sectionLabel: string;
   selectAriaLabel: string;
-  onHotelChange: (hotelId: string) => void;
+  onPropertyChange: (propertyId: string) => void;
 };
 
 export function ManagerSettingsHotelSelect({
-  hotels,
+  properties,
   value,
   sectionLabel,
   selectAriaLabel,
-  onHotelChange,
+  onPropertyChange,
 }: ManagerSettingsHotelSelectProps) {
   return (
     <Stack
@@ -42,7 +42,7 @@ export function ManagerSettingsHotelSelect({
         onChange={(e) => {
           const nextId = String(e.target.value || '');
           if (!nextId) return;
-          onHotelChange(nextId);
+          onPropertyChange(nextId);
         }}
         sx={{
           minWidth: { xs: '100%', sm: 320 },
@@ -57,7 +57,7 @@ export function ManagerSettingsHotelSelect({
           },
         }}
       >
-        {hotels.map((h) => (
+        {properties.map((h) => (
           <MenuItem key={h.id} value={h.id}>
             {h.name}
           </MenuItem>

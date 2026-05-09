@@ -15,6 +15,8 @@ _ACTIVE_STATUSES = (
     BookingStatus.PENDING_CONFIRMATION,
 )
 _PAST_TERMINAL_STATUSES = (BookingStatus.CANCELLED, BookingStatus.REJECTED)
+# Trip listings hide CART (use GET /bookings/my-cart for in-progress rescue) and
+# EXPIRED (terminal-but-not-meaningful holds the user never paid for).
 _EXCLUDED_FROM_ALL = (BookingStatus.CART, BookingStatus.EXPIRED)
 
 class SqlAlchemyBookingRepository(BookingRepository):
@@ -26,6 +28,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
         user_id: UUID,
         *,
         scope: BookingScope = BookingScope.ALL,
+        status: str | None = None,
         today: date | None = None,
         page: int = 1,
         page_size: int = 10,
@@ -33,7 +36,10 @@ class SqlAlchemyBookingRepository(BookingRepository):
         today = today or datetime.now(UTC).date()
         base_where = [Booking.user_id == user_id]
 
-        if scope is BookingScope.ACTIVE:
+        if status:
+            base_where += [Booking.status == status]
+            order = Booking.checkin.desc()
+        elif scope is BookingScope.ACTIVE:
             base_where += [Booking.status.in_(_ACTIVE_STATUSES), Booking.checkout >= today]
             order = Booking.checkin.asc()
         elif scope is BookingScope.PAST:

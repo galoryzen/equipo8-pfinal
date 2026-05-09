@@ -33,7 +33,7 @@ class SendPaymentFailedEmailUseCase:
         self._email_sender = email_sender
 
     async def execute(self, envelope: DomainEventEnvelope) -> None:
-        if await self._repo.exists_by_event_id(envelope.event_id):
+        if await self._repo.exists_by_event_id_and_channel(envelope.event_id, NotificationChannel.EMAIL):
             logger.info("duplicate event_id skipped event_id=%s", envelope.event_id)
             return
 
@@ -62,9 +62,7 @@ class SendPaymentFailedEmailUseCase:
         await self._repo.create(notification)
 
         try:
-            message_id = await self._email_sender.send(
-                to=contact.email, subject=subject, html=html, text=text
-            )
+            message_id = await self._email_sender.send(to=contact.email, subject=subject, html=html, text=text)
         except Exception:
             await self._repo.mark_failed(notification.id)
             raise

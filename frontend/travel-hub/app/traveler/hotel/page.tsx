@@ -14,12 +14,22 @@ import PropertyDetailView from '@/components/traveler/PropertyDetailView';
 function HotelDetailContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
+  const checkin = searchParams.get('checkin') || undefined;
+  const checkout = searchParams.get('checkout') || undefined;
+  const guests = searchParams.get('guests');
 
   if (!id) {
     return <NotFoundView variant="missingParam" />;
   }
 
-  return <PropertyDetailView id={id} />;
+  return (
+    <PropertyDetailView
+      id={id}
+      checkin={checkin}
+      checkout={checkout}
+      guests={guests ? Number(guests) : undefined}
+    />
+  );
 }
 
 export default function TravelerHotelPage() {

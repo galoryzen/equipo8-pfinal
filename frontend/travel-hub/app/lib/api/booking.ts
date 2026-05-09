@@ -1,4 +1,5 @@
 import { formatApiErrorBody } from '@/app/lib/api/catalog';
+import { API_URL } from '@/app/lib/api/constants';
 import type {
   BookingDetail,
   BookingListItem,
@@ -7,9 +8,8 @@ import type {
   GuestPayload,
   PaginatedResponse,
   PendingConfirmationBookingItem,
+  RefundDetail,
 } from '@/app/lib/types/booking';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.travelhub.galoryzen.xyz';
 
 /** HTTP error with status for hotel booking actions (check-in, etc.). */
 export class ApiHttpError extends Error {
@@ -26,8 +26,10 @@ export class ApiHttpError extends Error {
 
 async function readErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
-  if (body && typeof body === 'object' && 'message' in body) {
-    return String((body as { message: unknown }).message);
+  if (body && typeof body === 'object') {
+    const msg = 'message' in body ? String((body as { message: unknown }).message) : '';
+    const code = 'code' in body ? String((body as { code: unknown }).code) : '';
+    if (msg) return code ? `${msg} (${code})` : msg;
   }
   return `Error ${res.status}`;
 }
@@ -82,9 +84,10 @@ export async function listPartnerBookings(options?: {
  */
 export async function getMyBookings(
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  status?: string
 ): Promise<PaginatedResponse<BookingListItem>> {
-  return listPartnerBookings({ page, page_size: pageSize });
+  return listPartnerBookings({ page, page_size: pageSize, status });
 }
 
 export async function getBookingDetail(bookingId: string): Promise<BookingDetail> {
@@ -133,9 +136,24 @@ export async function createCartBooking(payload: CreateCartBookingPayload): Prom
   return res.json();
 }
 
-export async function cancelCartBooking(bookingId: string): Promise<BookingDetail> {
+export async function cancelBooking(bookingId: string): Promise<BookingDetail> {
   const res = await fetch(
     `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/cancel`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json();
+}
+
+export async function abandonCart(bookingId: string): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/abandon-cart`,
     {
       method: 'POST',
       credentials: 'include',
@@ -273,4 +291,12 @@ export async function registerBookingCheckOut(
     throw new ApiHttpError(formatApiErrorBody(body, res.status), res.status, body);
   }
   return body as BookingDetail;
+}
+
+export async function getRefundByBookingId(bookingId: string): Promise<RefundDetail | null> {
+  const res = await fetch(`${API_URL}/api/v1/payment/by-booking/${encodeURIComponent(bookingId)}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) return null;
+  return (await res.json()) ?? null;
 }

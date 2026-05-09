@@ -22,6 +22,7 @@ void i18n.use(initReactI18next).init({
   ns: ['common'],
   interpolation: { escapeValue: false },
   react: { useSuspense: false },
+  showSupportNotice: false,
 });
 
 /**

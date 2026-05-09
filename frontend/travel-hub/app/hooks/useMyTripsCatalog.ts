@@ -45,11 +45,15 @@ export function useMyTripsCatalog(): UseMyTripsCatalogState {
       setLoading(true);
       setError(null);
       try {
-        const { items: list } = await getMyBookings();
+        const [regular, carts] = await Promise.all([
+          getMyBookings(1, 100),
+          getMyBookings(1, 100, 'CART'),
+        ]);
         if (cancelled) return;
-        setBookings(list);
-        const ids = uniquePropertyIds(list);
-        const map = await fetchPropertyDetailsMap(ids, list);
+        const combined = [...regular.items, ...carts.items];
+        setBookings(combined);
+        const ids = uniquePropertyIds(combined);
+        const map = await fetchPropertyDetailsMap(ids, combined);
         if (cancelled) return;
         setPropertyById(map);
       } catch (e) {

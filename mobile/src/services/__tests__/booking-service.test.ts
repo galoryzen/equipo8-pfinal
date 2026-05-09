@@ -5,7 +5,9 @@ import {
   ActiveCartConflictError,
   InventoryUnavailableError,
   RateUnavailableError,
-  cancelCartBooking,
+  abandonCart,
+  cancelBooking,
+  getMyActiveCart,
   createCartBooking,
   getBookingDetail,
   listMyBookings,
@@ -172,15 +174,49 @@ describe('listMyBookings', () => {
   });
 });
 
-describe('cancelCartBooking', () => {
+describe('cancelBooking', () => {
   afterEach(() => jest.resetAllMocks());
 
   it('POSTs /v1/booking/bookings/{id}/cancel and returns the updated detail', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { ...DETAIL, status: 'CANCELLED' } });
 
-    const result = await cancelCartBooking('b1');
+    const result = await cancelBooking('b1');
 
     expect(mockedApi.post).toHaveBeenCalledWith('/v1/booking/bookings/b1/cancel');
     expect(result.status).toBe('CANCELLED');
+  });
+});
+
+describe('abandonCart', () => {
+  afterEach(() => jest.resetAllMocks());
+
+  it('POSTs /v1/booking/bookings/{id}/abandon-cart and returns the updated detail', async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { ...DETAIL, status: 'EXPIRED' } });
+
+    const result = await abandonCart('b1');
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/v1/booking/bookings/b1/abandon-cart');
+    expect(result.status).toBe('EXPIRED');
+  });
+});
+
+describe('getMyActiveCart', () => {
+  afterEach(() => jest.resetAllMocks());
+
+  it('GETs /v1/booking/bookings/my-cart and returns the cart detail', async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: { ...DETAIL, status: 'CART' } });
+
+    const result = await getMyActiveCart();
+
+    expect(mockedApi.get).toHaveBeenCalledWith('/v1/booking/bookings/my-cart');
+    expect(result?.status).toBe('CART');
+  });
+
+  it('returns null when the server responds with no active cart', async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: null });
+
+    const result = await getMyActiveCart();
+
+    expect(result).toBeNull();
   });
 });

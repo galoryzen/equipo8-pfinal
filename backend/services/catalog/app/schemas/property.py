@@ -98,7 +98,14 @@ class RoomTypeOut(BaseModel):
     amenities: list[AmenitySummary] = []
     images: list[RoomTypeImageOut] = []
     rate_plans: list[RatePlanOut] = []
-    min_price: Decimal | None = None
+
+
+# ── Admin active hotels list ─────────────────────────────
+
+
+class ActiveHotelItem(BaseModel):
+    id: UUID
+    name: str
 
 
 class ReviewOut(BaseModel):

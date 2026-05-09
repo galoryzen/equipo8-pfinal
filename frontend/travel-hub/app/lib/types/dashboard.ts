@@ -46,3 +46,25 @@ export type DashboardError = {
   message: string;
   kind: 'unauthorized' | 'network' | 'server';
 };
+
+export type DashboardResponse = Partial<{
+  metrics?: Partial<DashboardMetrics>;
+  bookingTrends?: unknown[];
+  recentActivity?: unknown[];
+  upcomingCheckins?: unknown[];
+}>;
+
+export class DashboardFetchError extends Error {
+  readonly status?: number;
+  readonly kind: 'unauthorized' | 'network' | 'server';
+
+  constructor(
+    message: string,
+    opts: { status?: number; kind: 'unauthorized' | 'network' | 'server' }
+  ) {
+    super(message);
+    this.name = 'DashboardFetchError';
+    this.status = opts.status;
+    this.kind = opts.kind;
+  }
+}

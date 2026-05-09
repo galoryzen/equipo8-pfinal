@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { getAdminProperties } from '@/app/lib/api/adminProperties';
+import { getActiveHotels } from '@/app/lib/api/activeHotels';
 import { getMe, getUserById } from '@/app/lib/api/auth';
 import { useRevenueReport } from '@/app/manager/hooks/useRevenueReport';
 import { tokens } from '@/lib/theme/tokens';
@@ -311,7 +311,7 @@ export default function ManagerReportsPage() {
     if (!isAdmin) return;
     let cancelled = false;
     setAdminPropertiesLoading(true);
-    getAdminProperties()
+    getActiveHotels()
       .then((properties) => {
         if (cancelled) return;
         setAdminProperties(properties);

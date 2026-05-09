@@ -58,6 +58,10 @@ jobs:
         run: pnpm vitest run __tests__/i18n-keys-parity.test.ts
       - name: Tests, coverage & accessibility (axe)
         run: pnpm test:coverage
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: E2E tests
+        run: pnpm e2e:ci
       - run: pnpm build
       - uses: actions/upload-artifact@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'

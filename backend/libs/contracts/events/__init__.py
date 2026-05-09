@@ -1,7 +1,9 @@
 from contracts.events.base import DomainEventEnvelope
 from contracts.events.booking import (
+    BOOKING_CANCELLED,
     BOOKING_CONFIRMED,
     BOOKING_REJECTED,
+    BookingCancelledPayload,
     BookingConfirmedPayload,
     BookingRejectedPayload,
 )
@@ -15,8 +17,10 @@ from contracts.events.payment import (
 )
 
 __all__ = [
+    "BOOKING_CANCELLED",
     "BOOKING_CONFIRMED",
     "BOOKING_REJECTED",
+    "BookingCancelledPayload",
     "BookingConfirmedPayload",
     "BookingRejectedPayload",
     "DomainEventEnvelope",

@@ -58,6 +58,8 @@ export interface BookingListItem {
   property_name?: string | null;
   image_url?: string | null;
   nights?: number | null;
+  /** Primary guest name from booking service (optional). */
+  guest_name?: string | null;
   guests_count?: number | null;
   guest_name?: string | null;
   /** When the API exposes a guest avatar URL, use it in the hotel bookings table. */
@@ -145,4 +147,11 @@ export interface BookingDetail {
   can_register_check_out?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface RefundDetail {
+  amount: string;
+  status: string;
+  reason: 'traveler_cancelled' | 'hotel_rejected';
+  created_at: string;
 }

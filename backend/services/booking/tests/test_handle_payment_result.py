@@ -44,6 +44,7 @@ def _succeeded_envelope(booking_id: UUID, intent_id: UUID) -> DomainEventEnvelop
             "payment_intent_id": str(intent_id),
             "booking_id": str(booking_id),
             "payment_id": str(uuid4()),
+            "user_id": str(uuid4()),
             "amount": "100.00",
             "currency": "USD",
         },

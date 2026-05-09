@@ -194,6 +194,8 @@ class RoomType(Base):
     amenities: Mapped[list["Amenity"]] = relationship(secondary=room_type_amenity_table, lazy="selectin")
     rate_plans: Mapped[list["RatePlan"]] = relationship(back_populates="room_type")
     images: Mapped[list["RoomTypeImage"]] = relationship(back_populates="room_type")
+    base_tariff: Mapped["TariffBase | None"] = relationship(back_populates="room_type", uselist=False)
+    seasonal_tariffs: Mapped[list["TariffSeasonalRule"]] = relationship(back_populates="room_type")
 
 
 class RatePlan(Base):
@@ -283,3 +285,35 @@ class Review(Base):
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
     comment: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class TariffBase(Base):
+    __tablename__ = "tariff_base"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    room_type_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("room_type.id"), nullable=False, unique=True)
+    base_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    weekend_premium: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    room_type: Mapped["RoomType"] = relationship(back_populates="base_tariff")
+
+
+class TariffSeasonalRule(Base):
+    __tablename__ = "tariff_seasonal_rule"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    room_type_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("room_type.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    adjustment_type: Mapped[DiscountType] = mapped_column(
+        SAEnum(DiscountType, name="discount_type", create_type=False, schema="public"),
+        nullable=False,
+    )
+    adjustment_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    room_type: Mapped["RoomType"] = relationship(back_populates="seasonal_tariffs")

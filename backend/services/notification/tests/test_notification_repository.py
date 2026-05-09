@@ -27,26 +27,26 @@ def _make_notification() -> Notification:
 
 
 @pytest.mark.asyncio
-async def test_exists_by_event_id_returns_true_when_row_present():
+async def test_exists_by_event_id_and_channel_returns_true_when_row_present():
     session = AsyncMock()
     result = MagicMock()
     result.scalar_one_or_none.return_value = uuid4()
     session.execute.return_value = result
 
     repo = SqlAlchemyNotificationRepository(session)
-    assert await repo.exists_by_event_id(uuid4()) is True
+    assert await repo.exists_by_event_id_and_channel(uuid4(), NotificationChannel.EMAIL) is True
     session.execute.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_exists_by_event_id_returns_false_when_missing():
+async def test_exists_by_event_id_and_channel_returns_false_when_missing():
     session = AsyncMock()
     result = MagicMock()
     result.scalar_one_or_none.return_value = None
     session.execute.return_value = result
 
     repo = SqlAlchemyNotificationRepository(session)
-    assert await repo.exists_by_event_id(uuid4()) is False
+    assert await repo.exists_by_event_id_and_channel(uuid4(), NotificationChannel.PUSH) is False
 
 
 @pytest.mark.asyncio

@@ -41,3 +41,7 @@ class PaymentRepository(ABC):
     @abstractmethod
     async def find_refund_by_payment_id(self, payment_id: UUID) -> Refund | None:
         """Idempotency guard: at most one refund per payment_id."""
+
+    @abstractmethod
+    async def find_refund_by_booking_id(self, booking_id: UUID) -> Refund | None:
+        """Idempotency guard: any refund already recorded for this booking (replay-safe)."""

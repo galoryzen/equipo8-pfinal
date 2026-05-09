@@ -221,14 +221,15 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                 variant="contained"
                 startIcon={<LogoutIcon />}
                 sx={{
-                  bgcolor: th.brand.accentOrangeContained,
-                  color: '#FFFFFF',
+                  bgcolor: th.brand.accentOrangeSoft,
+                  color: th.brand.accentOrangeFg,
                   fontWeight: 700,
                   textTransform: 'none',
                   borderRadius: '10px',
                   py: 1,
                   '&:hover': {
-                    bgcolor: th.brand.accentOrangeContained,
+                    bgcolor: th.brand.accentOrange,
+                    color: '#fff',
                     filter: 'brightness(0.95)',
                   },
                 }}

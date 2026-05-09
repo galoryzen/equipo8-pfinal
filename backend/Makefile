@@ -6,7 +6,7 @@ PYTHON_VERSION := 3.11
 # ── Docker ───────────────────────────────────────────────
 
 up:
-	docker compose up --build -d
+	docker compose up -d
 
 down:
 	docker compose down

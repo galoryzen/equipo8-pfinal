@@ -16,9 +16,7 @@ def test_factory_returns_ses_sender():
 
 
 def test_factory_case_insensitive():
-    assert isinstance(
-        build_email_sender("LOGGING", from_address="noreply@test.com"), LoggingEmailSender
-    )
+    assert isinstance(build_email_sender("LOGGING", from_address="noreply@test.com"), LoggingEmailSender)
 
 
 def test_factory_raises_when_ses_missing_region():
@@ -34,7 +32,5 @@ def test_factory_raises_on_unknown_backend():
 @pytest.mark.asyncio
 async def test_logging_sender_returns_local_message_id():
     sender = LoggingEmailSender(from_address="noreply@test.com")
-    message_id = await sender.send(
-        to="ana@test.com", subject="Hola", html="<p>hi</p>", text="hi"
-    )
+    message_id = await sender.send(to="ana@test.com", subject="Hola", html="<p>hi</p>", text="hi")
     assert message_id.startswith("local-")

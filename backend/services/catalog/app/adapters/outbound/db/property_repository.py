@@ -1,8 +1,8 @@
-from datetime import date
+from datetime import UTC, date
 from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, case, desc, nulls_last, select
+from sqlalchemy import and_, case, desc, nulls_last, select, text
 from sqlalchemy import func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload, with_loader_criteria
@@ -507,13 +507,138 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         rows = (await self._session.execute(stmt)).all()
         return {row[0]: row[1] for row in rows}
 
-    async def list_admin_properties(self, *, limit: int = 500) -> list[dict]:
-        stmt = (
-            select(Property.hotel_id, Property.name)
+    async def list_admin_properties(self, *, page: int, page_size: int) -> tuple[list[dict], int]:
+        from datetime import datetime
+
+        today = datetime.now(UTC).date()
+
+        # Count total active properties
+        count_stmt = select(sa_func.count(Property.id)).where(Property.status == PropertyStatus.ACTIVE)
+        total: int = (await self._session.execute(count_stmt)).scalar() or 0
+
+        if total == 0:
+            return [], 0
+
+        # Fetch paginated properties with eager-loaded city
+        prop_stmt = (
+            select(Property)
+            .options(joinedload(Property.city))
             .where(Property.status == PropertyStatus.ACTIVE)
-            .order_by(Property.name.asc(), Property.hotel_id)
-            .limit(limit)
+            .order_by(Property.name)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
         )
-        rows = (await self._session.execute(stmt)).all()
-        # Booking dashboard aggregates by catalog.property.hotel_id, not property.id.
-        return [{"id": hid, "name": name} for hid, name in rows]
+        prop_result = await self._session.execute(prop_stmt)
+        properties = list(prop_result.unique().scalars().all())
+        property_ids = [p.id for p in properties]
+
+        if not property_ids:
+            return [], total
+
+        # Batch load first image per property
+        first_images: dict[UUID, str | None] = {pid: None for pid in property_ids}
+        img_stmt = (
+            select(PropertyImage)
+            .where(PropertyImage.property_id.in_(property_ids))
+            .order_by(PropertyImage.property_id, PropertyImage.display_order)
+            .distinct(PropertyImage.property_id)
+        )
+        img_result = await self._session.execute(img_stmt)
+        for img in img_result.scalars():
+            first_images[img.property_id] = img.url
+
+        # Count room types per property
+        rt_count_stmt = (
+            select(RoomType.property_id, sa_func.count(RoomType.id).label("rt_count"))
+            .where(RoomType.property_id.in_(property_ids))
+            .group_by(RoomType.property_id)
+        )
+        rt_count_result = await self._session.execute(rt_count_stmt)
+        rt_counts: dict[UUID, int] = {row[0]: row[1] for row in rt_count_result.all()}
+
+        # Total capacity per property
+        max_per_rt_cte = (
+            select(
+                InventoryCalendar.room_type_id,
+                sa_func.max(InventoryCalendar.available_units).label("max_units"),
+            )
+            .join(RoomType, RoomType.id == InventoryCalendar.room_type_id)
+            .where(RoomType.property_id.in_(property_ids))
+            .group_by(InventoryCalendar.room_type_id)
+            .cte("max_per_rt")
+        )
+        total_cap_stmt = (
+            select(
+                RoomType.property_id,
+                sa_func.coalesce(sa_func.sum(max_per_rt_cte.c.max_units), 0).label("total_capacity"),
+            )
+            .join(max_per_rt_cte, max_per_rt_cte.c.room_type_id == RoomType.id, isouter=True)
+            .where(RoomType.property_id.in_(property_ids))
+            .group_by(RoomType.property_id)
+        )
+        total_cap_result = await self._session.execute(total_cap_stmt)
+        total_capacity: dict[UUID, int] = {
+            row[0]: int(row[1]) if row[1] is not None else 0
+            for row in total_cap_result.all()
+        }
+
+        # Available units today per property
+        avail_today_stmt = (
+            select(
+                RoomType.property_id,
+                sa_func.coalesce(sa_func.sum(InventoryCalendar.available_units), 0).label("available_today"),
+            )
+            .join(InventoryCalendar, InventoryCalendar.room_type_id == RoomType.id)
+            .where(
+                RoomType.property_id.in_(property_ids),
+                InventoryCalendar.day == today,
+            )
+            .group_by(RoomType.property_id)
+        )
+        avail_today_result = await self._session.execute(avail_today_stmt)
+        available_today: dict[UUID, int] = {row[0]: int(row[1]) for row in avail_today_result.all()}
+
+        items = []
+        for prop in properties:
+            total_rooms = total_capacity.get(prop.id, 0)
+            avail = available_today.get(prop.id, 0)
+            occupied = max(0, total_rooms - avail)
+            status = "ACTIVE" if avail > 0 else "PENDING_REVIEW"
+
+            city = prop.city
+            location = f"{city.name}, {city.country}" if city else ""
+
+            items.append({
+                "id": prop.id,
+                "name": prop.name,
+                "location": location,
+                "totalRooms": total_rooms,
+                "occupiedRooms": occupied,
+                "status": status,
+                "imageUrl": first_images.get(prop.id),
+                "categories": rt_counts.get(prop.id, 0),
+                "hotelId": prop.hotel_id,
+            })
+
+        return items, total
+
+    async def get_active_hotels(self) -> list[dict]:
+        """Return all active hotels with just id and name.
+
+        The catalog schema stores hotel grouping in ``Property.hotel_id``.
+        Join against ``users.hotel`` so we return the actual partner hotel name
+        seeded in the users schema, not a property name.
+        """
+        stmt = text(
+            """
+            SELECT DISTINCT h.id, h.name
+            FROM users.hotel AS h
+            JOIN catalog.property AS p ON p.hotel_id = h.id
+            WHERE p.status = CAST(:active_status AS public.property_status)
+            ORDER BY h.name
+            """
+        )
+        result = await self._session.execute(stmt, {"active_status": PropertyStatus.ACTIVE.value})
+        rows = result.all()
+        return [{"id": row[0], "name": row[1]} for row in rows]
+

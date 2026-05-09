@@ -342,6 +342,26 @@ INSERT INTO catalog.rate_plan (id, room_type_id, name, is_active, cancellation_p
   ('70000000-0000-0000-0000-00000000000b', '60000000-0000-0000-0000-00000000000b', 'Tarifa Base',  true, '10000000-0000-0000-0000-000000000003'),
   ('70000000-0000-0000-0000-00000000000c', '60000000-0000-0000-0000-00000000000c', 'Tarifa Base',  true, '10000000-0000-0000-0000-000000000003');
 
+-- ── catalog.tariff_base ─────────────────────────────────
+INSERT INTO catalog.tariff_base (id, room_type_id, base_price, weekend_premium) VALUES
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000001', 120.00, 15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000002', 280.00, 20.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000003', 75.00,  10.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000004', 150.00, 10.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000005', 60.00,  15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000006', 130.00, 15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000007', 85.00,  20.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000008', 200.00, 20.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000009', 140.00, 10.00), -- Madrid Clásica
+  (gen_random_uuid(), '60000000-0000-0000-0000-00000000000a', 300.00, 10.00), -- Madrid Suite
+  (gen_random_uuid(), '60000000-0000-0000-0000-00000000000b', 90.00,  15.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-00000000000c', 180.00, 15.00);
+
+-- ── catalog.tariff_seasonal_rule ────────────────────────
+INSERT INTO catalog.tariff_seasonal_rule (id, room_type_id, name, start_date, end_date, adjustment_type, adjustment_value) VALUES
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000001', 'Temporada Alta Invierno', '2026-12-15', '2027-01-15', 'PERCENT', 30.00),
+  (gen_random_uuid(), '60000000-0000-0000-0000-000000000009', 'Verano Madrid', '2026-06-01', '2026-08-31', 'FIXED', 25.00);
+
 -- ── catalog.rate_calendar ───────────────────────────────
 -- 30 days of prices starting from today, using generate_series
 -- Prices vary by property tier (USD)
@@ -985,6 +1005,92 @@ INSERT INTO booking.guest (id, booking_id, is_primary, full_name, email, phone, 
   ('c0000000-0000-0000-0000-000000000025', '90000000-0000-0000-0000-000000000022', FALSE, 'Chris Johnson',    NULL, NULL,             now(), now()),
   ('c0000000-0000-0000-0000-000000000026', '90000000-0000-0000-0000-000000000022', FALSE, 'Amy Johnson',      NULL, NULL,             now(), now()),
   ('c0000000-0000-0000-0000-000000000027', '90000000-0000-0000-0000-000000000022', FALSE, 'Ryan Johnson',     NULL, NULL,             now(), now());
+
+-- ── E2E: cancellation policy (Carlos · a0000000-0000-0000-0000-000000000001) ─
+-- Scenario A — CONFIRMED, checkin far ahead, FULL+48h → cancel allowed (now < checkin_start - 48h)
+INSERT INTO booking.booking (
+  id, user_id, status, checkin, checkout, total_amount, currency_code,
+  property_id, room_type_id, rate_plan_id, unit_price,
+  policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied,
+  inventory_released, guests_count
+) VALUES (
+  '90000000-0000-0000-0000-00000000ca01',
+  'a0000000-0000-0000-0000-000000000001',
+  'CONFIRMED',
+  CURRENT_DATE + INTERVAL '120 days',
+  CURRENT_DATE + INTERVAL '123 days',
+  360.00, 'USD',
+  '30000000-0000-0000-0000-000000000006',
+  '60000000-0000-0000-0000-00000000000b',
+  '70000000-0000-0000-0000-00000000000b',
+  120.00,
+  'FULL', 48, 100,
+  TRUE, 1
+);
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
+  ('92000000-0000-0000-0000-00000000ca11', '90000000-0000-0000-0000-00000000ca01', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-00000000ca12', '90000000-0000-0000-0000-00000000ca01', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-00000000ca13', '90000000-0000-0000-0000-00000000ca01', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL),
+  ('92000000-0000-0000-0000-00000000ca14', '90000000-0000-0000-0000-00000000ca01', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000001');
+
+-- Scenario B — CONFIRMED, checkin tomorrow, FULL+48h → cancel blocked (now > deadline)
+INSERT INTO booking.booking (
+  id, user_id, status, checkin, checkout, total_amount, currency_code,
+  property_id, room_type_id, rate_plan_id, unit_price,
+  policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied,
+  inventory_released, guests_count
+) VALUES (
+  '90000000-0000-0000-0000-00000000ca02',
+  'a0000000-0000-0000-0000-000000000001',
+  'CONFIRMED',
+  CURRENT_DATE + INTERVAL '1 day',
+  CURRENT_DATE + INTERVAL '4 days',
+  360.00, 'USD',
+  '30000000-0000-0000-0000-000000000001',
+  '60000000-0000-0000-0000-000000000001',
+  '70000000-0000-0000-0000-000000000001',
+  120.00,
+  'FULL', 48, 100,
+  TRUE, 1
+);
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
+  ('92000000-0000-0000-0000-00000000ca21', '90000000-0000-0000-0000-00000000ca02', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-00000000ca22', '90000000-0000-0000-0000-00000000ca02', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000001'),
+  ('92000000-0000-0000-0000-00000000ca23', '90000000-0000-0000-0000-00000000ca02', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL),
+  ('92000000-0000-0000-0000-00000000ca24', '90000000-0000-0000-0000-00000000ca02', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000001');
+
+-- Scenario C — CART (no policy gate on cancel → EXPIRED)
+-- Owned by Pablo (not Carlos): an active CART blocks the one-cart-at-a-time rule, and
+-- the integration suite logs in as Carlos to create new carts. Keeping this off Carlos
+-- avoids a 409 CART_ALREADY_EXISTS that breaks integration tests for the first 2 hours
+-- after re-seeding.
+INSERT INTO booking.booking (
+  id, user_id, status, checkin, checkout, hold_expires_at, total_amount, currency_code,
+  property_id, room_type_id, rate_plan_id, unit_price,
+  policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied,
+  inventory_released, guests_count
+) VALUES (
+  '90000000-0000-0000-0000-00000000ca03',
+  'a0000000-0000-0000-0000-000000000004',
+  'CART',
+  CURRENT_DATE + INTERVAL '45 days',
+  CURRENT_DATE + INTERVAL '48 days',
+  now() + INTERVAL '2 hours',
+  360.00, 'USD',
+  '30000000-0000-0000-0000-000000000002',
+  '60000000-0000-0000-0000-000000000003',
+  '70000000-0000-0000-0000-000000000003',
+  120.00,
+  'FULL', 48, 100,
+  FALSE, 1
+);
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
+  ('92000000-0000-0000-0000-00000000ca31', '90000000-0000-0000-0000-00000000ca03', NULL, 'CART', 'a0000000-0000-0000-0000-000000000004');
+
+INSERT INTO booking.guest (id, booking_id, is_primary, full_name, email, phone, created_at, updated_at) VALUES
+  ('c0000000-0000-0000-0000-0000000ca0a1', '90000000-0000-0000-0000-00000000ca01', TRUE, 'TEST — Allowed cancellation', 'carlos@example.com', '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-0000000ca0a2', '90000000-0000-0000-0000-00000000ca02', TRUE, 'TEST — Blocked cancellation',  'carlos@example.com', '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-0000000ca0a3', '90000000-0000-0000-0000-00000000ca03', TRUE, 'TEST — Cart booking',          'pablo@example.com',  '+34612345678',   now(), now());
 
 -- =============================================
 -- payments
