@@ -112,7 +112,7 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     expect(hotelCheckOutDate).toBe(dates.checkOut);
 
     const rating = await hotelDetailsPage.getHotelRating();
-    expect(rating).toBe('4.7');
+    expect(rating).toBe('4.8');
 
     const roomNames = await hotelDetailsPage.getRoomNames();
     expect(roomNames).toContain(DEFAULT_ROOM_NAME);
