@@ -26,7 +26,7 @@ export const TEST_USERS = {
 export const TEST_DESTINATIONS = [
   {
     name: 'Cancún',
-    property: 'Sol Caribe Cancún',
+    property: 'Hotel Luna al Beso del Malecón',
     city: 'Cancún',
     daneCode: 'D.42.1755.477409',
   },
