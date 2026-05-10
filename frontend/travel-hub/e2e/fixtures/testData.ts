@@ -11,6 +11,11 @@ export const TEST_USERS = {
     password: 'travelhub',
     name: 'Carlos García',
   },
+  travelerNoBookings: {
+    email: 'sofia@example.com',
+    password: 'travelhub',
+    name: 'Sofía Martínez',
+  },
   maria: {
     email: 'maria@example.com',
     password: 'travelhub',
@@ -20,6 +25,21 @@ export const TEST_USERS = {
     email: 'lucia@example.com',
     password: 'travelhub',
     name: 'Lucía Fernández',
+  },
+  manager: {
+    email: 'andrea@hotelesluna.com',
+    password: 'travelhub',
+    name: 'Andrea Luna',
+  },
+  roberto: {
+    email: 'roberto@cadenadelsol.com',
+    password: 'travelhub',
+    name: 'Roberto Sol',
+  },
+  javier: {
+    email: 'javier@grupoestrella.com',
+    password: 'travelhub',
+    name: 'Javier Estrella',
   },
 };
 

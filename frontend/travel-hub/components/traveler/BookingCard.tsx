@@ -103,6 +103,7 @@ export default function BookingCard({ booking, property, onCartAction }: Booking
 
   return (
     <Card
+      data-testid="booking-card"
       variant="outlined"
       sx={{
         borderRadius: 2,

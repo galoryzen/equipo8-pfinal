@@ -72,6 +72,11 @@
     "finalTotal": "Final total",
     "refundTooltip": "Full refund: includes subtotal, taxes, and service fee"
   },
+  "tripsEmptyState": {
+    "title": "No bookings yet",
+    "description": "When you book a stay, it will appear here with your trip status and dates.",
+    "cta": "Search hotels"
+  },
   "recommended": {
     "title": "Recommended for You",
     "subtitle": "Properties based on your recent activity",

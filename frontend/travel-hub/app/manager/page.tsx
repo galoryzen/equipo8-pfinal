@@ -295,7 +295,10 @@ function MetricCard({
 }): React.ReactNode {
   const trend = formatVariation(variation);
   return (
-    <Card sx={{ borderRadius: 3, boxShadow: 'none', border: `1px solid ${tokens.border.subtle}` }}>
+    <Card
+      sx={{ borderRadius: 3, boxShadow: 'none', border: `1px solid ${tokens.border.subtle}` }}
+      data-testid="manager-metric-card"
+    >
       <CardContent>
         <Stack spacing={1}>
           <Typography variant="body2" sx={{ color: tokens.dashboard.mutedText, fontWeight: 600 }}>
@@ -426,6 +429,7 @@ export default function ManagerDashboardPage() {
         <Box>
           <Typography
             component="h1"
+            data-testid="manager-dashboard-title"
             sx={{ fontSize: '2rem', fontWeight: 800, color: tokens.dashboard.heading }}
           >
             {t('manager.hotels.roomTypeManage.dashboard.title')}
@@ -514,6 +518,7 @@ export default function ManagerDashboardPage() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Card
+            data-testid="manager-booking-trends-card"
             sx={{
               minHeight: 260,
               borderRadius: 3,
@@ -629,7 +634,7 @@ export default function ManagerDashboardPage() {
           <Typography sx={{ fontWeight: 700, color: tokens.dashboard.heading, mb: 1.5 }}>
             {t('manager.hotels.roomTypeManage.dashboard.sections.upcomingCheckins')}
           </Typography>
-          <Table size="small">
+          <Table size="small" data-testid="manager-upcoming-checkins-table">
             <TableHead>
               <TableRow>
                 <TableCell>{t('manager.hotels.roomTypeManage.dashboard.table.guest')}</TableCell>

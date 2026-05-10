@@ -34,7 +34,10 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
   const isPending = booking.status === 'PENDING_CONFIRMATION';
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <article
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+      data-testid="manager-booking-request-card"
+    >
       <div className="flex flex-col md:flex-row">
         <Image
           src={booking.imageUrl}
@@ -98,6 +101,7 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               <Button
                 variant="contained"
                 color="success"
+                data-testid="confirm-booking-button"
                 onClick={() => onConfirm(booking.id)}
                 sx={{
                   minWidth: 160,
