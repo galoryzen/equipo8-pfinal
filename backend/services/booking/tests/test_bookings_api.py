@@ -11,6 +11,8 @@ from app.adapters.inbound.api.dependencies import (
     get_current_user_info,
     get_checkout_booking_use_case,
     get_list_my_bookings_use_case,
+    get_register_guest_check_in_use_case,
+    get_register_guest_check_out_use_case,
 )
 from app.application.exceptions import (
     BookingNotFoundError,
@@ -43,6 +45,8 @@ def _sample_list_row():
         property_id=PROPERTY_ID,
         room_type_id=ROOM_TYPE_ID,
         created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
+        display_reference="#00000001",
+        room_type_name="Standard Queen",
     )
 
 
@@ -65,6 +69,8 @@ def _sample_detail():
         guests_count=2,
         created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
         updated_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
+        can_register_check_in=False,
+        actual_checkin_at=None,
     )
 
 
@@ -170,7 +176,7 @@ class TestBookingsEndpoints:
             app.dependency_overrides.pop(get_current_user_info, None)
 
         assert resp.status_code == 200
-        assert str(mock_uc.execute_hotel.await_args.kwargs["hotel_id"]) == hotel_id
+        assert str(mock_uc.execute_hotel.await_args.args[0]) == hotel_id
 
     def test_list_hotel_role_without_hotel_id_returns_400(self, client_authenticated):
         mock_uc = AsyncMock()
@@ -268,3 +274,189 @@ class TestBookingsEndpoints:
 
         assert resp.status_code == 404
         assert resp.json()["code"] == "BOOKING_NOT_FOUND"
+
+    def test_detail_hotel_forwards_hotel_scope_to_use_case(self, client_authenticated):
+        hotel_id = str(UUID("e0000000-0000-0000-0000-000000000001"))
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail()
+        app.dependency_overrides[get_booking_detail_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+            "hotel_id": hotel_id,
+        }
+        try:
+            resp = client_authenticated.get(f"/api/v1/booking/bookings/{BOOKING_ID}")
+        finally:
+            app.dependency_overrides.pop(get_booking_detail_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 200
+        kwargs = mock_uc.execute.await_args.kwargs
+        assert kwargs["viewer_role"] == "HOTEL"
+        assert str(kwargs["hotel_id"]) == hotel_id
+
+    def test_detail_hotel_without_hotel_id_returns_400(self, client_authenticated):
+        mock_uc = AsyncMock()
+        app.dependency_overrides[get_booking_detail_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": str(UUID("b0000000-0000-0000-0000-000000000001")),
+            "hotel_id": None,
+        }
+        try:
+            resp = client_authenticated.get(f"/api/v1/booking/bookings/{BOOKING_ID}")
+        finally:
+            app.dependency_overrides.pop(get_booking_detail_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 400
+        mock_uc.execute.assert_not_awaited()
+
+    def test_check_in_forbidden_for_traveler(self, client_authenticated):
+        mock_uc = AsyncMock()
+        app.dependency_overrides[get_register_guest_check_in_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-in",
+                json={"actual_arrival_at": "2026-05-03T15:00:00Z"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_in_use_case, None)
+
+        assert resp.status_code == 403
+        mock_uc.execute.assert_not_awaited()
+
+    def test_check_in_hotel_calls_use_case(self, client_authenticated):
+        hotel_id = str(UUID("e0000000-0000-0000-0000-000000000001"))
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail()
+        app.dependency_overrides[get_register_guest_check_in_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+            "hotel_id": hotel_id,
+        }
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-in",
+                json={"actual_arrival_at": "2026-05-03T15:00:00Z"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_in_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 200
+        mock_uc.execute.assert_awaited_once()
+        kw = mock_uc.execute.await_args.kwargs
+        assert str(kw["hotel_id"]) == hotel_id
+
+    def test_check_in_missing_body_returns_422(self, client_authenticated):
+        hotel_id = str(UUID("e0000000-0000-0000-0000-000000000001"))
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        app.dependency_overrides[get_register_guest_check_in_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+            "hotel_id": hotel_id,
+        }
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-in",
+                json={},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_in_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 422
+        mock_uc.execute.assert_not_awaited()
+
+    def test_check_in_invalid_arrival_business_rule_returns_409(self, client_authenticated):
+        hotel_id = str(UUID("e0000000-0000-0000-0000-000000000001"))
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        mock_uc.execute.side_effect = InvalidBookingStateError(
+            "La hora de llegada no puede ser posterior al momento actual del servidor."
+        )
+        app.dependency_overrides[get_register_guest_check_in_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+            "hotel_id": hotel_id,
+        }
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-in",
+                json={"actual_arrival_at": "2099-01-01T12:00:00Z"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_in_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 409
+        assert resp.json()["code"] == "INVALID_BOOKING_STATE"
+
+    def test_check_out_forbidden_for_traveler(self, client_authenticated):
+        mock_uc = AsyncMock()
+        app.dependency_overrides[get_register_guest_check_out_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-out",
+                json={"actual_departure_at": "2026-05-03T15:00:00Z"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_out_use_case, None)
+
+        assert resp.status_code == 403
+        mock_uc.execute.assert_not_awaited()
+
+    def test_check_out_hotel_calls_use_case(self, client_authenticated):
+        hotel_id = str(UUID("e0000000-0000-0000-0000-000000000001"))
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail()
+        app.dependency_overrides[get_register_guest_check_out_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+            "hotel_id": hotel_id,
+        }
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-out",
+                json={"actual_departure_at": "2026-05-03T15:00:00Z"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_out_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 200
+        mock_uc.execute.assert_awaited_once()
+        kw = mock_uc.execute.await_args.kwargs
+        assert str(kw["hotel_id"]) == hotel_id
+
+    def test_check_out_missing_body_returns_422(self, client_authenticated):
+        hotel_id = str(UUID("e0000000-0000-0000-0000-000000000001"))
+        user_id = str(UUID("b0000000-0000-0000-0000-000000000001"))
+        mock_uc = AsyncMock()
+        app.dependency_overrides[get_register_guest_check_out_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "HOTEL",
+            "user_id": user_id,
+            "hotel_id": hotel_id,
+        }
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-out",
+                json={},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_out_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 422
+        mock_uc.execute.assert_not_awaited()

@@ -24,12 +24,16 @@ from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
 from app.application.use_cases.get_admin_hotel_revenue_report import GetAdminHotelRevenueReportUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
+from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
+from app.application.use_cases.get_hotel_bookings_metrics import GetHotelBookingsMetricsUseCase
 from app.application.use_cases.get_hotel_dashboard_metrics import GetHotelDashboardMetricsUseCase
 from app.application.use_cases.get_hotel_revenue_report import GetHotelRevenueReportUseCase
 from app.application.use_cases.get_my_active_cart import GetMyActiveCartUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
 from app.application.use_cases.reject_booking import RejectBookingUseCase
+from app.application.use_cases.register_guest_check_in import RegisterGuestCheckInUseCase
+from app.application.use_cases.register_guest_check_out import RegisterGuestCheckOutUseCase
 from app.application.use_cases.save_booking_guests import SaveBookingGuestsUseCase
 from app.config import settings
 
@@ -162,6 +166,22 @@ def get_booking_detail_use_case(
     return GetBookingDetailUseCase(repo, guest_repo)
 
 
+def get_register_guest_check_in_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> RegisterGuestCheckInUseCase:
+    booking_repo = SqlAlchemyBookingRepository(session)
+    guest_repo = SqlAlchemyGuestRepository(session)
+    return RegisterGuestCheckInUseCase(booking_repo, guest_repo)
+
+
+def get_register_guest_check_out_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> RegisterGuestCheckOutUseCase:
+    booking_repo = SqlAlchemyBookingRepository(session)
+    guest_repo = SqlAlchemyGuestRepository(session)
+    return RegisterGuestCheckOutUseCase(booking_repo, guest_repo)
+
+
 def get_save_booking_guests_use_case(
     session: AsyncSession = Depends(get_db_session),
 ) -> SaveBookingGuestsUseCase:
@@ -238,6 +258,13 @@ def get_hotel_dashboard_metrics_use_case(
 ) -> GetHotelDashboardMetricsUseCase:
     repo = SqlAlchemyDashboardMetricsRepository(session)
     return GetHotelDashboardMetricsUseCase(repo)
+
+
+def get_hotel_bookings_metrics_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetHotelBookingsMetricsUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return GetHotelBookingsMetricsUseCase(repo)
 
 
 def get_hotel_revenue_report_use_case(

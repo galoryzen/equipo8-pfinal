@@ -39,6 +39,8 @@ def _booking(
     status: BookingStatus,
     checkin: date,
     checkout: date,
+    *,
+    actual_checkin_at: datetime | None = None,
 ) -> Booking:
     now = datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC)
     return Booking(
@@ -47,6 +49,7 @@ def _booking(
         status=status,
         checkin=checkin,
         checkout=checkout,
+        actual_checkin_at=actual_checkin_at,
         hold_expires_at=None,
         total_amount=Decimal("100.00"),
         currency_code="USD",
@@ -114,6 +117,7 @@ class TestListMyBookingsUseCase:
         assert out.items[0].status == "PENDING_CONFIRMATION"
         assert out.items[0].property_id == b1.property_id
         assert out.items[0].room_type_id == b1.room_type_id
+        assert out.items[0].display_reference == "#00000001"
 
     async def test_user_with_no_bookings_returns_empty_list(self):
         uid = UUID("a0000000-0000-0000-0000-000000000099")
@@ -165,9 +169,183 @@ class TestListMyBookingsUseCase:
         out = await uc.execute_hotel(hotel_id=hotel_id)
 
         repo.list_by_hotel.assert_awaited_once_with(
-            hotel_id=hotel_id, status=None, page=1, page_size=10
+            hotel_id,
+            status=None,
+            date_from=None,
+            date_to=None,
+            room_type_id=None,
+            q=None,
+            page=1,
+            page_size=10,
         )
         assert len(out.items) == 1
+        assert out.items[0].can_register_check_in is False
+
+    async def test_execute_hotel_can_register_when_confirmed_and_checkin_not_future(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        b = _booking(
+            UUID("90000000-0000-0000-0000-000000000095"),
+            UUID("a0000000-0000-0000-0000-000000000001"),
+            BookingStatus.CONFIRMED,
+            date(2026, 4, 10),
+            date(2026, 4, 15),
+        )
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b], 1)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
+        out = await uc.execute_hotel(hotel_id=hotel_id)
+        assert out.items[0].can_register_check_in is True
+
+    async def test_hotel_list_exposes_distinct_display_reference_per_booking(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        b1 = _booking(
+            UUID("90000000-0000-0000-0000-000000000001"),
+            UUID("a0000000-0000-0000-0000-000000000001"),
+            BookingStatus.CONFIRMED,
+            date(2026, 5, 1),
+            date(2026, 5, 4),
+        )
+        b2 = _booking(
+            UUID("90000000-0000-0000-0000-0000000000aa"),
+            UUID("a0000000-0000-0000-0000-000000000001"),
+            BookingStatus.CONFIRMED,
+            date(2026, 5, 2),
+            date(2026, 5, 5),
+        )
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b1, b2], 2)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
+        out = await uc.execute_hotel(hotel_id=hotel_id)
+        refs = {x.display_reference for x in out.items}
+        assert refs == {"#00000001", "#000000AA"}
+
+    async def test_hotel_list_resolves_room_type_name_from_catalog_property_detail(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        pid = UUID("30000000-0000-0000-0000-000000000099")
+        rt_id = UUID("60000000-0000-0000-0000-000000000099")
+        b = _booking(
+            UUID("90000000-0000-0000-0000-000000000011"),
+            UUID("a0000000-0000-0000-0000-000000000001"),
+            BookingStatus.CONFIRMED,
+            date(2026, 5, 1),
+            date(2026, 5, 4),
+        )
+        b.property_id = pid
+        b.room_type_id = rt_id
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b], 1)
+
+        ok = MagicMock()
+        ok.status_code = 200
+        ok.json = MagicMock(
+            return_value={
+                "detail": {
+                    "name": "Prop",
+                    "images": [],
+                    "room_types": [{"id": str(rt_id), "name": "Suite Ocean"}],
+                }
+            }
+        )
+        client = AsyncMock()
+        client.get = AsyncMock(return_value=ok)
+
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=client)
+        out = await uc.execute_hotel(hotel_id=hotel_id)
+        assert out.items[0].room_type_name == "Suite Ocean"
+        assert out.items[0].display_reference == "#00000011"
+
+    async def test_execute_hotel_forwards_filters_to_repository(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([], 0)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
+        d0 = date(2026, 6, 1)
+        d1 = date(2026, 6, 30)
+        rt = UUID("60000000-0000-0000-0000-000000000099")
+        await uc.execute_hotel(
+            hotel_id,
+            status=BookingStatus.CONFIRMED,
+            date_from=d0,
+            date_to=d1,
+            room_type_id=rt,
+            q="alice",
+            page=2,
+            page_size=20,
+        )
+        repo.list_by_hotel.assert_awaited_once_with(
+            hotel_id,
+            status=BookingStatus.CONFIRMED,
+            date_from=d0,
+            date_to=d1,
+            room_type_id=rt,
+            q="alice",
+            page=2,
+            page_size=20,
+        )
+
+    async def test_execute_hotel_export_calls_repository_without_pagination(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([], 0)
+        uc = ListMyBookingsUseCase(repo, clock=_clock, catalog_http_client=_mock_catalog_client())
+        await uc.execute_hotel_export_csv(hotel_id)
+        repo.list_by_hotel.assert_awaited_once_with(
+            hotel_id,
+            status=None,
+            date_from=None,
+            date_to=None,
+            room_type_id=None,
+            q=None,
+            page=1,
+            page_size=None,
+        )
+
+    async def test_list_items_include_guest_email_when_guest_repo_returns_it(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        bid = UUID("90000000-0000-0000-0000-000000000001")
+        b = _booking(bid, uid, BookingStatus.CONFIRMED, date(2026, 5, 1), date(2026, 5, 4))
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b], 1)
+        guest_repo = AsyncMock()
+        guest_repo.get_primary_contact_for_bookings.return_value = {
+            bid: ("Jane Doe", "jane@example.com")
+        }
+        uc = ListMyBookingsUseCase(
+            repo,
+            guest_repo=guest_repo,
+            clock=_clock,
+            catalog_http_client=_mock_catalog_client(),
+        )
+        out = await uc.execute_hotel(hotel_id=hotel_id)
+        assert out.items[0].guest_name == "Jane Doe"
+        assert out.items[0].guest_email == "jane@example.com"
+
+    async def test_execute_hotel_export_csv_contains_expected_columns(self):
+        hotel_id = UUID("e0000000-0000-0000-0000-000000000001")
+        uid = UUID("a0000000-0000-0000-0000-000000000001")
+        bid = UUID("90000000-0000-0000-0000-000000000001")
+        b = _booking(bid, uid, BookingStatus.CONFIRMED, date(2026, 5, 1), date(2026, 5, 4))
+        repo = AsyncMock()
+        repo.list_by_hotel.return_value = ([b], 1)
+        guest_repo = AsyncMock()
+        guest_repo.get_primary_contact_for_bookings.return_value = {
+            bid: ("Jane Doe", "jane@example.com")
+        }
+        uc = ListMyBookingsUseCase(
+            repo,
+            guest_repo=guest_repo,
+            clock=_clock,
+            catalog_http_client=_mock_catalog_client(),
+        )
+        raw = await uc.execute_hotel_export_csv(hotel_id)
+        text = raw.decode("utf-8-sig")
+        assert "Booking reference" in text
+        assert "Guest email" in text
+        assert "Currency" in text
+        assert "Jane Doe" in text
+        assert "jane@example.com" in text
+        assert "#00000001" in text
 
     async def test_pagination_metadata_is_correct(self):
         uid = UUID("a0000000-0000-0000-0000-000000000001")
@@ -205,6 +383,7 @@ class TestGetBookingDetailUseCase:
         repo.get_by_id_for_user.assert_awaited_once_with(bid, uid)
         assert out.id == bid
         assert out.status == "CONFIRMED"
+        assert out.can_register_check_in is False
         assert out.property_id == b.property_id
         assert out.room_type_id == b.room_type_id
         assert out.rate_plan_id == b.rate_plan_id
@@ -263,3 +442,30 @@ class TestGetBookingDetailUseCase:
         # Returned datetime is tz-aware UTC so JS clients parse it correctly.
         assert out.last_payment_attempt.occurred_at == occurred.replace(tzinfo=UTC)
         assert out.last_payment_attempt.occurred_at.utcoffset() == timedelta(0)
+
+    async def test_hotel_viewer_sees_can_register_when_eligible(self):
+        bid = UUID("90000000-0000-0000-0000-000000000095")
+        uid = UUID("b0000000-0000-0000-0000-000000000001")
+        b = _booking(
+            bid,
+            UUID("a0000000-0000-0000-0000-000000000001"),
+            BookingStatus.CONFIRMED,
+            date(2026, 4, 10),
+            date(2026, 4, 15),
+        )
+        repo = AsyncMock()
+        repo.get_by_id_for_hotel.return_value = b
+        repo.find_last_status_history_by_reason_prefix = AsyncMock(return_value=None)
+        guest_repo = AsyncMock()
+        guest_repo.list_by_booking.return_value = []
+        uc = GetBookingDetailUseCase(repo, guest_repo)
+        hid = UUID("e0000000-0000-0000-0000-000000000001")
+        out = await uc.execute(
+            bid,
+            uid,
+            viewer_role="HOTEL",
+            hotel_id=hid,
+            today=date(2026, 4, 19),
+        )
+        repo.get_by_id_for_hotel.assert_awaited_once_with(bid, hid)
+        assert out.can_register_check_in is True

@@ -46,6 +46,7 @@ async def test_execute_calls_repo_twice_and_returns_shape(monkeypatch):
     repo.list_booking_trends = AsyncMock(return_value=[])
     repo.list_recent_activity = AsyncMock(return_value=[])
     repo.list_upcoming_checkins = AsyncMock(return_value=[])
+    repo.count_checked_in_stays_currently_at_hotel = AsyncMock(return_value=(4, 9))
 
     uc = GetHotelDashboardMetricsUseCase(repo)
     out = await uc.execute(
@@ -57,7 +58,10 @@ async def test_execute_calls_repo_twice_and_returns_shape(monkeypatch):
     assert "metrics" in out
     assert out["metrics"]["totalBookings"]["value"] == 2
     assert out["activeCancellations"] == 1
+    assert out["checkedInCount"] == 4
+    assert out["checkedInGuests"] == 9
     assert out["availableRooms"] == 5.0
+    repo.count_checked_in_stays_currently_at_hotel.assert_awaited_once_with(hotel)
     assert repo.aggregate_hotel_period.await_count == 2
     first_args, first_kw = repo.aggregate_hotel_period.await_args_list[0]
     assert first_args[0] == hotel
@@ -81,6 +85,7 @@ async def test_execute_invalid_range(monkeypatch):
     repo.list_booking_trends = AsyncMock()
     repo.list_recent_activity = AsyncMock()
     repo.list_upcoming_checkins = AsyncMock()
+    repo.count_checked_in_stays_currently_at_hotel = AsyncMock()
     uc = GetHotelDashboardMetricsUseCase(repo)
     with pytest.raises(ValueError, match="inválido"):
         await uc.execute(

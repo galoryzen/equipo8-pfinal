@@ -32,6 +32,8 @@ export interface PropertySummary {
   review_count: number;
   image: ImageSummary | null;
   min_price: number | null;
+  /** Distance to reference tourist POI (km); null when unknown — backend ranking still applies. */
+  distance_to_poi_km?: number | null;
   amenities: AmenitySummary[];
 }
 

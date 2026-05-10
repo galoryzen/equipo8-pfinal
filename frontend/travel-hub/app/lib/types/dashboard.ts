@@ -32,6 +32,10 @@ export type DashboardMetrics = {
 
 export type DashboardData = {
   metrics: DashboardMetrics;
+  /** Active CHECKED_IN stays for the hotel (check-in ≤ today < check-out). */
+  checkedInCount: number;
+  /** Sum of guests_count for those stays. */
+  checkedInGuests: number;
   bookingTrends: BookingTrend[];
   recentActivity: RecentActivityItem[];
   upcomingCheckins: UpcomingCheckin[];
@@ -45,6 +49,10 @@ export type DashboardError = {
 
 export type DashboardResponse = Partial<{
   metrics?: Partial<DashboardMetrics>;
+  checkedInCount?: unknown;
+  checked_in_count?: unknown;
+  checkedInGuests?: unknown;
+  checked_in_guests?: unknown;
   bookingTrends?: unknown[];
   recentActivity?: unknown[];
   upcomingCheckins?: unknown[];

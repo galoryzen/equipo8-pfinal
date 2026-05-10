@@ -6,13 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.adapters.inbound.api.dependencies import (
     get_admin_hotel_revenue_report_use_case,
     get_current_user_info,
+    get_hotel_bookings_metrics_use_case,
     get_hotel_dashboard_metrics_use_case,
     get_hotel_revenue_report_use_case,
 )
 from app.application.use_cases.get_admin_hotel_revenue_report import GetAdminHotelRevenueReportUseCase
+from app.application.use_cases.get_hotel_bookings_metrics import GetHotelBookingsMetricsUseCase
 from app.application.use_cases.get_hotel_dashboard_metrics import GetHotelDashboardMetricsUseCase
 from app.application.use_cases.get_hotel_revenue_report import GetHotelRevenueReportUseCase
-from app.schemas.dashboard import DashboardMetricsResponse
+from app.schemas.dashboard import DashboardMetricsResponse, HotelBookingsMetricsOut
 from app.schemas.revenue_report import RevenueReportResponse
 
 router = APIRouter()
@@ -76,6 +78,54 @@ async def get_dashboard_metrics(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     return DashboardMetricsResponse.model_validate(payload)
+
+
+@router.get(
+    "/bookings-metrics",
+    response_model=HotelBookingsMetricsOut,
+    response_model_by_alias=True,
+)
+async def get_hotel_bookings_tab_metrics(
+    user_info: dict = Depends(get_current_user_info),
+    use_case: GetHotelBookingsMetricsUseCase = Depends(get_hotel_bookings_metrics_use_case),
+    hotel_id_query: UUID | None = Query(None, alias="hotel_id"),
+):
+    """Aggregates for the manager Bookings tab stat cards (full hotel, not current table page)."""
+    role = user_info.get("role")
+    uid = user_info.get("user_id")
+    if not uid:
+        raise HTTPException(status_code=401, detail="user_id es requerido")
+
+    if role == "TRAVELER":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No autorizado para consultar métricas de reservas de hotel.",
+        )
+
+    if role == "ADMIN" and not hotel_id_query:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id es requerido para este rol",
+        )
+
+    resolved_hotel_id = user_info.get("hotel_id") if hotel_id_query is None else hotel_id_query
+
+    if not resolved_hotel_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id es requerido",
+        )
+
+    try:
+        resolved_hotel_id = UUID(str(resolved_hotel_id))
+    except (TypeError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hotel_id inválido",
+        ) from e
+
+    payload = await use_case.execute(hotel_id=resolved_hotel_id)
+    return HotelBookingsMetricsOut.model_validate(payload)
 
 
 @router.get(

@@ -68,12 +68,17 @@ class GetHotelDashboardMetricsUseCase:
             hotel_id, date_from, date_to, limit=10
         )
         upcoming = await self._repo.list_upcoming_checkins(hotel_id, limit=10)
+        checked_in_stays, checked_in_guests = await self._repo.count_checked_in_stays_currently_at_hotel(
+            hotel_id
+        )
 
         available_rooms = max(0.0, cur.capacity_room_nights - cur.active_room_nights)
 
         return {
             "metrics": metrics,
             "activeCancellations": active_cancellations,
+            "checkedInCount": checked_in_stays,
+            "checkedInGuests": checked_in_guests,
             "availableRooms": round(available_rooms, 2),
             "bookingTrends": [
                 {"date": p.day.isoformat(), "bookings": p.bookings} for p in trends

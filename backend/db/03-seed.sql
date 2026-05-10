@@ -1,6 +1,12 @@
 -- =============================================
 -- TravelHub — Seed Data
 -- =============================================
+-- Idempotent schema bits for check-out (01-init.sql already includes these on fresh DBs).
+-- Placed before BEGIN so ALTER TYPE runs outside the seed transaction (PostgreSQL enum rules).
+
+ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'CHECKED_OUT' AFTER 'CHECKED_IN';
+
+ALTER TABLE booking.booking ADD COLUMN IF NOT EXISTS actual_checkout_at TIMESTAMP;
 
 BEGIN;
 
@@ -85,7 +91,7 @@ INSERT INTO catalog.property (id, hotel_id, name, description, city_id, address,
    (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
    'Blvd. Kukulcán Km 12.5, Zona Hotelera, 77500 Cancún',
    '15:00', '12:00', '+52 998 555 0101', 'reservas@solcaribe.mx', 'https://solcaribe.mx',
-   'ACTIVE', 4.60, 124, 920.00,
+   'ACTIVE', 5.00, 124, 920.00,
    '10000000-0000-0000-0000-000000000001'),
 
   ('30000000-0000-0000-0000-000000000002',
@@ -483,7 +489,7 @@ FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') A
 INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment) VALUES
   -- Cancún reviews
   ('80000000-0000-0000-0000-000000000001', '99000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 5, 'Increíble resort, la playa es espectacular y el servicio de primera.'),
-  ('80000000-0000-0000-0000-000000000002', '99000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 4, 'Muy buena experiencia. La piscina infinita es hermosa.'),
+  ('80000000-0000-0000-0000-000000000002', '99000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 5, 'Muy buena experiencia. La piscina infinita es hermosa.'),
   ('80000000-0000-0000-0000-000000000003', '99000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-000000000001', 5, 'Best vacation ever! The beach is pristine.'),
   -- CDMX reviews
   ('80000000-0000-0000-0000-000000000004', '99000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002', 4, 'Excelente ubicación, a pasos de todo. Habitación cómoda.'),
@@ -723,6 +729,181 @@ INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_stat
   ('92000000-0000-0000-0000-000000000016', '90000000-0000-0000-0000-000000000006', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL, NULL),
   ('92000000-0000-0000-0000-000000000017', '90000000-0000-0000-0000-000000000006', 'PENDING_CONFIRMATION',   'REJECTED',               'Sin disponibilidad confirmada por el hotel', 'b0000000-0000-0000-0000-000000000002');
 
+-- Check-in manual QA: Roberto (Cadena del Sol) vs Andrea (Luna) — re-ejecutar seed tras cambiar CURRENT_DATE
+INSERT INTO booking.booking (id, user_id, status, checkin, checkout, total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price, policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied) VALUES
+  ('90000000-0000-0000-0000-000000000095', 'a0000000-0000-0000-0000-000000000001', 'CONFIRMED',
+   CURRENT_DATE, CURRENT_DATE + INTERVAL '3 days',
+   360.00, 'USD',
+   '30000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 120.00,
+   'FULL', 48, 100),
+  ('90000000-0000-0000-0000-000000000096', 'a0000000-0000-0000-0000-000000000002', 'CONFIRMED',
+   CURRENT_DATE + INTERVAL '14 days', CURRENT_DATE + INTERVAL '16 days',
+   280.00, 'USD',
+   '30000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 140.00,
+   'FULL', 48, 100),
+  ('90000000-0000-0000-0000-000000000097', 'a0000000-0000-0000-0000-000000000003', 'CONFIRMED',
+   CURRENT_DATE, CURRENT_DATE + INTERVAL '2 days',
+   200.00, 'USD',
+   '30000000-0000-0000-0000-000000000003', '60000000-0000-0000-0000-000000000005', '70000000-0000-0000-0000-000000000005', 100.00,
+   'FULL', 48, 100)
+ON CONFLICT (id) DO UPDATE SET
+  status = EXCLUDED.status,
+  checkin = EXCLUDED.checkin,
+  checkout = EXCLUDED.checkout,
+  property_id = EXCLUDED.property_id,
+  room_type_id = EXCLUDED.room_type_id,
+  rate_plan_id = EXCLUDED.rate_plan_id,
+  unit_price = EXCLUDED.unit_price,
+  total_amount = EXCLUDED.total_amount,
+  actual_checkin_at = NULL;
+
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, changed_by) VALUES
+  ('92900000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000095', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000001'),
+  ('92900000-0000-0000-0000-000000000002', '90000000-0000-0000-0000-000000000095', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000001'),
+  ('92900000-0000-0000-0000-000000000003', '90000000-0000-0000-0000-000000000095', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL),
+  ('92900000-0000-0000-0000-000000000004', '90000000-0000-0000-0000-000000000095', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000001'),
+  ('92900000-0000-0000-0000-000000000005', '90000000-0000-0000-0000-000000000096', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000002'),
+  ('92900000-0000-0000-0000-000000000006', '90000000-0000-0000-0000-000000000096', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000002'),
+  ('92900000-0000-0000-0000-000000000007', '90000000-0000-0000-0000-000000000096', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL),
+  ('92900000-0000-0000-0000-000000000008', '90000000-0000-0000-0000-000000000096', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000001'),
+  ('92900000-0000-0000-0000-000000000009', '90000000-0000-0000-0000-000000000097', NULL,                     'CART',                   'a0000000-0000-0000-0000-000000000003'),
+  ('92900000-0000-0000-0000-00000000000a', '90000000-0000-0000-0000-000000000097', 'CART',                   'PENDING_PAYMENT',        'a0000000-0000-0000-0000-000000000003'),
+  ('92900000-0000-0000-0000-00000000000b', '90000000-0000-0000-0000-000000000097', 'PENDING_PAYMENT',        'PENDING_CONFIRMATION',   NULL),
+  ('92900000-0000-0000-0000-00000000000c', '90000000-0000-0000-0000-000000000097', 'PENDING_CONFIRMATION',   'CONFIRMED',              'b0000000-0000-0000-0000-000000000002')
+ON CONFLICT (id) DO NOTHING;
+
+-- =============================================
+-- Manager /hotel Bookings — cobertura por cadena (pestañas + check-in físico)
+-- Objetivo: cada hotel (Sol, Luna, Estrella) tiene al menos:
+--   · CONFIRMED con check-in = CURRENT_DATE (registro de check-in + pestaña "Check-ins today")
+--   · CONFIRMED con check-out = CURRENT_DATE (pestaña "Check-outs today")
+--   · PENDING_CONFIRMATION (pestaña "Pending")
+--   · CANCELLED (pestaña "Cancelled")
+-- Las fechas usan CURRENT_DATE del servidor Postgres; al re-ejecutar el seed se refrescan.
+-- =============================================
+
+INSERT INTO booking.booking (
+  id, user_id, status, checkin, checkout, hold_expires_at,
+  total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price,
+  policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied,
+  inventory_released, guests_count
+) VALUES
+  -- Check-out hoy · Cadena del Sol (CDMX)
+  ('9e000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', 'CONFIRMED',
+   CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE, NULL,
+   225.00, 'USD', '30000000-0000-0000-0000-000000000002', '60000000-0000-0000-0000-000000000003', '70000000-0000-0000-0000-000000000003', 75.00,
+   'PARTIAL', 24, 50, TRUE, 1),
+  -- Check-out hoy · Hoteles Luna (Buenos Aires)
+  ('9e000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000005', 'CONFIRMED',
+   CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE, NULL,
+   340.00, 'USD', '30000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000007', '70000000-0000-0000-0000-000000000007', 85.00,
+   'PARTIAL', 24, 50, TRUE, 2),
+  -- Check-out hoy · Grupo Estrella (Barcelona)
+  ('9e000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', 'CONFIRMED',
+   CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE, NULL,
+   310.00, 'USD', '30000000-0000-0000-0000-000000000006', '60000000-0000-0000-0000-00000000000b', '70000000-0000-0000-0000-00000000000b', 155.00,
+   'NON_REFUNDABLE', NULL, NULL, TRUE, 1),
+  -- Pendiente · Luna Maya Cancún (hotel Luna)
+  ('9e000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000002', 'PENDING_CONFIRMATION',
+   CURRENT_DATE + INTERVAL '4 days', CURRENT_DATE + INTERVAL '7 days', now() + INTERVAL '7 days',
+   285.00, 'USD', '30000000-0000-0000-0000-000000000007', '60000000-0000-0000-0000-00000000000d', '70000000-0000-0000-0000-00000000000d', 95.00,
+   'FULL', 48, 100, TRUE, 2),
+  -- Pendiente · Estrella Gran Vía Madrid
+  ('9e000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000003', 'PENDING_CONFIRMATION',
+   CURRENT_DATE + INTERVAL '6 days', CURRENT_DATE + INTERVAL '9 days', now() + INTERVAL '7 days',
+   360.00, 'USD', '30000000-0000-0000-0000-000000000005', '60000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000009', 120.00,
+   'FULL', 48, 100, TRUE, 1),
+  -- Cancelada · Sol Caribe Cancún (hotel Sol)
+  ('9e000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000005', 'CANCELLED',
+   CURRENT_DATE + INTERVAL '30 days', CURRENT_DATE + INTERVAL '33 days', NULL,
+   360.00, 'USD', '30000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 120.00,
+   'FULL', 48, 100, TRUE, 2),
+  -- Cancelada · Estrella Gótico Barcelona
+  ('9e000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000004', 'CANCELLED',
+   CURRENT_DATE + INTERVAL '40 days', CURRENT_DATE + INTERVAL '43 days', NULL,
+   420.00, 'USD', '30000000-0000-0000-0000-000000000006', '60000000-0000-0000-0000-00000000000c', '70000000-0000-0000-0000-00000000000c', 140.00,
+   'NON_REFUNDABLE', NULL, NULL, TRUE, 1),
+  -- Check-in hoy (registro físico) · Grupo Estrella — Madrid
+  ('9e000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000005', 'CONFIRMED',
+   CURRENT_DATE, CURRENT_DATE + INTERVAL '3 days', NULL,
+   240.00, 'USD', '30000000-0000-0000-0000-000000000005', '60000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000009', 120.00,
+   'FULL', 48, 100, TRUE, 1)
+ON CONFLICT (id) DO UPDATE SET
+  user_id = EXCLUDED.user_id,
+  status = EXCLUDED.status,
+  checkin = EXCLUDED.checkin,
+  checkout = EXCLUDED.checkout,
+  hold_expires_at = EXCLUDED.hold_expires_at,
+  total_amount = EXCLUDED.total_amount,
+  currency_code = EXCLUDED.currency_code,
+  property_id = EXCLUDED.property_id,
+  room_type_id = EXCLUDED.room_type_id,
+  rate_plan_id = EXCLUDED.rate_plan_id,
+  unit_price = EXCLUDED.unit_price,
+  policy_type_applied = EXCLUDED.policy_type_applied,
+  policy_hours_limit_applied = EXCLUDED.policy_hours_limit_applied,
+  policy_refund_percent_applied = EXCLUDED.policy_refund_percent_applied,
+  inventory_released = EXCLUDED.inventory_released,
+  guests_count = EXCLUDED.guests_count,
+  actual_checkin_at = NULL;
+
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, reason, changed_by) VALUES
+  ('92a00000-0000-0000-0000-000000000001', '9e000000-0000-0000-0000-000000000001', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000004'),
+  ('92a00000-0000-0000-0000-000000000002', '9e000000-0000-0000-0000-000000000001', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000004'),
+  ('92a00000-0000-0000-0000-000000000003', '9e000000-0000-0000-0000-000000000001', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-000000000004', '9e000000-0000-0000-0000-000000000001', 'PENDING_CONFIRMATION', 'CONFIRMED', NULL, 'b0000000-0000-0000-0000-000000000001'),
+  ('92a00000-0000-0000-0000-000000000005', '9e000000-0000-0000-0000-000000000002', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000005'),
+  ('92a00000-0000-0000-0000-000000000006', '9e000000-0000-0000-0000-000000000002', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000005'),
+  ('92a00000-0000-0000-0000-000000000007', '9e000000-0000-0000-0000-000000000002', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-000000000008', '9e000000-0000-0000-0000-000000000002', 'PENDING_CONFIRMATION', 'CONFIRMED', NULL, 'b0000000-0000-0000-0000-000000000002'),
+  ('92a00000-0000-0000-0000-000000000009', '9e000000-0000-0000-0000-000000000003', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000001'),
+  ('92a00000-0000-0000-0000-00000000000a', '9e000000-0000-0000-0000-000000000003', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000001'),
+  ('92a00000-0000-0000-0000-00000000000b', '9e000000-0000-0000-0000-000000000003', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-00000000000c', '9e000000-0000-0000-0000-000000000003', 'PENDING_CONFIRMATION', 'CONFIRMED', NULL, 'b0000000-0000-0000-0000-000000000003'),
+  ('92a00000-0000-0000-0000-00000000000d', '9e000000-0000-0000-0000-000000000004', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000002'),
+  ('92a00000-0000-0000-0000-00000000000e', '9e000000-0000-0000-0000-000000000004', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000002'),
+  ('92a00000-0000-0000-0000-00000000000f', '9e000000-0000-0000-0000-000000000004', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-000000000010', '9e000000-0000-0000-0000-000000000005', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000003'),
+  ('92a00000-0000-0000-0000-000000000011', '9e000000-0000-0000-0000-000000000005', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000003'),
+  ('92a00000-0000-0000-0000-000000000012', '9e000000-0000-0000-0000-000000000005', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-000000000013', '9e000000-0000-0000-0000-000000000006', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000005'),
+  ('92a00000-0000-0000-0000-000000000014', '9e000000-0000-0000-0000-000000000006', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000005'),
+  ('92a00000-0000-0000-0000-000000000015', '9e000000-0000-0000-0000-000000000006', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-000000000016', '9e000000-0000-0000-0000-000000000006', 'PENDING_CONFIRMATION', 'CANCELLED', 'Cancelación demo pestaña', 'a0000000-0000-0000-0000-000000000005'),
+  ('92a00000-0000-0000-0000-000000000017', '9e000000-0000-0000-0000-000000000007', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000004'),
+  ('92a00000-0000-0000-0000-000000000018', '9e000000-0000-0000-0000-000000000007', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000004'),
+  ('92a00000-0000-0000-0000-000000000019', '9e000000-0000-0000-0000-000000000007', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-00000000001a', '9e000000-0000-0000-0000-000000000007', 'PENDING_CONFIRMATION', 'CANCELLED', 'Cancelación demo pestaña', 'a0000000-0000-0000-0000-000000000004'),
+  ('92a00000-0000-0000-0000-00000000001b', '9e000000-0000-0000-0000-000000000008', NULL, 'CART', NULL, 'a0000000-0000-0000-0000-000000000005'),
+  ('92a00000-0000-0000-0000-00000000001c', '9e000000-0000-0000-0000-000000000008', 'CART', 'PENDING_PAYMENT', NULL, 'a0000000-0000-0000-0000-000000000005'),
+  ('92a00000-0000-0000-0000-00000000001d', '9e000000-0000-0000-0000-000000000008', 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', NULL, NULL),
+  ('92a00000-0000-0000-0000-00000000001e', '9e000000-0000-0000-0000-000000000008', 'PENDING_CONFIRMATION', 'CONFIRMED', NULL, 'b0000000-0000-0000-0000-000000000003')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO booking.guest (id, booking_id, is_primary, full_name, email, phone, created_at, updated_at) VALUES
+  ('c0000000-0000-0000-0000-000000000028', '9e000000-0000-0000-0000-000000000001', TRUE, 'Pablo Ruiz', 'pablo@example.com', '+34612345678', now(), now()),
+  ('c0000000-0000-0000-0000-000000000029', '9e000000-0000-0000-0000-000000000002', TRUE, 'Emily Johnson', 'emily@example.com', '+12025551234', now(), now()),
+  ('c0000000-0000-0000-0000-00000000002a', '9e000000-0000-0000-0000-000000000002', FALSE, 'Chris Johnson', NULL, NULL, now(), now()),
+  ('c0000000-0000-0000-0000-00000000002b', '9e000000-0000-0000-0000-000000000003', TRUE, 'Carlos García', 'carlos@example.com', '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-00000000002c', '9e000000-0000-0000-0000-000000000004', TRUE, 'María López', 'maria@example.com', '+573001234567', now(), now()),
+  ('c0000000-0000-0000-0000-00000000002d', '9e000000-0000-0000-0000-000000000004', FALSE, 'Luis López', NULL, NULL, now(), now()),
+  ('c0000000-0000-0000-0000-00000000002e', '9e000000-0000-0000-0000-000000000005', TRUE, 'Lucía Fernández', 'lucia@example.com', '+5491123456789', now(), now()),
+  ('c0000000-0000-0000-0000-00000000002f', '9e000000-0000-0000-0000-000000000006', TRUE, 'Emily Johnson', 'emily@example.com', '+12025551234', now(), now()),
+  ('c0000000-0000-0000-0000-000000000030', '9e000000-0000-0000-0000-000000000006', FALSE, 'Mark Johnson', NULL, NULL, now(), now()),
+  ('c0000000-0000-0000-0000-000000000031', '9e000000-0000-0000-0000-000000000007', TRUE, 'Pablo Ruiz', 'pablo@example.com', '+34612345678', now(), now()),
+  ('c0000000-0000-0000-0000-000000000032', '9e000000-0000-0000-0000-000000000008', TRUE, 'Emily Johnson', 'emily@example.com', '+12025551234', now(), now()),
+  -- Check-in QA (095–097): huésped primario para listados del portal hotel
+  ('c0000000-0000-0000-0000-000000000033', '90000000-0000-0000-0000-000000000095', TRUE, 'Carlos García', 'carlos@example.com', '+5215512345678', now(), now()),
+  ('c0000000-0000-0000-0000-000000000034', '90000000-0000-0000-0000-000000000096', TRUE, 'María López', 'maria@example.com', '+573001234567', now(), now()),
+  ('c0000000-0000-0000-0000-000000000035', '90000000-0000-0000-0000-000000000097', TRUE, 'Lucía Fernández', 'lucia@example.com', '+5491123456789', now(), now())
+ON CONFLICT (id) DO UPDATE SET
+  booking_id = EXCLUDED.booking_id,
+  is_primary = EXCLUDED.is_primary,
+  full_name = EXCLUDED.full_name,
+  email = EXCLUDED.email,
+  phone = EXCLUDED.phone,
+  updated_at = now();
+
 -- =============================================
 -- guests_count + guest rows
 -- =============================================
@@ -750,6 +931,17 @@ UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-
 UPDATE booking.booking SET guests_count = 2 WHERE id = '90000000-0000-0000-0000-000000000020'; -- Lucía   · CDMX Deluxe
 UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000021'; -- Pablo   · Cancún Standard
 UPDATE booking.booking SET guests_count = 4 WHERE id = '90000000-0000-0000-0000-000000000022'; -- Emily   · Cancún Suite
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000095';
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000096';
+UPDATE booking.booking SET guests_count = 1 WHERE id = '90000000-0000-0000-0000-000000000097';
+UPDATE booking.booking SET guests_count = 1 WHERE id = '9e000000-0000-0000-0000-000000000001';
+UPDATE booking.booking SET guests_count = 2 WHERE id = '9e000000-0000-0000-0000-000000000002';
+UPDATE booking.booking SET guests_count = 1 WHERE id = '9e000000-0000-0000-0000-000000000003';
+UPDATE booking.booking SET guests_count = 2 WHERE id = '9e000000-0000-0000-0000-000000000004';
+UPDATE booking.booking SET guests_count = 1 WHERE id = '9e000000-0000-0000-0000-000000000005';
+UPDATE booking.booking SET guests_count = 2 WHERE id = '9e000000-0000-0000-0000-000000000006';
+UPDATE booking.booking SET guests_count = 1 WHERE id = '9e000000-0000-0000-0000-000000000007';
+UPDATE booking.booking SET guests_count = 1 WHERE id = '9e000000-0000-0000-0000-000000000008';
 
 -- Guest rows — primary guest is always the booking user
 INSERT INTO booking.guest (id, booking_id, is_primary, full_name, email, phone, created_at, updated_at) VALUES
@@ -1203,5 +1395,393 @@ INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, commen
    '30000000-0000-0000-0000-000000000007', 4, 'Dashboard dinámico: buena ubicación y limpieza.', now() - INTERVAL '3 days'),
   ('b7e00000-0000-4000-8000-000000000003', 'b8e00000-0000-4000-8000-000000000005', 'a0000000-0000-0000-0000-000000000005',
    '30000000-0000-0000-0000-000000000003', 3, 'Dashboard dinámico: estancia correcta.', now() - INTERVAL '12 days');
+
+-- ── Cancún: hospedajes didácticos (relevancia vs calificación / distancia / precio) ──
+-- 1) Sol Viral… — barato, rating ~4.0, popularidad altísima, lejos (~22 km) con km en catálogo
+-- 2) Hotel Luna al Beso… — “ganador relevancia”: ~4.85★ (muchas reseñas), popularidad alta, **muy cerca** (~1.5 km)
+-- 3) Penthouse Arena Dorada… — **~5.0★** (pocas reseñas perfectas) pero caro, lejos (~24 km), baja popularidad → suele ir **arriba por rating**, **abajo por relevancia** vs Luna Beso
+-- 4) Resort Marea de Oro — rating bajo, popularidad **baja** en semilla, **sin** km al POI (NULL); no competir con penthouse solo por “demanda”
+INSERT INTO catalog.property (
+  id, hotel_id, name, description, city_id, address, check_in_time, check_out_time,
+  phone, email, website, status, rating_avg, review_count, popularity_score, distance_to_poi_km,
+  default_cancellation_policy_id
+) VALUES
+  ('30000000-0000-0000-0000-000000000008',
+   'e0000000-0000-0000-0000-000000000001',
+   'Sol Viral Carretera Cancún',
+   'Lo más barato de la zona: se llena por TikTok y colas en recepción. Está lejos del corredor turístico de referencia (~22 km), así que el ranking puede premiar precio y popularidad aunque el viaje al POI sea largo.',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Km 22 Carr. Tulum, Cancún', '15:00', '12:00', '+52 998 555 9008', 'sol.viral.carretera@travelhub.test', NULL,
+   'ACTIVE', 4.00, 0, 1500.00, 22.00,
+   '10000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-000000000009',
+   'e0000000-0000-0000-0000-000000000002',
+   'Hotel Luna al Beso del Malecón',
+   'Boutique de Hoteles Luna a dos calles del malecón: precio medio, piscina, muchísimas reseñas positivas y popularidad alta. Muy cerca del punto de interés de referencia (~1.5 km) — caso “ganador” en relevancia frente a competencia sin km o más lejana.',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Av. Bonampak 14, Zona Hotelera, Cancún', '15:00', '12:00', '+52 998 555 9009', 'luna.beso.malecon@travelhub.test', NULL,
+   'ACTIVE', 4.85, 0, 1180.00, 1.50,
+   '10000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000b',
+   'e0000000-0000-0000-0000-000000000001',
+   'Penthouse Arena Dorada Cancún',
+   'Suites exclusivas con calificación media perfecta entre pocos huéspedes: excelente para ordenar por **calificación**, pero tarifa alta, lejos del POI de referencia y poca “masa” de demanda frente al Luna al Beso — peor en **relevancia**.',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Blvd. Kukulcán Km 18, Zona Hotelera, Cancún', '15:00', '12:00', '+52 998 555 900b', 'penthouse.arena@travelhub.test', NULL,
+   'ACTIVE', 5.00, 0, 260.00, 24.50,
+   '10000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000a',
+   'e0000000-0000-0000-0000-000000000001',
+   'Resort Marea de Oro — sin km al POI',
+   'All inclusive caro con mala reputación en reseñas y poca conversión en el buscador (popularidad semilla baja): sirve para **dato faltante en distancia** sin “ganar” el ranking solo por un score de demanda artificial. Sin km al POI en catálogo (NULL es penalizado en distancia).',
+   (SELECT id FROM catalog.city WHERE dane_code = 'D.42.1755.477409'),
+   'Blvd. Kukulcán Km 8.5, Cancún', '15:00', '12:00', '+52 998 555 900a', 'marea.oro@travelhub.test', NULL,
+   'ACTIVE', 3.00, 0, 165.00, NULL,
+   '10000000-0000-0000-0000-000000000001');
+
+INSERT INTO catalog.property_image (id, property_id, url, caption, display_order) VALUES
+  ('40000000-0000-0000-0000-000000000016', '30000000-0000-0000-0000-000000000008', 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=500&fit=crop', 'Entrada', 0),
+  ('40000000-0000-0000-0000-000000000017', '30000000-0000-0000-0000-000000000009', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=500&fit=crop', 'Terraza', 0),
+  ('40000000-0000-0000-0000-000000000018', '30000000-0000-0000-0000-00000000000a', 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&h=500&fit=crop', 'Lobby', 0),
+  ('40000000-0000-0000-0000-000000000019', '30000000-0000-0000-0000-00000000000b', 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=500&fit=crop', 'Suite penthouse', 0);
+
+INSERT INTO catalog.property_amenity (property_id, amenity_id) VALUES
+  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000002'),
+  ('30000000-0000-0000-0000-00000000000a', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000a', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-00000000000b', '20000000-0000-0000-0000-000000000001'),
+  ('30000000-0000-0000-0000-00000000000b', '20000000-0000-0000-0000-000000000009'),
+  ('30000000-0000-0000-0000-00000000000b', '20000000-0000-0000-0000-000000000002');
+
+INSERT INTO catalog.property_policy (id, property_id, category, description) VALUES
+  ('50000000-0000-0000-0000-000000000015', '30000000-0000-0000-0000-000000000008', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000016', '30000000-0000-0000-0000-000000000009', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000017', '30000000-0000-0000-0000-00000000000a', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000018', '30000000-0000-0000-0000-00000000000b', 'CHECK_IN',  'Check-in 15:00'),
+  ('50000000-0000-0000-0000-000000000019', '30000000-0000-0000-0000-00000000000b', 'CHECK_OUT', 'Check-out 12:00');
+
+INSERT INTO catalog.room_type (id, property_id, name, description, capacity) VALUES
+  ('60000000-0000-0000-0000-00000000000f', '30000000-0000-0000-0000-000000000008', 'Estándar Campestre', 'Habitación sencilla; el precio por noche es el más bajo del trío.', 2),
+  ('60000000-0000-0000-0000-000000000010', '30000000-0000-0000-0000-000000000009', 'Estándar Cerca del Malecón', 'Habitación cómoda con precio intermedio frente a la competencia.', 2),
+  ('60000000-0000-0000-0000-000000000011', '30000000-0000-0000-0000-00000000000a', 'Estándar Premium', 'Habitación con tarifa alta para contrastar precio en el ranking.', 2),
+  ('60000000-0000-0000-0000-000000000012', '30000000-0000-0000-0000-00000000000b', 'Suite Penthouse Arena', 'Suite amplia con tarifa premium para contrastar precio vs relevancia.', 2);
+
+INSERT INTO catalog.room_type_amenity (room_type_id, amenity_id) VALUES
+  ('60000000-0000-0000-0000-00000000000f', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-00000000000f', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000002'),
+  ('60000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000009'),
+  ('60000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000002');
+
+INSERT INTO catalog.rate_plan (id, room_type_id, name, is_active, cancellation_policy_id) VALUES
+  ('70000000-0000-0000-0000-00000000000f', '60000000-0000-0000-0000-00000000000f', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001'),
+  ('70000000-0000-0000-0000-000000000010', '60000000-0000-0000-0000-000000000010', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001'),
+  ('70000000-0000-0000-0000-000000000011', '60000000-0000-0000-0000-000000000011', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001'),
+  ('70000000-0000-0000-0000-000000000012', '60000000-0000-0000-0000-000000000012', 'Tarifa Base', true, '10000000-0000-0000-0000-000000000001');
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-00000000000f', d::date, 'USD', 52.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-000000000010', d::date, 'USD', 128.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-000000000011', d::date, 'USD', 215.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.rate_calendar (id, rate_plan_id, day, currency_code, price_amount)
+SELECT gen_random_uuid(), '70000000-0000-0000-0000-000000000012', d::date, 'USD', 288.00
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-00000000000f', d::date, 6
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-000000000010', d::date, 6
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-000000000011', d::date, 6
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.inventory_calendar (id, room_type_id, day, available_units)
+SELECT gen_random_uuid(), '60000000-0000-0000-0000-000000000012', d::date, 4
+FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '29 days', '1 day') AS d;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment) VALUES
+  ('ca0e0000-0000-4000-8000-000000000001', 'cb0e0000-0000-4000-8000-000000000001', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000008', 4, 'Baratísimo; hay que manejar lejos de la zona hotelera.'),
+  ('ca0e0000-0000-4000-8000-000000000002', 'cb0e0000-0000-4000-8000-000000000002', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000008', 4, 'Cola eterna en check-in pero vale la pena el precio.'),
+  ('ca0e0000-0000-4000-8000-000000000003', 'cb0e0000-0000-4000-8000-000000000003', 'a0000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000008', 4, 'Lo vimos en redes y sí, es real: económico y ruidoso.'),
+  ('ca0e0000-0000-4000-8000-000000000004', 'cb0e0000-0000-4000-8000-000000000004', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000009', 5, 'Ubicación impecable; caminas al malecón en minutos.'),
+  ('ca0e0000-0000-4000-8000-000000000005', 'cb0e0000-0000-4000-8000-000000000005', 'a0000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000009', 5, 'Piscina chiquita pero el trato y la limpieza 10/10.'),
+  ('ca0e0000-0000-4000-8000-000000000006', 'cb0e0000-0000-4000-8000-000000000006', 'a0000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000009', 5, 'Volvería solo por la cercanía al mar y las reseñas no mienten.'),
+  ('ca0e0000-0000-4000-8000-000000000007', 'cb0e0000-0000-4000-8000-000000000007', 'a0000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-00000000000a', 3, 'Carísimo para lo que recibimos; el buffet repetitivo.'),
+  ('ca0e0000-0000-4000-8000-000000000008', 'cb0e0000-0000-4000-8000-000000000008', 'a0000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-00000000000a', 3, 'Mucho marketing en Instagram; la habitación olía a humedad.'),
+  ('ca0e0000-0000-4000-8000-000000000009', 'cb0e0000-0000-4000-8000-000000000009', 'a0000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-00000000000a', 3, 'Marketing agresivo; en la práctica poca gente vuelve a reservar aquí.');
+
+-- ── Relevancia (Cancún): contraste **relevancia vs calificación** + distancia POI ──
+-- Sol Caribe (001): promedio reseñas **5.0**; Luna Beso (009): **~4.85** (100 reseñas con algo de 4★).
+-- Penthouse Arena Dorada (00b): **5.0** con pocas reseñas, caro y lejos → suele ir **arriba de 009 por rating**, **debajo por relevancia**.
+--   · `sort_by=rating`: entre 001 / 00b / 009 manda el promedio y luego `property_id` (001 y 00b suelen encima de 009).
+--   · `sort_by=relevance`: **009** suele superar a **00b** (precio, distancia, popularidad).
+-- Luna Maya (007): sin km al POI → penalizado en relevancia frente a hoteles georreferenciados.
+UPDATE catalog.property
+SET distance_to_poi_km = 6.85, popularity_score = 910.00
+WHERE id = '30000000-0000-0000-0000-000000000001';
+
+UPDATE catalog.property
+SET distance_to_poi_km = NULL, popularity_score = 195.00
+WHERE id = '30000000-0000-0000-0000-000000000007';
+
+-- Reseñas sintéticas (booking_id único; sin FK a booking). Rotación de usuarios semilla.
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000009'::uuid,
+  CASE WHEN n <= 15 THEN 4 ELSE 5 END,
+  'Huésped frecuente: ubicación y servicio impecables (demo relevancia).'
+FROM generate_series(1, 97) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000001'::uuid,
+  5,
+  'Estancia reciente (semilla volumen Sol Caribe, 5★ para demo calificación vs relevancia).'
+FROM generate_series(1, 47) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000007'::uuid,
+  4,
+  'Buena relación calidad-precio; poca historia de reseñas (demo Luna Maya).'
+FROM generate_series(1, 19) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-000000000008'::uuid,
+  4,
+  'Fila y ruido, pero cumple el precio (demo Sol Viral).'
+FROM generate_series(1, 37) AS n;
+
+INSERT INTO catalog.review (id, booking_id, user_id, property_id, rating, comment)
+SELECT gen_random_uuid(), gen_random_uuid(),
+  (ARRAY[
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000003'::uuid,
+    'a0000000-0000-0000-0000-000000000004'::uuid,
+    'a0000000-0000-0000-0000-000000000005'::uuid
+  ])[(n % 5) + 1],
+  '30000000-0000-0000-0000-00000000000b'::uuid,
+  5,
+  'Suite impecable; pocos comentarios pero todos 5★ (demo rating > relevancia vs Luna Beso).'
+FROM generate_series(1, 25) AS n;
+
+-- Re-ancla reservas de check-in físico (095–097) al día corriente del servidor para alinearlas
+-- con las pestañas del manager que filtran por fecha local del API (checkin = hoy).
+UPDATE booking.booking SET
+  checkin = CURRENT_DATE,
+  checkout = CURRENT_DATE + INTERVAL '3 days',
+  actual_checkin_at = NULL,
+  status = 'CONFIRMED'
+WHERE id IN (
+  '90000000-0000-0000-0000-000000000095',
+  '90000000-0000-0000-0000-000000000096',
+  '90000000-0000-0000-0000-000000000097'
+);
+
+-- Misma re-ancla para filas de cobertura de pestañas (check-out hoy / etc.) si el seed se vuelve a aplicar.
+UPDATE booking.booking SET
+  checkin = CURRENT_DATE - INTERVAL '2 days',
+  checkout = CURRENT_DATE
+WHERE id IN (
+  '9e000000-0000-0000-0000-000000000001',
+  '9e000000-0000-0000-0000-000000000002',
+  '9e000000-0000-0000-0000-000000000003'
+);
+UPDATE booking.booking SET
+  checkin = CURRENT_DATE,
+  checkout = CURRENT_DATE + INTERVAL '3 days',
+  actual_checkin_at = NULL
+WHERE id = '9e000000-0000-0000-0000-000000000008';
+
+-- ── Check-out físico QA (9f…) — IDs estables para Postman / pruebas manuales ──
+-- 9f…001: Cadena del Sol, CHECKED_IN, salida programada hoy → elegible check-out
+-- 9f…002: mismo hotel, CHECKED_IN, salida futura → no elegible
+-- 9f…003: Luna (otra cadena), CHECKED_IN → 404 si el token es de Sol
+-- 9f…004: Sol, CHECKED_OUT → idempotencia POST check-out
+INSERT INTO booking.booking (
+  id, user_id, status, checkin, checkout, hold_expires_at,
+  total_amount, currency_code, property_id, room_type_id, rate_plan_id, unit_price,
+  policy_type_applied, policy_hours_limit_applied, policy_refund_percent_applied,
+  inventory_released, guests_count, taxes, service_fee,
+  actual_checkin_at, actual_checkout_at,
+  created_at, updated_at
+) VALUES
+  (
+    '9f000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000001',
+    'CHECKED_IN',
+    CURRENT_DATE - INTERVAL '2 days',
+    CURRENT_DATE,
+    NULL,
+    300.00,
+    'USD',
+    '30000000-0000-0000-0000-000000000001',
+    '60000000-0000-0000-0000-000000000001',
+    '70000000-0000-0000-0000-000000000001',
+    100.00,
+    'FULL',
+    48,
+    100,
+    TRUE,
+    1,
+    0,
+    0,
+    (CURRENT_DATE - INTERVAL '2 days') + INTERVAL '15 hours',
+    NULL,
+    now(),
+    now()
+  ),
+  (
+    '9f000000-0000-0000-0000-000000000002',
+    'a0000000-0000-0000-0000-000000000001',
+    'CHECKED_IN',
+    CURRENT_DATE,
+    CURRENT_DATE + INTERVAL '5 days',
+    NULL,
+    400.00,
+    'USD',
+    '30000000-0000-0000-0000-000000000001',
+    '60000000-0000-0000-0000-000000000001',
+    '70000000-0000-0000-0000-000000000001',
+    80.00,
+    'FULL',
+    48,
+    100,
+    TRUE,
+    1,
+    0,
+    0,
+    (CURRENT_DATE::timestamp + TIME '08:00') - INTERVAL '1 hour',
+    NULL,
+    now(),
+    now()
+  ),
+  (
+    '9f000000-0000-0000-0000-000000000003',
+    'a0000000-0000-0000-0000-000000000002',
+    'CHECKED_IN',
+    CURRENT_DATE - INTERVAL '1 day',
+    CURRENT_DATE,
+    NULL,
+    220.00,
+    'USD',
+    '30000000-0000-0000-0000-000000000003',
+    '60000000-0000-0000-0000-000000000005',
+    '70000000-0000-0000-0000-000000000005',
+    110.00,
+    'FULL',
+    48,
+    100,
+    TRUE,
+    1,
+    0,
+    0,
+    (CURRENT_DATE::timestamp + TIME '10:00') - INTERVAL '20 hours',
+    NULL,
+    now(),
+    now()
+  ),
+  (
+    '9f000000-0000-0000-0000-000000000004',
+    'a0000000-0000-0000-0000-000000000001',
+    'CHECKED_OUT',
+    CURRENT_DATE - INTERVAL '3 days',
+    CURRENT_DATE - INTERVAL '1 day',
+    NULL,
+    280.00,
+    'USD',
+    '30000000-0000-0000-0000-000000000002',
+    '60000000-0000-0000-0000-000000000003',
+    '70000000-0000-0000-0000-000000000003',
+    140.00,
+    'PARTIAL',
+    24,
+    50,
+    TRUE,
+    1,
+    0,
+    0,
+    (CURRENT_DATE - INTERVAL '3 days') + INTERVAL '16 hours',
+    (CURRENT_DATE - INTERVAL '1 day') + INTERVAL '10 hours',
+    now(),
+    now()
+  )
+ON CONFLICT (id) DO UPDATE SET
+  status = EXCLUDED.status,
+  checkin = EXCLUDED.checkin,
+  checkout = EXCLUDED.checkout,
+  property_id = EXCLUDED.property_id,
+  room_type_id = EXCLUDED.room_type_id,
+  rate_plan_id = EXCLUDED.rate_plan_id,
+  unit_price = EXCLUDED.unit_price,
+  total_amount = EXCLUDED.total_amount,
+  actual_checkin_at = EXCLUDED.actual_checkin_at,
+  actual_checkout_at = EXCLUDED.actual_checkout_at,
+  updated_at = now();
+
+INSERT INTO booking.guest (id, booking_id, is_primary, full_name, email, phone, created_at, updated_at) VALUES
+  ('c0000000-0000-0000-0000-000000000040', '9f000000-0000-0000-0000-000000000001', TRUE, 'Huésped Check-out QA', 'checkout-qa-1@example.com', NULL, now(), now()),
+  ('c0000000-0000-0000-0000-000000000041', '9f000000-0000-0000-0000-000000000002', TRUE, 'Huésped Check-out futuro', 'checkout-qa-2@example.com', NULL, now(), now()),
+  ('c0000000-0000-0000-0000-000000000042', '9f000000-0000-0000-0000-000000000003', TRUE, 'Huésped otra cadena', 'checkout-qa-3@example.com', NULL, now(), now()),
+  ('c0000000-0000-0000-0000-000000000043', '9f000000-0000-0000-0000-000000000004', TRUE, 'Huésped ya salido', 'checkout-qa-4@example.com', NULL, now(), now())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO booking.booking_status_history (id, booking_id, from_status, to_status, reason, changed_by) VALUES
+  ('93f00000-0000-0000-0000-000000000001', '9f000000-0000-0000-0000-000000000001', 'CONFIRMED', 'CHECKED_IN', 'hotel_check_in', 'b0000000-0000-0000-0000-000000000001'),
+  ('93f00000-0000-0000-0000-000000000002', '9f000000-0000-0000-0000-000000000002', 'CONFIRMED', 'CHECKED_IN', 'hotel_check_in', 'b0000000-0000-0000-0000-000000000001'),
+  ('93f00000-0000-0000-0000-000000000003', '9f000000-0000-0000-0000-000000000003', 'CONFIRMED', 'CHECKED_IN', 'hotel_check_in', 'b0000000-0000-0000-0000-000000000002'),
+  ('93f00000-0000-0000-0000-000000000004', '9f000000-0000-0000-0000-000000000004', 'CHECKED_IN', 'CHECKED_OUT', 'hotel_check_out', 'b0000000-0000-0000-0000-000000000001')
+ON CONFLICT (id) DO NOTHING;
 
 COMMIT;

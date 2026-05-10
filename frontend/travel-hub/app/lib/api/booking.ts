@@ -1,3 +1,4 @@
+import { formatApiErrorBody } from '@/app/lib/api/catalog';
 import { API_URL } from '@/app/lib/api/constants';
 import type {
   BookingDetail,
@@ -10,6 +11,19 @@ import type {
   RefundDetail,
 } from '@/app/lib/types/booking';
 
+/** HTTP error with status for hotel booking actions (check-in, etc.). */
+export class ApiHttpError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+
+  constructor(message: string, status: number, body: unknown) {
+    super(message);
+    this.name = 'ApiHttpError';
+    this.status = status;
+    this.body = body;
+  }
+}
+
 async function readErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
   if (body && typeof body === 'object') {
@@ -17,7 +31,136 @@ async function readErrorMessage(res: Response): Promise<string> {
     const code = 'code' in body ? String((body as { code: unknown }).code) : '';
     if (msg) return code ? `${msg} (${code})` : msg;
   }
-  return `Error ${res.status}`;
+  return formatApiErrorBody(body, res.status);
+}
+
+/** Thrown by partner list/export when the booking API returns a non-OK status. */
+export class BookingApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'BookingApiError';
+    this.status = status;
+  }
+}
+
+export interface HotelBookingsMetrics {
+  confirmedCount: number;
+  pendingCount: number;
+  checkInsTodayCount: number;
+  cancelledCount: number;
+}
+
+/** Hotel-wide aggregates for the manager Bookings stat cards (not paginated). */
+export async function fetchHotelBookingsMetrics(): Promise<HotelBookingsMetrics> {
+  const res = await fetch(`${API_URL}/api/v1/booking/dashboard/bookings-metrics`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+  return res.json() as Promise<HotelBookingsMetrics>;
+}
+
+export type PartnerBookingsListFilters = {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+  room_type_id?: string;
+  q?: string;
+};
+
+export type PartnerBookingsExportFilters = Omit<PartnerBookingsListFilters, 'page' | 'page_size'>;
+
+function appendPartnerBookingQuery(params: URLSearchParams, options?: PartnerBookingsListFilters) {
+  const page = options?.page ?? 1;
+  const page_size = options?.page_size ?? 10;
+  params.set('page', String(page));
+  params.set('page_size', String(page_size));
+  if (options?.status) params.set('status', options.status);
+  if (options?.date_from) params.set('date_from', options.date_from);
+  if (options?.date_to) params.set('date_to', options.date_to);
+  if (options?.room_type_id) params.set('room_type_id', options.room_type_id);
+  const q = options?.q?.trim();
+  if (q) params.set('q', q);
+}
+
+/**
+ * Lists bookings for the current session: traveler (own), hotel partner (property
+ * scope), or admin (all) — same `/bookings` route, role resolved by the gateway.
+ */
+export async function listPartnerBookings(
+  options?: PartnerBookingsListFilters
+): Promise<PaginatedResponse<BookingListItem>> {
+  const params = new URLSearchParams();
+  appendPartnerBookingQuery(params, options);
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new BookingApiError(await readErrorMessage(res), res.status);
+  }
+  return res.json();
+}
+
+function parseContentDispositionFilename(disposition: string | null): string | null {
+  if (!disposition) return null;
+  const star = /filename\*=(?:UTF-8'')?([^;\n]+)/i.exec(disposition);
+  if (star?.[1]) return decodeURIComponent(star[1].trim().replace(/^["']|["']$/g, ''));
+  const quoted = /filename="([^"]+)"/i.exec(disposition);
+  if (quoted?.[1]) return quoted[1].trim();
+  const plain = /filename=([^;\n]+)/i.exec(disposition);
+  if (plain?.[1]) return plain[1].trim().replace(/^["']|["']$/g, '');
+  return null;
+}
+
+/** Fetches CSV bytes and suggested filename (from Content-Disposition when present). */
+export async function fetchPartnerBookingsExportBlob(
+  filters?: PartnerBookingsExportFilters
+): Promise<{ blob: Blob; filename: string }> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.date_from) params.set('date_from', filters.date_from);
+  if (filters?.date_to) params.set('date_to', filters.date_to);
+  if (filters?.room_type_id) params.set('room_type_id', filters.room_type_id);
+  const q = filters?.q?.trim();
+  if (q) params.set('q', q);
+  const qs = params.toString();
+  const res = await fetch(`${API_URL}/api/v1/booking/bookings/export${qs ? `?${qs}` : ''}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new BookingApiError(await readErrorMessage(res), res.status);
+  }
+  const blob = await res.blob();
+  const filename =
+    parseContentDispositionFilename(res.headers.get('Content-Disposition')) ??
+    'travelhub-bookings-history.csv';
+  return { blob, filename };
+}
+
+/** Triggers a browser download for a CSV blob (client-only). */
+export function triggerCsvDownload(blob: Blob, filename: string): void {
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+/** Hotel partner export: same filters as list, without pagination query params. */
+export async function exportPartnerBookingsCsv(
+  filters?: PartnerBookingsExportFilters
+): Promise<void> {
+  const { blob, filename } = await fetchPartnerBookingsExportBlob(filters);
+  triggerCsvDownload(blob, filename);
 }
 
 /**
@@ -28,15 +171,7 @@ export async function getMyBookings(
   pageSize = 10,
   status?: string
 ): Promise<PaginatedResponse<BookingListItem>> {
-  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
-  if (status) params.set('status', status);
-  const res = await fetch(`${API_URL}/api/v1/booking/bookings?${params}`, {
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorMessage(res));
-  }
-  return res.json();
+  return listPartnerBookings({ page, page_size: pageSize, status });
 }
 
 export async function getBookingDetail(bookingId: string): Promise<BookingDetail> {
@@ -198,6 +333,48 @@ export async function checkoutBooking(
     throw new Error(await readErrorMessage(res));
   }
   return res.json();
+}
+
+/** Registers physical guest check-in for a hotel booking (HOTEL / MANAGER roles). */
+export async function registerGuestCheckIn(
+  bookingId: string,
+  payload: { actual_arrival_at: string }
+): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/check-in`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiHttpError(formatApiErrorBody(body, res.status), res.status, body);
+  }
+  return body as BookingDetail;
+}
+
+/** Registers physical guest check-out for a hotel booking (HOTEL / MANAGER roles). */
+export async function registerBookingCheckOut(
+  bookingId: string,
+  payload: { actual_departure_at: string }
+): Promise<BookingDetail> {
+  const res = await fetch(
+    `${API_URL}/api/v1/booking/bookings/${encodeURIComponent(bookingId)}/check-out`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiHttpError(formatApiErrorBody(body, res.status), res.status, body);
+  }
+  return body as BookingDetail;
 }
 
 export async function getRefundByBookingId(bookingId: string): Promise<RefundDetail | null> {

@@ -14,6 +14,8 @@ class BookingStatus(str, enum.Enum):
     PENDING_PAYMENT = "PENDING_PAYMENT"
     PENDING_CONFIRMATION = "PENDING_CONFIRMATION"
     CONFIRMED = "CONFIRMED"
+    CHECKED_IN = "CHECKED_IN"
+    CHECKED_OUT = "CHECKED_OUT"
     REJECTED = "REJECTED"
     CANCELLED = "CANCELLED"
     EXPIRED = "EXPIRED"
@@ -51,6 +53,10 @@ class Booking(Base):
     )
     checkin: Mapped[date] = mapped_column(nullable=False)
     checkout: Mapped[date] = mapped_column(nullable=False)
+    # Naive UTC instant when the hotel partner recorded physical check-in.
+    actual_checkin_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    # Naive UTC instant when the hotel partner recorded physical check-out.
+    actual_checkout_at: Mapped[datetime | None] = mapped_column(nullable=True)
     hold_expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False)

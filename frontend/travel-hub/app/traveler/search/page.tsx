@@ -49,9 +49,9 @@ function SearchPageContent() {
   const sortOptions = useMemo(
     () =>
       [
-        { key: '', label: t('searchPage.sort') },
-        { key: 'price_asc', label: t('searchPage.price') },
-        { key: 'rating', label: t('searchPage.rating') },
+        { key: 'relevance' as const, label: t('searchPage.recommended') },
+        { key: 'price_asc' as const, label: t('searchPage.price') },
+        { key: 'rating' as const, label: t('searchPage.rating') },
       ] as const,
     [t]
   );
@@ -94,7 +94,7 @@ function SearchPageContent() {
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('');
+  const [sortBy, setSortBy] = useState<'relevance' | 'price_asc' | 'rating'>('relevance');
   const [page, setPage] = useState(1);
   const [featuredRaw, setFeaturedRaw] = useState<PropertySummary[]>([]);
   const [data, setData] = useState<PaginatedResponse<PropertySummary> | null>(null);
@@ -134,11 +134,7 @@ function SearchPageContent() {
       setError(null);
       try {
         const sortParam =
-          sortBy === 'rating'
-            ? 'rating'
-            : sortBy === 'price_asc'
-              ? 'price_asc'
-              : sortBy || undefined;
+          sortBy === 'rating' ? 'rating' : sortBy === 'price_asc' ? 'price_asc' : 'relevance';
         const result = await searchProperties({
           checkin: searchCheckin,
           checkout: searchCheckout,
@@ -240,6 +236,7 @@ function SearchPageContent() {
     } else if (sortBy === 'rating') {
       items.sort((a, b) => Number(b.rating_avg ?? 0) - Number(a.rating_avg ?? 0));
     }
+    /* relevance: keep featured API order (no client-side ranking). */
     const total = items.length;
     const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);
     const safePage = totalPages === 0 ? 1 : Math.min(page, totalPages);
@@ -357,20 +354,46 @@ function SearchPageContent() {
           )}
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {sortOptions.map((opt) => (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: { xs: 'stretch', md: 'flex-end' },
+            gap: 1,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+            }}
+          >
+            {sortOptions.map((opt) => (
+              <Chip
+                key={opt.key}
+                label={`${opt.label}${sortBy === opt.key ? ' \u2193' : ''}`}
+                onClick={() => {
+                  setSortBy(opt.key);
+                  setPage(1);
+                }}
+                variant={sortBy === opt.key ? 'filled' : 'outlined'}
+                color={sortBy === opt.key ? 'primary' : 'default'}
+                sx={{ fontWeight: 500 }}
+                data-testid={`sort-chip-${opt.key}`}
+              />
+            ))}
+          </Box>
+          {catalogMode && sortBy === 'relevance' && (
             <Chip
-              key={opt.label}
-              label={`${opt.label}${sortBy === opt.key && opt.key ? ' \u2193' : ''}`}
-              onClick={() => {
-                setSortBy(opt.key);
-                setPage(1);
-              }}
-              variant={sortBy === opt.key ? 'filled' : 'outlined'}
-              color={sortBy === opt.key ? 'primary' : 'default'}
-              sx={{ fontWeight: 500 }}
+              size="small"
+              label={t('searchPage.recommendedBadge')}
+              variant="outlined"
+              color="primary"
+              sx={{ alignSelf: { xs: 'flex-start', md: 'flex-end' }, fontWeight: 500 }}
             />
-          ))}
+          )}
         </Box>
       </Box>
 

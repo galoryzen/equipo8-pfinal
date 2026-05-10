@@ -44,7 +44,7 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               SELECT b.id, b.checkin, b.checkout, b.currency_code
               FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
-                AND b.status = 'CONFIRMED'
+                AND b.status IN ('CONFIRMED', 'CHECKED_IN')
                 AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
                 AND EXISTS (
                   SELECT 1
@@ -78,7 +78,7 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
                   AND p.status = 'CAPTURED'
               ) AS total_revenue,
               (
-                -- ADR denominator: noches vendidas (solo reservas CONFIRMED incluidas en reporte).
+                -- ADR denominator: noches vendidas (reservas confirmadas o con check-in registrado).
                 SELECT COALESCE(SUM((ccb.checkout - ccb.checkin)::int), 0)::float
                 FROM captured_confirmed_bookings ccb
               ) AS sold_room_nights,
@@ -172,7 +172,7 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
                 AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
-                AND b.status = 'CONFIRMED'
+                AND b.status IN ('CONFIRMED', 'CHECKED_IN')
                 AND EXISTS (
                   SELECT 1
                   FROM payments.payment p
@@ -276,7 +276,7 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               FROM payments.payment p
               INNER JOIN booking.booking b ON b.id = p.booking_id
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
-                AND b.status = 'CONFIRMED'
+                AND b.status IN ('CONFIRMED', 'CHECKED_IN')
                 AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
                 AND p.status = 'CAPTURED'
               GROUP BY p.booking_id

@@ -34,7 +34,7 @@ import { calculateNights, formatDateRange } from './utils/testHelpers';
 const DEFAULT_GUESTS_COUNT = 2;
 const ADDITIONAL_GUESTS_COUNT = 1;
 const DEFAULT_ROOM_INDEX = 0;
-const DEFAULT_ROOM_NAME = 'Estándar Vista al Mar';
+const DEFAULT_ROOM_NAME = 'Estándar Cerca del Malecón';
 
 test.describe('E2E: Complete Booking & Payment Flow', () => {
   let loginPage: LoginPage;
@@ -112,7 +112,7 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     expect(hotelCheckOutDate).toBe(dates.checkOut);
 
     const rating = await hotelDetailsPage.getHotelRating();
-    expect(rating).toBe('4.7');
+    expect(rating).toBe('4.8');
 
     const roomNames = await hotelDetailsPage.getRoomNames();
     expect(roomNames).toContain(DEFAULT_ROOM_NAME);

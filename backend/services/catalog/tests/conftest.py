@@ -49,6 +49,7 @@ def make_property_summary(
         "review_count": 124,
         "image": {"url": "https://example.com/img.jpg", "caption": "Fachada"},
         "min_price": min_price,
+        "distance_to_poi_km": None,
         "amenities": [{"code": "wifi", "name": "Wi-Fi gratuito"}],
     }
 

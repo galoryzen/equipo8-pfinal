@@ -2,14 +2,21 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, func as sa_func, or_, select, text
+from sqlalchemy import String, and_, case, exists, func as sa_func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.booking_repository import BookingRepository
-from app.domain.models import Booking, BookingScope, BookingStatus, BookingStatusHistory
+from app.domain.models import Booking, BookingScope, BookingStatus, BookingStatusHistory, Guest
+
+
+def _escape_ilike_pattern(fragment: str) -> str:
+    """Wildcard-safe ILIKE pattern (Escape ``\\\\``)."""
+    escaped = fragment.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
 
 _ACTIVE_STATUSES = (
     BookingStatus.CONFIRMED,
+    BookingStatus.CHECKED_IN,
     BookingStatus.PENDING_PAYMENT,
     BookingStatus.PENDING_CONFIRMATION,
 )
@@ -44,8 +51,12 @@ class SqlAlchemyBookingRepository(BookingRepository):
         elif scope is BookingScope.PAST:
             base_where += [
                 or_(
-                    and_(Booking.status == BookingStatus.CONFIRMED, Booking.checkout < today),
+                    and_(
+                        Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN)),
+                        Booking.checkout < today,
+                    ),
                     Booking.status.in_(_PAST_TERMINAL_STATUSES),
+                    Booking.status == BookingStatus.CHECKED_OUT,
                 )
             ]
             order = Booking.checkout.desc()
@@ -91,40 +102,146 @@ class SqlAlchemyBookingRepository(BookingRepository):
         return list(result.scalars().all()), total
 
     async def list_by_hotel(
-        self, hotel_id: UUID, status: str | None = None, page: int = 1, page_size: int = 10
+        self,
+        hotel_id: UUID,
+        *,
+        status: str | BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        room_type_id: UUID | None = None,
+        q: str | None = None,
+        page: int = 1,
+        page_size: int | None = 10,
     ) -> tuple[list[Booking], int]:
         hotel_filter = text(
             "booking.booking.property_id IN "
             "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
         )
+        bind = {"hotel_id": str(hotel_id)}
+        conditions: list = [hotel_filter]
 
-        count_stmt = (
-            select(sa_func.count(Booking.id))
-            .where(hotel_filter)
-            .params(hotel_id=str(hotel_id))
-        )
-        if status:
-            count_stmt = count_stmt.where(Booking.status == status)
+        if status is not None:
+            conditions.append(Booking.status == status)
+        if date_from is not None:
+            conditions.append(Booking.checkout >= date_from)
+        if date_to is not None:
+            conditions.append(Booking.checkin <= date_to)
+        if room_type_id is not None:
+            conditions.append(Booking.room_type_id == room_type_id)
+
+        q_trim = (q or "").strip()
+        if q_trim:
+            pat = _escape_ilike_pattern(q_trim)
+            guest_pred = or_(
+                Guest.full_name.ilike(pat, escape="\\"),
+                and_(Guest.email.isnot(None), Guest.email.ilike(pat, escape="\\")),
+            )
+            guest_exists = exists(
+                select(1).select_from(Guest).where(Guest.booking_id == Booking.id, guest_pred)
+            )
+            id_text = Booking.id.cast(String)
+            hex_compact = sa_func.replace(id_text, "-", "")
+            id_search = or_(
+                guest_exists,
+                id_text.ilike(pat, escape="\\"),
+                hex_compact.ilike(pat, escape="\\"),
+            )
+            ref_core = q_trim.lstrip("#").strip().upper()
+            if ref_core:
+                ref_pat = _escape_ilike_pattern(ref_core)
+                suffix = sa_func.upper(sa_func.right(hex_compact, 8))
+                id_search = or_(id_search, suffix.ilike(ref_pat, escape="\\"))
+            conditions.append(id_search)
+
+        count_stmt = select(sa_func.count(Booking.id)).where(*conditions).params(**bind)
         total: int = (await self._session.execute(count_stmt)).scalar() or 0
 
+        stmt = select(Booking).where(*conditions).params(**bind).order_by(Booking.checkin.desc())
+        if page_size is not None:
+            stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all()), total
+
+    async def count_hotel_bookings_metrics(self, hotel_id: UUID, *, today: date) -> dict[str, int]:
+        hotel_filter = text(
+            "booking.booking.property_id IN "
+            "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
+        )
+        excluded_checkin = (
+            BookingStatus.CANCELLED,
+            BookingStatus.REJECTED,
+            BookingStatus.EXPIRED,
+            BookingStatus.CART,
+        )
         stmt = (
-            select(Booking)
+            select(
+                sa_func.coalesce(
+                    sa_func.sum(case((Booking.status == BookingStatus.CONFIRMED, 1), else_=0)),
+                    0,
+                ),
+                sa_func.coalesce(
+                    sa_func.sum(
+                        case(
+                            (
+                                Booking.status.in_(
+                                    (BookingStatus.PENDING_CONFIRMATION, BookingStatus.PENDING_PAYMENT)
+                                ),
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ),
+                sa_func.coalesce(
+                    sa_func.sum(
+                        case(
+                            (
+                                and_(
+                                    Booking.checkin == today,
+                                    Booking.status != BookingStatus.CHECKED_OUT,
+                                    Booking.status.not_in(excluded_checkin),
+                                ),
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ),
+                sa_func.coalesce(
+                    sa_func.sum(case((Booking.status == BookingStatus.CANCELLED, 1), else_=0)),
+                    0,
+                ),
+            )
+            .select_from(Booking)
             .where(hotel_filter)
             .params(hotel_id=str(hotel_id))
         )
-        if status:
-            stmt = stmt.where(Booking.status == status)
-        stmt = stmt.order_by(Booking.checkin.desc()).offset((page - 1) * page_size).limit(page_size)
-        result = await self._session.execute(stmt)
-        return list(result.scalars().all()), total
+        row = (await self._session.execute(stmt)).one()
+        return {
+            "confirmed_count": int(row[0]),
+            "pending_count": int(row[1]),
+            "check_ins_today_count": int(row[2]),
+            "cancelled_count": int(row[3]),
+        }
 
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
-    async def get_by_id(self, booking_id: UUID) -> Booking | None:
-        stmt = select(Booking).where(Booking.id == booking_id)
+    async def get_by_id_for_hotel(self, booking_id: UUID, hotel_id: UUID) -> Booking | None:
+        hotel_filter = text(
+            "booking.booking.property_id IN "
+            "(SELECT p.id FROM catalog.property p WHERE p.hotel_id = :hotel_id)"
+        )
+        stmt = (
+            select(Booking)
+            .where(Booking.id == booking_id)
+            .where(hotel_filter)
+            .params(hotel_id=str(hotel_id))
+        )
         result = await self._session.execute(stmt)
         return result.scalars().one_or_none()
 
@@ -254,7 +371,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
 
         active_stmt = select(sa_func.count(Booking.id)).where(
             Booking.property_id == property_id,
-            Booking.status == BookingStatus.CONFIRMED,
+            Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN)),
             Booking.checkout >= today,
         )
         active_result = await self._session.execute(active_stmt)
@@ -262,7 +379,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
 
         revenue_stmt = select(sa_func.coalesce(sa_func.sum(Booking.total_amount), Decimal("0"))).where(
             Booking.property_id == property_id,
-            Booking.status == BookingStatus.CONFIRMED,
+            Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN)),
             Booking.created_at >= month_start,
         )
         revenue_result = await self._session.execute(revenue_stmt)

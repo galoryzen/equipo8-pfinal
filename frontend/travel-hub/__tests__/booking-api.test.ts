@@ -1,4 +1,11 @@
-import { getBookingDetail, getMyBookings } from '@/app/lib/api/booking';
+import {
+  BookingApiError,
+  fetchPartnerBookingsExportBlob,
+  getBookingDetail,
+  getMyBookings,
+  listPartnerBookings,
+  registerGuestCheckIn,
+} from '@/app/lib/api/booking';
 import type { BookingDetail, BookingListItem, PaginatedResponse } from '@/app/lib/types/booking';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -67,14 +74,155 @@ describe('booking API', () => {
       expectFetchListCall();
     });
 
-    it('throws Error <status> when body has no message', async () => {
+    it('surfaces FastAPI detail when body has no message', async () => {
       vi.mocked(global.fetch).mockResolvedValue({
         ok: false,
         status: 500,
         json: () => Promise.resolve({ detail: 'ignored' }),
       } as Response);
 
-      await expect(getMyBookings()).rejects.toThrow('Error 500');
+      await expect(getMyBookings()).rejects.toThrow('ignored');
+    });
+  });
+
+  describe('listPartnerBookings', () => {
+    it('adds status query when provided', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            items: [],
+            total: 0,
+            page: 1,
+            page_size: 10,
+            total_pages: 1,
+          }),
+      } as Response);
+
+      await listPartnerBookings({ status: 'CANCELLED', page: 2, page_size: 10 });
+
+      const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
+      expect(url).toContain('status=CANCELLED');
+      expect(url).toContain('page=2');
+      expect(url).toContain('page_size=10');
+    });
+
+    it('adds hotel history filters when provided', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            items: [],
+            total: 0,
+            page: 1,
+            page_size: 10,
+            total_pages: 1,
+          }),
+      } as Response);
+
+      await listPartnerBookings({
+        status: 'CONFIRMED',
+        page: 1,
+        page_size: 10,
+        date_from: '2026-06-01',
+        date_to: '2026-06-30',
+        room_type_id: '60000000-0000-0000-0000-000000000001',
+        q: 'alice',
+      });
+
+      const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
+      expect(url).toContain('date_from=2026-06-01');
+      expect(url).toContain('date_to=2026-06-30');
+      expect(url).toContain('room_type_id=60000000-0000-0000-0000-000000000001');
+      expect(url).toContain('q=alice');
+    });
+
+    it('throws BookingApiError on HTTP error', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 422,
+        json: () => Promise.resolve({ detail: 'date_from must be on or before date_to' }),
+      } as Response);
+
+      await expect(listPartnerBookings({ page: 1, page_size: 10 })).rejects.toMatchObject({
+        name: 'BookingApiError',
+        status: 422,
+      });
+    });
+  });
+
+  describe('fetchPartnerBookingsExportBlob', () => {
+    it('requests export path without page or page_size', async () => {
+      const blob = new Blob(['a,b'], { type: 'text/csv' });
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(blob),
+        headers: new Headers({
+          'Content-Disposition': 'attachment; filename="travelhub-bookings-history.csv"',
+        }),
+      } as unknown as Response);
+
+      const out = await fetchPartnerBookingsExportBlob({
+        status: 'CONFIRMED',
+        date_from: '2026-01-01',
+        q: 'x',
+      });
+
+      const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
+      expect(url).toContain('/api/v1/booking/bookings/export');
+      expect(url).toContain('status=CONFIRMED');
+      expect(url).toContain('date_from=2026-01-01');
+      expect(url).toContain('q=x');
+      expect(url).not.toMatch(/page=/);
+      expect(url).not.toMatch(/page_size=/);
+      expect(out.filename).toBe('travelhub-bookings-history.csv');
+      expect(out.blob).toBe(blob);
+    });
+
+    it('throws BookingApiError when export fails', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: () => Promise.resolve({ detail: 'Forbidden' }),
+      } as Response);
+
+      await expect(fetchPartnerBookingsExportBlob()).rejects.toBeInstanceOf(BookingApiError);
+    });
+  });
+
+  describe('registerGuestCheckIn', () => {
+    it('POSTs JSON body and returns detail on success', async () => {
+      const detail = { id: 'b1', status: 'CHECKED_IN' };
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(detail),
+      } as Response);
+
+      const out = await registerGuestCheckIn('b1', {
+        actual_arrival_at: '2026-05-03T15:00:00.000Z',
+      });
+      expect(out).toEqual(detail);
+      const call = vi.mocked(global.fetch).mock.calls[0];
+      expect(String(call?.[0])).toContain('/bookings/b1/check-in');
+      expect(call?.[1]).toMatchObject({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      expect(JSON.parse(String((call?.[1] as { body?: string }).body))).toEqual({
+        actual_arrival_at: '2026-05-03T15:00:00.000Z',
+      });
+    });
+
+    it('throws ApiHttpError on HTTP error', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.resolve({ detail: 'conflict' }),
+      } as Response);
+
+      await expect(
+        registerGuestCheckIn('b1', { actual_arrival_at: '2026-05-03T15:00:00.000Z' })
+      ).rejects.toMatchObject({ name: 'ApiHttpError', status: 409, message: 'conflict' });
     });
   });
 

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-travelhub-2026",
     "name": "TravelHub — API local (gateway)",
-    "description": "Colección para probar microservicios detrás del gateway nginx (puerto 8080).\n\n**Uso:** importar en Postman. Variable `baseUrl` = `http://localhost:8080` por defecto.\n\n**Auth:** Ejecuta primero *Login* o *Register*; Postman guardará la cookie `access_token` para *Get me* en la misma sesión (mismo dominio/puerto). Los endpoints de **Booking** y **Payment** aceptan `Authorization: Bearer` (variable `accessToken`): copia el valor de la cookie `access_token` tras el login (Postman → Cookies) o pégalo manualmente.\n\n**Catalog:** *Search properties* requiere checkin, checkout y guests.\n\n**Booking:** listado y detalle de reservas del viajero autenticado (`property_id` enlaza con catálogo para nombre/imagen, etc.).\n\n**Payment (mock PSP):** para *Create payment intent* usa login **María** (`maria@example.com` / `travelhub`) y `bookingIdPayable` por defecto (`90000000-0000-0000-0000-000000000002`, `PENDING_CONFIRMATION`). Tras crear intención, copia respuesta a variables `paymentIntentId`, `webhookSecret` y el token a `mockPaymentToken` para *Confirm* y *Webhook mock*.\n\n**Notification:** solo health en esta colección.",
+    "description": "Colección para probar microservicios detrás del gateway nginx (puerto 8080).\n\n**Uso:** importar en Postman. Variable `baseUrl` = `http://localhost:8080` por defecto.\n\n**Auth:** Ejecuta primero *Login* o *Register*; Postman guardará la cookie `access_token` para *Get me* en la misma sesión (mismo dominio/puerto). Los endpoints de **Booking** y **Payment** aceptan `Authorization: Bearer` (variable `accessToken`): copia el valor de la cookie `access_token` tras el login (Postman → Cookies) o pégalo manualmente.\n\n**Catalog:** *Search properties* requiere ``checkin``, ``checkout``, ``guests`` y ``city_id``. Orden por defecto: ``sort_by=relevance`` (ranking multi-factor: precio, rating, popularidad, distancia a POI). Usa *Cities search* para obtener ``cancunCityId``. Fechas de estancia deben caer en la ventana de disponibilidad del seed (aprox. 30 días desde la fecha del servidor en ``rate_calendar``).\n\n**Booking:** listado y detalle de reservas del viajero autenticado (`property_id` enlaza con catálogo para nombre/imagen, etc.).\n\n**Payment (mock PSP):** para *Create payment intent* usa login **María** (`maria@example.com` / `travelhub`) y `bookingIdPayable` por defecto (`90000000-0000-0000-0000-000000000002`, `PENDING_CONFIRMATION`). Tras crear intención, copia respuesta a variables `paymentIntentId`, `webhookSecret` y el token a `mockPaymentToken` para *Confirm* y *Webhook mock*.\n\n**Notification:** solo health en esta colección.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -68,6 +68,56 @@
     {
       "key": "webhookIdempotencyKey",
       "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancunCityId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "searchCheckIn",
+      "value": "2026-05-10",
+      "type": "string"
+    },
+    {
+      "key": "searchCheckOut",
+      "value": "2026-05-14",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckInEligible",
+      "value": "90000000-0000-0000-0000-000000000095",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckInFuture",
+      "value": "90000000-0000-0000-0000-000000000096",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckInOtherHotel",
+      "value": "90000000-0000-0000-0000-000000000097",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutEligible",
+      "value": "9f000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutFuture",
+      "value": "9f000000-0000-0000-0000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutOtherHotel",
+      "value": "9f000000-0000-0000-0000-000000000003",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdCheckOutIdempotent",
+      "value": "9f000000-0000-0000-0000-000000000004",
       "type": "string"
     }
   ],
@@ -193,7 +243,35 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin=2026-04-15&checkout=2026-04-20&guests=2&sort_by=popularity&page=1&page_size=20"
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&sort_by=relevance&page=1&page_size=20",
+            "description": "Búsqueda con ranking inteligente (default). **Antes:** ejecuta *Cities search* con `q=canc` y copia el `id` de Cancún en la variable `cancunCityId`. Ajusta `searchCheckIn` / `searchCheckOut` a fechas dentro de los próximos ~30 días respecto al **día del servidor** donde corre Postgres (el seed usa `CURRENT_DATE` en inventario y tarifas).\n\n**Orden esperado entre las tres propiedades “didácticas” de Cancún:** primero **Hotel Luna al Beso del Malecón** (muchas reseñas ~5★ + popularidad alta + muy cerca del POI), luego **Sol Viral Carretera Cancún** (barato + popularidad altísima + lejos pero con km), luego **Resort Marea de Oro — sin km al POI** (rating bajo + popularidad semilla baja + distancia NULL penalizada; no debe superar al penthouse 5★ por un solo eje)."
+          }
+        },
+        {
+          "name": "Search properties — filter pool + relevance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&amenities=pool&sort_by=relevance&page=1&page_size=20",
+            "description": "`amenities=pool` + `sort_by=relevance`. **Penthouse Arena Dorada Cancún** (~5.0★, caro, ~24 km al POI) suele quedar **por debajo** de **Hotel Luna al Beso** (~4.85★ pero más cerca y más popular). Con `sort_by=rating` ese orden puede invertirse entre ambos. **Luna Maya** suele quedar atrás sin km al POI. Compara con el request siguiente (`sort_by=rating`)."
+          }
+        },
+        {
+          "name": "Search properties — Cancún pool + rating (contraste)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&amenities=pool&sort_by=rating&page=1&page_size=20",
+            "description": "Mismos filtros que *pool + relevance*, pero `sort_by=rating`. **Penthouse Arena Dorada** y **Sol Caribe** suelen ir con **~5.0★** (por encima de **Luna Beso ~4.85**). El desempate es `property_id` entre empates de promedio — el orden global difiere del de `sort_by=relevance`, donde Luna Beso suele superar al penthouse."
+          }
+        },
+        {
+          "name": "Search properties — missing POI distance (relevance)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/catalog/properties?checkin={{searchCheckIn}}&checkout={{searchCheckOut}}&guests=2&city_id={{cancunCityId}}&sort_by=relevance&page=1&page_size=50",
+            "description": "**Dato faltante:** **Resort Marea de Oro — sin km al POI** tiene `distance_to_poi_km` NULL; en relevancia la dimensión distancia se **penaliza** (no cuenta como “neutral”) para no empatar con propiedades georreferenciadas. Respuesta 200 con `items` ordenados; Marea de Oro suele quedar al final entre las tres didácticas. Verifica que el JSON no rompe y que `distance_to_poi_km` puede ser `null` en ítems."
           }
         },
         {
@@ -309,6 +387,44 @@
           ]
         },
         {
+          "name": "Hotel — list bookings (filtros)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/booking/bookings?status=CONFIRMED&date_from=2026-06-01&date_to=2026-06-30&room_type_id=60000000-0000-0000-0000-000000000001&q=guest&page=1&page_size=20",
+            "description": "Historial hotel partner: filtros opcionales ``status``, ``date_from``, ``date_to`` (solape de estadía), ``room_type_id``, ``q`` (huésped / email / referencia), más ``page`` y ``page_size`` (máx. 100). Requiere JWT rol HOTEL/MANAGER con ``hotel_id`` en el token."
+          }
+        },
+        {
+          "name": "Hotel — export bookings CSV",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/booking/bookings/export?status=CONFIRMED&date_from=2026-06-01&date_to=2026-06-30&q=",
+            "description": "Exporta todas las filas que cumplen los mismos filtros que el listado (sin paginar). Respuesta ``text/csv`` con adjunto ``travelhub-bookings-history.csv``. Solo HOTEL/MANAGER."
+          }
+        },
+        {
           "name": "Get booking detail",
           "request": {
             "auth": {
@@ -363,6 +479,208 @@
               ],
               "cookie": [],
               "body": "{\n  \"code\": \"BOOKING_NOT_FOUND\",\n  \"message\": \"Booking not found\",\n  \"trace_id\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Check-in hotel (seed 095–097)",
+          "description": "En **Auth** → *Login* con `roberto@cadenadelsol.com` / `travelhub`; copia el JWT a la variable `accessToken`. Las reservas 095/096/097 se crean en el seed con `CURRENT_DATE` (recrear volumen o re-ejecutar seed si las fechas quedaron viejas). Andrea (`andrea@hotelesluna.com`) sirve para probar 404 en 097.",
+          "item": [
+            {
+              "name": "List hotel bookings (can_register_check_in)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings"
+              }
+            },
+            {
+              "name": "Hotel — detalle elegible (095)",
+              "description": "Respuesta incluye can_register_check_in true y actual_checkin_at null cuando la reserva es CONFIRMED, checkin ≤ hoy y pertenece al hotel del token.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}"
+              }
+            },
+            {
+              "name": "Hotel — registrar check-in OK",
+              "description": "Ajusta actual_arrival_at a un instante válido (ISO 8601). Tras éxito: status CHECKED_IN, actual_checkin_at informado, historial hotel_check_in.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_arrival_at\": \"2026-05-03T16:45:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}/check-in"
+              }
+            },
+            {
+              "name": "Hotel — check-in 422 (falta hora de llegada)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{}" },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}/check-in"
+              }
+            },
+            {
+              "name": "Hotel — check-in no elegible (096 check-in futuro)",
+              "description": "Esperado 409 INVALID_BOOKING_STATE mientras la fecha programada de check-in sea posterior a hoy.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_arrival_at\": \"2026-12-01T14:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInFuture}}/check-in"
+              }
+            },
+            {
+              "name": "Hotel — detalle 097 otra cadena (404 con Roberto)",
+              "description": "Reserva en propiedad de Hoteles Luna; con token de Roberto debe responder 404 BOOKING_NOT_FOUND.",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInOtherHotel}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check-out hotel (seed 9f)",
+          "description": "Reservas `9f…` en el seed: 001 elegible (CHECKED_IN, checkout ≤ hoy), 002 checkout futuro (409), 003 otra cadena (404 con Roberto), 004 ya CHECKED_OUT (200 idempotente). Login `roberto@cadenadelsol.com` / `travelhub`. Ajusta `actual_departure_at` a un instante ≤ ahora y ≥ check-in real.",
+          "item": [
+            {
+              "name": "Hotel — list (can_register_check_out)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/booking/bookings"
+              }
+            },
+            {
+              "name": "Hotel — registrar check-out OK (9f001)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T11:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutEligible}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out 422 (body vacío)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{}" },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutEligible}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out 409 checkout futuro (9f002)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutFuture}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out 404 otra cadena (9f003, Roberto)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutOtherHotel}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out no checked-in (095 CONFIRMED)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckInEligible}}/check-out"
+              }
+            },
+            {
+              "name": "Hotel — check-out idempotente (9f004 ya CHECKED_OUT)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actual_departure_at\": \"2026-05-03T10:00:00Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/booking/bookings/{{bookingIdCheckOutIdempotent}}/check-out"
+              }
             }
           ]
         }
@@ -425,6 +743,25 @@
               "body": "{\n  \"detail\": \"Las métricas de hotel requieren una cuenta vinculada a un hotel.\"\n}"
             }
           ]
+        },
+        {
+          "name": "Hotel bookings tab metrics",
+          "description": "Conteos globales para las tarjetas inferiores de **Bookings** (confirmadas, pendientes, llegadas hoy, canceladas). Mismo alcance de hotel que `/dashboard/metrics` (`hotel_id` en token; **ADMIN** debe pasar `hotel_id` en query).",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/booking/dashboard/bookings-metrics"
+          }
         },
         {
           "name": "Revenue report by period",

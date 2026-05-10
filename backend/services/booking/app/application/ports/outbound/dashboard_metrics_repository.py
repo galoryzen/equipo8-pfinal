@@ -75,4 +75,15 @@ class DashboardMetricsRepository(ABC):
     async def list_upcoming_checkins(
         self, hotel_id: UUID, *, limit: int = 10
     ) -> list[UpcomingCheckinItem]:
-        """Return next check-ins for hotel properties ordered by check-in date."""
+        """Return next check-ins for hotel properties ordered by check-in date.
+
+        Excluye CHECKED_IN: esas estancias ya tienen llegada registrada y no deben listarse
+        como check-in pendiente.
+        """
+
+    @abstractmethod
+    async def count_checked_in_stays_currently_at_hotel(self, hotel_id: UUID) -> tuple[int, int]:
+        """Count CHECKED_IN stays overlapping today (checkin <= today < checkout).
+
+        Returns ``(number_of_bookings, sum_of_guests_count)`` for dashboard occupancy.
+        """
