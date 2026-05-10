@@ -254,7 +254,7 @@ function PaymentPageContent() {
     () =>
       firstName.trim().length > 0 &&
       lastName.trim().length > 0 &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase()) &&
       phone.trim().length > 0,
     [firstName, lastName, email, phone]
   );
@@ -938,9 +938,13 @@ function PaymentPageContent() {
                         size="small"
                         required
                         inputProps={{ 'data-testid': 'traveler-payment-email' }}
-                        error={email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}
+                        error={
+                          email.length > 0 &&
+                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase())
+                        }
                         helperText={
-                          email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+                          email.length > 0 &&
+                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase())
                             ? t('payment.emailInvalid')
                             : t('payment.emailHelper')
                         }
@@ -1089,12 +1093,7 @@ function PaymentPageContent() {
               {/* Payment Method */}
               <Card
                 variant="outlined"
-                sx={{
-                  borderRadius: 2,
-                  opacity: guestDetailsFilled ? 1 : 0.55,
-                  pointerEvents: guestDetailsFilled ? 'auto' : 'none',
-                  transition: 'opacity 0.2s',
-                }}
+                sx={{ borderRadius: 2 }}
                 data-testid="traveler-payment-method-card"
               >
                 <CardContent sx={{ p: 3 }}>
@@ -1117,13 +1116,6 @@ function PaymentPageContent() {
                       sx={{ fontWeight: 600 }}
                     />
                   </Box>
-
-                  {!guestDetailsFilled && (
-                    <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
-                      {t('payment.fillGuestDetailsFirst')}
-                    </Alert>
-                  )}
-
                   <Tabs
                     value={paymentTab}
                     onChange={(_, v) => setPaymentTab(v)}

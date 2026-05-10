@@ -179,6 +179,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                     component={Link}
                     href={item.href}
                     selected={isActive(item.href)}
+                    data-testid={item.key}
                     sx={{
                       borderRadius: '10px',
                       mx: 1,

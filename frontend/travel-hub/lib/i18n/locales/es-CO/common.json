@@ -72,6 +72,11 @@
     "finalTotal": "Total final",
     "refundTooltip": "Reembolso completo: incluye subtotal, impuestos y tarifa de servicio"
   },
+  "tripsEmptyState": {
+    "title": "No tienes reservas registradas",
+    "description": "Cuando reserves un alojamiento, aparecerá aquí con el estado y las fechas de tu viaje.",
+    "cta": "Buscar hoteles"
+  },
   "recommended": {
     "title": "Recomendado para ti",
     "subtitle": "Propiedades según tu actividad reciente",

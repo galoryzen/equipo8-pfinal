@@ -193,12 +193,13 @@ export default function RoomTypeTariffView({
         severity: 'success',
       });
       await loadTariffs();
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       setSnack({
         open: true,
         message: t('manager.hotels.roomTypeManage.tariffError'),
         severity: 'error',
       });
+      console.error(error);
     } finally {
       setSavingBase(false);
     }
@@ -229,12 +230,13 @@ export default function RoomTypeTariffView({
       });
       setRuleName('');
       await loadTariffs();
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       setSnack({
         open: true,
         message: t('manager.hotels.roomTypeManage.ruleAddError'),
         severity: 'error',
       });
+      console.error(error);
     } finally {
       setAddingRule(false);
     }
@@ -249,12 +251,13 @@ export default function RoomTypeTariffView({
         severity: 'success',
       });
       await loadTariffs();
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       setSnack({
         open: true,
         message: t('manager.hotels.roomTypeManage.ruleDeleteError'),
         severity: 'error',
       });
+      console.error(error);
     }
   }
 
