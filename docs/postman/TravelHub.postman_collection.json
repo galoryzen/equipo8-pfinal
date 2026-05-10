@@ -119,6 +119,26 @@
       "key": "bookingIdCheckOutIdempotent",
       "value": "9f000000-0000-0000-0000-000000000004",
       "type": "string"
+    },
+    {
+      "key": "occupancyFrom",
+      "value": "2026-06-01",
+      "type": "string"
+    },
+    {
+      "key": "occupancyTo",
+      "value": "2026-06-14",
+      "type": "string"
+    },
+    {
+      "key": "roomTypeIdStandard",
+      "value": "60000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "propertyIdOtherHotel",
+      "value": "30000000-0000-0000-0000-000000000003",
+      "type": "string"
     }
   ],
   "item": [
@@ -761,6 +781,153 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/api/v1/booking/dashboard/bookings-metrics"
+          }
+        },
+        {
+          "name": "Occupancy — calendar (propiedad por defecto)",
+          "description": "Roles **HOTEL** / **MANAGER** + Bearer. Sin `property_id` usa la primera propiedad del hotel (orden por UUID). Capacidad vía inventario (`available_units`) + reservas solapadas.",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/booking/occupancy/calendar?date_from={{occupancyFrom}}&date_to={{occupancyTo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "booking", "occupancy", "calendar"],
+              "query": [
+                { "key": "date_from", "value": "{{occupancyFrom}}" },
+                { "key": "date_to", "value": "{{occupancyTo}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Occupancy — calendar con rango",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/booking/occupancy/calendar?date_from=2026-06-01&date_to=2026-06-14&property_id={{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "booking", "occupancy", "calendar"],
+              "query": [
+                { "key": "date_from", "value": "2026-06-01" },
+                { "key": "date_to", "value": "2026-06-14" },
+                { "key": "property_id", "value": "{{propertyId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Occupancy — calendar filtro room_type_id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/booking/occupancy/calendar?date_from=2026-06-01&date_to=2026-06-07&property_id={{propertyId}}&room_type_id={{roomTypeIdStandard}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "booking", "occupancy", "calendar"],
+              "query": [
+                { "key": "date_from", "value": "2026-06-01" },
+                { "key": "date_to", "value": "2026-06-07" },
+                { "key": "property_id", "value": "{{propertyId}}" },
+                { "key": "room_type_id", "value": "{{roomTypeIdStandard}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Occupancy — daily breakdown",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/booking/occupancy/daily-breakdown?property_id={{propertyId}}&date=2026-06-10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "booking", "occupancy", "daily-breakdown"],
+              "query": [
+                { "key": "property_id", "value": "{{propertyId}}" },
+                { "key": "date", "value": "2026-06-10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Occupancy — projection 90 días",
+          "description": "Proyección desde **hoy** del servidor; solo **CONFIRMED** y **CHECKED_IN**. Alertas por día <50% y períodos consecutivos.",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/booking/occupancy/projection?property_id={{propertyId}}&days=90",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "booking", "occupancy", "projection"],
+              "query": [
+                { "key": "property_id", "value": "{{propertyId}}" },
+                { "key": "days", "value": "90" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Occupancy — property otro hotel (403)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/booking/occupancy/calendar?date_from=2026-06-01&date_to=2026-06-07&property_id={{propertyIdOtherHotel}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "booking", "occupancy", "calendar"],
+              "query": [
+                { "key": "date_from", "value": "2026-06-01" },
+                { "key": "date_to", "value": "2026-06-07" },
+                { "key": "property_id", "value": "{{propertyIdOtherHotel}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Occupancy — rango inválido (>90 días)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/booking/occupancy/calendar?date_from=2026-06-01&date_to=2026-09-01&property_id={{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "booking", "occupancy", "calendar"],
+              "query": [
+                { "key": "date_from", "value": "2026-06-01" },
+                { "key": "date_to", "value": "2026-09-01" },
+                { "key": "property_id", "value": "{{propertyId}}" }
+              ]
+            }
           }
         },
         {
