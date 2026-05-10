@@ -223,6 +223,19 @@ export class BookingPage extends BasePage {
     await this.fillOwnerInformation(ownerInfo);
     await this.fillAdditionalGuestsInformation(additionalGuests);
     await this.fillCreditCardInformation(creditCardInfo);
+
+    await this.page.locator(this.CONTINUE_PAYMENT_BUTTON).waitFor({
+      state: 'visible',
+      timeout: 10000,
+    });
+    await this.page.waitForFunction(
+      () => {
+        const btn = document.querySelector('[data-testid="traveler-payment-submit"]');
+        return btn && (!btn.hasAttribute('disabled') || btn.getAttribute('disabled') === 'false');
+      },
+      { timeout: 10000 }
+    );
+
     await this.clickContinueToPayment();
     await this.waitForLoadingComplete();
   }
