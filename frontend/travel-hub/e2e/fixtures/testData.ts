@@ -31,6 +31,16 @@ export const TEST_USERS = {
     password: 'travelhub',
     name: 'Andrea Luna',
   },
+  roberto: {
+    email: 'roberto@cadenadelsol.com',
+    password: 'travelhub',
+    name: 'Roberto Sol',
+  },
+  javier: {
+    email: 'javier@grupoestrella.com',
+    password: 'travelhub',
+    name: 'Javier Estrella',
+  },
 };
 
 export const TEST_DESTINATIONS = [
