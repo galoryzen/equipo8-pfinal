@@ -23,10 +23,12 @@ class TestManagerHotelsEndpoints:
     @patch("app.adapters.inbound.api.manager.get_list_manager_hotels_use_case")
     def test_list_manager_hotels_ok(self, mock_factory, client):
         mock_uc = AsyncMock()
+        prop_id = uuid4()
+        hotel_group_id = uuid4()
         mock_uc.execute.return_value = {
             "items": [
                 {
-                    "id": str(uuid4()),
+                    "id": str(prop_id),
                     "name": "Prop",
                     "location": "X, Y",
                     "totalRooms": 1,
@@ -34,7 +36,7 @@ class TestManagerHotelsEndpoints:
                     "status": "ACTIVE",
                     "imageUrl": None,
                     "categories": 0,
-                    "hotelId": str(uuid4()),
+                    "hotelId": str(hotel_group_id),
                 }
             ],
             "total": 1,
@@ -54,6 +56,36 @@ class TestManagerHotelsEndpoints:
         body = resp.json()
         assert body["total"] == 1
         assert body["items"][0]["name"] == "Prop"
+        assert body["items"][0]["hotelId"] == str(hotel_group_id)
+
+    @patch("app.adapters.inbound.api.manager.get_list_manager_hotels_use_case")
+    def test_list_manager_hotels_use_case_receives_authenticated_hotel_id(self, mock_factory, client):
+        """Repository / SQL scope by hotel — use case must receive JWT hotel id."""
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "page_size": 10,
+            "total_pages": 0,
+            "message": None,
+        }
+        mock_factory.return_value = mock_uc
+        fixed_hotel_id = uuid4()
+        app.dependency_overrides[get_manager_hotel_id] = lambda: fixed_hotel_id
+        app.dependency_overrides[enforce_administrative_role] = lambda: None
+        try:
+            resp = client.get("/api/v1/catalog/manager/hotels")
+        finally:
+            app.dependency_overrides.pop(get_manager_hotel_id, None)
+            app.dependency_overrides.pop(enforce_administrative_role, None)
+
+        assert resp.status_code == 200
+        mock_uc.execute.assert_awaited_once_with(
+            hotel_id=fixed_hotel_id,
+            page=1,
+            page_size=10,
+        )
 
     def test_list_manager_hotels_401_without_hotel_claim(self, client):
         resp = client.get("/api/v1/catalog/manager/hotels")
