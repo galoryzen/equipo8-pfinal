@@ -58,8 +58,8 @@ const sampleProperty: PropertyDetail = {
 describe('TripsEmptyState', () => {
   it('renders empty message and link to search', () => {
     render(<TripsEmptyState />);
-    expect(screen.getByText('No tienes reservas registradas')).toBeDefined();
-    expect(screen.getByRole('link', { name: /buscar hoteles/i }).getAttribute('href')).toBe(
+    expect(screen.getByText('No bookings yet')).toBeDefined();
+    expect(screen.getByRole('link', { name: /search hotels/i }).getAttribute('href')).toBe(
       '/traveler/search'
     );
   });

@@ -168,6 +168,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
       <Box component="header" sx={{ mb: 3 }}>
         <Typography
           component="h1"
+          data-testid="manager-notifications-title"
           sx={{
             fontSize: '2.25rem',
             lineHeight: 1.1,
@@ -253,6 +254,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
         <Stack spacing={2} sx={{ mt: 2.5 }}>
           {!loading && bookings.length === 0 && !error && (
             <Box
+              data-testid="manager-no-pending-bookings"
               sx={{
                 borderRadius: 4,
                 border: '1px solid',
@@ -305,6 +307,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
             variant="text"
             disabled={page <= 1 || loading}
             onClick={() => loadPage(page - 1)}
+            data-testid="manager-pagination-prev"
             sx={{
               textTransform: 'none',
               fontWeight: 700,
@@ -324,6 +327,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
             variant="text"
             disabled={page >= totalPages || loading}
             onClick={() => loadPage(page + 1)}
+            data-testid="manager-pagination-next"
             sx={{
               textTransform: 'none',
               fontWeight: 700,
@@ -342,6 +346,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
       </Box>
 
       <Snackbar
+        data-testid="manager-snackbar"
         open={snack.open}
         autoHideDuration={4000}
         onClose={handleSnackClose}

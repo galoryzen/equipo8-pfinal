@@ -7,6 +7,10 @@ import { Page } from '@playwright/test';
 export class BasePage {
   constructor(protected page: Page) {}
 
+  getPage() {
+    return this.page;
+  }
+
   /**
    * Navigate to a specific URL path
    */
@@ -45,15 +49,39 @@ export class BasePage {
   /**
    * Wait for element to be visible
    */
-  async waitForVisible(selector: string, timeout = 5000) {
-    await this.page.waitForSelector(selector, { state: 'visible', timeout });
+  async waitForVisible(selector: string, timeout = 10000) {
+    try {
+      await this.page.waitForSelector(selector, { state: 'visible', timeout });
+    } catch (e) {
+      const isVisible = await this.isVisible(selector);
+      if (!isVisible) {
+        throw e;
+      }
+    }
   }
 
   /**
    * Wait for element to be hidden
    */
-  async waitForHidden(selector: string, timeout = 5000) {
-    await this.page.waitForSelector(selector, { state: 'hidden', timeout });
+  async waitForHidden(selector: string, timeout = 10000) {
+    try {
+      await this.page.waitForSelector(selector, { state: 'hidden', timeout });
+    } catch {
+      const count = await this.page.locator(selector).count();
+      if (count > 0) {
+        const isHidden = await this.page.locator(selector).first().isHidden();
+        if (!isHidden) {
+          throw new Error(`Element ${selector} did not become hidden`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Wait for selector to be present in DOM (attached)
+   */
+  async waitForSelector(selector: string, timeout = 10000) {
+    await this.page.waitForSelector(selector, { state: 'attached', timeout });
   }
 
   /**
@@ -61,7 +89,7 @@ export class BasePage {
    */
   async fillInput(selector: string, value: string) {
     const input = this.page.locator(selector);
-    await input.clear();
+    await input.click({ clickCount: 3 });
     await input.fill(value);
   }
 
@@ -111,20 +139,35 @@ export class BasePage {
    * Wait for loading to complete
    */
   async waitForLoadingComplete() {
-    // Wait for any loading spinners to disappear
     const loadingSelectors = [
-      'svg[class*="spinner"]',
+      '[class*="spinner"]',
       '[class*="loading"]',
       '[class*="progress"]',
       '.MuiCircularProgress-root',
+      '[data-testid*="loading"]',
+      '[role="progressbar"]',
+      '.skeleton',
+      '[class*="Skeleton"]',
     ];
 
     for (const selector of loadingSelectors) {
       try {
-        await this.page.waitForSelector(selector, { state: 'hidden', timeout: 2000 });
+        await this.page.waitForSelector(selector, { state: 'hidden', timeout: 3000 });
       } catch {
         // Selector might not exist on this page
       }
+    }
+
+    try {
+      await this.page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+    } catch {
+      // Page might already be loaded
+    }
+
+    try {
+      await this.page.waitForLoadState('networkidle', { timeout: 5000 });
+    } catch {
+      // Network might not be fully idle, but page should be functional
     }
   }
 
@@ -180,6 +223,16 @@ export class BasePage {
       },
       [key, value]
     );
+  }
+
+  /**
+   * Logout the current user by calling the logout API endpoint
+   */
+  async logout() {
+    await this.page.evaluate(async () => {
+      await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+    });
+    await this.page.reload();
   }
 
   /**

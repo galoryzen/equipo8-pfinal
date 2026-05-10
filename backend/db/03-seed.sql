@@ -18,7 +18,8 @@ INSERT INTO users.users (id, full_name, email, phone, role, country_code, passwo
   ('a0000000-0000-0000-0000-000000000002', 'María López',      'maria@example.com',    '+573001234567',  'TRAVELER', 'CO', crypt('travelhub', gen_salt('bf'))::bytea),
   ('a0000000-0000-0000-0000-000000000003', 'Lucía Fernández',  'lucia@example.com',    '+5491123456789', 'TRAVELER', 'AR', crypt('travelhub', gen_salt('bf'))::bytea),
   ('a0000000-0000-0000-0000-000000000004', 'Pablo Ruiz',       'pablo@example.com',    '+34612345678',   'TRAVELER', 'ES', crypt('travelhub', gen_salt('bf'))::bytea),
-  ('a0000000-0000-0000-0000-000000000005', 'Emily Johnson',    'emily@example.com',    '+12025551234',   'TRAVELER', 'US', crypt('travelhub', gen_salt('bf'))::bytea);
+  ('a0000000-0000-0000-0000-000000000005', 'Emily Johnson',    'emily@example.com',    '+12025551234',   'TRAVELER', 'US', crypt('travelhub', gen_salt('bf'))::bytea),
+  ('a0000000-0000-0000-0000-000000000006', 'Sofía Martínez',   'sofia@example.com',    '+5215587654321', 'TRAVELER', 'MX', crypt('travelhub', gen_salt('bf'))::bytea);
 
 -- Hotel managers
 INSERT INTO users.users (id, full_name, email, phone, role, country_code, password) VALUES
