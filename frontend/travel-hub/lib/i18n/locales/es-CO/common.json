@@ -646,6 +646,7 @@
           "bookings": "Reservas",
           "hotels": "Mis Hoteles",
           "notifications": "Notificaciones",
+          "occupancy": "Ocupación",
           "reports": "Reportes",
           "subtitle": "Super Admin",
           "settings": "Configuración",
@@ -736,6 +737,65 @@
         "empty": "No hay datos de reporte para el período seleccionado.",
         "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
         "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
+      }
+    },
+    "occupancy": {
+      "title": "Resumen de ocupación",
+      "subtitle": "Supervisa la utilización diaria de habitaciones y el desempeño.",
+      "filters": {
+        "property": "Propiedad",
+        "roomType": "Tipo de habitación",
+        "roomTypeAll": "Todos los tipos",
+        "month": "Mes"
+      },
+      "weekdays": {
+        "sun": "DOM",
+        "mon": "LUN",
+        "tue": "MAR",
+        "wed": "MIÉ",
+        "thu": "JUE",
+        "fri": "VIE",
+        "sat": "SÁB"
+      },
+      "calendar": {
+        "roomsLine": "{{occupied}}/{{total}} hab."
+      },
+      "legend": {
+        "high": "Alta ocupación",
+        "medium": "Ocupación media",
+        "low": "Baja ocupación"
+      },
+      "breakdown": {
+        "title": "Desglose del día por tipo de habitación",
+        "hint": "Selecciona un día en el calendario para ver ocupadas, disponibles y bloqueadas por categoría.",
+        "empty": "No hay filas de desglose para este día.",
+        "columns": {
+          "roomType": "Tipo de habitación",
+          "occupied": "Ocupadas",
+          "available": "Disponibles",
+          "blocked": "Bloqueadas",
+          "rate": "% Ocupación"
+        }
+      },
+      "projection": {
+        "title": "Alertas de proyección",
+        "empty": "Sin alertas de baja ocupación para los próximos 90 días.",
+        "period": "Baja ocupación {{from}} → {{to}} (prom. {{rate}}%)",
+        "periodsSummary_one": "{{count}} período de baja ocupación detectado",
+        "periodsSummary_other": "{{count}} períodos de baja ocupación detectados",
+        "dailySummary_one": "{{count}} señal diaria de baja ocupación en la ventana de proyección",
+        "dailySummary_other": "{{count}} señales diarias de baja ocupación en la ventana de proyección",
+        "pageSizeLabel": "Alertas por página",
+        "rangeSummary": "{{from}}–{{to}} de {{total}} alertas"
+      },
+      "states": {
+        "forbidden": "La ocupación solo está disponible para cuentas de hotel.",
+        "loadingHotels": "Cargando propiedades…",
+        "hotelsError": "No se pudieron cargar tus propiedades.",
+        "calendarError": "No se pudo cargar el calendario de ocupación.",
+        "calendarEmpty": "No hay datos de ocupación para este mes.",
+        "breakdownError": "No se pudo cargar el desglose diario.",
+        "projectionError": "No se pudo cargar la proyección de ocupación."
       }
     },
     "settings": {

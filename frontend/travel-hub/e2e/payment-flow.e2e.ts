@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  PAYMENT_TEST_SCENARIOS,
   TEST_DESTINATIONS,
   TEST_USERS,
   generateBookingOwnerInfo,
   generateGuestInfo,
-  generatePaymentInfo,
   getBookingDates,
 } from './fixtures/testData';
 import { BookingPage } from './pages/BookingPage';
@@ -56,8 +56,12 @@ test.describe('E2E: Complete Booking & Payment Flow', () => {
     // Test data
     const user = TEST_USERS.traveler;
     const destination = TEST_DESTINATIONS[0]; // Cancún
-    const dates = getBookingDates(7, 10); // 7-10 days from now
-    const paymentInfo = generatePaymentInfo();
+    const dates = getBookingDates(21, 24); // outside seed inventory blackout (days +5…+19)
+    const cardExpiryYear = String(new Date().getFullYear() + 2).slice(-2);
+    const paymentInfo = {
+      ...PAYMENT_TEST_SCENARIOS.validPayment,
+      expiryDate: `12/${cardExpiryYear}`,
+    };
 
     // ── STEP 1: Login ──
     await loginPage.goToLoginPage();

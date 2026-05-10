@@ -11,6 +11,8 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import CalendarViewMonthIcon from '@mui/icons-material/CalendarViewMonth';
+import CalendarViewMonthOutlinedIcon from '@mui/icons-material/CalendarViewMonthOutlined';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import DashboardCustomizeOutlinedIcon from '@mui/icons-material/DashboardCustomizeOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -43,6 +45,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       .catch(() => setUser(null));
   }, []);
 
+  const occupancyNavAllowed = user?.role === 'HOTEL' || user?.role === 'MANAGER';
+
   const MENU_ITEMS = [
     {
       key: 'manager.hotels.admin.navbar.dashboard',
@@ -68,6 +72,16 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       activeIcon: <NotificationsIcon />,
       href: '/manager/notifications',
     },
+    ...(occupancyNavAllowed
+      ? [
+          {
+            key: 'manager.hotels.admin.navbar.occupancy',
+            icon: <CalendarViewMonthOutlinedIcon />,
+            activeIcon: <CalendarViewMonthIcon />,
+            href: '/manager/occupancy',
+          },
+        ]
+      : []),
     {
       key: 'manager.hotels.admin.navbar.reports',
       icon: <BarChartOutlinedIcon />,

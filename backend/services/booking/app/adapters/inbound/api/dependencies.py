@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.db.booking_repository import SqlAlchemyBookingRepository
 from app.adapters.outbound.db.dashboard_metrics_repository import SqlAlchemyDashboardMetricsRepository
+from app.adapters.outbound.db.occupancy_repository import SqlAlchemyOccupancyRepository
 from app.adapters.outbound.db.guest_repository import SqlAlchemyGuestRepository
 from app.adapters.outbound.db.revenue_report_repository import SqlAlchemyRevenueReportRepository
 from app.adapters.outbound.db.session import async_session
@@ -29,6 +30,11 @@ from app.application.use_cases.get_hotel_bookings_metrics import GetHotelBooking
 from app.application.use_cases.get_hotel_dashboard_metrics import GetHotelDashboardMetricsUseCase
 from app.application.use_cases.get_hotel_revenue_report import GetHotelRevenueReportUseCase
 from app.application.use_cases.get_my_active_cart import GetMyActiveCartUseCase
+from app.application.use_cases.get_occupancy_calendar import GetOccupancyCalendarUseCase
+from app.application.use_cases.get_occupancy_daily_breakdown import (
+    GetOccupancyDailyBreakdownUseCase,
+)
+from app.application.use_cases.get_occupancy_projection import GetOccupancyProjectionUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
 from app.application.use_cases.list_my_bookings import ListMyBookingsUseCase
 from app.application.use_cases.reject_booking import RejectBookingUseCase
@@ -279,5 +285,26 @@ def get_admin_hotel_revenue_report_use_case(
 ) -> GetAdminHotelRevenueReportUseCase:
     repo = SqlAlchemyRevenueReportRepository(session)
     return GetAdminHotelRevenueReportUseCase(repo)
+
+
+def get_occupancy_calendar_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetOccupancyCalendarUseCase:
+    repo = SqlAlchemyOccupancyRepository(session)
+    return GetOccupancyCalendarUseCase(repo)
+
+
+def get_occupancy_daily_breakdown_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetOccupancyDailyBreakdownUseCase:
+    repo = SqlAlchemyOccupancyRepository(session)
+    return GetOccupancyDailyBreakdownUseCase(repo)
+
+
+def get_occupancy_projection_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetOccupancyProjectionUseCase:
+    repo = SqlAlchemyOccupancyRepository(session)
+    return GetOccupancyProjectionUseCase(repo)
 
 
