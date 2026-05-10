@@ -18,7 +18,7 @@ export class MyTripsPage extends BasePage {
         this.page.waitForSelector(this.EMPTY_STATE, { state: 'visible', timeout: 10000 }),
       ]);
     } catch (error: unknown) {
-      console.warn('Neither selector appeared within timeout')
+      console.warn('Neither selector appeared within timeout');
       console.error(error);
       // Continue anyway or throw if this is critical
     }
