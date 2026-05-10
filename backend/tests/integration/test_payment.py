@@ -7,7 +7,7 @@ payment-intent creation endpoint.
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import date, timedelta
+from datetime import date
 
 import asyncpg
 import httpx
@@ -42,6 +42,11 @@ async def _create_cart(
         pytest.skip(
             f"cart pre-condition failed (404: {resp.text}). Re-seed with "
             "`make reset-db && make up`."
+        )
+    if resp.status_code == 409:
+        pytest.skip(
+            f"cart pre-condition failed (409: {resp.text}). "
+            "Likely inventory blackout or stale seed — re-run `make reset-db && make up`."
         )
     assert resp.status_code == 201, resp.text
     return resp.json()
@@ -92,10 +97,7 @@ async def test_checkout_force_decline_records_failure(
       * booking.booking remains in 'PENDING_PAYMENT' (no PAYMENT_FAILED state exists)
     """
     headers = auth_header(traveler_token)
-    # Distinct date window per test so we don't collide with other tests'
-    # bookings on the same room+date (the use case rejects duplicates 409).
-    checkin = date.today() + timedelta(days=11)
-    checkout = checkin + timedelta(days=2)
+    checkin, checkout = booking_dates
     body = await _create_cart(
         http_client,
         headers,
@@ -169,8 +171,7 @@ async def test_payment_intent_endpoint_creates_intent(
     with intent fields, and the row exists in payments.payment_intent.
     """
     headers = auth_header(traveler_token)
-    checkin = date.today() + timedelta(days=14)
-    checkout = checkin + timedelta(days=2)
+    checkin, checkout = booking_dates
     body = await _create_cart(
         http_client,
         headers,

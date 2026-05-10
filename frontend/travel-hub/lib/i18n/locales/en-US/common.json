@@ -723,6 +723,7 @@
           "bookings": "Bookings",
           "hotels": "My Hotels",
           "notifications": "Notifications",
+          "occupancy": "Occupancy",
           "reports": "Reports",
           "subtitle": "Super Admin",
           "settings": "Settings",
@@ -768,6 +769,65 @@
         "empty": "No report data available for the selected period.",
         "error": "We could not load the report. Please try again.",
         "hotelNotResolved": "We could not resolve your hotel profile. Please sign in again."
+      }
+    },
+    "occupancy": {
+      "title": "Occupancy Overview",
+      "subtitle": "Monitor daily room utilization and performance.",
+      "filters": {
+        "property": "Property",
+        "roomType": "Room type",
+        "roomTypeAll": "All room types",
+        "month": "Month"
+      },
+      "weekdays": {
+        "sun": "SUN",
+        "mon": "MON",
+        "tue": "TUE",
+        "wed": "WED",
+        "thu": "THU",
+        "fri": "FRI",
+        "sat": "SAT"
+      },
+      "calendar": {
+        "roomsLine": "{{occupied}}/{{total}} rooms"
+      },
+      "legend": {
+        "high": "High occupancy",
+        "medium": "Medium occupancy",
+        "low": "Low occupancy"
+      },
+      "breakdown": {
+        "title": "Daily breakdown by room type",
+        "hint": "Select a day on the calendar to see occupied, available, and blocked rooms by category.",
+        "empty": "No breakdown rows for this day.",
+        "columns": {
+          "roomType": "Room type",
+          "occupied": "Occupied",
+          "available": "Available",
+          "blocked": "Blocked",
+          "rate": "Occupancy %"
+        }
+      },
+      "projection": {
+        "title": "Projection alerts",
+        "empty": "No low-occupancy alerts for the next 90 days.",
+        "period": "Low occupancy {{from}} → {{to}} (avg {{rate}}%)",
+        "periodsSummary_one": "{{count}} low occupancy period detected",
+        "periodsSummary_other": "{{count}} low occupancy periods detected",
+        "dailySummary_one": "{{count}} daily low-occupancy signal in the projection window",
+        "dailySummary_other": "{{count}} daily low-occupancy signals in the projection window",
+        "pageSizeLabel": "Alerts per page",
+        "rangeSummary": "{{from}}–{{to}} of {{total}} alerts"
+      },
+      "states": {
+        "forbidden": "Occupancy insights are only available for hotel partner accounts.",
+        "loadingHotels": "Loading properties…",
+        "hotelsError": "Could not load your properties.",
+        "calendarError": "Could not load occupancy calendar.",
+        "calendarEmpty": "No occupancy rows returned for this month.",
+        "breakdownError": "Could not load daily breakdown.",
+        "projectionError": "Could not load occupancy projection."
       }
     },
     "settings": {

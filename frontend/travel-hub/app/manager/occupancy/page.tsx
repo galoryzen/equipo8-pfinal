@@ -10,7 +10,7 @@ import {
   getOccupancyProjection,
 } from '@/app/lib/api/occupancy';
 import type { ManagerHotelItem } from '@/app/lib/types/manager';
-import type { OccupancyDay, OccupancyDailyBreakdownResponse } from '@/app/lib/types/occupancy';
+import type { OccupancyDailyBreakdownResponse, OccupancyDay } from '@/app/lib/types/occupancy';
 import { tokens } from '@/lib/theme/tokens';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -173,7 +173,11 @@ function OccupancyProjectionAlerts({
   }
   if (periods.length === 0 && days.length === 0) {
     return (
-      <Typography variant="body2" sx={{ color: tokens.dashboard.mutedText }} data-testid="occupancy-projection-empty">
+      <Typography
+        variant="body2"
+        sx={{ color: tokens.dashboard.mutedText }}
+        data-testid="occupancy-projection-empty"
+      >
         {t('manager.occupancy.projection.empty')}
       </Typography>
     );
@@ -230,7 +234,11 @@ function OccupancyProjectionAlerts({
         flexWrap="wrap"
         sx={{ pt: 0.5 }}
       >
-        <Typography variant="body2" sx={{ color: tokens.text.secondary }} data-testid="occupancy-projection-range">
+        <Typography
+          variant="body2"
+          sx={{ color: tokens.text.secondary }}
+          data-testid="occupancy-projection-range"
+        >
           {t('manager.occupancy.projection.rangeSummary', {
             from: total === 0 ? 0 : start + 1,
             to: rangeTo,
@@ -354,7 +362,9 @@ export default function ManagerOccupancyPage() {
       })
       .catch((e: unknown) => {
         if (!cancelled)
-          setHotelsError(e instanceof Error ? e.message : t('manager.occupancy.states.hotelsError'));
+          setHotelsError(
+            e instanceof Error ? e.message : t('manager.occupancy.states.hotelsError')
+          );
       })
       .finally(() => {
         if (!cancelled) setHotelsLoading(false);
@@ -404,7 +414,9 @@ export default function ManagerOccupancyPage() {
       setCalendarDays(data.days);
     } catch (e: unknown) {
       setCalendarDays([]);
-      setCalendarError(e instanceof Error ? e.message : t('manager.occupancy.states.calendarError'));
+      setCalendarError(
+        e instanceof Error ? e.message : t('manager.occupancy.states.calendarError')
+      );
     } finally {
       setCalendarLoading(false);
     }
@@ -512,17 +524,24 @@ export default function ManagerOccupancyPage() {
       </Box>
 
       {hotelsError ? (
-        <Alert severity="error" action={<Button onClick={() => window.location.reload()}>{t('common.tryAgain')}</Button>}>
+        <Alert
+          severity="error"
+          action={<Button onClick={() => window.location.reload()}>{t('common.tryAgain')}</Button>}
+        >
           {hotelsError}
         </Alert>
       ) : null}
 
-      <Card sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}>
+      <Card
+        sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}
+      >
         <CardContent>
           <Grid container spacing={2} alignItems="flex-end">
             <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth disabled={filtersDisabled}>
-                <InputLabel id="occupancy-property-label">{t('manager.occupancy.filters.property')}</InputLabel>
+                <InputLabel id="occupancy-property-label">
+                  {t('manager.occupancy.filters.property')}
+                </InputLabel>
                 <Select
                   id="occupancy-property-select"
                   labelId="occupancy-property-label"
@@ -551,7 +570,9 @@ export default function ManagerOccupancyPage() {
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth disabled={filtersDisabled || !propertyId || roomTypesLoading}>
-                <InputLabel id="occupancy-room-type-label">{t('manager.occupancy.filters.roomType')}</InputLabel>
+                <InputLabel id="occupancy-room-type-label">
+                  {t('manager.occupancy.filters.roomType')}
+                </InputLabel>
                 <Select
                   id="occupancy-room-type-select"
                   labelId="occupancy-room-type-label"
@@ -605,7 +626,9 @@ export default function ManagerOccupancyPage() {
         </CardContent>
       </Card>
 
-      <Card sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}>
+      <Card
+        sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}
+      >
         <CardContent>
           {calendarError ? (
             <Alert
@@ -688,7 +711,9 @@ export default function ManagerOccupancyPage() {
                         key={iso}
                         component="button"
                         type="button"
-                        onClick={() => handlePickDay(parsedMonth.year, parsedMonth.monthIndex, cell)}
+                        onClick={() =>
+                          handlePickDay(parsedMonth.year, parsedMonth.monthIndex, cell)
+                        }
                         data-testid={`occupancy-day-${iso}`}
                         data-occupancy-level={dayData ? level : ''}
                         sx={{
@@ -708,14 +733,21 @@ export default function ManagerOccupancyPage() {
                           '&:hover': { filter: 'brightness(0.98)' },
                         }}
                       >
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: tokens.text.primary }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ fontWeight: 700, color: tokens.text.primary }}
+                        >
                           {cell}
                         </Typography>
                         {dayData ? (
                           <>
                             <Typography
                               variant="caption"
-                              sx={{ color: tokens.text.primary, fontWeight: 600, fontSize: '0.68rem' }}
+                              sx={{
+                                color: tokens.text.primary,
+                                fontWeight: 600,
+                                fontSize: '0.68rem',
+                              }}
                             >
                               {t('manager.occupancy.calendar.roomsLine', {
                                 occupied: dayData.occupied_rooms,
@@ -759,7 +791,13 @@ export default function ManagerOccupancyPage() {
             </>
           )}
 
-          <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mt: 2 }} data-testid="occupancy-legend">
+          <Stack
+            direction="row"
+            spacing={2}
+            flexWrap="wrap"
+            sx={{ mt: 2 }}
+            data-testid="occupancy-legend"
+          >
             <Stack direction="row" spacing={1} alignItems="center">
               <Box
                 sx={{
@@ -777,7 +815,9 @@ export default function ManagerOccupancyPage() {
             <Stack direction="row" spacing={1} alignItems="center">
               <Box
                 sx={{
-                  width: 14, height: 14, borderRadius: 0.5,
+                  width: 14,
+                  height: 14,
+                  borderRadius: 0.5,
                   bgcolor: tokens.brand.accentOrangeContained,
                   border: `1px solid ${tokens.state.warningBorder}`,
                 }}
@@ -804,7 +844,9 @@ export default function ManagerOccupancyPage() {
         </CardContent>
       </Card>
 
-      <Card sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}>
+      <Card
+        sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}
+      >
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
             {t('manager.occupancy.breakdown.title')}
@@ -822,10 +864,18 @@ export default function ManagerOccupancyPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>{t('manager.occupancy.breakdown.columns.roomType')}</TableCell>
-                  <TableCell align="right">{t('manager.occupancy.breakdown.columns.occupied')}</TableCell>
-                  <TableCell align="right">{t('manager.occupancy.breakdown.columns.available')}</TableCell>
-                  <TableCell align="right">{t('manager.occupancy.breakdown.columns.blocked')}</TableCell>
-                  <TableCell align="right">{t('manager.occupancy.breakdown.columns.rate')}</TableCell>
+                  <TableCell align="right">
+                    {t('manager.occupancy.breakdown.columns.occupied')}
+                  </TableCell>
+                  <TableCell align="right">
+                    {t('manager.occupancy.breakdown.columns.available')}
+                  </TableCell>
+                  <TableCell align="right">
+                    {t('manager.occupancy.breakdown.columns.blocked')}
+                  </TableCell>
+                  <TableCell align="right">
+                    {t('manager.occupancy.breakdown.columns.rate')}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -848,7 +898,9 @@ export default function ManagerOccupancyPage() {
         </CardContent>
       </Card>
 
-      <Card sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}>
+      <Card
+        sx={{ borderRadius: 3, border: `1px solid ${tokens.border.subtle}`, boxShadow: 'none' }}
+      >
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
             {t('manager.occupancy.projection.title')}

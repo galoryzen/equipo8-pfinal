@@ -1,5 +1,5 @@
-import { API_URL } from '@/app/lib/api/constants';
 import { formatApiErrorBody } from '@/app/lib/api/catalog';
+import { API_URL } from '@/app/lib/api/constants';
 import type {
   OccupancyCalendarResponse,
   OccupancyDailyBreakdownResponse,

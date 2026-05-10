@@ -233,13 +233,15 @@ describe('ManagerOccupancyPage', () => {
 
     await renderOccupancyMay2026();
 
-    expect((await screen.findByTestId(`occupancy-day-${d10}`)).getAttribute('data-occupancy-level')).toBe(
-      'HIGH'
-    );
+    expect(
+      (await screen.findByTestId(`occupancy-day-${d10}`)).getAttribute('data-occupancy-level')
+    ).toBe('HIGH');
     expect(screen.getByTestId(`occupancy-day-${d11}`).getAttribute('data-occupancy-level')).toBe(
       'MEDIUM'
     );
-    expect(screen.getByTestId(`occupancy-day-${d12}`).getAttribute('data-occupancy-level')).toBe('LOW');
+    expect(screen.getByTestId(`occupancy-day-${d12}`).getAttribute('data-occupancy-level')).toBe(
+      'LOW'
+    );
   });
 
   it('loads daily breakdown when a day is selected', async () => {
@@ -352,9 +354,9 @@ describe('ManagerOccupancyPage', () => {
 
     await renderOccupancyMay2026();
 
-    expect(
-      (await screen.findByTestId('occupancy-projection-empty')).textContent
-    ).toMatch(/no low-occupancy alerts/i);
+    expect((await screen.findByTestId('occupancy-projection-empty')).textContent).toMatch(
+      /no low-occupancy alerts/i
+    );
   });
 
   it('shows an error when calendar loading fails', async () => {

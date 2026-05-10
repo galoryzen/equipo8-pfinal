@@ -182,12 +182,14 @@ def seeded_rate_plan_id() -> str:
 
 @pytest.fixture
 def booking_dates() -> tuple[date, date]:
-    """Return (checkin, checkout) two days starting 7 days from today.
+    """Return (checkin, checkout) for a two-night stay within the seed window.
 
-    Stays within the seed's 30-day rate_calendar window if the DB was seeded
-    within the last ~3 weeks.
+    Seed (`03-seed.sql`) forces Cancún standard inventory to 0 on
+    CURRENT_DATE+5 … +19 for the occupancy demo; booking integration tests must
+    use dates outside that range. Day +21 avoids the blackout and stays inside
+    the 30-day rate_calendar generated from CURRENT_DATE at seed time.
     """
-    checkin = date.today() + timedelta(days=7)
+    checkin = date.today() + timedelta(days=21)
     checkout = checkin + timedelta(days=2)
     return checkin, checkout
 
