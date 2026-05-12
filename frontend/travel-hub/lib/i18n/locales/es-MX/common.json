@@ -1,0 +1,956 @@
+{
+  "meta": {
+    "title": "TravelHub — Encuentra tu próxima estadía",
+    "description": "Accede a ofertas exclusivas en hoteles, casas y más en América Latina."
+  },
+  "brand": {
+    "name": "TravelHub"
+  },
+  "nav": {
+    "explore": "Explorar",
+    "myTrips": "Mis viajes",
+    "logIn": "Iniciar sesión",
+    "logOut": "Cerrar sesión",
+    "notifications": "Notificaciones"
+  },
+  "hero": {
+    "title": "Encuentra tu próxima estadía",
+    "subtitle": "Desbloquea ofertas exclusivas en tus hoteles y alojamientos favoritos en América Latina."
+  },
+  "search": {
+    "where": "¿Dónde?",
+    "when": "¿Cuándo?",
+    "who": "¿Quiénes?",
+    "searchDestination": "Buscar destino",
+    "typeTwoChars": "Escribe al menos 2 letras",
+    "noCities": "No se encontraron ciudades",
+    "selectDates": "Seleccionar fechas",
+    "checkIn": "Entrada",
+    "checkOut": "Salida",
+    "guests": "Huéspedes",
+    "guestsMinHelper": "Mínimo 1 huésped",
+    "search": "Buscar",
+    "searchButton": "Botón de búsqueda",
+    "guestsCount_one": "{{count}} huésped",
+    "guestsCount_other": "{{count}} huéspedes"
+  },
+  "popular": {
+    "title": "Destinos populares",
+    "subtitle": "Lugares en tendencia para viajeros como tú",
+    "seeAll": "Ver todo",
+    "empty": "No hay destinos disponibles en este momento."
+  },
+  "booking": {
+    "confirm_error": "No se pudo confirmar tu reserva. Por favor, inténtalo de nuevo."
+  },
+  "tripDetail": {
+    "backButton": "Volver a Mis viajes",
+    "breadcrumb": "Mis viajes",
+    "reservationDetails": "Detalles de la reserva",
+    "checkOut": "Salida",
+    "total": "Total",
+    "room": "Habitación",
+    "costDetails": "Detalle de costos",
+    "subtotal": "Subtotal",
+    "taxes": "Impuestos",
+    "serviceFee": "Tarifa de servicio",
+    "totalDue": "Total a pagar",
+    "nightlyBreakdown": "Detalle por noche",
+    "cancelBooking": "Cancelar reserva",
+    "cancelBookingHint": "Confirmada: aplica la política. Carrito: abandona la reserva temporal (sin validación de política).",
+    "cancelSuccess": "Cancelación procesada.",
+    "cancelFailed": "No se pudo cancelar. Intenta de nuevo.",
+    "cancellationPolicyApplied": "Política de cancelación aplicada: {{type}}",
+    "cancellationPolicyHoursLimit": " · límite de {{hours}} h",
+    "refundAmount": "Monto reembolsado",
+    "refundType": {
+      "traveler_cancelled": "Reembolso por cancelación del viajero",
+      "hotel_rejected": "Reembolso por rechazo del hotel"
+    },
+    "refundIssued": "Reembolso emitido",
+    "totalPaid": "Total pagado",
+    "finalTotal": "Total final",
+    "refundTooltip": "Reembolso completo: incluye subtotal, impuestos y tarifa de servicio"
+  },
+  "tripsEmptyState": {
+    "title": "No tienes reservas registradas",
+    "description": "Cuando reserves un alojamiento, aparecerá aquí con el estado y las fechas de tu viaje.",
+    "cta": "Buscar hoteles"
+  },
+  "recommended": {
+    "title": "Recomendado para ti",
+    "subtitle": "Propiedades según tu actividad reciente",
+    "empty": "No hay propiedades disponibles en este momento.",
+    "noImage": "Sin imagen",
+    "perNight": "/ noche"
+  },
+  "newsletter": {
+    "title": "Planifica tu escapada soñada hoy",
+    "body": "Únete a miles de viajeros que encuentran las mejores ofertas en América Latina. Suscríbete al boletín para recibir promociones exclusivas.",
+    "emailPlaceholder": "Tu correo electrónico",
+    "subscribe": "Suscribirme"
+  },
+  "a11y": {
+    "loading": "Cargando"
+  },
+  "common": {
+    "tryAgain": "Intentar de nuevo",
+    "cancel": "Cancelar",
+    "unknownError": "Error desconocido"
+  },
+  "footer": {
+    "support": {
+      "title": "Soporte",
+      "links": [
+        "Centro de ayuda",
+        "Información de seguridad",
+        "Opciones de cancelación",
+        "Reportar una preocupación"
+      ]
+    },
+    "social": {
+      "facebook": "Facebook"
+    },
+    "community": {
+      "title": "Comunidad",
+      "links": ["Blog de TravelHub", "Foro de la comunidad", "Guías de viaje"]
+    },
+    "hosting": {
+      "title": "Anfitrión",
+      "links": ["Publica tu propiedad", "Recursos para anfitriones", "Foro de la comunidad"]
+    },
+    "about": {
+      "title": "Acerca de",
+      "links": ["Sala de prensa", "Novedades", "Empleo", "Inversionistas"]
+    },
+    "copyright": "© 2026 TravelHub, Inc.",
+    "legal": ["Privacidad", "Términos", "Mapa del sitio"]
+  },
+  "priceRange": {
+    "title": "Rango de precio",
+    "caption": "Precios por noche antes de impuestos y cargos",
+    "min": "Mín.",
+    "max": "Máx.",
+    "minGreaterThanMax": "El mínimo no puede ser mayor que el máximo",
+    "sliderMinThumb": "Precio mínimo por noche del filtro",
+    "sliderMaxThumb": "Precio máximo por noche del filtro",
+    "sliderValueText": "{{value}} dólares por noche"
+  },
+  "amenityFilter": {
+    "title": "Amenidades",
+    "showMore": "Ver más",
+    "showLess": "Ver menos"
+  },
+  "propertyCard": {
+    "noImage": "Sin imagen",
+    "perNight": "/ noche",
+    "reviews_one": "{{count}} reseña",
+    "reviews_other": "{{count}} reseñas",
+    "reviewsShort": "{{count}}k reseñas",
+    "poiDistance": "~{{km}} km del área turística"
+  },
+  "searchPage": {
+    "sort": "Ordenar",
+    "recommended": "Recomendado",
+    "recommendedBadge": "Orden por relevancia",
+    "price": "Precio",
+    "rating": "Calificación",
+    "allStays": "Todos los alojamientos",
+    "staysIn": "Alojamientos en {{city}}",
+    "placesFound_one": "{{count}} lugar encontrado",
+    "placesFound_other": "{{count}} lugares encontrados",
+    "guestTail_one": "al menos {{count}} huésped",
+    "guestTail_other": "al menos {{count}} huéspedes",
+    "browseTail": "explora destinos populares",
+    "catalogHint": "Los resultados coinciden con tus fechas y el número mínimo de huéspedes en este destino. La capacidad por habitación está en la página de cada propiedad.",
+    "errorGeneric": "Error al buscar alojamientos",
+    "emptyCatalog": "No se encontraron alojamientos para el destino y las fechas seleccionadas.",
+    "emptyFeatured": "No hay estadías destacadas disponibles en este momento.",
+    "emptyFilters": "Ninguna propiedad coincide con los filtros seleccionados."
+  },
+  "searchAmenities": {
+    "wifi": "Wifi",
+    "kitchen": "Cocina",
+    "pool": "Piscina",
+    "air_conditioning": "Aire acondicionado",
+    "breakfast": "Desayuno",
+    "parking": "Parqueadero"
+  },
+  "propertyDetail": {
+    "availableRooms": "Habitaciones disponibles",
+    "about": "Acerca de esta propiedad",
+    "popularAmenities": "Amenidades populares",
+    "breakfast": "Desayuno incluido",
+    "location": "Ubicación",
+    "noRanking": "Calificación no disponible",
+    "amenities": {
+      "pool": "Piscina incluida",
+      "freeCancellation": "Cancelación gratuita",
+      "list": "Ver todas las {{count}} amenidades",
+      "allAmenities": "Todas las amenidades"
+    },
+    "reviews": {
+      "guestName": "Huésped",
+      "reviewsCount_one": "{{count}} reseña(s)",
+      "noReviewsYet": "Sin reseñas aún",
+      "showAllReviews": "Ver todas las {{count}} reseñas"
+    },
+    "priceCard": {
+      "night": " / noche",
+      "priceNotAvailable": "Precio no disponible",
+      "taxes": "Impuestos",
+      "serviceFee": "Cargo por servicio",
+      "total": "Total",
+      "hostedBy": "Anfitrión",
+      "selectRoom": "Selecciona una habitación para continuar",
+      "signInToReserve": "Iniciar sesión para reservar",
+      "youWillNotBeChargedYet": "No se te cobrará todavía",
+      "reserve": "Reservar"
+    }
+  },
+  "roomCard": {
+    "bookingInProgress": "Reserva en curso",
+    "perNight": "/ noche",
+    "startingFrom": "Desde ",
+    "guest_one": "{{count}} huésped",
+    "guest_other": "{{count}} huéspedes",
+    "ownHoldText": "Tienes una reserva activa en esta habitación.",
+    "resumeBooking": "Continuar reserva",
+    "selectDatesTooltip": "Selecciona primero las fechas de entrada y salida",
+    "selected": "Seleccionada",
+    "selectRoom": "Seleccionar habitación",
+    "cancellation": {
+      "free": "Cancelación gratuita",
+      "partial": "Reembolso parcial",
+      "nonRefundable": "No reembolsable"
+    }
+  },
+  "payment": {
+    "preparing": "Preparando tu reserva temporal…",
+    "backToSearch": "Volver a la búsqueda",
+    "resumeReservation": "Retomar mi reserva",
+    "expiredTitle": "Reserva temporal vencida",
+    "expiredBody": "Tu tiempo de espera de 15 minutos ha terminado. Las habitaciones están sujetas a disponibilidad — inicia una nueva búsqueda.",
+    "newSearch": "Nueva búsqueda",
+    "myTrips": "Mis viajes",
+    "backLink": "← TravelHub",
+    "secureCheckout": "Pago seguro",
+    "countdownBannerBefore": "Tu reserva está asegurada por",
+    "countdownBannerAfter": "— completa el pago antes de que expire.",
+    "resumeBanner": "Encontramos tu reserva anterior — continuando desde donde la dejaste.",
+    "pageTitle": "Revisar y pagar",
+    "guestDetails": "Datos del huésped",
+    "logIn": "Iniciar sesión",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "emailAddress": "Correo electrónico",
+    "emailHelper": "Se enviará un correo de confirmación a esta dirección.",
+    "emailInvalid": "Por favor ingresa un correo electrónico válido.",
+    "phoneNumber": "Número de teléfono",
+    "paymentMethod": "Método de pago",
+    "secure": "Seguro",
+    "creditOrDebitCard": "Tarjeta de crédito o débito",
+    "paypal": "PayPal",
+    "cardNumber": "Número de tarjeta",
+    "expiryDate": "Fecha de vencimiento",
+    "cvv": "CVV",
+    "nameOnCard": "Nombre en la tarjeta",
+    "fullName": "Nombre completo",
+    "paypalRedirect": "Serás redirigido a PayPal para completar tu pago.",
+    "bookingSummary": "Resumen de reserva",
+    "night_one": "{{count}} noche",
+    "night_other": "{{count}} noches",
+    "guest_one": "{{count}} huésped",
+    "guest_other": "{{count}} huéspedes",
+    "editBooking": "Editar reserva",
+    "priceDetails": "Detalles del precio",
+    "basePrice_one": "Precio base ({{count}} noche)",
+    "basePrice_other": "Precio base ({{count}} noches)",
+    "taxesAndFees": "Impuestos y cargos (12%)",
+    "serviceFee": "Cargo por servicio",
+    "total": "Total ({{currency}})",
+    "freeCancellationUntil": "Cancelación gratuita hasta el {{date}}",
+    "cancellationPolicyLabel": "Política de cancelación:",
+    "cancellationPolicyText": "Cancelación gratuita hasta 48 horas antes del check-in. No reembolsable después de ese período.",
+    "checkinPolicyLabel": "Check-in:",
+    "checkinPolicyText": "A partir de las 3:00 p. m.",
+    "securityBadge": "Tu pago está protegido por TravelHub Secure. Usamos cifrado de 256 bits.",
+    "payButton": "Pagar ${{amount}}",
+    "terms": "Al hacer clic en Pagar, aceptas los Términos y Condiciones de TravelHub.",
+    "primaryGuest": "Huésped principal",
+    "additionalGuest": "Huésped adicional",
+    "addGuest": "Agregar huésped",
+    "fillGuestDetailsFirst": "Por favor completa los datos del huésped para desbloquear el pago.",
+    "expiryInPast": "La tarjeta ha vencido",
+    "paymentRejected": "Tu pago fue rechazado. Por favor verifica los datos de tu tarjeta e intenta de nuevo.",
+    "paymentTimeout": "La verificación del pago expiró. Revisa Mis viajes para conocer el estado de tu reserva.",
+    "paymentError": "Ocurrió un error con tu pago. Por favor, inténtalo de nuevo.",
+    "processingTitle": "Procesando tu reserva...",
+    "processingBody": "Confirmando tu estadía de forma segura en",
+    "processingNote": "Esto suele tardar menos de un minuto.",
+    "processingStatus": "Verificación en curso",
+    "processingFeature1Title": "Conexión segura",
+    "processingFeature1Desc": "Cifrado SSL de 256 bits activo",
+    "processingFeature2Title": "Pago verificado",
+    "processingFeature2Desc": "Autorizado por tu banco",
+    "processingFeature3Title": "Soporte 24/7",
+    "processingFeature3Desc": "Estamos aquí si necesitas ayuda",
+    "processingWarning": "Por favor no actualices la página ni hagas clic en atrás para evitar cargos duplicados."
+  },
+  "manager": {
+    "common": {
+      "cancel": "Cancelar",
+      "tryAgain": "Intentar de nuevo",
+      "unknownError": "Error desconocido"
+    },
+    "pendingConfirmation": "Pendiente de confirmación",
+    "confirmBooking": "Confirmar reserva",
+    "confirmBookingTitle": "Confirmar reserva",
+    "confirmBookingHint": "Puedes agregar notas internas para el personal del hotel (opcional).",
+    "internalNotesPlaceholder": "Notas internas...",
+    "decline": "Rechazar",
+    "nights": "noches",
+    "guests": "huésped(es)",
+    "totalStayValue": "Valor total de la estadía",
+    "confirming": "Confirmando...",
+    "notifications": "Notificaciones",
+    "pendingBookingsToday": "Tienes {{count}} reservas pendientes de confirmación hoy.",
+    "noPendingBookings": "No hay reservas pendientes.",
+    "bookings": {
+      "title": "Gestión de reservas",
+      "subtitle": "Administra y da seguimiento a todas las reservas de huéspedes desde un solo lugar.",
+      "newBooking": "Nueva reserva",
+      "table": {
+        "bookingGuest": "Reserva y huésped",
+        "roomType": "Habitación / propiedad",
+        "checkin": "Check-in",
+        "checkout": "Check-out",
+        "status": "Estado",
+        "amount": "Monto",
+        "actions": "Acciones",
+        "guestFallback": "Huésped",
+        "roomFallback": "—",
+        "roomTypeSubline": "Tipo de habitación · {{id}}",
+        "roomTypeUnavailable": "Tipo de habitación no disponible",
+        "bookingDate": "Fecha de reserva",
+        "guestEmailHint": "Correo del huésped"
+      },
+      "tabs": {
+        "all": "Todas las reservas",
+        "checkinToday": "Check-ins hoy",
+        "checkoutToday": "Check-outs hoy",
+        "pending": "Pendientes",
+        "cancelled": "Canceladas"
+      },
+      "actions": {
+        "open": "Abrir acciones",
+        "menuLabel": "Acciones",
+        "registerCheckIn": "Registrar check-in",
+        "registerCheckOut": "Registrar check-out",
+        "checkOut": "Check-out",
+        "checkOutUnavailableHint": "Disponible cuando la reserva tenga check-in realizado y la fecha de salida sea hoy o anterior.",
+        "editDetails": "Editar detalles",
+        "cancelBooking": "Cancelar reserva",
+        "comingSoon": "Próximamente",
+        "disabledNotImplemented": "Disponible en una próxima historia",
+        "disabledByState": "Acción no disponible para el estado actual de la reserva"
+      },
+      "stats": {
+        "confirmed": "Confirmadas",
+        "pending": "Pendientes",
+        "checkinsToday": "Check-ins (hoy)",
+        "cancelled": "Canceladas",
+        "loadError": "No se pudieron cargar las métricas de reservas."
+      },
+      "status": {
+        "checkedInDone": "Check-in realizado",
+        "checkedOutDone": "Check-out realizado"
+      },
+      "pagination": "Mostrando {{from}}–{{to}} de {{total}} reservas",
+      "empty": "No hay reservas en esta vista.",
+      "loadError": "No se pudieron cargar las reservas.",
+      "history": {
+        "loadError": "No fue posible cargar el historial de reservas.",
+        "exportError": "No fue posible exportar el historial.",
+        "exportSuccess": "Historial de reservas exportado.",
+        "filtersInvalid": "Revisa los filtros seleccionados.",
+        "exportCsv": "Exportar CSV",
+        "exportDisabledTabs": "Usa una pestaña principal del listado para exportar con filtros.",
+        "searchPlaceholder": "Buscar huésped, email o referencia…",
+        "statusAll": "Todos los estados",
+        "dateFrom": "Estadía desde",
+        "dateTo": "Estadía hasta",
+        "roomTypeAll": "Todos los tipos",
+        "clearFilters": "Limpiar filtros",
+        "exporting": "Exportando…"
+      },
+      "checkIn": {
+        "title": "Registrar check-in",
+        "arrivalLabel": "Hora real de llegada",
+        "confirm": "Confirmar check-in",
+        "success": "Check-in registrado correctamente.",
+        "errors": {
+          "required": "La hora real de llegada es obligatoria.",
+          "future": "La hora de llegada no puede ser futura.",
+          "forbidden": "No tienes permisos para registrar el check-in de esta reserva.",
+          "notFound": "La reserva no existe o no pertenece a este hotel.",
+          "conflict": "No es posible registrar el check-in para esta reserva. Verifica el estado o la fecha.",
+          "validation": "La hora de llegada ingresada no es válida."
+        }
+      },
+      "checkOut": {
+        "title": "Registrar check-out",
+        "departureLabel": "Hora real de salida",
+        "confirm": "Confirmar check-out",
+        "success": "Check-out registrado correctamente.",
+        "errors": {
+          "required": "La hora real de salida es obligatoria.",
+          "future": "La hora de salida no puede ser futura.",
+          "forbidden": "No tienes permisos para registrar el check-out de esta reserva.",
+          "notFound": "La reserva no existe o no pertenece a este hotel.",
+          "conflict": "No es posible registrar el check-out para esta reserva. Verifica el estado o la fecha.",
+          "validation": "La hora de salida ingresada no es válida."
+        }
+      }
+    },
+    "noAvailability": "No hay disponibilidad suficiente. Puede ofrecer upgrade, cambiar fechas o rechazar la reserva.",
+    "hotels": {
+      "title": "Mis Hoteles",
+      "subtitle": "Administra y supervisa todas tus propiedades y su inventario de habitaciones.",
+      "searchPlaceholder": "Buscar hotel por nombre o ubicación...",
+      "filters": "Filtros",
+      "noResults": "Ningún hotel coincide con tu búsqueda.",
+      "hotelIdPrefix": "ID:",
+      "rooms_one": "{{count}} Habitación",
+      "rooms_other": "{{count}} Habitaciones",
+      "statusActive": "Activo",
+      "statusPendingReview": "En revisión",
+      "manageRooms": "Gestionar habitaciones",
+      "manageRoomsFor": "Gestionar habitaciones de {{hotelName}}",
+      "backToHotels": "Volver a hoteles",
+      "pricingOffers": {
+        "title": "Precios y ofertas",
+        "discountLabel": "Descuento a aplicar (%)",
+        "discountHelper": "Este descuento se aplicará a la tarifa base durante el período de disponibilidad."
+      },
+      "cancellationPolicy": {
+        "title": "Política de cancelación",
+        "policyTypeLabel": "Tipo de política",
+        "totallyRefundable": "Totalmente reembolsable",
+        "totallyRefundableDesc": "Reembolso completo si se cancela antes de la fecha de aplicación.",
+        "partialRefundable": "Reembolso parcial",
+        "partialRefundableDesc": "Se reembolsa un porcentaje específico al cancelar.",
+        "nonRefundable": "No reembolsable",
+        "nonRefundableDesc": "No se emite reembolso independientemente de cuándo se cancele.",
+        "refundPctLabel": "Porcentaje de reembolso (%)",
+        "errorRefundPctRange": "El porcentaje de reembolso debe estar entre 1% y 99%.",
+        "applyDateLabel": "Fecha de aplicación de la política",
+        "applyDateHelper": "La última fecha en que el huésped puede ejercer esta política."
+      },
+      "tableHeaders": {
+        "hotelDetails": "Detalles del hotel",
+        "location": "Ubicación",
+        "inventory": "Inventario",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "roomManagement": {
+        "title": "Gestión de habitaciones: {{hotelName}}",
+        "subtitle": "Mostrando {{totalRooms}} habitaciones en {{categories}} categorías.",
+        "searchPlaceholder": "Buscar por número (ej. 402) o tipo...",
+        "noResults": "Ninguna habitación coincide con tu búsqueda o filtro.",
+        "filterAllTypes": "Todos los tipos",
+        "filterSuites": "Suites",
+        "filterDeluxe": "Deluxe",
+        "statusAvailable": "Disponible",
+        "statusOccupied": "Ocupada",
+        "manageRoom": "Gestionar habitación {{number}}",
+        "addNewRoom": "Agregar habitación"
+      },
+      "hotelDetail": {
+        "breadcrumbLabel": "Mis Hoteles",
+        "breadcrumbNav": "Navegación de página",
+        "idLabel": "ID:",
+        "locationLabel": "Ubicación:",
+        "stats": {
+          "occupancyRate": "Tasa de ocupación",
+          "activeBookings": "Reservas activas",
+          "revenue": "Ingresos (mes)"
+        },
+        "roomManagement": {
+          "sectionTitle": "Gestión de habitaciones",
+          "searchPlaceholder": "Buscar por número o tipo de habitación",
+          "statusFilterLabel": "Filtrar por estado",
+          "allStatuses": "Todos los estados",
+          "statusAvailable": "Disponible",
+          "statusOccupied": "Ocupada",
+          "tableRoomType": "Tipo de habitación",
+          "tableAvailable": "Disponible",
+          "tableAction": "Acción",
+          "availableCount": "{{available}} / {{total}} Disponibles",
+          "manageRoomType": "Gestionar habitaciones de tipo {{name}}",
+          "manage": "Gestionar",
+          "showing": "Mostrando {{count}} tipos de habitación",
+          "paginationLabel": "Paginación de tipos de habitación"
+        }
+      },
+      "promotion": {
+        "dialogTitle": "Crear Promoción",
+        "ratePlanIdLabel": "ID del Plan Tarifario",
+        "nameLabel": "Nombre de la Promoción",
+        "namePlaceholder": "Ej. Oferta de Verano",
+        "discountTypeLabel": "Tipo de Descuento",
+        "discountTypePercent": "Porcentaje (%)",
+        "discountTypeFixed": "Monto Fijo ($)",
+        "discountValueLabel": "Valor del Descuento",
+        "startDateLabel": "Fecha de Inicio",
+        "endDateLabel": "Fecha de Fin",
+        "createButton": "Crear Promoción",
+        "deleteButton": "Eliminar Promoción",
+        "successMessage": "Promoción creada exitosamente.",
+        "deleteSuccess": "Promoción eliminada exitosamente.",
+        "errorRequired": "Por favor completa todos los campos requeridos.",
+        "errorValue": "El valor del descuento debe ser mayor a 0.",
+        "errorNameRequired": "El nombre de la promoción es requerido.",
+        "errorDiscountRange": "El descuento debe estar entre 1% y 100%."
+      },
+      "roomTypeManage": {
+        "breadcrumbRoomTypes": "Tipos de habitación",
+        "breadcrumbManage": "Gestionar {{name}}",
+        "title": "Gestionar habitación: {{name}}",
+        "subtitle": "Configura la disponibilidad, precios y políticas de cancelación para esta categoría de habitación.",
+        "saveChanges": "Guardar cambios",
+        "savedSuccess": "Promoción guardada correctamente.",
+        "noRatePlan": "No hay plan tarifario disponible para este tipo de habitación.",
+        "tariffTitle": "Gestionar Tarifas",
+        "tariffSubtitle": "Define precios y ajustes estacionales para {{name}}",
+        "baseTariff": "Tarifa Base",
+        "basePrice": "Precio Base (USD)",
+        "weekendPremium": "Recargo de Fin de Semana (%)",
+        "weekendPremiumHint": "Aplicado a las noches del viernes y sábado",
+        "saveBaseTariff": "Guardar Tarifa Base",
+        "seasonalAdjustments": "Ajustes Estacionales",
+        "addRule": "Agregar Nueva Regla Estacional",
+        "ruleName": "Nombre",
+        "ruleNamePlaceholder": "ej. Temporada Alta",
+        "ruleStart": "Inicio",
+        "ruleEnd": "Fin",
+        "ruleType": "Tipo",
+        "ruleTypePercent": "Porcentaje %",
+        "ruleTypeFixed": "Fijo $",
+        "ruleValue": "Valor",
+        "ruleNameHeader": "Nombre de Regla",
+        "rulePeriodHeader": "Período",
+        "ruleTypeHeader": "Tipo",
+        "ruleValueHeader": "Valor",
+        "addRuleButton": "Agregar",
+        "tariffSavedSuccess": "Tarifa base actualizada y calendario sincronizado.",
+        "ruleAddedSuccess": "Regla estacional agregada y calendario sincronizado.",
+        "ruleDeletedSuccess": "Regla eliminada y calendario sincronizado.",
+        "tariffError": "Error al actualizar tarifa base",
+        "ruleAddError": "Error al agregar regla estacional",
+        "ruleDeleteError": "Error al eliminar regla",
+        "fillAllFields": "Por favor completa todos los campos de la regla",
+        "deleteRuleTitle": "Eliminar regla {{name}}",
+        "availabilityPeriod": {
+          "title": "Período de disponibilidad",
+          "startLabel": "Fecha y hora de inicio",
+          "endLabel": "Fecha y hora de fin"
+        },
+        "common": {
+          "cancel": "Cancelar",
+          "tryAgain": "Intentar de nuevo",
+          "unknownError": "Error desconocido"
+        },
+        "pricingOffers": {
+          "title": "Precios y ofertas",
+          "discountLabel": "Descuento a aplicar (%)",
+          "discountHelper": "Este descuento se aplicará a la tarifa base durante el período de disponibilidad."
+        },
+        "cancellationPolicy": {
+          "title": "Política de cancelación",
+          "policyTypeLabel": "Tipo de política",
+          "totallyRefundable": "Totalmente reembolsable",
+          "totallyRefundableDesc": "Reembolso completo si se cancela antes de la fecha de aplicación.",
+          "partialRefundable": "Reembolso parcial",
+          "partialRefundableDesc": "Se reembolsa un porcentaje específico al cancelar.",
+          "nonRefundable": "No reembolsable",
+          "nonRefundableDesc": "No se emite reembolso independientemente de cuándo se cancele.",
+          "refundPctLabel": "Porcentaje de reembolso (%)",
+          "errorRefundPctRange": "El porcentaje de reembolso debe estar entre 1% y 99%.",
+          "applyDateLabel": "Fecha de aplicación de la política",
+          "applyDateHelper": "La última fecha en que el huésped puede ejercer esta política."
+        },
+        "dashboard": {
+          "title": "Resumen del dashboard",
+          "subtitle": "Resumen del rendimiento de tu hotel para el periodo seleccionado.",
+          "metrics": {
+            "totalBookings": "Reservas totales",
+            "revenue": "Ingresos",
+            "occupancyRate": "Tasa de ocupación",
+            "averageRating": "Calificación promedio"
+          },
+          "sections": {
+            "bookingTrends": "Tendencias de reservas",
+            "recentActivity": "Actividad reciente",
+            "upcomingCheckins": "Próximos check-ins"
+          },
+          "filters": {
+            "dateRange": "Rango de fechas",
+            "hotels": "Hoteles",
+            "last7days": "Últimos 7 días",
+            "last30days": "Últimos 30 días",
+            "currentMonth": "Mes actual"
+          },
+          "empty": {
+            "noData": "No hay datos disponibles",
+            "noUpcomingCheckins": "No hay próximos check-ins"
+          },
+          "errors": {
+            "loading": "Error al cargar el dashboard",
+            "unauthorizedTitle": "Acceso restringido",
+            "unauthorized": "El socio de agencia no está autorizado para consultar métricas del hotel."
+          },
+          "actions": {
+            "goToBookings": "Ir a reservas"
+          },
+          "table": {
+            "guest": "Huésped",
+            "roomType": "Tipo de habitación",
+            "checkIn": "Check-in",
+            "checkOut": "Check-out",
+            "status": "Estado",
+            "amount": "Monto"
+          },
+          "status": {
+            "confirmed": "Confirmada",
+            "pending_payment": "Pago pendiente",
+            "pending_confirmation": "Confirmación pendiente",
+            "cancelled": "Cancelada",
+            "checked_in": "Check-in realizado"
+          },
+          "activity": {
+            "booking_confirmed": "Reserva confirmada",
+            "booking_cancelled": "Reserva cancelada",
+            "booking_pending_confirmation": "Reserva pendiente de confirmación",
+            "booking_pending_payment": "Reserva pendiente de pago",
+            "payment_captured": "Pago capturado",
+            "review_created": "Reseña creada"
+          }
+        }
+      },
+      "admin": {
+        "navbar": {
+          "title": "TravelHub Admin",
+          "dashboard": "Dashboard",
+          "bookings": "Reservas",
+          "hotels": "Mis Hoteles",
+          "notifications": "Notificaciones",
+          "occupancy": "Ocupación",
+          "reports": "Reportes",
+          "subtitle": "Super Admin",
+          "settings": "Configuración",
+          "logOut": "Cerrar sesión"
+        }
+      },
+      "reports": {
+        "title": "Reportes de ingresos",
+        "subtitle": "Genera reportes de desempeño de ingresos por período.",
+        "filters": {
+          "hotel": "Hotel",
+          "myHotel": "Mi hotel",
+          "from": "Desde",
+          "to": "Hasta"
+        },
+        "kpis": {
+          "totalRevenue": "Ingresos totales",
+          "adr": "ADR",
+          "occupancyRate": "Tasa de ocupación"
+        },
+        "sections": {
+          "trends": "Tendencias de ingresos",
+          "byRoomType": "Ingresos por tipo de habitación"
+        },
+        "chart": {
+          "revenue": "Ingresos",
+          "occupancy": "Ocupación"
+        },
+        "table": {
+          "roomType": "Tipo de habitación",
+          "unitsSold": "Unidades vendidas",
+          "avgRate": "Tarifa promedio",
+          "totalRevenue": "Ingresos totales",
+          "totalAggregatedRevenue": "Ingreso total agregado"
+        },
+        "actions": {
+          "generate": "Generar reporte",
+          "download": "Descargar reporte"
+        },
+        "states": {
+          "initial": "Selecciona un hotel y un rango de fechas, luego haz clic en Generar reporte.",
+          "empty": "No hay datos de reporte para el período seleccionado.",
+          "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
+          "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
+        }
+      },
+      "common": {
+        "cancel": "Cancelar",
+        "unknownError": "Error desconocido",
+        "tryAgain": "Intentar de nuevo"
+      }
+    },
+    "reports": {
+      "title": "Reportes de ingresos",
+      "subtitle": "Genera reportes de desempeño de ingresos por período.",
+      "filters": {
+        "hotel": "Hotel",
+        "myHotel": "Mi hotel",
+        "from": "Desde",
+        "to": "Hasta"
+      },
+      "kpis": {
+        "totalRevenue": "Ingresos totales",
+        "adr": "ADR",
+        "occupancyRate": "Tasa de ocupación"
+      },
+      "sections": {
+        "trends": "Tendencias de ingresos",
+        "byRoomType": "Ingresos por tipo de habitación"
+      },
+      "chart": {
+        "revenue": "Ingresos",
+        "occupancy": "Ocupación"
+      },
+      "table": {
+        "roomType": "Tipo de habitación",
+        "unitsSold": "Unidades vendidas",
+        "avgRate": "Tarifa promedio",
+        "totalRevenue": "Ingresos totales",
+        "totalAggregatedRevenue": "Ingreso total agregado"
+      },
+      "actions": {
+        "generate": "Generar reporte",
+        "download": "Descargar reporte"
+      },
+      "states": {
+        "initial": "Selecciona un hotel y un rango de fechas, luego haz clic en Generar reporte.",
+        "empty": "No hay datos de reporte para el período seleccionado.",
+        "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
+        "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
+      }
+    },
+    "occupancy": {
+      "title": "Resumen de ocupación",
+      "subtitle": "Supervisa la utilización diaria de habitaciones y el desempeño.",
+      "filters": {
+        "property": "Propiedad",
+        "roomType": "Tipo de habitación",
+        "roomTypeAll": "Todos los tipos",
+        "month": "Mes"
+      },
+      "weekdays": {
+        "sun": "DOM",
+        "mon": "LUN",
+        "tue": "MAR",
+        "wed": "MIÉ",
+        "thu": "JUE",
+        "fri": "VIE",
+        "sat": "SÁB"
+      },
+      "calendar": {
+        "roomsLine": "{{occupied}}/{{total}} hab."
+      },
+      "legend": {
+        "high": "Alta ocupación",
+        "medium": "Ocupación media",
+        "low": "Baja ocupación"
+      },
+      "breakdown": {
+        "title": "Desglose del día por tipo de habitación",
+        "hint": "Selecciona un día en el calendario para ver ocupadas, disponibles y bloqueadas por categoría.",
+        "empty": "No hay filas de desglose para este día.",
+        "columns": {
+          "roomType": "Tipo de habitación",
+          "occupied": "Ocupadas",
+          "available": "Disponibles",
+          "blocked": "Bloqueadas",
+          "rate": "% Ocupación"
+        }
+      },
+      "projection": {
+        "title": "Alertas de proyección",
+        "empty": "Sin alertas de baja ocupación para los próximos 90 días.",
+        "period": "Baja ocupación {{from}} → {{to}} (prom. {{rate}}%)",
+        "periodsSummary_one": "{{count}} período de baja ocupación detectado",
+        "periodsSummary_other": "{{count}} períodos de baja ocupación detectados",
+        "dailySummary_one": "{{count}} señal diaria de baja ocupación en la ventana de proyección",
+        "dailySummary_other": "{{count}} señales diarias de baja ocupación en la ventana de proyección",
+        "pageSizeLabel": "Alertas por página",
+        "rangeSummary": "{{from}}–{{to}} de {{total}} alertas"
+      },
+      "states": {
+        "forbidden": "La ocupación solo está disponible para cuentas de hotel.",
+        "loadingHotels": "Cargando propiedades…",
+        "hotelsError": "No se pudieron cargar tus propiedades.",
+        "calendarError": "No se pudo cargar el calendario de ocupación.",
+        "calendarEmpty": "No hay datos de ocupación para este mes.",
+        "breakdownError": "No se pudo cargar el desglose diario.",
+        "projectionError": "No se pudo cargar la proyección de ocupación."
+      }
+    },
+    "settings": {
+      "title": "Editar Perfil del Hotel",
+      "breadcrumb": {
+        "settings": "Configuración",
+        "myHotels": "Mis Hoteles",
+        "editProfile": "Editar Perfil"
+      },
+      "status": {
+        "draft": "Borrador",
+        "published": "Publicado"
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "saveChanges": "Guardar Cambios"
+      },
+      "description": {
+        "title": "Descripción del Hotel",
+        "subtitle": "Proporciona una descripción detallada de tu propiedad para atraer huéspedes."
+      },
+      "amenities": {
+        "title": "Comodidades y Servicios",
+        "subtitle": "Selecciona las instalaciones y servicios disponibles en tu propiedad.",
+        "groups": {
+          "propertyFeatures": "Características de la Propiedad",
+          "leisureWellness": "Ocio y Bienestar",
+          "services": "Servicios"
+        },
+        "items": {
+          "WIFI": "WiFi Gratis",
+          "RESTAURANT": "Restaurante",
+          "BAR": "Bar",
+          "PARKING": "Estacionamiento",
+          "PET_FRIENDLY": "Admite Mascotas",
+          "POOL": "Piscina",
+          "FITNESS": "Gimnasio",
+          "SPA": "Spa",
+          "FRONT_DESK_24H": "Recepción 24h"
+        }
+      },
+      "policy": {
+        "title": "Política del Hotel",
+        "subtitle": "Define horarios de check-in/out, reglas sobre fumar y otras políticas de la propiedad.",
+        "placeholder": "ej. Check-in: 3:00 PM, Check-out: 11:00 AM. No se permite fumar dentro de las habitaciones..."
+      },
+      "gallery": {
+        "title": "Gestión de Galería de Imágenes",
+        "subtitle": "Sube y gestiona fotos de tu propiedad.",
+        "addNew": "Agregar Nuevas Imágenes",
+        "uploadImage": "Subir Imagen",
+        "primary": "Foto Principal",
+        "actions": {
+          "setPrimary": "Establecer como principal",
+          "delete": "Eliminar"
+        },
+        "addDialog": {
+          "title": "Agregar Imagen",
+          "urlLabel": "URL de la imagen",
+          "captionLabel": "Descripción (opcional)",
+          "submit": "Agregar",
+          "cancel": "Cancelar",
+          "helper": "Pega una URL pública de imagen. La carga directa de archivos llegará pronto."
+        },
+        "deleteDialog": {
+          "title": "¿Eliminar esta imagen?",
+          "message": "Esta foto se quitará de tu galería. Podrás volver a agregarla más tarde con una URL.",
+          "cancel": "Cancelar",
+          "confirm": "Eliminar"
+        }
+      },
+      "toolbar": {
+        "comingSoon": "Edición de texto enriquecido próximamente"
+      },
+      "snackbar": {
+        "saved": "Cambios guardados",
+        "imageAdded": "Imagen agregada",
+        "imageDeleted": "Imagen eliminada",
+        "primaryUpdated": "Imagen principal actualizada"
+      },
+      "errors": {
+        "loadFailed": "Error al cargar el perfil del hotel",
+        "saveFailed": "Error al guardar los cambios",
+        "addImageFailed": "Error al agregar la imagen",
+        "deleteFailed": "Error al eliminar la imagen",
+        "noHotels": "Tu cuenta no está asociada a ningún hotel."
+      }
+    }
+  },
+  "reports": {
+    "title": "Reportes de ingresos",
+    "subtitle": "Genera reportes de desempeño de ingresos por período.",
+    "filters": {
+      "hotel": "Hotel",
+      "myHotel": "Mi hotel",
+      "from": "Desde",
+      "to": "Hasta"
+    },
+    "kpis": {
+      "totalRevenue": "Ingresos totales",
+      "adr": "ADR",
+      "occupancyRate": "Tasa de ocupación"
+    },
+    "sections": {
+      "trends": "Tendencias de ingresos",
+      "byRoomType": "Ingresos por tipo de habitación"
+    },
+    "chart": {
+      "revenue": "Ingresos",
+      "occupancy": "Ocupación"
+    },
+    "table": {
+      "roomType": "Tipo de habitación",
+      "unitsSold": "Unidades vendidas",
+      "avgRate": "Tarifa promedio",
+      "totalRevenue": "Ingresos totales",
+      "totalAggregatedRevenue": "Ingreso total agregado"
+    },
+    "actions": {
+      "generate": "Generar reporte",
+      "download": "Descargar reporte"
+    },
+    "states": {
+      "initial": "Selecciona un hotel y un rango de fechas, luego haz clic en Generar reporte.",
+      "empty": "No hay datos de reporte para el período seleccionado.",
+      "error": "No pudimos cargar el reporte. Inténtalo de nuevo.",
+      "hotelNotResolved": "No pudimos resolver el perfil de tu hotel. Inicia sesión nuevamente."
+    }
+  },
+  "myTrips": {
+    "title": "Mis viajes",
+    "subtitle": "Gestiona tus viajes y reservas",
+    "backToSearch": "Volver a la búsqueda",
+    "findHotel": "Encontrar un hotel",
+    "upcoming": "Próximos",
+    "past": "Pasados",
+    "noUpcoming": "No hay viajes próximos",
+    "noPast": "No hay viajes pasados",
+    "noInCart": "No hay reservas en carrito",
+    "endOfTrips": "Fin de tus viajes {{tab}}.",
+    "inCart": "En carrito",
+    "resume": "Continuar",
+    "delete": "Eliminar",
+    "deleting": "Eliminando...",
+    "confirmDeleteTitle": "¿Eliminar reserva en carrito?",
+    "confirmDeleteCart": "Esto liberará tu reserva temporal. Esta acción no se puede deshacer.",
+    "deleteError": "No se pudo eliminar la reserva.",
+    "confirmDelete": "Eliminar",
+    "card": {
+      "locationNotAvailable": "Ubicación no disponible",
+      "noImage": "Sin imagen",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "viewDetails": "Ver detalles",
+      "hotelName": "Hotel"
+    }
+  }
+}
