@@ -16,6 +16,7 @@ import { fetchPropertyDetailsMap } from '@/app/lib/myTrips/loadPropertyDetails';
 import { statusChipProps } from '@/app/lib/myTrips/statusLabels';
 import type { BookingDetail, RefundDetail } from '@/app/lib/types/booking';
 import type { PropertyDetail } from '@/app/lib/types/catalog';
+import { useCurrency } from '@/lib/currency/CurrencyProvider';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Accordion from '@mui/material/Accordion';
@@ -36,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 
 function BookingDetailContent() {
   const { t } = useTranslation();
+  const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get('bookingId')?.trim() ?? '';
 
@@ -144,9 +146,9 @@ function BookingDetailContent() {
   const roomName = hotel?.room_types?.find((r) => r.id === detail.room_type_id)?.name;
   const refundAmount = refund?.status === 'SUCCEEDED' ? parseFloat(refund.amount) : 0;
   const totalPaid = parseFloat(detail.grand_total ?? detail.total_amount);
-  const finalTotal = (totalPaid - refundAmount).toFixed(2);
-  const taxes = detail.taxes ?? '0';
-  const serviceFee = detail.service_fee ?? '0';
+  const finalTotal = Number((totalPaid - refundAmount).toFixed(2));
+  const taxes = Number(detail.taxes ?? 0);
+  const serviceFee = Number(detail.service_fee ?? 0);
   const nights = detail.nights_breakdown ?? [];
   const hasCostDetails = Boolean(detail.taxes || detail.service_fee || nights.length > 0);
 
@@ -202,7 +204,7 @@ function BookingDetailContent() {
             {t('tripDetail.total')}
           </Typography>
           <Typography variant="body1" fontWeight={600}>
-            {totalPaid.toFixed(2)} {detail.currency_code}
+            {formatPrice(totalPaid)}
           </Typography>
 
           {hasCostDetails && (
@@ -234,7 +236,7 @@ function BookingDetailContent() {
                       {t('tripDetail.subtotal')}
                     </Typography>
                     <Typography variant="body2" fontWeight={600}>
-                      {detail.total_amount} {detail.currency_code}
+                      {formatPrice(Number(detail.total_amount))}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
@@ -242,7 +244,7 @@ function BookingDetailContent() {
                       {t('tripDetail.taxes')}
                     </Typography>
                     <Typography variant="body2" fontWeight={600}>
-                      {taxes} {detail.currency_code}
+                      {formatPrice(taxes)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
@@ -250,7 +252,7 @@ function BookingDetailContent() {
                       {t('tripDetail.serviceFee')}
                     </Typography>
                     <Typography variant="body2" fontWeight={600}>
-                      {serviceFee} {detail.currency_code}
+                      {formatPrice(serviceFee)}
                     </Typography>
                   </Box>
 
@@ -261,7 +263,7 @@ function BookingDetailContent() {
                       {t('tripDetail.totalDue')}
                     </Typography>
                     <Typography variant="body2" fontWeight={700}>
-                      {totalPaid.toFixed(2)} {detail.currency_code}
+                      {formatPrice(totalPaid)}
                     </Typography>
                   </Box>
 
@@ -281,7 +283,7 @@ function BookingDetailContent() {
                               {formatTripDate(n.day)}
                             </Typography>
                             <Typography variant="body2" fontWeight={600}>
-                              {n.price} {detail.currency_code}
+                              {formatPrice(Number(n.price))}
                             </Typography>
                           </Box>
                         ))}
@@ -304,7 +306,7 @@ function BookingDetailContent() {
                     {t('tripDetail.totalPaid')}
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
-                    {totalPaid.toFixed(2)} {detail.currency_code}
+                    {formatPrice(totalPaid)}
                   </Typography>
                 </Box>
                 <Tooltip title={t('tripDetail.refundTooltip')}>
@@ -313,7 +315,7 @@ function BookingDetailContent() {
                       {t('tripDetail.refundIssued')}
                     </Typography>
                     <Typography variant="body2" fontWeight={600} color="success.dark">
-                      +{refund.amount} {detail.currency_code}
+                      +{formatPrice(Number(refund.amount))}
                     </Typography>
                   </Box>
                 </Tooltip>
@@ -323,7 +325,7 @@ function BookingDetailContent() {
                     {t('tripDetail.finalTotal')}
                   </Typography>
                   <Typography variant="body2" fontWeight={700} color="success.dark">
-                    {finalTotal} {detail.currency_code}
+                    {formatPrice(Number(finalTotal))}
                   </Typography>
                 </Box>
               </Stack>
@@ -345,8 +347,8 @@ function BookingDetailContent() {
           </Typography>
         )}
         <Typography variant="body2" sx={{ mt: 1 }}>
-          {detail.unit_price} {detail.currency_code} / night · Total {detail.total_amount}{' '}
-          {detail.currency_code}
+          {formatPrice(Number(detail.unit_price))} / night · Total{' '}
+          {formatPrice(Number(detail.total_amount))}
         </Typography>
       </Box>
 

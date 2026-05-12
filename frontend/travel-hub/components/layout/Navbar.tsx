@@ -18,7 +18,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
-import LanguageDropdown from '@/components/i18n/LanguageDropdown';
+import LanguageCurrencyDropdown from '@/components/i18n/LanguageCurrencyDropdown';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -118,7 +118,7 @@ export default function Navbar() {
 
         {/* Right section */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <LanguageDropdown />
+          <LanguageCurrencyDropdown />
 
           {user ? (
             <>
