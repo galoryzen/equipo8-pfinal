@@ -6,15 +6,11 @@ import NextLink from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { getMe, logoutUser } from '@/app/lib/api/auth';
-import { loadLocale } from '@/lib/i18n/client';
-import { defaultLocale } from '@/lib/i18n/settings';
 import { tokens as th } from '@/lib/theme/tokens';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
-import LanguageIcon from '@mui/icons-material/Language';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -22,13 +18,14 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import LanguageDropdown from '@/components/i18n/LanguageDropdown';
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [user, setUser] = useState<{ email: string; role: string } | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const langLabel = i18n.language.startsWith('es') ? 'ES' : 'EN';
 
   useEffect(() => {
     getMe()
@@ -121,21 +118,7 @@ export default function Navbar() {
 
         {/* Right section */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton
-            onClick={() => {
-              const next = i18n.language.startsWith('es') ? defaultLocale : 'es-CO';
-              void loadLocale(next).then(() => i18n.changeLanguage(next));
-            }}
-            sx={{ color: 'text.secondary', borderRadius: '8px', gap: 0.5, fontSize: '0.8rem' }}
-          >
-            <LanguageIcon sx={{ fontSize: 20 }} />
-            <Typography
-              component="span"
-              sx={{ fontSize: '0.75rem', fontWeight: 500, color: 'text.secondary' }}
-            >
-              {langLabel}
-            </Typography>
-          </IconButton>
+          <LanguageDropdown />
 
           {user ? (
             <>
