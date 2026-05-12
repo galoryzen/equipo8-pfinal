@@ -6,6 +6,7 @@ import NextLink from 'next/link';
 
 import { getFeaturedProperties } from '@/app/lib/api/catalog';
 import type { PropertySummary } from '@/app/lib/types/catalog';
+import { useCurrency } from '@/lib/currency/CurrencyProvider';
 import StarIcon from '@mui/icons-material/Star';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -21,9 +22,11 @@ const FETCH_HIGH = 'high' as const;
 function PropertyCard({
   property,
   priority = false,
+  formatPrice,
 }: {
   property: PropertySummary;
   priority?: boolean;
+  formatPrice: (amount: number) => string;
 }) {
   const { t } = useTranslation();
   return (
@@ -143,7 +146,7 @@ function PropertyCard({
         )}
 
         {/* Price */}
-        {property.min_price != null && (
+        {formatPrice(property.min_price ?? 0) && (
           <Box
             sx={{
               borderTop: '1px solid',
@@ -157,7 +160,7 @@ function PropertyCard({
             }}
           >
             <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', color: 'primary.main' }}>
-              ${property.min_price.toLocaleString()}
+              {formatPrice(property.min_price ?? 0)}
             </Typography>
             <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
               {t('recommended.perNight')}
@@ -171,6 +174,7 @@ function PropertyCard({
 
 export default function RecommendedSection() {
   const { t } = useTranslation();
+  const { formatPrice } = useCurrency();
   const [properties, setProperties] = useState<PropertySummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -212,7 +216,7 @@ export default function RecommendedSection() {
           }}
         >
           {properties.map((p, idx) => (
-            <PropertyCard key={p.id} property={p} priority={idx === 0} />
+            <PropertyCard key={p.id} property={p} priority={idx === 0} formatPrice={formatPrice} />
           ))}
         </Box>
       )}

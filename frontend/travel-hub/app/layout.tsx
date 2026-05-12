@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { CurrencyProvider } from '@/lib/currency/CurrencyProvider';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 
@@ -25,12 +26,14 @@ export default function RootLayout({
     <html lang="en-US" className={roboto.variable} suppressHydrationWarning>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <I18nProvider>
-          <LanguageSync />
-          <DocumentLang />
-          <TranslatedMeta />
-          <AppRouterCacheProvider>
-            <ThemeProvider theme={theme}>{children}</ThemeProvider>
-          </AppRouterCacheProvider>
+          <CurrencyProvider>
+            <LanguageSync />
+            <DocumentLang />
+            <TranslatedMeta />
+            <AppRouterCacheProvider>
+              <ThemeProvider theme={theme}>{children}</ThemeProvider>
+            </AppRouterCacheProvider>
+          </CurrencyProvider>
         </I18nProvider>
       </body>
     </html>

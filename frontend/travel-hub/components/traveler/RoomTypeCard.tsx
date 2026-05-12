@@ -3,6 +3,7 @@
 import NextLink from 'next/link';
 
 import type { PropertyImageOut, RoomTypeOut } from '@/app/lib/types/catalog';
+import { useCurrency } from '@/lib/currency/CurrencyProvider';
 import { tokens as th } from '@/lib/theme/tokens';
 import BedIcon from '@mui/icons-material/Bed';
 import CheckIcon from '@mui/icons-material/Check';
@@ -52,6 +53,7 @@ export default function RoomTypeCard({
   propertyImage,
 }: RoomTypeCardProps) {
   const { t } = useTranslation();
+  const { formatPrice } = useCurrency();
   const activePlans = room.rate_plans.filter((rp) => rp.min_price != null);
   const cheapestPlan = activePlans.length
     ? activePlans.reduce((a, b) => (a.min_price! < b.min_price! ? a : b))
@@ -150,7 +152,7 @@ export default function RoomTypeCard({
                 {t('roomCard.startingFrom')}
               </Typography>
               <Typography variant="h6" color="primary.main" fontWeight={700} component="span">
-                ${Number(displayPrice).toLocaleString()}
+                {formatPrice(Number(displayPrice))}
               </Typography>
               <Typography variant="caption" color="text.secondary" component="span">
                 {' '}

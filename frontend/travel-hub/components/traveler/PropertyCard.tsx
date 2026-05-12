@@ -3,6 +3,7 @@
 import NextLink from 'next/link';
 
 import type { PropertySummary } from '@/app/lib/types/catalog';
+import { useCurrency } from '@/lib/currency/CurrencyProvider';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import StarIcon from '@mui/icons-material/Star';
 import Box from '@mui/material/Box';
@@ -28,6 +29,7 @@ function formatReviewCount(count: number, t: TFunction): string {
 
 export default function PropertyCard({ property, checkin, checkout, guests }: PropertyCardProps) {
   const { t } = useTranslation();
+  const { formatPrice } = useCurrency();
 
   const href = (() => {
     const params = new URLSearchParams();
@@ -179,7 +181,7 @@ export default function PropertyCard({ property, checkin, checkout, guests }: Pr
               }}
             >
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                ${property.min_price.toLocaleString()}
+                {formatPrice(property.min_price)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {t('propertyCard.perNight')}

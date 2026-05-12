@@ -5,6 +5,7 @@ import { Suspense, useMemo } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+import { useCurrency } from '@/lib/currency/CurrencyProvider';
 import BedroomParentOutlinedIcon from '@mui/icons-material/BedroomParentOutlined';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import CheckBoxOutlinedIcon from '@mui/icons-material/CheckBoxOutlined';
@@ -35,6 +36,7 @@ function formatDate(dateStr: string): string {
 }
 
 function ConfirmationPageContent() {
+  const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
 
   const bookingId = searchParams.get('booking_id') ?? '';
@@ -48,7 +50,6 @@ function ConfirmationPageContent() {
   const discountPercentParam = searchParams.get('discount_percent') ?? '';
   const originalSubtotalParam = searchParams.get('original_total_amount') ?? '';
   const originalGrandTotalParam = searchParams.get('original_grand_total') ?? '';
-  const currency = searchParams.get('currency') ?? 'USD';
   const guestName = searchParams.get('guest_name') ?? '';
   const guestEmail = searchParams.get('guest_email') ?? '';
   const cardLast4 = searchParams.get('card_last4') ?? '';
@@ -80,8 +81,6 @@ function ConfirmationPageContent() {
     const n = Number(originalGrandTotalParam);
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [originalGrandTotalParam]);
-
-  const currencySymbol = currency === 'USD' ? '$' : currency;
 
   return (
     <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 6 }}>
@@ -281,19 +280,14 @@ function ConfirmationPageContent() {
                           variant="body2"
                           sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
                         >
-                          {currencySymbol}
-                          {originalSubtotal.toFixed(2)}
+                          {formatPrice(originalSubtotal)}
                         </Typography>
                         <Typography variant="body2" fontWeight={700}>
-                          {currencySymbol}
-                          {basePrice.toFixed(2)}
+                          {formatPrice(basePrice)}
                         </Typography>
                       </Stack>
                     ) : (
-                      <Typography variant="body2">
-                        {currencySymbol}
-                        {basePrice.toFixed(2)}
-                      </Typography>
+                      <Typography variant="body2">{formatPrice(basePrice)}</Typography>
                     )}
                   </Box>
                   {discountPercent != null && (
@@ -310,19 +304,13 @@ function ConfirmationPageContent() {
                     <Typography variant="body2" color="text.secondary">
                       Service fees
                     </Typography>
-                    <Typography variant="body2">
-                      {currencySymbol}
-                      {SERVICE_FEE.toFixed(2)}
-                    </Typography>
+                    <Typography variant="body2">{formatPrice(SERVICE_FEE)}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2" color="text.secondary">
                       Taxes
                     </Typography>
-                    <Typography variant="body2">
-                      {currencySymbol}
-                      {taxes.toFixed(2)}
-                    </Typography>
+                    <Typography variant="body2">{formatPrice(taxes)}</Typography>
                   </Box>
                 </Stack>
 
@@ -340,8 +328,7 @@ function ConfirmationPageContent() {
                         variant="body2"
                         sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
                       >
-                        Price {currencySymbol}
-                        {originalDisplayTotal.toFixed(2)}
+                        Price {formatPrice(originalDisplayTotal)}
                       </Typography>
                     )}
                     <Typography
@@ -351,8 +338,7 @@ function ConfirmationPageContent() {
                       data-testid="traveler-confirmation-total-price"
                     >
                       {originalDisplayTotal != null ? 'Price with discount ' : ''}
-                      {currencySymbol}
-                      {displayTotal.toFixed(2)}
+                      {formatPrice(displayTotal)}
                     </Typography>
                   </Box>
                 </Box>

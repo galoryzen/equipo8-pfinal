@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { RateUnavailableError, getRatePlanPricing } from '@/app/lib/api/catalog';
 import { useAuthAction } from '@/app/lib/hooks/useAuthAction';
 import type { PropertyDetail, RatePlanPricing } from '@/app/lib/types/catalog';
+import { useCurrency } from '@/lib/currency/CurrencyProvider';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -53,6 +54,7 @@ export default function PriceCard({
   const { today, tomorrow } = getDefaultDates();
   const { authStatus, requireAuth } = useAuthAction();
   const { t } = useTranslation();
+  const { formatPrice } = useCurrency();
 
   const [checkin, setCheckin] = useState(initialCheckin || today);
   const [checkout, setCheckout] = useState(initialCheckout || tomorrow);
@@ -166,15 +168,15 @@ export default function PriceCard({
                   fontWeight={700}
                   sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
                 >
-                  ${Math.round(originalPricePerNight).toLocaleString()}
+                  {formatPrice(Math.round(originalPricePerNight))}
                 </Typography>
                 <Typography variant="h5" fontWeight={800}>
-                  ${Math.round(pricePerNight).toLocaleString()}
+                  {formatPrice(Math.round(pricePerNight))}
                 </Typography>
               </Box>
             ) : (
               <Typography variant="h5" fontWeight={700}>
-                ${Math.round(pricePerNight).toLocaleString()}
+                {formatPrice(Math.round(pricePerNight))}
               </Typography>
             )}
             <Typography variant="body2" color="text.secondary">
@@ -301,7 +303,7 @@ export default function PriceCard({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                ${Math.round(pricePerNight).toLocaleString()} x {nights}{' '}
+                {formatPrice(Math.round(pricePerNight))} x {nights}{' '}
                 {t('propertyDetail.priceCard.night')}
               </Typography>
               {originalRoomTotal != null ? (
@@ -310,14 +312,14 @@ export default function PriceCard({
                     variant="body2"
                     sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
                   >
-                    ${Math.round(originalRoomTotal).toLocaleString()}
+                    {formatPrice(Math.round(originalRoomTotal))}
                   </Typography>
                   <Typography variant="body2" fontWeight={700}>
-                    ${Math.round(roomTotal).toLocaleString()}
+                    {formatPrice(Math.round(roomTotal))}
                   </Typography>
                 </Box>
               ) : (
-                <Typography variant="body2">${Math.round(roomTotal).toLocaleString()}</Typography>
+                <Typography variant="body2">{formatPrice(Math.round(roomTotal))}</Typography>
               )}
             </Box>
             {discountPercent != null && (
@@ -334,13 +336,13 @@ export default function PriceCard({
               <Typography variant="body2" color="text.secondary">
                 {t('propertyDetail.priceCard.taxes')}
               </Typography>
-              <Typography variant="body2">${Math.round(taxes).toLocaleString()}</Typography>
+              <Typography variant="body2">{formatPrice(Math.round(taxes))}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
                 {t('propertyDetail.priceCard.serviceFee')}
               </Typography>
-              <Typography variant="body2">${Math.round(serviceFee).toLocaleString()}</Typography>
+              <Typography variant="body2">{formatPrice(Math.round(serviceFee))}</Typography>
             </Box>
             <Divider sx={{ my: 0.5 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -357,12 +359,12 @@ export default function PriceCard({
                       textDecoration: 'line-through',
                     }}
                   >
-                    Price ${Math.round(originalRoomTotal + taxes + serviceFee).toLocaleString()}
+                    Price {formatPrice(Math.round(originalRoomTotal + taxes + serviceFee))}
                   </Typography>
                 )}
                 <Typography variant="body2" fontWeight={700}>
-                  {originalRoomTotal != null ? 'Price with discount ' : ''}$
-                  {Math.round(total).toLocaleString()}
+                  {originalRoomTotal != null ? 'Price with discount ' : ''}
+                  {formatPrice(Math.round(total))}
                 </Typography>
               </Box>
             </Box>

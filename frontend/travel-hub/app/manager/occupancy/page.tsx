@@ -11,6 +11,7 @@ import {
 } from '@/app/lib/api/occupancy';
 import type { ManagerHotelItem } from '@/app/lib/types/manager';
 import type { OccupancyDailyBreakdownResponse, OccupancyDay } from '@/app/lib/types/occupancy';
+import { dateFormattingLocale } from '@/lib/i18n/dateLocale';
 import { tokens } from '@/lib/theme/tokens';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -141,7 +142,7 @@ function OccupancyProjectionAlerts({
   const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<ProjectionPageSize>(5);
-  const locale = i18n.language?.startsWith('es') ? 'es-CO' : 'en-US';
+  const locale = dateFormattingLocale(i18n.language ?? 'en-US');
 
   const flatRows = useMemo((): ProjectionRow[] => {
     const rows: ProjectionRow[] = [];

@@ -215,7 +215,7 @@ describe('PropertyDetailView', () => {
     renderWithI18n(<PropertyDetailView id={PROPERTY_ID} />);
 
     await waitFor(() => {
-      expect(screen.getAllByText('$199').length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/\$199/).length).toBeGreaterThan(0);
     });
   });
 

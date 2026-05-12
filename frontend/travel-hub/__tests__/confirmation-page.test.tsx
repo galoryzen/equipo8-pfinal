@@ -1,5 +1,6 @@
+import { renderWithI18n } from '@/__tests__/test-utils';
 import BookingConfirmationPage from '@/app/traveler/(protected)/payment/confirmation/page';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -34,48 +35,48 @@ vi.mock('next/link', () => ({
 
 describe('BookingConfirmationPage', () => {
   it('renders the pending reservation heading', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     expect(screen.getByText('Reservation Pending')).toBeTruthy();
   });
 
   it('shows property name', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     expect(screen.getByText('Sunset Resort')).toBeTruthy();
   });
 
   it('shows room name and guest count', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     expect(screen.getByText('Ocean View Suite')).toBeTruthy();
     expect(screen.getByText(/2 Adults/)).toBeTruthy();
   });
 
   it('shows price summary with correct total', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     // 3 nights × $150 = $450 + $35 service + $54 taxes = $539
     expect(screen.getByText('Price Summary')).toBeTruthy();
     expect(screen.getByText('Total Amount')).toBeTruthy();
   });
 
   it('shows guest information section', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     expect(screen.getByText('Guest Information')).toBeTruthy();
     expect(screen.getByText('Jane Doe')).toBeTruthy();
     expect(screen.getByText('jane@example.com')).toBeTruthy();
   });
 
   it('shows payment card info', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     expect(screen.getByText('Visa •••• 4242')).toBeTruthy();
   });
 
   it('renders navigation buttons', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     expect(screen.getByText('View My Trips')).toBeTruthy();
     expect(screen.getByText('Explore More')).toBeTruthy();
   });
 
   it('shows progress bar at 85%', () => {
-    render(<BookingConfirmationPage />);
+    renderWithI18n(<BookingConfirmationPage />);
     expect(screen.getByText('85%')).toBeTruthy();
   });
 });

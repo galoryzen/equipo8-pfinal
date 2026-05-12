@@ -1,7 +1,8 @@
+import { renderWithI18n } from '@/__tests__/test-utils';
 import * as bookingApi from '@/app/lib/api/booking';
 import type { CartBooking } from '@/app/lib/types/booking';
 import TravelerPaymentPage from '@/app/traveler/(protected)/payment/page';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -32,17 +33,21 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, opts?: Record<string, unknown>) => {
-      if (opts?.count !== undefined) return `${key}(${opts.count})`;
-      if (opts?.currency) return `${key}(${opts.currency})`;
-      if (opts?.amount) return `${key}(${opts.amount})`;
-      if (opts?.date) return `${key}(${opts.date})`;
-      return key;
-    },
-  }),
-}));
+vi.mock('react-i18next', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-i18next')>();
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string, opts?: Record<string, unknown>) => {
+        if (opts?.count !== undefined) return `${key}(${opts.count})`;
+        if (opts?.currency) return `${key}(${opts.currency})`;
+        if (opts?.amount) return `${key}(${opts.amount})`;
+        if (opts?.date) return `${key}(${opts.date})`;
+        return key;
+      },
+    }),
+  };
+});
 
 vi.mock('@/app/lib/api/booking', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/app/lib/api/booking')>();
@@ -96,13 +101,13 @@ describe('TravelerPaymentPage', () => {
 
   it('shows a loading spinner on mount', () => {
     mockCreate.mockImplementation(() => new Promise(() => {}));
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
     expect(document.querySelector('.MuiCircularProgress-root')).toBeTruthy();
   });
 
   it('shows the review and pay form after booking is created', async () => {
     mockCreate.mockResolvedValue(CART);
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText('payment.pageTitle')).toBeTruthy();
@@ -111,7 +116,7 @@ describe('TravelerPaymentPage', () => {
 
   it('shows guest details and payment method sections', async () => {
     mockCreate.mockResolvedValue(CART);
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText(/payment\.guestDetails/)).toBeTruthy();
@@ -121,7 +126,7 @@ describe('TravelerPaymentPage', () => {
 
   it('shows the booking summary section', async () => {
     mockCreate.mockResolvedValue(CART);
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText('payment.bookingSummary')).toBeTruthy();
@@ -130,7 +135,7 @@ describe('TravelerPaymentPage', () => {
 
   it('shows countdown banner when booking is active', async () => {
     mockCreate.mockResolvedValue(CART);
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText(/payment\.countdownBannerAfter/)).toBeTruthy();
@@ -139,7 +144,7 @@ describe('TravelerPaymentPage', () => {
 
   it('shows error and back-to-search button when booking creation fails', async () => {
     mockCreate.mockRejectedValue(new Error('Room unavailable'));
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Room unavailable')).toBeTruthy();
@@ -183,7 +188,7 @@ describe('TravelerPaymentPage', () => {
       last_payment_attempt: null,
     });
 
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText('payment.pageTitle')).toBeTruthy();
@@ -195,7 +200,7 @@ describe('TravelerPaymentPage', () => {
 
   it('stores booking id in localStorage after creation', async () => {
     mockCreate.mockResolvedValue(CART);
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText('payment.pageTitle')).toBeTruthy();
@@ -211,7 +216,7 @@ describe('TravelerPaymentPage', () => {
       hold_expires_at: new Date(Date.now() - 1000).toISOString(),
     };
     mockCreate.mockResolvedValue(expiredCart);
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getByText('payment.expiredTitle')).toBeTruthy();
@@ -220,7 +225,7 @@ describe('TravelerPaymentPage', () => {
 
   it('shows property name in the booking summary', async () => {
     mockCreate.mockResolvedValue(CART);
-    render(<TravelerPaymentPage />);
+    renderWithI18n(<TravelerPaymentPage />);
 
     await waitFor(() => {
       expect(screen.getAllByText('Test Hotel').length).toBeGreaterThan(0);

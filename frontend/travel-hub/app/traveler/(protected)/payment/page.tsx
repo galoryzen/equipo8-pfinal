@@ -14,6 +14,7 @@ import {
 } from '@/app/lib/api/booking';
 import { COUNTRY_CODES } from '@/app/lib/constant';
 import type { CartBooking } from '@/app/lib/types/booking';
+import { useCurrency } from '@/lib/currency/CurrencyProvider';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import { FormControl, MenuItem, Select } from '@mui/material';
 import Alert from '@mui/material/Alert';
@@ -172,6 +173,7 @@ function pricingFromBooking(b: {
 
 function PaymentPageContent() {
   const { t } = useTranslation();
+  const { formatPrice } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1347,14 +1349,14 @@ function PaymentPageContent() {
                           variant="body2"
                           sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
                         >
-                          ${originalBasePrice.toFixed(2)}
+                          {formatPrice(originalBasePrice)}
                         </Typography>
                         <Typography variant="body2" fontWeight={700}>
-                          ${basePrice.toFixed(2)}
+                          {formatPrice(basePrice)}
                         </Typography>
                       </Stack>
                     ) : (
-                      <Typography variant="body2">${basePrice.toFixed(2)}</Typography>
+                      <Typography variant="body2">{formatPrice(basePrice)}</Typography>
                     )}
                   </Box>
                   {discountPercent != null && (
@@ -1371,13 +1373,13 @@ function PaymentPageContent() {
                     <Typography variant="body2" color="text.secondary">
                       {t('payment.taxesAndFees')}
                     </Typography>
-                    <Typography variant="body2">${taxes.toFixed(2)}</Typography>
+                    <Typography variant="body2">{formatPrice(taxes)}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2" color="text.secondary">
                       {t('payment.serviceFee')}
                     </Typography>
-                    <Typography variant="body2">${serverServiceFee.toFixed(2)}</Typography>
+                    <Typography variant="body2">{formatPrice(serverServiceFee)}</Typography>
                   </Box>
                 </Stack>
 
@@ -1402,7 +1404,7 @@ function PaymentPageContent() {
                         variant="body2"
                         sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
                       >
-                        Price ${originalDisplayTotal.toFixed(2)}
+                        Price {formatPrice(originalDisplayTotal ?? 0)}
                       </Typography>
                     )}
                     <Typography
@@ -1411,8 +1413,8 @@ function PaymentPageContent() {
                       color="primary.main"
                       data-testid="traveler-payment-total-amount"
                     >
-                      {originalDisplayTotal != null ? 'Price with discount ' : ''}$
-                      {displayTotal.toFixed(2)}
+                      {originalDisplayTotal != null ? 'Price with discount ' : ''}
+                      {formatPrice(displayTotal)}
                     </Typography>
                   </Box>
                 </Box>
@@ -1452,7 +1454,7 @@ function PaymentPageContent() {
                   data-testid="traveler-payment-submit"
                   sx={{ textTransform: 'none', fontWeight: 700, py: 1.5, borderRadius: 2 }}
                 >
-                  🔒 {t('payment.payButton', { amount: displayTotal.toFixed(2) })}
+                  🔒 {t('payment.payButton')} {formatPrice(displayTotal)}
                 </Button>
 
                 <Typography
