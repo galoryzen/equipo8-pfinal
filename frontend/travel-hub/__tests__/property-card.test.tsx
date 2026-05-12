@@ -30,7 +30,7 @@ describe('PropertyCard', () => {
 
   it('shows distance when distance_to_poi_km is set', () => {
     renderWithI18n(<PropertyCard property={{ ...baseProperty, distance_to_poi_km: 12.5 }} />);
-    expect(screen.getByText(/12,5/)).toBeTruthy();
+    expect(screen.getByText(/12\.5/)).toBeTruthy();
     expect(screen.getByText(/km/i)).toBeTruthy();
   });
 });
