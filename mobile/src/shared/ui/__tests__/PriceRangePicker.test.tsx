@@ -15,6 +15,7 @@ jest.mock('react-i18next', () => ({
       return map[key] ?? key;
     },
   }),
+  initReactI18next: { type: '3rdParty', init: jest.fn() },
 }));
 
 describe('PriceRangePicker', () => {
@@ -111,9 +112,11 @@ describe('PriceRangePicker', () => {
     expect(maxInput.props.value).toBe('800');
   });
 
-  it('renders slider labels', () => {
+  it('renders slider labels with locale-formatted currency', () => {
     const { getByText } = render(<PriceRangePicker {...defaultProps} />);
-    expect(getByText('$0')).toBeTruthy();
-    expect(getByText('$1000')).toBeTruthy();
+    // formatCurrency forces currencyDisplay: 'code' for cross-platform
+    // consistency, so the slider labels read e.g. "USD 0" / "USD 1,000".
+    expect(getByText(/USD\s*0/)).toBeTruthy();
+    expect(getByText(/USD\s*1[,.]000/)).toBeTruthy();
   });
 });

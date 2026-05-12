@@ -103,7 +103,7 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.formContainer}>
-            <Text style={styles.title}>
+            <Text style={styles.title} accessibilityRole="header">
               {mode === 'login' ? t('profile.login') : t('profile.signup')}
             </Text>
 
@@ -133,7 +133,13 @@ export default function LoginScreen() {
                 />
                 <View style={styles.countryField}>
                   <Text style={styles.countryLabel}>{t('profile.country')}</Text>
-                  <View style={[styles.countryControl, errors.country && styles.countryControlError]}>
+                  <View
+                    style={[styles.countryControl, errors.country && styles.countryControlError]}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('profile.country')}: ${String(countryDisplay)}`}
+                    accessibilityHint={t('profile.country')}
+                  >
                     <CountryPicker
                       countryCode={countryCode}
                       withFilter
@@ -148,11 +154,13 @@ export default function LoginScreen() {
                         setErrors((prev) => ({ ...prev, country: undefined }));
                       }}
                     />
-                    <Text style={styles.countryValue} accessibilityLabel={String(countryDisplay)}>
-                      {countryCode}
-                    </Text>
+                    <Text style={styles.countryValue}>{countryCode}</Text>
                   </View>
-                  {errors.country && <Text style={styles.fieldError}>{errors.country}</Text>}
+                  {errors.country && (
+                    <Text style={styles.fieldError} accessibilityLiveRegion="polite">
+                      {errors.country}
+                    </Text>
+                  )}
                 </View>
               </>
             )}
@@ -184,7 +192,19 @@ export default function LoginScreen() {
               style={styles.submitButton}
             />
 
-            <Pressable onPress={switchMode} style={styles.switchMode} disabled={submitting}>
+            <Pressable
+              onPress={switchMode}
+              style={styles.switchMode}
+              disabled={submitting}
+              accessibilityRole="button"
+              accessibilityLabel={
+                mode === 'login' ? t('profile.signup') : t('profile.login')
+              }
+              accessibilityHint={
+                mode === 'login' ? t('profile.noAccount') : t('profile.hasAccount')
+              }
+              hitSlop={8}
+            >
               <Text style={styles.switchText}>
                 {mode === 'login' ? t('profile.noAccount') : t('profile.hasAccount')}{' '}
                 <Text style={styles.switchLink}>

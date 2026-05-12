@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@src/theme';
-import { formatCurrency } from '@src/shared/utils/format-currency';
+import { useDisplayCurrency } from '@src/shared/utils/use-display-currency';
 import type { RateBreakdown } from '@src/features/catalog/rate-breakdown';
 import type { SelectedRoomInfo } from './RoomTypeCard';
 
@@ -14,6 +14,7 @@ interface PriceBreakdownPanelProps {
 
 export function PriceBreakdownPanel({ selection, breakdown }: PriceBreakdownPanelProps) {
   const { t } = useTranslation();
+  const { format: formatPrice } = useDisplayCurrency();
 
   const currency = selection.currencyCode;
   const hasPromo = breakdown.discount != null && breakdown.discount > 0;
@@ -31,7 +32,7 @@ export function PriceBreakdownPanel({ selection, breakdown }: PriceBreakdownPane
   const discountLabelDetail = promo
     ? promo.discountType === 'PERCENT'
       ? `−${Math.round(promo.discountValue)}%`
-      : `−${formatCurrency(Math.round(promo.discountValue), currency, { maximumFractionDigits: 0 })}${t('rooms.breakdown.perNightShort')}`
+      : `−${formatPrice(Math.round(promo.discountValue), currency, { maximumFractionDigits: 0 })}${t('rooms.breakdown.perNightShort')}`
     : null;
 
   return (
@@ -42,11 +43,11 @@ export function PriceBreakdownPanel({ selection, breakdown }: PriceBreakdownPane
       <View style={styles.row}>
         <Text style={styles.rowLabel}>
           {t('rooms.breakdown.perNightLine', {
-            price: formatCurrency(firstLinePrice, currency),
+            price: formatPrice(firstLinePrice, currency),
             count: breakdown.nights,
           })}
         </Text>
-        <Text style={styles.rowValue}>{formatCurrency(firstLineAmount, currency)}</Text>
+        <Text style={styles.rowValue}>{formatPrice(firstLineAmount, currency)}</Text>
       </View>
 
       {/* Discount line (only when promo) */}
@@ -57,7 +58,7 @@ export function PriceBreakdownPanel({ selection, breakdown }: PriceBreakdownPane
             {discountLabelDetail ? ` (${discountLabelDetail})` : ''}
           </Text>
           <Text style={styles.discountValue}>
-            −{formatCurrency(breakdown.discount, currency)}
+            −{formatPrice(breakdown.discount, currency)}
           </Text>
         </View>
       )}
@@ -68,32 +69,32 @@ export function PriceBreakdownPanel({ selection, breakdown }: PriceBreakdownPane
           <View style={styles.subtleDivider} />
           <View style={styles.row}>
             <Text style={styles.rowLabel}>{t('rooms.breakdown.subtotal')}</Text>
-            <Text style={styles.rowValue}>{formatCurrency(breakdown.subtotal, currency)}</Text>
+            <Text style={styles.rowValue}>{formatPrice(breakdown.subtotal, currency)}</Text>
           </View>
         </>
       )}
 
       <View style={styles.row}>
         <Text style={styles.rowLabel}>{t('rooms.breakdown.taxes')}</Text>
-        <Text style={styles.rowValue}>{formatCurrency(breakdown.taxes, currency)}</Text>
+        <Text style={styles.rowValue}>{formatPrice(breakdown.taxes, currency)}</Text>
       </View>
 
       <View style={styles.row}>
         <Text style={styles.rowLabel}>{t('rooms.breakdown.serviceFee')}</Text>
-        <Text style={styles.rowValue}>{formatCurrency(breakdown.serviceFee, currency)}</Text>
+        <Text style={styles.rowValue}>{formatPrice(breakdown.serviceFee, currency)}</Text>
       </View>
 
       <View style={styles.divider} />
 
       <View style={styles.row}>
         <Text style={styles.totalLabel}>{t('rooms.breakdown.total')}</Text>
-        <Text style={styles.totalValue}>{formatCurrency(breakdown.total, currency)}</Text>
+        <Text style={styles.totalValue}>{formatPrice(breakdown.total, currency)}</Text>
       </View>
 
       {hasPromo && breakdown.discount != null && (
         <Text style={styles.savedHint}>
           {t('rooms.breakdown.youSaved', {
-            amount: formatCurrency(breakdown.discount, currency),
+            amount: formatPrice(breakdown.discount, currency),
           })}
         </Text>
       )}

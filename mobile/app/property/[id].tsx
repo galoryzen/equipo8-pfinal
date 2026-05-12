@@ -92,9 +92,15 @@ export default function PropertyDetailScreen() {
           {/* Header */}
           <View style={styles.headerRow}>
             <View style={styles.headerInfo}>
-              <Text style={styles.propertyName}>{property.name}</Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={16} color={colors.text.secondary} />
+              <Text style={styles.propertyName} accessibilityRole="header">
+                {property.name}
+              </Text>
+              <View
+                style={styles.locationRow}
+                accessible
+                accessibilityLabel={`${t('property.location')}: ${property.city.name}, ${property.city.country}`}
+              >
+                <Ionicons name="location-outline" size={16} color={colors.text.muted} />
                 <Text style={styles.locationText}>
                   {property.city.name}, {property.city.country}
                 </Text>
@@ -105,14 +111,24 @@ export default function PropertyDetailScreen() {
           {/* Description — connected to backend */}
           {property.description && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('property.description')}</Text>
+              <Text style={styles.sectionTitle} accessibilityRole="header">
+                {t('property.description')}
+              </Text>
               <Text
                 style={styles.descriptionText}
                 numberOfLines={showFullDescription ? undefined : 3}
               >
                 {property.description}
               </Text>
-              <Pressable onPress={() => setShowFullDescription(!showFullDescription)}>
+              <Pressable
+                onPress={() => setShowFullDescription(!showFullDescription)}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showFullDescription ? t('property.showLess') : t('property.showMore')
+                }
+                accessibilityState={{ expanded: showFullDescription }}
+                hitSlop={8}
+              >
                 <Text style={styles.showMoreText}>
                   {showFullDescription ? t('property.showLess') : t('property.showMore')}
                 </Text>
@@ -123,10 +139,20 @@ export default function PropertyDetailScreen() {
           {/* Amenities — connected to backend */}
           {property.amenities.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('property.amenities')}</Text>
-              <View style={styles.amenitiesGrid}>
+              <Text style={styles.sectionTitle} accessibilityRole="header">
+                {t('property.amenities')}
+              </Text>
+              <View
+                style={styles.amenitiesGrid}
+                accessibilityLabel={t('property.amenities')}
+              >
                 {property.amenities.map((amenity) => (
-                  <View key={amenity.code} style={styles.amenityItem}>
+                  <View
+                    key={amenity.code}
+                    style={styles.amenityItem}
+                    accessible
+                    accessibilityLabel={amenity.name}
+                  >
                     <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
                     <Text style={styles.amenityText}>{amenity.name}</Text>
                   </View>
@@ -137,7 +163,9 @@ export default function PropertyDetailScreen() {
 
           {/* Reviews */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('property.reviews')}</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              {t('property.reviews')}
+            </Text>
             <RatingHeader
               ratingAvg={ratingAvg}
               reviewCount={reviews?.total ?? 0}

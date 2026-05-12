@@ -25,6 +25,7 @@ module.exports = {
     "src/features/**/*.{ts,tsx}",
     "src/services/api.ts",
     "src/services/auth-context.tsx",
+    "src/services/preferences-context.tsx",
     "src/shared/**/*.{ts,tsx}",
     "!src/**/i18n/**",
     "!src/**/index.ts",

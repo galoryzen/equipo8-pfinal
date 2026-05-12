@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Card } from '@src/shared/ui';
 import { formatCurrency } from '@src/shared/utils/format-currency';
+import { useDisplayCurrency } from '@src/shared/utils/use-display-currency';
 import { colors, radius, spacing, typography } from '@src/theme';
 import { getBookingDetail } from '@src/services/booking-service';
 import { getPropertyDetail } from '@src/features/catalog/catalog-service';
@@ -380,6 +381,7 @@ export default function BookingDetailScreen() {
 
 function PriceBreakdown({ booking }: { booking: BookingDetail }) {
   const { t } = useTranslation();
+  const { format: formatDisplay, displayCurrency } = useDisplayCurrency();
   const currency = booking.currency_code;
   // Defensive number coercion: legacy bookings created before the fee columns
   // existed may serialise with 0 or missing values. ``grand_total`` is
@@ -389,31 +391,37 @@ function PriceBreakdown({ booking }: { booking: BookingDetail }) {
   const serviceFee = Number(booking.service_fee ?? 0);
   const total = Number(booking.grand_total ?? 0) || subtotal + taxes + serviceFee;
   const hasFees = taxes > 0 || serviceFee > 0;
+  const showChargeNote = displayCurrency !== currency;
 
   return (
     <>
       <Text style={[styles.label, styles.spaced]}>{t('rooms.priceBreakdown')}</Text>
       <View style={styles.priceRow}>
         <Text style={styles.meta}>{t('rooms.breakdown.subtotal')}</Text>
-        <Text style={styles.value}>{formatCurrency(subtotal, currency)}</Text>
+        <Text style={styles.value}>{formatDisplay(subtotal, currency)}</Text>
       </View>
       {hasFees && (
         <>
           <View style={styles.priceRow}>
             <Text style={styles.meta}>{t('rooms.breakdown.taxes')}</Text>
-            <Text style={styles.value}>{formatCurrency(taxes, currency)}</Text>
+            <Text style={styles.value}>{formatDisplay(taxes, currency)}</Text>
           </View>
           <View style={styles.priceRow}>
             <Text style={styles.meta}>{t('rooms.breakdown.serviceFee')}</Text>
-            <Text style={styles.value}>{formatCurrency(serviceFee, currency)}</Text>
+            <Text style={styles.value}>{formatDisplay(serviceFee, currency)}</Text>
           </View>
         </>
       )}
       <View style={styles.priceDivider} />
       <View style={styles.priceRow}>
         <Text style={styles.value}>{t('trips.detail.total')}</Text>
-        <Text style={styles.totalValue}>{formatCurrency(total, currency)}</Text>
+        <Text style={styles.totalValue}>{formatDisplay(total, currency)}</Text>
       </View>
+      {showChargeNote ? (
+        <Text style={styles.chargeNote}>
+          {t('settings.chargeNote', { amount: formatCurrency(total, currency) })}
+        </Text>
+      ) : null}
     </>
   );
 }
@@ -563,6 +571,13 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold,
     fontSize: typography.fontSize.lg,
     color: colors.text.primary,
+  },
+  chargeNote: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.muted,
+    textAlign: 'right',
+    marginTop: 2,
   },
   meta: {
     fontFamily: typography.fontFamily.regular,

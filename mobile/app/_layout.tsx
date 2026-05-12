@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { CartProvider } from '@src/features/booking/cart-context';
 import { AuthProvider } from '@src/services/auth-context';
 import { NotificationsProvider } from '@src/services/notifications-context';
+import { PreferencesProvider } from '@src/services/preferences-context';
 import '@src/i18n/i18n';
 
 export { ErrorBoundary } from 'expo-router';
@@ -43,40 +44,43 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <NotificationsProvider>
-        <CartProvider>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="welcome" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="property/[id]"
-              options={{
-                headerShown: true,
-                headerTitle: '',
-                headerBackTitle: '',
-                headerTransparent: true,
-              }}
-            />
-            <Stack.Screen
-              name="property/[id]/rooms"
-              options={{ headerShown: true }}
-            />
-            <Stack.Screen
-              name="property/[id]/reviews"
-              options={{ headerShown: true }}
-            />
-            <Stack.Screen
-              name="property/[id]/rooms/[roomId]"
-              options={{ headerShown: true }}
-            />
-            {/* Booking flow has its own nested Stack with header, keep the root one hidden. */}
-            <Stack.Screen name="booking" options={{ headerShown: false }} />
-          </Stack>
-        </CartProvider>
-      </NotificationsProvider>
-    </AuthProvider>
+    <PreferencesProvider>
+      <AuthProvider>
+        <NotificationsProvider>
+          <CartProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="welcome" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="property/[id]"
+                options={{
+                  headerShown: true,
+                  headerTitle: '',
+                  headerBackTitle: '',
+                  headerTransparent: true,
+                }}
+              />
+              <Stack.Screen
+                name="property/[id]/rooms"
+                options={{ headerShown: true }}
+              />
+              <Stack.Screen
+                name="property/[id]/reviews"
+                options={{ headerShown: true }}
+              />
+              <Stack.Screen
+                name="property/[id]/rooms/[roomId]"
+                options={{ headerShown: true }}
+              />
+              {/* Booking flow has its own nested Stack with header, keep the root one hidden. */}
+              <Stack.Screen name="booking" options={{ headerShown: false }} />
+              <Stack.Screen name="settings" options={{ headerShown: true }} />
+            </Stack>
+          </CartProvider>
+        </NotificationsProvider>
+      </AuthProvider>
+    </PreferencesProvider>
   );
 }

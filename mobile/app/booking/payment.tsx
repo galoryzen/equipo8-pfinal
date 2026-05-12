@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +21,8 @@ import {
   checkoutBooking,
 } from '@src/services/booking-service';
 import { Button, Card, Input } from '@src/shared/ui';
+import { formatCurrency } from '@src/shared/utils/format-currency';
+import { useDisplayCurrency } from '@src/shared/utils/use-display-currency';
 import { colors, radius, shadows, spacing, typography } from '@src/theme';
 
 const WARNING_THRESHOLD_MS = 5 * 60 * 1000;
@@ -54,6 +65,7 @@ export default function PaymentScreen() {
   const { cart, loading, clearCart } = useCart();
   const countdown = useCountdown(cart?.hold_expires_at);
   const polling = usePaymentPolling();
+  const { format: formatDisplay, displayCurrency } = useDisplayCurrency();
 
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -84,8 +96,9 @@ export default function PaymentScreen() {
       }
       cartClearedRef.current = true;
       void clearCart();
+      AccessibilityInfo.announceForAccessibility(t('booking.success.title'));
     }
-  }, [polling.status, cart, clearCart]);
+  }, [polling.status, cart, clearCart, t]);
 
   const palette = useMemo(() => countdownColor(countdown.remainingMs), [countdown.remainingMs]);
 
@@ -185,9 +198,24 @@ export default function PaymentScreen() {
               </View>
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>{t('booking.success.totalLabel')}</Text>
-                <Text style={styles.total}>
-                  {authorizedDetail.grand_total} {authorizedDetail.currency_code}
-                </Text>
+                <View style={styles.totalAmounts}>
+                  <Text style={styles.total}>
+                    {formatDisplay(
+                      parseFloat(authorizedDetail.grand_total),
+                      authorizedDetail.currency_code,
+                    )}
+                  </Text>
+                  {displayCurrency !== authorizedDetail.currency_code ? (
+                    <Text style={styles.chargeNote}>
+                      {t('settings.chargeNote', {
+                        amount: formatCurrency(
+                          parseFloat(authorizedDetail.grand_total),
+                          authorizedDetail.currency_code,
+                        ),
+                      })}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
             </Card>
 
@@ -237,8 +265,7 @@ export default function PaymentScreen() {
   // the checkout screen and the amount the backend actually charges. Showing
   // total_amount (subtotal only) here would mismatch both.
   const payLabel = t('booking.payment.payButton', {
-    amount: cart.grand_total,
-    currency: cart.currency_code,
+    amount: formatCurrency(parseFloat(cart.grand_total), cart.currency_code),
   });
 
   return (
@@ -264,8 +291,18 @@ export default function PaymentScreen() {
               {cart.checkin} → {cart.checkout}
             </Text>
             <Text style={styles.total}>
-              {cart.grand_total} {cart.currency_code}
+              {formatDisplay(parseFloat(cart.grand_total), cart.currency_code)}
             </Text>
+            {displayCurrency !== cart.currency_code ? (
+              <Text style={styles.chargeNote}>
+                {t('settings.chargeNote', {
+                  amount: formatCurrency(
+                    parseFloat(cart.grand_total),
+                    cart.currency_code,
+                  ),
+                })}
+              </Text>
+            ) : null}
           </Card>
 
           <View style={styles.section}>
@@ -469,6 +506,15 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold,
     fontSize: typography.fontSize.lg,
     color: colors.text.primary,
+  },
+  totalAmounts: {
+    alignItems: 'flex-end',
+  },
+  chargeNote: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.muted,
+    marginTop: 2,
   },
   section: {
     gap: spacing.sm,

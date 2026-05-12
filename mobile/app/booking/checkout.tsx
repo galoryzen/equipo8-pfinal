@@ -270,7 +270,9 @@ export default function CheckoutScreen() {
 
           {nights > 0 && cart.nights_breakdown && cart.nights_breakdown.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('rooms.priceBreakdown')}</Text>
+              <Text style={styles.sectionTitle} accessibilityRole="header">
+                {t('rooms.priceBreakdown')}
+              </Text>
               <PriceBreakdownPanel
                 selection={selection}
                 breakdown={buildBreakdownFromNights(cart.nights_breakdown, {
@@ -283,10 +285,12 @@ export default function CheckoutScreen() {
 
           {/* Guest details */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('booking.checkout.guestDetails')}</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              {t('booking.checkout.guestDetails')}
+            </Text>
             {guests.map((guest, index) => (
               <View key={index} style={styles.guestBlock}>
-                <Text style={styles.guestLabel}>
+                <Text style={styles.guestLabel} accessibilityRole="header">
                   {guest.is_primary
                     ? t('booking.checkout.guests.primary')
                     : t('booking.checkout.guests.additional', { number: index + 1 })}

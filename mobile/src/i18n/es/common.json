@@ -224,7 +224,7 @@
       "cvv": "CVV",
       "cvvPlaceholder": "123",
       "cardholderName": "Nombre en la tarjeta",
-      "payButton": "Pagar {{amount}} {{currency}}",
+      "payButton": "Pagar {{amount}}",
       "processing": "Procesando tu pago…",
       "processingHint": "No cierres esta pantalla. Esto suele tardar unos segundos.",
       "retry": "Reintentar",
@@ -315,5 +315,26 @@
     "save": "Guardar",
     "back": "Volver",
     "language": "Idioma"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "openCta": "Ajustes",
+    "language": "Idioma",
+    "languageHint": "Elige el idioma que se usa en toda la aplicación.",
+    "displayCurrency": "Moneda de visualización",
+    "displayCurrencyHint": "Los precios se muestran en esta moneda. El alojamiento se cobra en su moneda original.",
+    "approximateNote": "Los precios con ≈ son conversiones aproximadas. El cobro final se realiza en la moneda del alojamiento.",
+    "languages": {
+      "en": "Inglés",
+      "es-CO": "Español (Colombia)",
+      "es-MX": "Español (México)"
+    },
+    "currencies": {
+      "USD": "Dólar estadounidense (USD)",
+      "COP": "Peso colombiano (COP)",
+      "MXN": "Peso mexicano (MXN)",
+      "EUR": "Euro (EUR)"
+    },
+    "chargeNote": "Se cobrará {{amount}}"
   }
 }

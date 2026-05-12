@@ -1,0 +1,27 @@
+{
+  "welcome": {
+    "searchStays": "Buscar Alojamientos"
+  },
+  "trips": {
+    "explore": "Explorar alojamientos",
+    "card": {
+      "unknownProperty": "Alojamiento"
+    }
+  },
+  "search": {
+    "amenities": "Comodidades",
+    "amenitiesCount_one": "{{count}} comodidad",
+    "amenitiesCount_other": "{{count}} comodidades"
+  },
+  "property": {
+    "amenities": "Comodidades"
+  },
+  "rooms": {
+    "amenities": "Comodidades"
+  },
+  "booking": {
+    "checkout": {
+      "title": "Confirma tu estadía"
+    }
+  }
+}

@@ -224,7 +224,7 @@
       "cvv": "CVV",
       "cvvPlaceholder": "123",
       "cardholderName": "Name on card",
-      "payButton": "Pay {{amount}} {{currency}}",
+      "payButton": "Pay {{amount}}",
       "processing": "Processing your payment…",
       "processingHint": "Please don't close this screen. This usually takes a few seconds.",
       "retry": "Try again",
@@ -315,5 +315,26 @@
     "save": "Save",
     "back": "Back",
     "language": "Language"
+  },
+  "settings": {
+    "title": "Settings",
+    "openCta": "Settings",
+    "language": "Language",
+    "languageHint": "Choose the language used throughout the app.",
+    "displayCurrency": "Display currency",
+    "displayCurrencyHint": "Prices throughout the app are shown in this currency. The property is still charged in its original currency.",
+    "approximateNote": "Prices marked ≈ are approximate conversions for reference. Final charges are processed in the property's currency.",
+    "languages": {
+      "en": "English",
+      "es-CO": "Spanish (Colombia)",
+      "es-MX": "Spanish (Mexico)"
+    },
+    "currencies": {
+      "USD": "US Dollar (USD)",
+      "COP": "Colombian Peso (COP)",
+      "MXN": "Mexican Peso (MXN)",
+      "EUR": "Euro (EUR)"
+    },
+    "chargeNote": "Will be charged {{amount}}"
   }
 }
