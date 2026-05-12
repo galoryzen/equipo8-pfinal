@@ -49,13 +49,17 @@ class GetBookingDetailUseCase:
     ) -> BookingDetailOut:
         if viewer_role in ("HOTEL", "MANAGER") and hotel_id is not None:
             booking = await self._repo.get_by_id_for_hotel(booking_id, hotel_id)
+        elif viewer_role == "ADMIN":
+            booking = await self._repo.get_by_id(booking_id)
         else:
             booking = await self._repo.get_by_id_for_user(booking_id, user_id)
         if booking is None:
             raise BookingNotFoundError()
 
         today_eff = today if today is not None else datetime.now(UTC).date()
-        viewer_is_hotel = viewer_role in ("HOTEL", "MANAGER") and hotel_id is not None
+        viewer_is_hotel = (
+            viewer_role in ("HOTEL", "MANAGER") and hotel_id is not None
+        ) or viewer_role == "ADMIN"
 
         now_naive = datetime.now(UTC).replace(tzinfo=None)
         if (

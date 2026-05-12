@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card } from '@src/shared/ui';
@@ -29,6 +29,7 @@ import {
   isPastBookingForRebook,
   statusI18nKey,
 } from '@src/features/bookings/bookings-helpers';
+import { canShowCheckInQr } from '@src/features/booking/check-in-eligibility';
 import {
   buildMailtoUrl,
   buildMapsUrl,
@@ -52,35 +53,40 @@ export default function BookingDetailScreen() {
   const room = property?.room_types.find((rt) => rt.id === booking?.room_type_id);
   const mergedAmenities = useMergedAmenities(property?.amenities, room?.amenities);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!id) return;
+  useFocusEffect(
+    useCallback(() => {
+      if (!id) return;
+      let cancelled = false;
 
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const detail = await getBookingDetail(id);
-        if (cancelled) return;
-        setBooking(detail);
+      async function load() {
+        setLoading((prev) => (booking ? prev : true));
+        setError(null);
         try {
-          const { detail: propDetail } = await getPropertyDetail(detail.property_id);
-          if (!cancelled) setProperty(propDetail);
-        } catch {
-          if (!cancelled) setProperty(null);
+          const detail = await getBookingDetail(id);
+          if (cancelled) return;
+          setBooking(detail);
+          try {
+            const { detail: propDetail } = await getPropertyDetail(detail.property_id);
+            if (!cancelled) setProperty(propDetail);
+          } catch {
+            if (!cancelled) setProperty(null);
+          }
+        } catch (err) {
+          if (!cancelled) setError(err instanceof Error ? err : new Error(String(err)));
+        } finally {
+          if (!cancelled) setLoading(false);
         }
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        if (!cancelled) setLoading(false);
       }
-    }
-    load();
+      load();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+      return () => {
+        cancelled = true;
+      };
+      // booking intentionally excluded — its only role here is to suppress the
+      // loading spinner on subsequent refocus refetches, not to retrigger.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]),
+  );
 
   const title = t('trips.detail.title');
 
@@ -119,6 +125,7 @@ export default function BookingDetailScreen() {
   const hasContact = !!(property?.phone || property?.email || property?.website);
   const isTerminalNonStay =
     booking.status === 'CANCELLED' || booking.status === 'REJECTED';
+  const showCheckInCta = canShowCheckInQr(booking, new Date());
 
   const policyText = (() => {
     if (booking.policy_type_applied === 'FULL') return t('trips.detail.policyFull');
@@ -234,6 +241,19 @@ export default function BookingDetailScreen() {
                 {statusLabel}
               </Text>
             </View>
+
+            {showCheckInCta ? (
+              <Button
+                title={t('trips.checkIn.showQr')}
+                onPress={() =>
+                  router.push({
+                    pathname: '/booking/checkin/[id]',
+                    params: { id: booking.id },
+                  })
+                }
+                style={styles.checkInCta}
+              />
+            ) : null}
 
             <PriceBreakdown booking={booking} />
           </Card>
@@ -456,13 +476,15 @@ function HouseRuleRow({ rule }: { rule: PropertyPolicyOut }) {
 }
 
 function pillStyleFor(status: string) {
-  if (status === 'CONFIRMED') return styles.pillSuccess;
+  if (status === 'CONFIRMED' || status === 'CHECKED_IN' || status === 'CHECKED_OUT')
+    return styles.pillSuccess;
   if (status === 'CANCELLED' || status === 'REJECTED') return styles.pillDanger;
   return styles.pillNeutral;
 }
 
 function pillTextStyleFor(status: string) {
-  if (status === 'CONFIRMED') return styles.pillSuccessText;
+  if (status === 'CONFIRMED' || status === 'CHECKED_IN' || status === 'CHECKED_OUT')
+    return styles.pillSuccessText;
   if (status === 'CANCELLED' || status === 'REJECTED') return styles.pillDangerText;
   return styles.pillNeutralText;
 }
@@ -644,6 +666,9 @@ const styles = StyleSheet.create({
   },
   rebookButton: {
     marginTop: spacing.md,
+  },
+  checkInCta: {
+    marginTop: spacing.sm,
   },
   guestRow: {
     flexDirection: 'row',

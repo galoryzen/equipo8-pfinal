@@ -37,6 +37,8 @@ interface UseSearchResult {
   minPrice: number | undefined;
   maxPrice: number | undefined;
   setPriceRange: (min?: number, max?: number) => void;
+  sortBy: string | undefined;
+  setSortBy: (value: string | undefined) => void;
 }
 
 export function useSearch(
@@ -64,11 +66,12 @@ export function useSearch(
   const [guests, setGuestsState] = useState(initialGuests ?? 1);
   const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
   const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
+  const [sortBy, setSortByState] = useState<string | undefined>(undefined);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs to access latest state from callbacks without stale closures
-  const stateRef = useRef({ hasSearched, selectedCity, amenityFilters, guests, minPrice, maxPrice });
-  stateRef.current = { hasSearched, selectedCity, amenityFilters, guests, minPrice, maxPrice };
+  const stateRef = useRef({ hasSearched, selectedCity, amenityFilters, guests, minPrice, maxPrice, sortBy });
+  stateRef.current = { hasSearched, selectedCity, amenityFilters, guests, minPrice, maxPrice, sortBy };
 
   const setDates = useCallback((ci: string, co: string) => {
     setCheckin(ci);
@@ -120,6 +123,7 @@ export function useSearch(
       amenities: string[],
       priceMin?: number,
       priceMax?: number,
+      sortByValue?: string,
     ) => {
       setLoading(true);
       setError(null);
@@ -132,6 +136,7 @@ export function useSearch(
           amenities: amenities.length > 0 ? amenities : undefined,
           min_price: priceMin,
           max_price: priceMax,
+          sort_by: sortByValue,
         });
         setResults(response.items);
         setTotal(response.total);
@@ -149,7 +154,16 @@ export function useSearch(
 
   // Helper: re-fetch with current filters (reads latest state via ref)
   const refetch = useCallback(
-    (overrides?: { city?: CityInfo; guests?: number; amenities?: string[]; minPrice?: number; maxPrice?: number }) => {
+    (overrides?: {
+      city?: CityInfo;
+      guests?: number;
+      amenities?: string[];
+      minPrice?: number;
+      maxPrice?: number;
+      // `sortBy` is read as `'sortBy' in overrides` so the caller can pass
+      // an explicit `undefined` to clear the sort and refetch.
+      sortBy?: string | undefined;
+    }) => {
       const s = stateRef.current;
       const city = overrides?.city ?? s.selectedCity;
       if (!s.hasSearched || !city) return;
@@ -159,6 +173,7 @@ export function useSearch(
         overrides?.amenities ?? s.amenityFilters,
         overrides?.minPrice !== undefined ? overrides.minPrice : s.minPrice,
         overrides?.maxPrice !== undefined ? overrides.maxPrice : s.maxPrice,
+        overrides && 'sortBy' in overrides ? overrides.sortBy : s.sortBy,
       );
     },
     [fetchProperties],
@@ -233,6 +248,11 @@ export function useSearch(
     refetch({ minPrice: min, maxPrice: max });
   }, [refetch]);
 
+  const setSortBy = useCallback((value: string | undefined) => {
+    setSortByState(value);
+    refetch({ sortBy: value });
+  }, [refetch]);
+
   return {
     query,
     setQuery,
@@ -258,5 +278,7 @@ export function useSearch(
     minPrice,
     maxPrice,
     setPriceRange,
+    sortBy,
+    setSortBy,
   };
 }

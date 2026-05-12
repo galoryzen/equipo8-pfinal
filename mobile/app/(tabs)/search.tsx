@@ -19,6 +19,19 @@ import { Card, GuestPicker, PriceRangePicker } from '@src/shared/ui';
 import { useSearch } from '@src/features/catalog/use-search';
 import type { CityInfo } from '@src/types/catalog';
 
+type SimpleSortValue = 'popularity' | 'rating';
+const SIMPLE_SORT_OPTIONS: { value: SimpleSortValue; i18nKey: string }[] = [
+  { value: 'popularity', i18nKey: 'search.sortPopularity' },
+  { value: 'rating', i18nKey: 'search.sortRating' },
+];
+
+// Cycle the Price chip: undefined → price_asc → price_desc → undefined.
+function nextPriceSort(current: string | undefined): string | undefined {
+  if (current === 'price_asc') return 'price_desc';
+  if (current === 'price_desc') return undefined;
+  return 'price_asc';
+}
+
 function formatShortDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, d);
@@ -67,6 +80,8 @@ export default function SearchScreen() {
     minPrice,
     maxPrice,
     setPriceRange,
+    sortBy,
+    setSortBy,
   } = useSearch(
     initialCity,
     params.checkin || undefined,
@@ -159,6 +174,78 @@ export default function SearchScreen() {
               </Pressable>
             )}
           </View>
+
+          {/* Sort chips */}
+          <Text style={styles.sortLabel}>{t('search.sortBy')}</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sortRow}
+          >
+            {(() => {
+              const priceActive = sortBy === 'price_asc' || sortBy === 'price_desc';
+              const ariaLabel =
+                sortBy === 'price_asc'
+                  ? t('search.sortPriceAsc')
+                  : sortBy === 'price_desc'
+                    ? t('search.sortPriceDesc')
+                    : t('search.sortPrice');
+              return (
+                <Pressable
+                  key="price"
+                  style={[styles.sortChip, priceActive && styles.sortChipActive]}
+                  onPress={() => setSortBy(nextPriceSort(sortBy))}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: priceActive }}
+                  accessibilityLabel={ariaLabel}
+                >
+                  <Text
+                    style={[
+                      styles.sortChipText,
+                      priceActive && styles.sortChipTextActive,
+                    ]}
+                  >
+                    {t('search.sortPrice')}
+                  </Text>
+                  {sortBy === 'price_asc' && (
+                    <Ionicons
+                      name="arrow-up"
+                      size={14}
+                      color={colors.primary}
+                      style={styles.sortChipIcon}
+                    />
+                  )}
+                  {sortBy === 'price_desc' && (
+                    <Ionicons
+                      name="arrow-down"
+                      size={14}
+                      color={colors.primary}
+                      style={styles.sortChipIcon}
+                    />
+                  )}
+                </Pressable>
+              );
+            })()}
+            {SIMPLE_SORT_OPTIONS.map((opt) => {
+              const active = sortBy === opt.value;
+              return (
+                <Pressable
+                  key={opt.value}
+                  style={[styles.sortChip, active && styles.sortChipActive]}
+                  onPress={() => setSortBy(active ? undefined : opt.value)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={t(opt.i18nKey)}
+                >
+                  <Text
+                    style={[styles.sortChipText, active && styles.sortChipTextActive]}
+                  >
+                    {t(opt.i18nKey)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
       )}
 
@@ -421,6 +508,45 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
+  },
+  sortLabel: {
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: spacing.sm,
+  },
+  sortRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  sortChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.surface.white,
+  },
+  sortChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary10,
+  },
+  sortChipText: {
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  sortChipTextActive: {
+    color: colors.primary,
+  },
+  sortChipIcon: {
+    marginLeft: 2,
   },
   emptyState: {
     alignItems: 'center',

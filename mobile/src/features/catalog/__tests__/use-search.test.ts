@@ -534,4 +534,82 @@ describe('useSearch', () => {
     expect(result.current.minPrice).toBeUndefined();
     expect(result.current.maxPrice).toBeUndefined();
   });
+
+  // ── New: sort_by ───────────────────────────────────────
+
+  it('starts with undefined sortBy', () => {
+    const { result } = renderHook(() => useSearch());
+    expect(result.current.sortBy).toBeUndefined();
+  });
+
+  it('setSortBy refetches with the chosen sort_by', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch(MOCK_CITY));
+    await waitFor(() => expect(result.current.hasSearched).toBe(true));
+
+    act(() => {
+      result.current.setSortBy('price_asc');
+    });
+
+    await waitFor(() =>
+      expect(mockedService.searchProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ sort_by: 'price_asc' }),
+      ),
+    );
+    expect(result.current.sortBy).toBe('price_asc');
+  });
+
+  it('setSortBy(undefined) clears the sort and omits sort_by on next refetch', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch(MOCK_CITY));
+    await waitFor(() => expect(result.current.hasSearched).toBe(true));
+
+    act(() => {
+      result.current.setSortBy('rating');
+    });
+    await waitFor(() => expect(result.current.sortBy).toBe('rating'));
+
+    act(() => {
+      result.current.setSortBy(undefined);
+    });
+
+    await waitFor(() => {
+      const lastCall =
+        mockedService.searchProperties.mock.calls[
+          mockedService.searchProperties.mock.calls.length - 1
+        ][0];
+      expect(lastCall.sort_by).toBeUndefined();
+    });
+    expect(result.current.sortBy).toBeUndefined();
+  });
+
+  it('switching between sort values issues a new request each time', async () => {
+    mockedService.searchProperties.mockResolvedValue(MOCK_SEARCH_RESPONSE as any);
+
+    const { result } = renderHook(() => useSearch(MOCK_CITY));
+    await waitFor(() => expect(result.current.hasSearched).toBe(true));
+    const callsAfterMount = mockedService.searchProperties.mock.calls.length;
+
+    act(() => {
+      result.current.setSortBy('price_asc');
+    });
+    await waitFor(() =>
+      expect(mockedService.searchProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ sort_by: 'price_asc' }),
+      ),
+    );
+
+    act(() => {
+      result.current.setSortBy('price_desc');
+    });
+    await waitFor(() =>
+      expect(mockedService.searchProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ sort_by: 'price_desc' }),
+      ),
+    );
+
+    expect(mockedService.searchProperties.mock.calls.length).toBe(callsAfterMount + 2);
+  });
 });

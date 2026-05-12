@@ -49,7 +49,13 @@
     "clearFilters": "Clear filters",
     "applyFilters": "Apply",
     "searchCity": "Search by city or destination",
-    "selectDestination": "Select a destination"
+    "selectDestination": "Select a destination",
+    "sortBy": "Sort by",
+    "sortPrice": "Price",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "sortPopularity": "Popularity",
+    "sortRating": "Top rated"
   },
   "property": {
     "description": "Description",
@@ -130,7 +136,21 @@
       "pendingPayment": "Payment pending",
       "pendingConfirmation": "Pending confirmation",
       "cancelled": "Cancelled",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "checkedIn": "Checked in",
+      "checkedOut": "Checked out"
+    },
+    "checkIn": {
+      "title": "Check-in",
+      "showQr": "Show check-in QR",
+      "qrInstructions": "Show this code to the hotel front desk to check in.",
+      "waitingForHotel": "Waiting for the hotel to scan…",
+      "successTitle": "You're checked in",
+      "successBody": "Enjoy your stay at {{property}}.",
+      "successBodyGeneric": "Enjoy your stay.",
+      "notYetAvailable": "Your check-in QR will appear 24 hours before {{date}}.",
+      "notEligible": "This booking is not eligible for check-in.",
+      "backToTrip": "Back to trip"
     },
     "detail": {
       "title": "Reservation detail",
