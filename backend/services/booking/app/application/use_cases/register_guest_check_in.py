@@ -31,14 +31,21 @@ class RegisterGuestCheckInUseCase:
         self,
         *,
         booking_id: UUID,
-        hotel_id: UUID,
+        hotel_id: UUID | None,
         actor_user_id: UUID,
         actual_arrival_at: datetime,
         today: date | None = None,
     ) -> BookingDetailOut:
+        # hotel_id=None means an ADMIN is acting on behalf of the hotel: skip the
+        # ownership scope check but still apply the same state-machine rules.
         today_eff = today if today is not None else datetime.now(UTC).date()
 
-        booking = await self._booking_repo.get_by_id_for_hotel(booking_id, hotel_id)
+        if hotel_id is None:
+            booking = await self._booking_repo.get_by_id(booking_id)
+            viewer_role = "ADMIN"
+        else:
+            booking = await self._booking_repo.get_by_id_for_hotel(booking_id, hotel_id)
+            viewer_role = "HOTEL"
         if booking is None:
             raise BookingNotFoundError()
 
@@ -48,7 +55,7 @@ class RegisterGuestCheckInUseCase:
             return await detail_uc.execute(
                 booking_id,
                 actor_user_id,
-                viewer_role="HOTEL",
+                viewer_role=viewer_role,
                 hotel_id=hotel_id,
                 today=today_eff,
             )
@@ -91,7 +98,7 @@ class RegisterGuestCheckInUseCase:
         return await detail_uc.execute(
             booking_id,
             actor_user_id,
-            viewer_role="HOTEL",
+            viewer_role=viewer_role,
             hotel_id=hotel_id,
             today=today_eff,
         )

@@ -460,3 +460,53 @@ class TestBookingsEndpoints:
 
         assert resp.status_code == 422
         mock_uc.execute.assert_not_awaited()
+
+    def test_check_in_admin_calls_use_case_without_hotel_id(self, client_authenticated):
+        admin_user_id = str(UUID("a0000000-0000-0000-0000-000000000099"))
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail()
+        app.dependency_overrides[get_register_guest_check_in_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "ADMIN",
+            "user_id": admin_user_id,
+            "hotel_id": None,
+        }
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-in",
+                json={"actual_arrival_at": "2026-05-03T15:00:00Z"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_in_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 200
+        mock_uc.execute.assert_awaited_once()
+        kw = mock_uc.execute.await_args.kwargs
+        assert kw["hotel_id"] is None
+        assert str(kw["actor_user_id"]) == admin_user_id
+
+    def test_check_out_admin_calls_use_case_without_hotel_id(self, client_authenticated):
+        admin_user_id = str(UUID("a0000000-0000-0000-0000-000000000099"))
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail()
+        app.dependency_overrides[get_register_guest_check_out_use_case] = lambda: mock_uc
+        app.dependency_overrides[get_current_user_info] = lambda: {
+            "role": "ADMIN",
+            "user_id": admin_user_id,
+            "hotel_id": None,
+        }
+        try:
+            resp = client_authenticated.post(
+                f"/api/v1/booking/bookings/{BOOKING_ID}/check-out",
+                json={"actual_departure_at": "2026-05-03T15:00:00Z"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_register_guest_check_out_use_case, None)
+            app.dependency_overrides.pop(get_current_user_info, None)
+
+        assert resp.status_code == 200
+        mock_uc.execute.assert_awaited_once()
+        kw = mock_uc.execute.await_args.kwargs
+        assert kw["hotel_id"] is None
+        assert str(kw["actor_user_id"]) == admin_user_id

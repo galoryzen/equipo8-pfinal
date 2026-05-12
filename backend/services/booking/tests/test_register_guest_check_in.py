@@ -289,6 +289,54 @@ class TestRegisterGuestCheckInUseCase:
                 today=today,
             )
 
+    async def test_admin_path_uses_unscoped_lookup_and_transitions(self):
+        """ADMIN (hotel_id=None) bypasses hotel scoping but still drives the transition."""
+        bid = uuid4()
+        today = date(2026, 5, 3)
+        arrival = datetime(2026, 5, 3, 11, 0, 0, tzinfo=UTC)
+        b = _booking(
+            bid=bid,
+            status=BookingStatus.CONFIRMED,
+            checkin=today,
+            checkout=date(2026, 5, 6),
+        )
+        repo = AsyncMock()
+        repo.get_by_id.return_value = b
+        guest_repo = AsyncMock()
+        guest_repo.list_by_booking.return_value = []
+        repo.find_last_status_history_by_reason_prefix.return_value = None
+
+        uc = RegisterGuestCheckInUseCase(repo, guest_repo)
+        out = await uc.execute(
+            booking_id=bid,
+            hotel_id=None,
+            actor_user_id=uuid4(),
+            actual_arrival_at=arrival,
+            today=today,
+        )
+
+        # Two awaits: one in this use case, one in the nested detail use case.
+        assert repo.get_by_id.await_count == 2
+        repo.get_by_id.assert_any_await(bid)
+        repo.get_by_id_for_hotel.assert_not_awaited()
+        repo.update.assert_awaited_once()
+        repo.add_status_history.assert_awaited_once()
+        assert b.status == BookingStatus.CHECKED_IN
+        assert out.status == "CHECKED_IN"
+
+    async def test_admin_path_returns_not_found_when_missing(self):
+        repo = AsyncMock()
+        repo.get_by_id.return_value = None
+        uc = RegisterGuestCheckInUseCase(repo, AsyncMock())
+        with pytest.raises(BookingNotFoundError):
+            await uc.execute(
+                booking_id=uuid4(),
+                hotel_id=None,
+                actor_user_id=uuid4(),
+                actual_arrival_at=datetime.now(UTC),
+                today=date(2026, 5, 3),
+            )
+
 
 def test_dashboard_metrics_sql_counts_checked_in_for_occupancy():
     src = inspect.getsource(dm_mod.SqlAlchemyDashboardMetricsRepository)

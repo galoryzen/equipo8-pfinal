@@ -182,18 +182,22 @@ async def register_guest_check_in(
     use_case: RegisterGuestCheckInUseCase = Depends(get_register_guest_check_in_use_case),
 ):
     role = user_info.get("role")
-    if role not in ("HOTEL", "MANAGER"):
+    if role not in ("HOTEL", "MANAGER", "ADMIN"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo personal del hotel puede registrar check-in.",
+            detail="Solo personal del hotel o administradores pueden registrar check-in.",
         )
-    hotel_id_str = user_info.get("hotel_id")
-    if not hotel_id_str:
-        raise HTTPException(status_code=400, detail="hotel_id es requerido para este rol")
+    if role == "ADMIN":
+        hotel_uuid: UUID | None = None
+    else:
+        hotel_id_str = user_info.get("hotel_id")
+        if not hotel_id_str:
+            raise HTTPException(status_code=400, detail="hotel_id es requerido para este rol")
+        hotel_uuid = UUID(hotel_id_str)
     user_id = UUID(user_info["user_id"])
     return await use_case.execute(
         booking_id=booking_id,
-        hotel_id=UUID(hotel_id_str),
+        hotel_id=hotel_uuid,
         actor_user_id=user_id,
         actual_arrival_at=body.actual_arrival_at,
     )
@@ -207,18 +211,22 @@ async def register_guest_check_out(
     use_case: RegisterGuestCheckOutUseCase = Depends(get_register_guest_check_out_use_case),
 ):
     role = user_info.get("role")
-    if role not in ("HOTEL", "MANAGER"):
+    if role not in ("HOTEL", "MANAGER", "ADMIN"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo personal del hotel puede registrar check-out.",
+            detail="Solo personal del hotel o administradores pueden registrar check-out.",
         )
-    hotel_id_str = user_info.get("hotel_id")
-    if not hotel_id_str:
-        raise HTTPException(status_code=400, detail="hotel_id es requerido para este rol")
+    if role == "ADMIN":
+        hotel_uuid: UUID | None = None
+    else:
+        hotel_id_str = user_info.get("hotel_id")
+        if not hotel_id_str:
+            raise HTTPException(status_code=400, detail="hotel_id es requerido para este rol")
+        hotel_uuid = UUID(hotel_id_str)
     user_id = UUID(user_info["user_id"])
     return await use_case.execute(
         booking_id=booking_id,
-        hotel_id=UUID(hotel_id_str),
+        hotel_id=hotel_uuid,
         actor_user_id=user_id,
         actual_departure_at=body.actual_departure_at,
     )

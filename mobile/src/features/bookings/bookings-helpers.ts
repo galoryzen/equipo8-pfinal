@@ -8,6 +8,8 @@ const STATUS_KEYS: Record<string, string> = {
   PENDING_CONFIRMATION: 'trips.status.pendingConfirmation',
   CANCELLED: 'trips.status.cancelled',
   REJECTED: 'trips.status.rejected',
+  CHECKED_IN: 'trips.status.checkedIn',
+  CHECKED_OUT: 'trips.status.checkedOut',
 };
 
 export function formatBookingCode(id: string): string {

@@ -87,4 +87,7 @@ mobile-install:
 	cd mobile && npm install
 
 mobile-dev:
-	cd mobile && npx expo start
+	cd mobile && npx expo start --dev-client
+
+mobile-devbuild:
+	cd mobile && npx expo run:android
