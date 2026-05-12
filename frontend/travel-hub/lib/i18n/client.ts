@@ -51,9 +51,10 @@ if (typeof window !== 'undefined') {
     }
   });
 
-  // Prefetch es-CO during browser idle time so it is ready before the user
-  // manually switches language, avoiding any visible flash of untranslated text.
-  const prefetch = () => void loadLocale('es-CO');
+  const lazyLocales = ['es-CO', 'es-AR', 'es-MX', 'en-GB', 'es-CL'] as const;
+  const prefetch = () => {
+    lazyLocales.forEach((lng) => void loadLocale(lng));
+  };
   if ('requestIdleCallback' in window) {
     window.requestIdleCallback(prefetch, { timeout: 4000 });
   } else {
