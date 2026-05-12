@@ -40,9 +40,9 @@ export default function LanguageCurrencyDropdown() {
     await i18n.changeLanguage(locale);
   }
 
-  function handleSelectCurrency(code: string) {
+  function handleSelectCurrency(code: (typeof availableCurrencies)[number]['code']) {
     handleClose();
-    setCurrency(code as (typeof availableCurrencies)[number]['code']);
+    setCurrency(code);
   }
 
   return (

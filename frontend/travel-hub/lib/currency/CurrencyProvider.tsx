@@ -15,7 +15,7 @@ interface CurrencyContextValue {
   setCurrency: (c: SupportedCurrency) => void;
   formatPrice: (amount: number, fromCurrency?: string) => string;
   ratesLoaded: boolean;
-  availableCurrencies: readonly { code: string; name: string; flag: string }[];
+  availableCurrencies: readonly { code: SupportedCurrency; name: string; flag: string }[];
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
