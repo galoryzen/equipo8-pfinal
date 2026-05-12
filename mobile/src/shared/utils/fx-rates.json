@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "base": "USD",
+    "source": "ECB reference rates snapshot",
+    "date": "2026-05-01"
+  },
+  "rates": {
+    "USD": 1,
+    "COP": 4150,
+    "MXN": 17.2,
+    "EUR": 0.92
+  }
+}

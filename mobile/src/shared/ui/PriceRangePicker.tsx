@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@src/theme';
+import { formatCurrency } from '@src/shared/utils/format-currency';
 
 const PRICE_MIN = 0;
 const PRICE_MAX = 1000;
+const FILTER_CURRENCY = 'USD';
 const THUMB_SIZE = 24;
 
 interface PriceRangePickerProps {
@@ -187,8 +189,12 @@ export function PriceRangePicker({
 
             {/* Labels under slider */}
             <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabel}>${PRICE_MIN}</Text>
-              <Text style={styles.sliderLabel}>${PRICE_MAX}</Text>
+              <Text style={styles.sliderLabel}>
+                {formatCurrency(PRICE_MIN, FILTER_CURRENCY, { maximumFractionDigits: 0 })}
+              </Text>
+              <Text style={styles.sliderLabel}>
+                {formatCurrency(PRICE_MAX, FILTER_CURRENCY, { maximumFractionDigits: 0 })}
+              </Text>
             </View>
 
             {/* Text inputs for precision */}

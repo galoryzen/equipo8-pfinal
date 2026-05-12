@@ -17,7 +17,11 @@ import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@src/theme';
 import { Card, GuestPicker, PriceRangePicker } from '@src/shared/ui';
 import { useSearch } from '@src/features/catalog/use-search';
+import { formatCurrency } from '@src/shared/utils/format-currency';
+import { useDisplayCurrency } from '@src/shared/utils/use-display-currency';
 import type { CityInfo } from '@src/types/catalog';
+
+const SOURCE_CURRENCY = 'USD';
 
 type SimpleSortValue = 'popularity' | 'rating';
 const SIMPLE_SORT_OPTIONS: { value: SimpleSortValue; i18nKey: string }[] = [
@@ -41,6 +45,7 @@ function formatShortDate(iso: string): string {
 
 export default function SearchScreen() {
   const { t } = useTranslation();
+  const { format: formatPrice } = useDisplayCurrency();
   const router = useRouter();
   const params = useLocalSearchParams<{
     cityId?: string;
@@ -151,7 +156,11 @@ export default function SearchScreen() {
               <Ionicons name="cash-outline" size={18} color={hasPriceFilter ? colors.primary : colors.text.secondary} />
               <Text style={[styles.filterTapText, hasPriceFilter && styles.filterTapTextActive]}>
                 {hasPriceFilter
-                  ? `$${minPrice ?? 0} — $${maxPrice ?? '∞'}`
+                  ? `${formatCurrency(minPrice ?? 0, SOURCE_CURRENCY, { maximumFractionDigits: 0 })} — ${
+                      maxPrice != null
+                        ? formatCurrency(maxPrice, SOURCE_CURRENCY, { maximumFractionDigits: 0 })
+                        : '∞'
+                    }`
                   : t('search.priceRange')}
               </Text>
               <Ionicons name="chevron-down" size={14} color={colors.text.muted} />
@@ -303,7 +312,11 @@ export default function SearchScreen() {
                   },
                 })
               }
-              accessibilityLabel={`${property.name}, ${property.city.name}. ${property.rating_avg} stars, ${property.review_count} reviews. $${property.min_price ?? '—'} per night. ${property.amenities.map((a) => a.name).join(', ')}`}
+              accessibilityLabel={`${property.name}, ${property.city.name}. ${property.rating_avg} stars, ${property.review_count} reviews. ${
+                property.min_price != null
+                  ? formatPrice(property.min_price, SOURCE_CURRENCY, { maximumFractionDigits: 0 })
+                  : '—'
+              } per night. ${property.amenities.map((a) => a.name).join(', ')}`}
               accessibilityHint="View property details"
               style={styles.resultCard}
             >
@@ -344,11 +357,15 @@ export default function SearchScreen() {
                       {property.original_min_price != null &&
                         property.original_min_price > property.min_price && (
                           <Text style={styles.originalPrice}>
-                            ${property.original_min_price}
+                            {formatPrice(property.original_min_price, SOURCE_CURRENCY, {
+                              maximumFractionDigits: 0,
+                            })}
                           </Text>
                         )}
                       <Text style={styles.priceText}>
-                        ${property.min_price}
+                        {formatPrice(property.min_price, SOURCE_CURRENCY, {
+                          maximumFractionDigits: 0,
+                        })}
                         <Text style={styles.perNight}>{t('home.perNight')}</Text>
                       </Text>
                     </View>

@@ -3,7 +3,7 @@ import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius, shadows } from '@src/theme';
-import { formatCurrency } from '@src/shared/utils/format-currency';
+import { useDisplayCurrency } from '@src/shared/utils/use-display-currency';
 import { Button } from './Button';
 import type { RoomTypeOut, RatePlanOut } from '@src/types/catalog';
 
@@ -35,6 +35,7 @@ function pickCheapestPlan(room: RoomTypeOut): RatePlanOut | null {
 
 export function RoomTypeCard({ room, onSelect, hasDates }: RoomTypeCardProps) {
   const { t } = useTranslation();
+  const { format: formatPrice } = useDisplayCurrency();
 
   const cheapest = useMemo(() => pickCheapestPlan(room), [room]);
   const currency = cheapest?.currency_code ?? 'USD';
@@ -68,7 +69,7 @@ export function RoomTypeCard({ room, onSelect, hasDates }: RoomTypeCardProps) {
     ? promotion.discount_type === 'PERCENT'
       ? t('rooms.promoBadgePercent', { value: Math.round(promotion.discount_value) })
       : t('rooms.promoBadgeFixed', {
-          amount: formatCurrency(Math.round(promotion.discount_value), currency, {
+          amount: formatPrice(Math.round(promotion.discount_value), currency, {
             maximumFractionDigits: 0,
           }),
         })
@@ -114,20 +115,18 @@ export function RoomTypeCard({ room, onSelect, hasDates }: RoomTypeCardProps) {
           {price != null ? (
             <View style={styles.priceBlock}>
               {hasPromotion && originalPrice != null && (
-                <Text style={styles.originalPrice}>
-                  {formatCurrency(Math.round(originalPrice), currency, {
+                <Text style={styles.originalPrice} numberOfLines={1}>
+                  {formatPrice(Math.round(originalPrice), currency, {
                     maximumFractionDigits: 0,
                   })}
                 </Text>
               )}
-              <View style={styles.priceLine}>
-                <Text style={styles.price}>
-                  {formatCurrency(Math.round(price), currency, {
-                    maximumFractionDigits: 0,
-                  })}
-                </Text>
-                <Text style={styles.perNight}>{t('rooms.perNight')}</Text>
-              </View>
+              <Text style={styles.price} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                {formatPrice(Math.round(price), currency, {
+                  maximumFractionDigits: 0,
+                })}
+              </Text>
+              <Text style={styles.perNight}>{t('rooms.perNight')}</Text>
             </View>
           ) : (
             <Text style={styles.noPrice}>—</Text>
@@ -218,18 +217,14 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    gap: spacing.md,
+    alignItems: 'center',
+    gap: spacing.sm,
     marginTop: spacing.xs,
   },
   priceBlock: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
-  },
-  priceLine: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.xs,
   },
   originalPrice: {
     fontFamily: typography.fontFamily.regular,
@@ -239,7 +234,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontFamily: typography.fontFamily.bold,
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.lg,
     color: colors.primary,
   },
   perNight: {
@@ -253,7 +248,8 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
   },
   selectButton: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     height: 40,
+    flexShrink: 0,
   },
 });

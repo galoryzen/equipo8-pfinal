@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,20 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { isLoggedIn, user, logout } = useAuth();
 
+  const settingsRow = (
+    <Pressable
+      onPress={() => router.push('/settings')}
+      style={({ pressed }) => [styles.settingsRow, pressed && styles.settingsRowPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={t('settings.openCta')}
+      accessibilityHint={t('settings.languageHint')}
+    >
+      <Ionicons name="settings-outline" size={22} color={colors.text.primary} />
+      <Text style={styles.settingsRowLabel}>{t('settings.openCta')}</Text>
+      <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
+    </Pressable>
+  );
+
   if (!isLoggedIn) {
     return (
       <View style={styles.container}>
@@ -21,7 +35,9 @@ export default function ProfileScreen() {
           <Button
             title={t('profile.login')}
             onPress={() => router.push('/login')}
+            style={styles.actionButton}
           />
+          {settingsRow}
         </View>
       </View>
     );
@@ -37,6 +53,7 @@ export default function ProfileScreen() {
         </View>
         <Text style={styles.userName}>{user?.fullName}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
+        {settingsRow}
         <Button
           title={t('profile.logout')}
           variant="outline"
@@ -44,7 +61,7 @@ export default function ProfileScreen() {
             logout();
             router.replace('/welcome');
           }}
-          style={styles.logoutButton}
+          style={styles.actionButton}
         />
       </View>
     </View>
@@ -92,8 +109,31 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   },
-  logoutButton: {
+  actionButton: {
     marginTop: spacing.base,
     paddingHorizontal: spacing.xl,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.surface.soft,
+    minHeight: 48,
+    width: '100%',
+    marginTop: spacing.lg,
+  },
+  settingsRowPressed: {
+    backgroundColor: colors.border.subtle,
+  },
+  settingsRowLabel: {
+    flex: 1,
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
   },
 });

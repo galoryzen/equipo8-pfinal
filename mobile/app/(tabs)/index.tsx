@@ -17,7 +17,10 @@ import { colors, typography, spacing, radius, shadows } from '@src/theme';
 import { Card, Button, DateRangePicker, GuestPicker } from '@src/shared/ui';
 import { useFeatured } from '@src/features/catalog/use-featured';
 import { searchCities } from '@src/features/catalog/catalog-service';
+import { useDisplayCurrency } from '@src/shared/utils/use-display-currency';
 import type { CityInfo } from '@src/types/catalog';
+
+const SOURCE_CURRENCY = 'USD';
 
 function formatShortDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
@@ -31,6 +34,7 @@ export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { destinations, properties, loading, error, retry } = useFeatured();
+  const { format: formatPrice } = useDisplayCurrency();
 
   // City autocomplete state
   const [cityQuery, setCityQuery] = useState('');
@@ -129,8 +133,8 @@ export default function HomeScreen() {
     });
   }, [selectedCity, router, checkin, checkout, guests]);
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'en' ? 'es' : 'en');
+  const openSettings = () => {
+    router.push('/settings');
   };
 
   return (
@@ -147,11 +151,11 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>{t('home.greeting')}</Text>
           </View>
           <Pressable
-            onPress={toggleLanguage}
+            onPress={openSettings}
             style={styles.langButton}
             accessibilityRole="button"
-            accessibilityLabel={`${t('common.language')}: ${i18n.language.toUpperCase()}`}
-            accessibilityHint="Toggles between English and Spanish"
+            accessibilityLabel={`${t('settings.openCta')} — ${i18n.language.toUpperCase()}`}
+            accessibilityHint={t('settings.languageHint')}
           >
             <Ionicons name="globe-outline" size={18} color={colors.text.secondary} />
             <Text style={styles.langText}>{i18n.language.toUpperCase()}</Text>
@@ -314,7 +318,11 @@ export default function HomeScreen() {
                           },
                         })
                       }
-                      accessibilityLabel={`${property.name}, ${property.city.name}. ${property.rating_avg} stars, ${property.review_count} reviews. $${property.min_price} per night`}
+                      accessibilityLabel={`${property.name}, ${property.city.name}. ${property.rating_avg} stars, ${property.review_count} reviews. ${
+                        property.min_price != null
+                          ? formatPrice(property.min_price, SOURCE_CURRENCY, { maximumFractionDigits: 0 })
+                          : '—'
+                      } per night`}
                       accessibilityHint="View property details"
                       style={styles.propertyCard}
                     >
@@ -348,11 +356,15 @@ export default function HomeScreen() {
                               {property.original_min_price != null &&
                                 property.original_min_price > property.min_price && (
                                   <Text style={styles.originalPrice}>
-                                    ${property.original_min_price}
+                                    {formatPrice(property.original_min_price, SOURCE_CURRENCY, {
+                                      maximumFractionDigits: 0,
+                                    })}
                                   </Text>
                                 )}
                               <Text style={styles.priceText}>
-                                ${property.min_price}
+                                {formatPrice(property.min_price, SOURCE_CURRENCY, {
+                                  maximumFractionDigits: 0,
+                                })}
                                 <Text style={styles.perNight}>{t('home.perNight')}</Text>
                               </Text>
                             </View>

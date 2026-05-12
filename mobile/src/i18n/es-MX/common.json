@@ -1,0 +1,11 @@
+{
+  "welcome": {
+    "title": "Encuentra tu estancia perfecta"
+  },
+  "trips": {
+    "checkIn": {
+      "successBody": "Disfruta tu estancia en {{property}}.",
+      "successBodyGeneric": "Disfruta tu estancia."
+    }
+  }
+}
