@@ -275,7 +275,7 @@
     "checkinPolicyLabel": "Check-in:",
     "checkinPolicyText": "A partir de las 3:00 p. m.",
     "securityBadge": "Tu pago está protegido por TravelHub Secure. Usamos cifrado de 256 bits.",
-    "payButton": "Pagar ${{amount}}",
+    "payButton": "Pagar",
     "terms": "Al hacer clic en Pagar, aceptas los Términos y Condiciones de TravelHub.",
     "primaryGuest": "Huésped principal",
     "additionalGuest": "Huésped adicional",
@@ -952,5 +952,12 @@
       "viewDetails": "Ver detalles",
       "hotelName": "Hotel"
     }
+  },
+  "language": {
+    "label": "IDIOMA"
+  },
+  "currency": {
+    "label": "MONEDA",
+    "current": "Precios en {{currency}}"
   }
 }

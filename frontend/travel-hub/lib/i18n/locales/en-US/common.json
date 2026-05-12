@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "TravelHub — Find Your Next Stay",
+    "title": "TravelHub ÔÇö Find Your Next Stay",
     "description": "Unlock exclusive deals on hotels, homes, and more across Latin America."
   },
   "brand": {
@@ -61,7 +61,7 @@
     "cancelSuccess": "Cancellation processed.",
     "cancelFailed": "Could not cancel. Please try again.",
     "cancellationPolicyApplied": "Cancellation policy applied: {{type}}",
-    "cancellationPolicyHoursLimit": " · {{hours}}h limit",
+    "cancellationPolicyHoursLimit": " ┬À {{hours}}h limit",
     "refundAmount": "Refund amount",
     "refundType": {
       "traveler_cancelled": "Refund due to traveler cancellation",
@@ -118,7 +118,7 @@
       "title": "About",
       "links": ["Newsroom", "Learn about new features", "Careers", "Investors"]
     },
-    "copyright": "© 2026 TravelHub, Inc.",
+    "copyright": "┬® 2026 TravelHub, Inc.",
     "legal": ["Privacy", "Terms", "Sitemap"]
   },
   "priceRange": {
@@ -221,18 +221,18 @@
     }
   },
   "payment": {
-    "preparing": "Preparing your booking hold…",
+    "preparing": "Preparing your booking holdÔÇª",
     "backToSearch": "Back to search",
     "resumeReservation": "Resume my reservation",
     "expiredTitle": "Booking hold expired",
-    "expiredBody": "Your 15-minute hold has ended. Rooms are subject to availability — please start a new search.",
+    "expiredBody": "Your 15-minute hold has ended. Rooms are subject to availability ÔÇö please start a new search.",
     "newSearch": "New search",
     "myTrips": "My trips",
-    "backLink": "← TravelHub",
+    "backLink": "ÔåÉ TravelHub",
     "secureCheckout": "Secure Checkout",
     "countdownBannerBefore": "Your booking is held for",
-    "countdownBannerAfter": "— complete payment before the hold expires.",
-    "resumeBanner": "We found your previous booking hold — resuming where you left off.",
+    "countdownBannerAfter": "ÔÇö complete payment before the hold expires.",
+    "resumeBanner": "We found your previous booking hold ÔÇö resuming where you left off.",
     "pageTitle": "Review & Pay",
     "guestDetails": "Guest Details",
     "logIn": "Log in",
@@ -347,8 +347,8 @@
         "amount": "Amount",
         "actions": "Actions",
         "guestFallback": "Guest",
-        "roomFallback": "—",
-        "roomTypeSubline": "Room type · {{id}}",
+        "roomFallback": "ÔÇö",
+        "roomTypeSubline": "Room type ┬À {{id}}",
         "roomTypeUnavailable": "Room type unavailable",
         "bookingDate": "Booking date",
         "guestEmailHint": "Guest email"
@@ -384,7 +384,7 @@
         "checkedInDone": "Checked in",
         "checkedOutDone": "Checked out"
       },
-      "pagination": "Showing {{from}}–{{to}} of {{total}} bookings",
+      "pagination": "Showing {{from}}ÔÇô{{to}} of {{total}} bookings",
       "empty": "No bookings in this view.",
       "loadError": "Could not load bookings.",
       "history": {
@@ -394,13 +394,13 @@
         "filtersInvalid": "Please review the selected filters.",
         "exportCsv": "Export CSV",
         "exportDisabledTabs": "Switch to a main list tab to export with filters.",
-        "searchPlaceholder": "Search guest, email or booking ref…",
+        "searchPlaceholder": "Search guest, email or booking refÔÇª",
         "statusAll": "All statuses",
         "dateFrom": "Stay from",
         "dateTo": "Stay to",
         "roomTypeAll": "All room types",
         "clearFilters": "Clear filters",
-        "exporting": "Exporting…"
+        "exporting": "ExportingÔÇª"
       },
       "checkIn": {
         "title": "Register check-in",
@@ -702,25 +702,6 @@
           }
         }
       },
-      "pricingOffers": {
-        "title": "Pricing & Offers",
-        "discountLabel": "Discount to Apply (%)",
-        "discountHelper": "This discount will be applied to the base rate during the availability period."
-      },
-      "cancellationPolicy": {
-        "title": "Cancellation Policy",
-        "policyTypeLabel": "Policy Type",
-        "totallyRefundable": "Totally Refundable",
-        "totallyRefundableDesc": "Full refund if cancelled before the apply date.",
-        "partialRefundable": "Partial Refundable",
-        "partialRefundableDesc": "Specific percentage refunded upon cancellation.",
-        "nonRefundable": "Non-Refundable",
-        "nonRefundableDesc": "No refund issued regardless of when cancelled.",
-        "refundPctLabel": "Refund Percentage (%)",
-        "errorRefundPctRange": "Refund percentage must be between 1% and 99%.",
-        "applyDateLabel": "Cancellation Policy Apply Date",
-        "applyDateHelper": "The last date this policy can be exercised by the guest."
-      },
       "admin": {
         "navbar": {
           "title": "TravelHub Admin",
@@ -817,17 +798,17 @@
       "projection": {
         "title": "Projection alerts",
         "empty": "No low-occupancy alerts for the next 90 days.",
-        "period": "Low occupancy {{from}} → {{to}} (avg {{rate}}%)",
+        "period": "Low occupancy {{from}} ÔåÆ {{to}} (avg {{rate}}%)",
         "periodsSummary_one": "{{count}} low occupancy period detected",
         "periodsSummary_other": "{{count}} low occupancy periods detected",
         "dailySummary_one": "{{count}} daily low-occupancy signal in the projection window",
         "dailySummary_other": "{{count}} daily low-occupancy signals in the projection window",
         "pageSizeLabel": "Alerts per page",
-        "rangeSummary": "{{from}}–{{to}} of {{total}} alerts"
+        "rangeSummary": "{{from}}ÔÇô{{to}} of {{total}} alerts"
       },
       "states": {
         "forbidden": "Occupancy insights are only available for hotel partner accounts.",
-        "loadingHotels": "Loading properties…",
+        "loadingHotels": "Loading propertiesÔÇª",
         "hotelsError": "Could not load your properties.",
         "calendarError": "Could not load occupancy calendar.",
         "calendarEmpty": "No occupancy rows returned for this month.",
@@ -966,5 +947,12 @@
       "error": "We could not load the report. Please try again.",
       "hotelNotResolved": "We could not resolve your hotel profile. Please sign in again."
     }
+  },
+  "language": {
+    "label": "LANGUAGE"
+  },
+  "currency": {
+    "label": "CURRENCY",
+    "current": "Showing prices in {{currency}}"
   }
 }
