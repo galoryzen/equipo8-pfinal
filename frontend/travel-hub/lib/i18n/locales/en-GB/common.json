@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "TravelHub ÔÇö Find Your Next Stay",
+    "title": "TravelHub – Find Your Next Stay",
     "description": "Unlock exclusive deals on hotels, homes, and more across Latin America."
   },
   "brand": {
@@ -61,7 +61,7 @@
     "cancelSuccess": "Cancellation processed.",
     "cancelFailed": "Could not cancel. Please try again.",
     "cancellationPolicyApplied": "Cancellation policy applied: {{type}}",
-    "cancellationPolicyHoursLimit": " ┬À {{hours}}h limit",
+    "cancellationPolicyHoursLimit": " @ {{hours}}h limit",
     "refundAmount": "Refund amount",
     "refundType": {
       "traveler_cancelled": "Refund due to traveler cancellation",
@@ -118,7 +118,7 @@
       "title": "About",
       "links": ["Newsroom", "Learn about new features", "Careers", "Investors"]
     },
-    "copyright": "┬® 2026 TravelHub, Inc.",
+    "copyright": "® 2026 TravelHub, Inc.",
     "legal": ["Privacy", "Terms", "Sitemap"]
   },
   "priceRange": {
@@ -221,18 +221,18 @@
     }
   },
   "payment": {
-    "preparing": "Preparing your booking holdÔÇª",
+    "preparing": "Preparing your booking hold…",
     "backToSearch": "Back to search",
     "resumeReservation": "Resume my reservation",
     "expiredTitle": "Booking hold expired",
-    "expiredBody": "Your 15-minute hold has ended. Rooms are subject to availability ÔÇö please start a new search.",
+    "expiredBody": "Your 15-minute hold has ended. Rooms are subject to availability – please start a new search.",
     "newSearch": "New search",
     "myTrips": "My trips",
-    "backLink": "ÔåÉ TravelHub",
+    "backLink": "← TravelHub",
     "secureCheckout": "Secure Checkout",
     "countdownBannerBefore": "Your booking is held for",
-    "countdownBannerAfter": "ÔÇö complete payment before the hold expires.",
-    "resumeBanner": "We found your previous booking hold ÔÇö resuming where you left off.",
+    "countdownBannerAfter": "– complete payment before the hold expires.",
+    "resumeBanner": "We found your previous booking hold – resuming where you left off.",
     "pageTitle": "Review & Pay",
     "guestDetails": "Guest Details",
     "logIn": "Log in",
@@ -347,8 +347,8 @@
         "amount": "Amount",
         "actions": "Actions",
         "guestFallback": "Guest",
-        "roomFallback": "ÔÇö",
-        "roomTypeSubline": "Room type ┬À {{id}}",
+        "roomFallback": "–",
+        "roomTypeSubline": "Room type @ {{id}}",
         "roomTypeUnavailable": "Room type unavailable",
         "bookingDate": "Booking date",
         "guestEmailHint": "Guest email"
@@ -384,7 +384,7 @@
         "checkedInDone": "Checked in",
         "checkedOutDone": "Checked out"
       },
-      "pagination": "Showing {{from}}ÔÇô{{to}} of {{total}} bookings",
+      "pagination": "Showing {{from}}–{{to}} of {{total}} bookings",
       "empty": "No bookings in this view.",
       "loadError": "Could not load bookings.",
       "history": {
@@ -394,13 +394,13 @@
         "filtersInvalid": "Please review the selected filters.",
         "exportCsv": "Export CSV",
         "exportDisabledTabs": "Switch to a main list tab to export with filters.",
-        "searchPlaceholder": "Search guest, email or booking refÔÇª",
+        "searchPlaceholder": "Search guest, email or booking ref…",
         "statusAll": "All statuses",
         "dateFrom": "Stay from",
         "dateTo": "Stay to",
         "roomTypeAll": "All room types",
         "clearFilters": "Clear filters",
-        "exporting": "ExportingÔÇª"
+        "exporting": "Exporting…"
       },
       "checkIn": {
         "title": "Register check-in",
@@ -798,17 +798,17 @@
       "projection": {
         "title": "Projection alerts",
         "empty": "No low-occupancy alerts for the next 90 days.",
-        "period": "Low occupancy {{from}} ÔåÆ {{to}} (avg {{rate}}%)",
+        "period": "Low occupancy {{from}} → {{to}} (avg {{rate}}%)",
         "periodsSummary_one": "{{count}} low occupancy period detected",
         "periodsSummary_other": "{{count}} low occupancy periods detected",
         "dailySummary_one": "{{count}} daily low-occupancy signal in the projection window",
         "dailySummary_other": "{{count}} daily low-occupancy signals in the projection window",
         "pageSizeLabel": "Alerts per page",
-        "rangeSummary": "{{from}}ÔÇô{{to}} of {{total}} alerts"
+        "rangeSummary": "{{from}}–{{to}} of {{total}} alerts"
       },
       "states": {
         "forbidden": "Occupancy insights are only available for hotel partner accounts.",
-        "loadingHotels": "Loading propertiesÔÇª",
+        "loadingHotels": "Loading properties…",
         "hotelsError": "Could not load your properties.",
         "calendarError": "Could not load occupancy calendar.",
         "calendarEmpty": "No occupancy rows returned for this month.",
