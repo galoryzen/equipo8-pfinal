@@ -39,14 +39,102 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run test:coverage
 
-  mobile-result:
+  mobile-e2e:
     runs-on: ubuntu-latest
     needs: [changes, mobile-ci]
+    if: needs.changes.outputs.mobile == 'true'
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify pre-built APK exists
+        run: |
+          if [ ! -f mobile/e2e/app-debug.apk ]; then
+            echo "::error::mobile/e2e/app-debug.apk is missing. Run 'cd mobile && npm run build:e2e-apk' locally and commit the APK. See mobile/e2e/README.md."
+            exit 1
+          fi
+          echo "APK size: $(du -h mobile/e2e/app-debug.apk | cut -f1)"
+
+      - name: Start backend stack
+        working-directory: backend
+        run: docker compose up -d --wait
+        timeout-minutes: 10
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM for emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache AVD
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api33-google-apis-x86_64-v1
+
+      - name: Install APK & run Maestro on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          working-directory: mobile
+          script: |
+            adb install -r e2e/app-debug.apk
+            # Pixel Launcher routinely ANRs on slow emulators, and its dialog
+            # overlays the bottom tabs of our app. Disable + kill it before
+            # the test so it never gets a chance to pop up.
+            adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher || true
+            adb shell am force-stop com.google.android.apps.nexuslauncher || true
+            adb shell am start -n com.travelhub.app/.MainActivity
+            adb logcat -c
+            bash -c 'maestro test .maestro/flows/ --format junit --output maestro-report.xml; M=$?; mkdir -p maestro-debug; cp -r ~/.maestro/tests/. maestro-debug/ 2>/dev/null || true; ls -lR maestro-debug || true; adb logcat -d > logcat.txt || true; echo "::group::Last 100 lines of logcat (com.travelhub.app)"; grep "com.travelhub" logcat.txt | tail -100 || true; echo "::endgroup::"; echo "::group::ReactNativeJS console output"; grep "ReactNativeJS" logcat.txt | tail -50 || true; echo "::endgroup::"; exit $M'
+
+      - name: Upload Maestro debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug
+          # maestro-debug/ contains:
+          #   commands.json          — exact commands Maestro executed
+          #   maestro.log            — verbose runner log
+          #   screenshot-*.png       — one per step (last one is the failure)
+          #   <flow>.json            — view hierarchy at failure
+          path: |
+            mobile/maestro-report.xml
+            mobile/maestro-debug
+            mobile/logcat.txt
+          retention-days: 14
+
+      - name: Stop backend stack
+        if: always()
+        working-directory: backend
+        run: docker compose down -v
+
+  mobile-result:
+    runs-on: ubuntu-latest
+    needs: [changes, mobile-ci, mobile-e2e]
     if: always()
     steps:
       - run: |
           if [ "${{ needs.mobile-ci.result }}" = "failure" ]; then
-            echo "Mobile tests failed"
+            echo "Mobile unit tests failed"
             exit 1
           fi
-          echo "Mobile CI passed (tests ran: ${{ needs.mobile-ci.result != 'skipped' }})"
+          if [ "${{ needs.mobile-e2e.result }}" = "failure" ]; then
+            echo "Mobile E2E failed"
+            exit 1
+          fi
+          echo "Mobile CI passed (unit: ${{ needs.mobile-ci.result }}, e2e: ${{ needs.mobile-e2e.result }})"

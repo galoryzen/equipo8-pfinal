@@ -65,6 +65,7 @@ export default function TabLayout() {
         options={{
           title: isLoggedIn ? t('tabs.profile') : t('profile.login'),
           headerTitle: isLoggedIn ? t('tabs.profile') : t('profile.login'),
+          tabBarButtonTestID: 'profile-tab',
           tabBarIcon: ({ color, size }) => (
             <Ionicons
               name={isLoggedIn ? 'person-outline' : 'log-in-outline'}

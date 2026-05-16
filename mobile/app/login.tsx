@@ -174,6 +174,7 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoComplete="email"
               error={errors.email}
+              testID="login-email"
             />
             <Input
               label={t('profile.password')}
@@ -182,6 +183,7 @@ export default function LoginScreen() {
               onBlur={() => validateField('password')}
               secureTextEntry
               error={errors.password}
+              testID="login-password"
             />
 
             <Button
@@ -190,6 +192,7 @@ export default function LoginScreen() {
               loading={submitting}
               disabled={submitting}
               style={styles.submitButton}
+              testID="login-submit"
             />
 
             <Pressable

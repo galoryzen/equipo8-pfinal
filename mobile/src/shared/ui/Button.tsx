@@ -19,6 +19,7 @@ interface ButtonProps {
   loading?: boolean;
   accessibilityHint?: string;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export function Button({
@@ -29,6 +30,7 @@ export function Button({
   loading = false,
   accessibilityHint,
   style,
+  testID,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
@@ -40,6 +42,7 @@ export function Button({
       accessibilityLabel={title}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
+      testID={testID}
       style={({ pressed }) => [
         styles.base,
         variantStyles[variant],

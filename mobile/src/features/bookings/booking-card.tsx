@@ -10,9 +10,10 @@ import type { EnrichedBookingListItem } from './use-my-bookings';
 interface BookingCardProps {
   booking: EnrichedBookingListItem;
   onPress: () => void;
+  testID?: string;
 }
 
-export function BookingCard({ booking, onPress }: BookingCardProps) {
+export function BookingCard({ booking, onPress, testID }: BookingCardProps) {
   const { t } = useTranslation();
   const statusLabel = t(statusI18nKey(booking.status));
   const code = formatBookingCode(booking.id);
@@ -23,6 +24,7 @@ export function BookingCard({ booking, onPress }: BookingCardProps) {
       accessibilityRole="button"
       accessibilityLabel={t('trips.card.viewDetails')}
       onPress={onPress}
+      testID={testID}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       {booking.image_url ? (

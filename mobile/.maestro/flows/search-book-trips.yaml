@@ -1,0 +1,156 @@
+appId: com.travelhub.app
+tags:
+  - critical
+  - obj-005
+env:
+  TEST_EMAIL: carlos@example.com
+  TEST_PASSWORD: travelhub
+  # Maestro's inputText is ASCII-only (adb shell input text). Use a prefix that's
+  # unambiguous in the autocomplete, then tap the rendered (Unicode) result.
+  TEST_CITY_QUERY: Canc
+  TEST_CITY_LABEL: "Cancún"
+  TEST_CARD: "4242 4242 4242 4242"
+  TEST_CARD_EXPIRY: "12/30"
+  TEST_CARD_CVV: "123"
+  TEST_CARDHOLDER: Carlos Garcia
+---
+# OBJ-005 critical mobile E2E:
+# login → search a seeded city → pick first property → reserve →
+# pick first room → continue → fill checkout (primary guest is
+# autofilled from profile, only phone needs to be entered) →
+# pay with the happy-path test card → see success → land on Trips.
+#
+# Backend dependency: backend/docker-compose.yml must be up with seed data
+# (03-seed.sql provides carlos@example.com + Cancún property).
+
+- launchApp:
+    clearState: true
+
+# Dismiss Android system ANR dialogs (Pixel Launcher sometimes pops "isn't
+# responding" on slow emulators and covers the bottom tabs).
+- tapOn:
+    text: "Wait"
+    optional: true
+- tapOn:
+    text: "Close app"
+    optional: true
+
+# --- Login ---
+- runFlow: ../helpers/login.yaml
+
+# --- Search ---
+- tapOn:
+    id: "city-search-input"
+- inputText: ${TEST_CITY_QUERY}
+# Wait for the 400ms debounced autocomplete, then pick the first matching suggestion.
+- tapOn:
+    text: "${TEST_CITY_LABEL}.*"
+    index: 0
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+    id: "home-search-cta"
+
+# --- Pick the first result ---
+- tapOn:
+    id: "property-card-first"
+    waitToSettleTimeoutMs: 1000
+
+# --- Property detail → rooms ---
+- tapOn:
+    id: "reserve-cta"
+
+# --- Rooms list → pick first ---
+- tapOn:
+    id: "select-room-first"
+    waitToSettleTimeoutMs: 1000
+
+# --- Room detail → checkout ---
+- tapOn:
+    id: "continue-to-booking"
+
+# --- Checkout: primary guest is autofilled from profile; we only need phone ---
+# scrollUntilVisible doubles as a navigation sanity check: it waits for the
+# email field to mount (proves we're on /booking/checkout, not still on the
+# room detail screen) AND scrolls it into the viewport on smaller screens.
+# (No hideKeyboard before this — no IME is up at this point, and Android's
+# hideKeyboard falls back to Back, which would pop the stack.)
+- scrollUntilVisible:
+    element:
+      id: "checkout-guest-email"
+    direction: DOWN
+    timeout: 15000
+
+- scrollUntilVisible:
+    element:
+      id: "checkout-guest-phone"
+    direction: DOWN
+    # CRITICAL: the checkout screen has an absolute-positioned footer button
+    # ("Continue to payment") that overlays the bottom of the ScrollView. When
+    # the phone field is "just visible" at the bottom, its hit area sits UNDER
+    # the footer — Maestro taps the footer (disabled) instead of phone, focus
+    # stays on Full name, and digits land there. Center the phone field in
+    # the viewport so it's well above the footer.
+    centerElement: true
+- tapOn:
+    id: "checkout-guest-phone"
+# Plain digits — `+` and spaces trip up `adb shell input text`.
+- inputText: "3000000000"
+# Phone input was just focused → keyboard is up; dismiss before tapping the
+# footer button so the tap lands on the right element.
+- hideKeyboard
+- tapOn:
+    id: "checkout-continue"
+
+# --- Payment ---
+# Small-screen emulator: only the focused field stays above the keyboard, the
+# others end up covered. Between every input, dismiss the keyboard and scroll
+# the next field back into view before tapping it.
+- tapOn:
+    id: "payment-card-number"
+- inputText: ${TEST_CARD}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-card-expiry"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: "payment-card-expiry"
+- inputText: ${TEST_CARD_EXPIRY}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-card-cvv"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: "payment-card-cvv"
+- inputText: ${TEST_CARD_CVV}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-cardholder"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: "payment-cardholder"
+- inputText: ${TEST_CARDHOLDER}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-pay"
+    direction: DOWN
+- tapOn:
+    id: "payment-pay"
+
+# --- Success — payment polling resolves in <10s for the happy-path card ---
+- assertVisible:
+    id: "success-view-bookings"
+    waitToSettleTimeoutMs: 15000
+- tapOn:
+    id: "success-view-bookings"
+
+# --- Trips: at least one booking row visible ---
+- assertVisible:
+    id: "booking-row-first"
+    waitToSettleTimeoutMs: 5000

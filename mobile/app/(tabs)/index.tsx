@@ -190,6 +190,7 @@ export default function HomeScreen() {
                 value={cityQuery}
                 onChangeText={setCityQuery}
                 style={styles.cityTextInput}
+                testID="city-search-input"
               />
             )}
           </View>
@@ -231,6 +232,7 @@ export default function HomeScreen() {
             disabled={!selectedCity}
             accessibilityRole="button"
             accessibilityLabel={t('home.search')}
+            testID="home-search-cta"
           >
             <Ionicons name="search" size={18} color={colors.onPrimary} />
             <Text style={styles.searchButtonText}>{t('home.searchHotels')}</Text>

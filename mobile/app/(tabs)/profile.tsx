@@ -36,6 +36,7 @@ export default function ProfileScreen() {
             title={t('profile.login')}
             onPress={() => router.push('/login')}
             style={styles.actionButton}
+            testID="profile-login-cta"
           />
           {settingsRow}
         </View>

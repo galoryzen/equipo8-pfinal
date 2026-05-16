@@ -106,13 +106,14 @@ export default function TripsScreen() {
         </View>
       ) : bookings.length > 0 ? (
         <View style={styles.list}>
-          {bookings.map((b) => (
+          {bookings.map((b, idx) => (
             <BookingCard
               key={b.id}
               booking={b}
               onPress={() =>
                 router.push({ pathname: '/booking/[id]', params: { id: b.id } })
               }
+              testID={idx === 0 ? 'booking-row-first' : `booking-row-${idx}`}
             />
           ))}
         </View>
