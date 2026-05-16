@@ -43,93 +43,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes, mobile-ci]
     if: needs.changes.outputs.mobile == 'true'
-    timeout-minutes: 30
-    env:
-      EXPO_PUBLIC_API_URL: http://10.0.2.2:8080
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: mobile/package-lock.json
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Install mobile deps
-        working-directory: mobile
-        run: npm ci
+      - name: Verify pre-built APK exists
+        run: |
+          if [ ! -f mobile/e2e/app-debug.apk ]; then
+            echo "::error::mobile/e2e/app-debug.apk is missing. Run 'cd mobile && npm run build:e2e-apk' locally and commit the APK. See mobile/e2e/README.md."
+            exit 1
+          fi
+          echo "APK size: $(du -h mobile/e2e/app-debug.apk | cut -f1)"
 
       - name: Start backend stack
         working-directory: backend
         run: docker compose up -d --wait
         timeout-minutes: 10
-
-      - name: Stub google-services.json
-        working-directory: mobile
-        run: |
-          cat > google-services.json <<'JSON'
-          {
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "travelhub-e2e-stub",
-              "storage_bucket": "travelhub-e2e-stub.appspot.com"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-                  "android_client_info": {
-                    "package_name": "com.travelhub.app"
-                  }
-                },
-                "oauth_client": [],
-                "api_key": [
-                  { "current_key": "AIzaSyDummy_Stub_Key_For_E2E_Builds_Only_x" }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": []
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          JSON
-
-      - name: Prebuild Android project
-        working-directory: mobile
-        env:
-          CI: "1"
-        run: npx expo prebuild --platform android --no-install
-
-      - name: Tune gradle for CI
-        working-directory: mobile
-        run: |
-          cat >> android/gradle.properties <<'PROPS'
-          org.gradle.jvmargs=-Xmx4096m -XX:+HeapDumpOnOutOfMemoryError
-          org.gradle.parallel=true
-          org.gradle.caching=true
-          org.gradle.configureondemand=true
-          # Emulator is x86_64 — skip the other 3 ABIs to cut CMake builds
-          # (reanimated, expo-modules-core, hermes) by ~75%.
-          reactNativeArchitectures=x86_64
-          PROPS
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            mobile/android/.gradle
-          key: gradle-${{ runner.os }}-${{ hashFiles('mobile/package-lock.json', 'mobile/app.json') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
 
       - name: Install Maestro
         run: |
@@ -152,7 +81,7 @@ jobs:
             ~/.android/adb*
           key: avd-api33-google-apis-x86_64-v1
 
-      - name: Build app & run Maestro on Android emulator
+      - name: Install APK & run Maestro on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
@@ -163,32 +92,11 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           working-directory: mobile
           script: |
-            set +e   # don't bail on maestro failure — we still want logs
-            ./android/gradlew :app:assembleDebug -p android --build-cache --parallel
-            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r e2e/app-debug.apk
             adb shell am start -n com.travelhub.app/.MainActivity
-
             adb logcat -c
-            adb logcat > logcat.txt &
-            LOGCAT_PID=$!
-
             mkdir -p maestro-debug
-            maestro test .maestro/flows/ \
-              --format junit \
-              --output maestro-report.xml \
-              --debug-output maestro-debug
-            MAESTRO_EXIT=$?
-
-            kill $LOGCAT_PID 2>/dev/null || true
-
-            echo "::group::Last 100 lines of logcat (com.travelhub.app)"
-            grep "com.travelhub" logcat.txt | tail -100 || true
-            echo "::endgroup::"
-            echo "::group::ReactNativeJS console output"
-            grep "ReactNativeJS" logcat.txt | tail -50 || true
-            echo "::endgroup::"
-
-            exit $MAESTRO_EXIT
+            bash -c 'maestro test .maestro/flows/ --format junit --output maestro-report.xml --debug-output maestro-debug; M=$?; adb logcat -d > logcat.txt || true; echo "::group::Last 100 lines of logcat (com.travelhub.app)"; grep "com.travelhub" logcat.txt | tail -100 || true; echo "::endgroup::"; echo "::group::ReactNativeJS console output"; grep "ReactNativeJS" logcat.txt | tail -50 || true; echo "::endgroup::"; exit $M'
 
       - name: Upload Maestro debug artifacts
         if: always()
