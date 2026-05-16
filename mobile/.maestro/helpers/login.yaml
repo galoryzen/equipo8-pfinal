@@ -42,6 +42,8 @@ appId: com.travelhub.app
     id: "login-submit"
 
 # Land on home — search CTA proves the tab stack is up and auth context is set.
+# Generous timeout: post-login navigation, home mount, and the featured-destinations
+# fetch all serialize here; on a CI emulator this can take 10-15s.
 - assertVisible:
     id: "home-search-cta"
-    waitToSettleTimeoutMs: 3000
+    waitToSettleTimeoutMs: 20000

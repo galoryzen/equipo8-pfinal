@@ -95,8 +95,7 @@ jobs:
             adb install -r e2e/app-debug.apk
             adb shell am start -n com.travelhub.app/.MainActivity
             adb logcat -c
-            mkdir -p maestro-debug
-            bash -c 'maestro test .maestro/flows/ --format junit --output maestro-report.xml --debug-output maestro-debug; M=$?; adb logcat -d > logcat.txt || true; echo "::group::Last 100 lines of logcat (com.travelhub.app)"; grep "com.travelhub" logcat.txt | tail -100 || true; echo "::endgroup::"; echo "::group::ReactNativeJS console output"; grep "ReactNativeJS" logcat.txt | tail -50 || true; echo "::endgroup::"; exit $M'
+            bash -c 'maestro test .maestro/flows/ --format junit --output maestro-report.xml; M=$?; mkdir -p maestro-debug; cp -r ~/.maestro/tests/. maestro-debug/ 2>/dev/null || true; ls -lR maestro-debug || true; adb logcat -d > logcat.txt || true; echo "::group::Last 100 lines of logcat (com.travelhub.app)"; grep "com.travelhub" logcat.txt | tail -100 || true; echo "::endgroup::"; echo "::group::ReactNativeJS console output"; grep "ReactNativeJS" logcat.txt | tail -50 || true; echo "::endgroup::"; exit $M'
 
       - name: Upload Maestro debug artifacts
         if: always()
