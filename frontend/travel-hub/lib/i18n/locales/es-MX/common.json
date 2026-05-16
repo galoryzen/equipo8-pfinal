@@ -491,7 +491,11 @@
           "manageRoomType": "Gestionar habitaciones de tipo {{name}}",
           "manage": "Gestionar",
           "showing": "Mostrando {{count}} tipos de habitación",
-          "paginationLabel": "Paginación de tipos de habitación"
+          "paginationLabel": "Paginación de tipos de habitación",
+          "manageOptions": {
+            "promotion": "Promoción",
+            "tariffs": "Tarifas"
+          }
         }
       },
       "promotion": {

@@ -554,7 +554,11 @@
           "manageRoomType": "Manage {{name}} rooms",
           "manage": "Manage",
           "showing": "Showing {{count}} room types",
-          "paginationLabel": "Room types pagination"
+          "paginationLabel": "Room types pagination",
+          "manageOptions": {
+            "promotion": "Promotion",
+            "tariffs": "Tariffs"
+          }
         }
       },
       "promotion": {
