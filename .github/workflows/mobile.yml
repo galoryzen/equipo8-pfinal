@@ -69,9 +69,44 @@ jobs:
         run: docker compose up -d --wait
         timeout-minutes: 10
 
+      - name: Stub google-services.json
+        working-directory: mobile
+        run: |
+          cat > google-services.json <<'JSON'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "travelhub-e2e-stub",
+              "storage_bucket": "travelhub-e2e-stub.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.travelhub.app"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  { "current_key": "AIzaSyDummy_Stub_Key_For_E2E_Builds_Only_x" }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON
+
       - name: Prebuild Android project
         working-directory: mobile
-        run: npx expo prebuild --platform android --no-install --non-interactive
+        env:
+          CI: "1"
+        run: npx expo prebuild --platform android --no-install
 
       - name: Install Maestro
         run: |
