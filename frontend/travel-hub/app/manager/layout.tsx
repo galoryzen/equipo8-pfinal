@@ -31,6 +31,8 @@ import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import LanguageDropdown from '@/components/i18n/LanguageDropdown';
+
 import AuthGuard from '../components/AuthGuard';
 
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
@@ -262,8 +264,11 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               alignItems: 'center',
               px: 3,
               py: 2,
+              gap: 2,
             }}
           >
+            <LanguageDropdown />
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
               <Box
                 sx={{
