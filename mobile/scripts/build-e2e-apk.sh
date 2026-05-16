@@ -24,6 +24,17 @@ export EXPO_PUBLIC_API_URL="http://10.0.2.2:8080"
 echo "==> Regenerating android/ via expo prebuild"
 npx expo prebuild --platform android --clean
 
+# Release APKs default to android:usesCleartextTraffic="false" on API 28+.
+# Our E2E APK talks to http://10.0.2.2:8080 (no TLS), so re-enable it here.
+# This patch is local to the E2E APK only; dev builds via `expo run:android`
+# still use RN's network_security_config that already permits 10.0.2.2.
+echo "==> Patching AndroidManifest.xml to allow cleartext HTTP (for E2E backend)"
+MANIFEST="android/app/src/main/AndroidManifest.xml"
+if ! grep -q "usesCleartextTraffic" "$MANIFEST"; then
+  sed -i.bak 's|<application |<application android:usesCleartextTraffic="true" |' "$MANIFEST"
+  rm -f "$MANIFEST.bak"
+fi
+
 echo "==> Building release APK (Gradle — bundles JS automatically)"
 ( cd android && ./gradlew :app:assembleRelease )
 
