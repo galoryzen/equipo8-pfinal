@@ -883,6 +883,16 @@
         "deleteFailed": "Error al eliminar la imagen",
         "noHotels": "Tu cuenta no está asociada a ningún hotel."
       }
+    },
+    "roles": {
+      "superAdmin": "Super Admin",
+      "hotelPartner": "Socio Hotelero",
+      "agencyPartner": "Socio de Agencia"
+    },
+    "fallback": {
+      "initials": "UA",
+      "name": "TravelHub Admin",
+      "role": "Super Admin"
     }
   },
   "reports": {

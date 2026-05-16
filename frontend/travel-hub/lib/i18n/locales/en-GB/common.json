@@ -906,6 +906,16 @@
       "cancel": "Cancel",
       "unknownError": "Unknown error",
       "tryAgain": "Try again"
+    },
+    "roles": {
+      "superAdmin": "Super Admin",
+      "hotelPartner": "Hotel Partner",
+      "agencyPartner": "Agency Partner"
+    },
+    "fallback": {
+      "initials": "UA",
+      "name": "TravelHub Admin",
+      "role": "Super Admin"
     }
   },
   "reports": {
