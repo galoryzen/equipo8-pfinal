@@ -102,16 +102,28 @@ env:
     id: "checkout-continue"
 
 # --- Payment ---
+# Small-screen emulator: only the focused field stays above the keyboard, the
+# others end up covered. Between every input, dismiss the keyboard and scroll
+# the next field back into view before tapping it.
 - tapOn:
     id: "payment-card-number"
 - inputText: ${TEST_CARD}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-card-expiry"
+    direction: DOWN
 - tapOn:
     id: "payment-card-expiry"
 - inputText: ${TEST_CARD_EXPIRY}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-card-cvv"
+    direction: DOWN
 - tapOn:
     id: "payment-card-cvv"
 - inputText: ${TEST_CARD_CVV}
-# Cardholder sits below CVV — keyboard covers it, so dismiss before scrolling.
 - hideKeyboard
 - scrollUntilVisible:
     element:
@@ -121,6 +133,10 @@ env:
     id: "payment-cardholder"
 - inputText: ${TEST_CARDHOLDER}
 - hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-pay"
+    direction: DOWN
 - tapOn:
     id: "payment-pay"
 
