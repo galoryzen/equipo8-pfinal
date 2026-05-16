@@ -59,16 +59,18 @@ env:
 - tapOn:
     id: "continue-to-booking"
 
-# Wait for the cart-create POST + route transition. Landing on the checkout
-# screen is confirmed by the email field being mounted.
-- assertVisible:
-    id: "checkout-guest-email"
-    waitToSettleTimeoutMs: 1000
-
 # --- Checkout: primary guest is autofilled from profile; we only need phone ---
-# No keyboard is up on entry, so we just scroll to the phone field.
-# (Maestro's hideKeyboard with no IME visible presses Back and would pop the
-# stack back to the room detail screen — don't add it here.)
+# scrollUntilVisible doubles as a navigation sanity check: it waits for the
+# email field to mount (proves we're on /booking/checkout, not still on the
+# room detail screen) AND scrolls it into the viewport on smaller screens.
+# (No hideKeyboard before this — no IME is up at this point, and Android's
+# hideKeyboard falls back to Back, which would pop the stack.)
+- scrollUntilVisible:
+    element:
+      id: "checkout-guest-email"
+    direction: DOWN
+    timeout: 15000
+
 - scrollUntilVisible:
     element:
       id: "checkout-guest-phone"
