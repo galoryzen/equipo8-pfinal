@@ -108,6 +108,29 @@ jobs:
           CI: "1"
         run: npx expo prebuild --platform android --no-install
 
+      - name: Tune gradle for CI
+        working-directory: mobile
+        run: |
+          cat >> android/gradle.properties <<'PROPS'
+          org.gradle.jvmargs=-Xmx4096m -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.parallel=true
+          org.gradle.caching=true
+          org.gradle.configureondemand=true
+          # Emulator is x86_64 — skip the other 3 ABIs to cut CMake builds
+          # (reanimated, expo-modules-core, hermes) by ~75%.
+          reactNativeArchitectures=x86_64
+          PROPS
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            mobile/android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('mobile/package-lock.json', 'mobile/app.json') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
       - name: Install Maestro
         run: |
           curl -fsSL "https://get.maestro.mobile.dev" | bash
@@ -120,6 +143,15 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Cache AVD
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api33-google-apis-x86_64-v1
+
       - name: Build app & run Maestro on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -127,9 +159,11 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           working-directory: mobile
           script: |
-            ./android/gradlew :app:assembleDebug -p android
+            ./android/gradlew :app:assembleDebug -p android --build-cache --parallel
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -n com.travelhub.app/.MainActivity
             maestro test .maestro/flows/ --format junit --output maestro-report.xml

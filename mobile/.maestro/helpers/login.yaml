@@ -1,21 +1,32 @@
 appId: com.travelhub.app
 ---
-# Reusable login subflow.
-# Pre-condition: app launched (lands on (tabs)/index — "Explore" — after clearState).
-# Post-condition: app is on (tabs)/index logged in as TEST_EMAIL.
+# Reusable login subflow — robust against either app entry point:
+#   1) Welcome screen (initialRouteName=welcome on a truly fresh install / CI)
+#   2) (tabs)/index ("Explore") if navigation state was persisted
 #
-# Note: even with clearState, the app boots into the tabs stack (not /welcome),
-# so we navigate to login via the Profile tab → "Log in" CTA on profile screen.
+# Both paths converge on /login.
 #
 # Env vars:
 #   TEST_EMAIL     — seeded TRAVELER from backend/db/03-seed.sql
 #   TEST_PASSWORD  — matching password (all seeded users share "travelhub")
 
+# Path 1: welcome → /login
+- tapOn:
+    id: "welcome-login-cta"
+    optional: true
+
+# Path 2: tabs → profile → /login (only fires if we're not on welcome)
 - tapOn:
     id: "profile-tab"
-
+    optional: true
 - tapOn:
     id: "profile-login-cta"
+    optional: true
+
+# We should now be on /login regardless of how we got here.
+- assertVisible:
+    text: "Email"
+    waitToSettleTimeoutMs: 3000
 
 - tapOn:
     text: "Email"
