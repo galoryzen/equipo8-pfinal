@@ -163,19 +163,48 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           working-directory: mobile
           script: |
+            set +e   # don't bail on maestro failure — we still want logs
             ./android/gradlew :app:assembleDebug -p android --build-cache --parallel
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -n com.travelhub.app/.MainActivity
-            maestro test .maestro/flows/ --format junit --output maestro-report.xml
 
-      - name: Upload Maestro report
+            adb logcat -c
+            adb logcat > logcat.txt &
+            LOGCAT_PID=$!
+
+            mkdir -p maestro-debug
+            maestro test .maestro/flows/ \
+              --format junit \
+              --output maestro-report.xml \
+              --debug-output maestro-debug
+            MAESTRO_EXIT=$?
+
+            kill $LOGCAT_PID 2>/dev/null || true
+
+            echo "::group::Last 100 lines of logcat (com.travelhub.app)"
+            grep "com.travelhub" logcat.txt | tail -100 || true
+            echo "::endgroup::"
+            echo "::group::ReactNativeJS console output"
+            grep "ReactNativeJS" logcat.txt | tail -50 || true
+            echo "::endgroup::"
+
+            exit $MAESTRO_EXIT
+
+      - name: Upload Maestro debug artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: maestro-report
+          name: maestro-debug
+          # maestro-debug/ contains:
+          #   commands.json          — exact commands Maestro executed
+          #   maestro.log            — verbose runner log
+          #   screenshot-*.png       — one per step (last one is the failure)
+          #   <flow>.json            — view hierarchy at failure
           path: |
             mobile/maestro-report.xml
-            mobile/.maestro/.cache
+            mobile/maestro-debug
+            mobile/logcat.txt
+          retention-days: 14
 
       - name: Stop backend stack
         if: always()

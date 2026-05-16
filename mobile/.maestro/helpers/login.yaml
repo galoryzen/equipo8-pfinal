@@ -25,15 +25,15 @@ appId: com.travelhub.app
 
 # We should now be on /login regardless of how we got here.
 - assertVisible:
-    text: "Email"
+    id: "login-email"
     waitToSettleTimeoutMs: 3000
 
 - tapOn:
-    text: "Email"
+    id: "login-email"
 - inputText: ${TEST_EMAIL}
 
 - tapOn:
-    text: "Password"
+    id: "login-password"
 - inputText: ${TEST_PASSWORD}
 
 - hideKeyboard
