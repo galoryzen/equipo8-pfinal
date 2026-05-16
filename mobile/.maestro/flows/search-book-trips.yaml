@@ -84,8 +84,15 @@ env:
     element:
       id: "checkout-guest-phone"
     direction: DOWN
+# Settle the scroll AND any keyboard-avoidance reflow before tapping. Diagnosed
+# from maestro-debug screenshot: previously inputText ran with Full-name focused
+# (autofilled "Carlos García" had digits appended) because the tap raced the scroll.
+- waitForAnimationToEnd:
+    timeout: 2000
 - tapOn:
     id: "checkout-guest-phone"
+- waitForAnimationToEnd:
+    timeout: 1000
 # Plain digits — `+` and spaces trip up `adb shell input text`.
 - inputText: "3000000000"
 # Phone input was just focused → keyboard is up; dismiss before tapping the
