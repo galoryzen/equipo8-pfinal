@@ -297,7 +297,7 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.resultsList}
         >
-          {results.map((property) => (
+          {results.map((property, idx) => (
             <Card
               key={property.id}
               elevated
@@ -319,6 +319,7 @@ export default function SearchScreen() {
               } per night. ${property.amenities.map((a) => a.name).join(', ')}`}
               accessibilityHint="View property details"
               style={styles.resultCard}
+              testID={idx === 0 ? 'property-card-first' : `property-card-${idx}`}
             >
               {property.image?.url ? (
                 <Image

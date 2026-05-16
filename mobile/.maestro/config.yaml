@@ -1,0 +1,15 @@
+# Maestro workspace config.
+#
+# Each flow under flows/ declares its own appId (com.travelhub.app), so we
+# don't repeat it here. This file scopes which flows the `maestro test`
+# command picks up when run from `mobile/`.
+#
+# Run from mobile/:
+#   maestro test .maestro/flows/
+#
+# All flows assume a backend reachable at the URL the app was built with
+# (EXPO_PUBLIC_API_URL). Use http://10.0.2.2:8080 for Android emulator → host,
+# or your LAN IP for a physical device.
+
+flows:
+  - flows/*.yaml

@@ -25,6 +25,7 @@ interface RoomTypeCardProps {
   room: RoomTypeOut;
   onSelect: (info: SelectedRoomInfo) => void;
   hasDates: boolean;
+  testID?: string;
 }
 
 function pickCheapestPlan(room: RoomTypeOut): RatePlanOut | null {
@@ -33,7 +34,7 @@ function pickCheapestPlan(room: RoomTypeOut): RatePlanOut | null {
   return plans.reduce((a, b) => (a.min_price! < b.min_price! ? a : b));
 }
 
-export function RoomTypeCard({ room, onSelect, hasDates }: RoomTypeCardProps) {
+export function RoomTypeCard({ room, onSelect, hasDates, testID }: RoomTypeCardProps) {
   const { t } = useTranslation();
   const { format: formatPrice } = useDisplayCurrency();
 
@@ -136,6 +137,7 @@ export function RoomTypeCard({ room, onSelect, hasDates }: RoomTypeCardProps) {
             onPress={handleSelect}
             disabled={!canSelect}
             style={styles.selectButton}
+            testID={testID}
           />
         </View>
       </View>

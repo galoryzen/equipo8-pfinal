@@ -316,6 +316,7 @@ export default function CheckoutScreen() {
                       keyboardType="email-address"
                       autoCapitalize="none"
                       error={errors[index]?.email}
+                      testID="checkout-guest-email"
                     />
                     <Input
                       label={t('booking.checkout.guests.phone')}
@@ -323,6 +324,7 @@ export default function CheckoutScreen() {
                       onChangeText={(v) => updateGuest(index, 'phone', v)}
                       keyboardType="phone-pad"
                       error={errors[index]?.phone}
+                      testID="checkout-guest-phone"
                     />
                   </>
                 )}
@@ -343,6 +345,7 @@ export default function CheckoutScreen() {
             onPress={handleContinue}
             loading={submitting}
             disabled={submitting || !guestsReady}
+            testID="checkout-continue"
           />
         </View>
 

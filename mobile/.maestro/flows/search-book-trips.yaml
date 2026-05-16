@@ -1,0 +1,119 @@
+appId: com.travelhub.app
+tags:
+  - critical
+  - obj-005
+env:
+  TEST_EMAIL: carlos@example.com
+  TEST_PASSWORD: travelhub
+  # Maestro's inputText is ASCII-only (adb shell input text). Use a prefix that's
+  # unambiguous in the autocomplete, then tap the rendered (Unicode) result.
+  TEST_CITY_QUERY: Canc
+  TEST_CITY_LABEL: "Cancún"
+  TEST_CARD: "4242 4242 4242 4242"
+  TEST_CARD_EXPIRY: "12/30"
+  TEST_CARD_CVV: "123"
+  TEST_CARDHOLDER: Carlos Garcia
+---
+# OBJ-005 critical mobile E2E:
+# login → search a seeded city → pick first property → reserve →
+# pick first room → continue → fill checkout (primary guest is
+# autofilled from profile, only phone needs to be entered) →
+# pay with the happy-path test card → see success → land on Trips.
+#
+# Backend dependency: backend/docker-compose.yml must be up with seed data
+# (03-seed.sql provides carlos@example.com + Cancún property).
+
+- launchApp:
+    clearState: true
+
+# --- Login ---
+- runFlow: ../helpers/login.yaml
+
+# --- Search ---
+- tapOn:
+    id: "city-search-input"
+- inputText: ${TEST_CITY_QUERY}
+# Wait for the 400ms debounced autocomplete, then pick the first matching suggestion.
+- tapOn:
+    text: "${TEST_CITY_LABEL}.*"
+    index: 0
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+    id: "home-search-cta"
+
+# --- Pick the first result ---
+- tapOn:
+    id: "property-card-first"
+    waitToSettleTimeoutMs: 1000
+
+# --- Property detail → rooms ---
+- tapOn:
+    id: "reserve-cta"
+
+# --- Rooms list → pick first ---
+- tapOn:
+    id: "select-room-first"
+    waitToSettleTimeoutMs: 1000
+
+# --- Room detail → checkout ---
+- tapOn:
+    id: "continue-to-booking"
+
+# Wait for the cart-create POST + route transition. Landing on the checkout
+# screen is confirmed by the email field being mounted.
+- assertVisible:
+    id: "checkout-guest-email"
+    waitToSettleTimeoutMs: 1000
+
+# --- Checkout: primary guest is autofilled from profile; we only need phone ---
+# No keyboard is up on entry, so we just scroll to the phone field.
+# (Maestro's hideKeyboard with no IME visible presses Back and would pop the
+# stack back to the room detail screen — don't add it here.)
+- scrollUntilVisible:
+    element:
+      id: "checkout-guest-phone"
+    direction: DOWN
+- tapOn:
+    id: "checkout-guest-phone"
+# Plain digits — `+` and spaces trip up `adb shell input text`.
+- inputText: "3000000000"
+# Phone input was just focused → keyboard is up; dismiss before tapping the
+# footer button so the tap lands on the right element.
+- hideKeyboard
+- tapOn:
+    id: "checkout-continue"
+
+# --- Payment ---
+- tapOn:
+    id: "payment-card-number"
+- inputText: ${TEST_CARD}
+- tapOn:
+    id: "payment-card-expiry"
+- inputText: ${TEST_CARD_EXPIRY}
+- tapOn:
+    id: "payment-card-cvv"
+- inputText: ${TEST_CARD_CVV}
+# Cardholder sits below CVV — keyboard covers it, so dismiss before scrolling.
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "payment-cardholder"
+    direction: DOWN
+- tapOn:
+    id: "payment-cardholder"
+- inputText: ${TEST_CARDHOLDER}
+- hideKeyboard
+- tapOn:
+    id: "payment-pay"
+
+# --- Success — payment polling resolves in <10s for the happy-path card ---
+- assertVisible:
+    id: "success-view-bookings"
+    waitToSettleTimeoutMs: 15000
+- tapOn:
+    id: "success-view-bookings"
+
+# --- Trips: at least one booking row visible ---
+- assertVisible:
+    id: "booking-row-first"
+    waitToSettleTimeoutMs: 5000

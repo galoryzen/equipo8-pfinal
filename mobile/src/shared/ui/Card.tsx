@@ -9,6 +9,7 @@ interface CardProps {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export function Card({
@@ -18,6 +19,7 @@ export function Card({
   accessibilityLabel,
   accessibilityHint,
   style,
+  testID,
 }: CardProps) {
   const cardStyle = [
     styles.base,
@@ -33,6 +35,7 @@ export function Card({
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={accessibilityHint}
+        testID={testID}
         style={({ pressed }) => [...cardStyle, pressed && styles.pressed]}
       >
         {children}
@@ -44,6 +47,7 @@ export function Card({
     <View
       accessible={!!accessibilityLabel}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
       style={cardStyle}
     >
       {children}

@@ -127,6 +127,7 @@ Cada servicio accede exclusivamente a su propio esquema. Las referencias cruzada
 | ADR-003 | Authorization & Capture en dos fases para pagos  | El usuario no es cobrado si el hotel rechaza; soportado por Stripe y MercadoPago            |
 | ADR-004 | BD compartida con aislamiento por esquemas (MVP) | Simplifica operación; preparado para separación futura sin cambios en código                |
 | ADR-005 | Caché distribuido con Redis (ElastiCache)        | Reduce latencia de búsqueda y tráfico de lectura a RDS en ~60-70%                           |
+| ADR-006 | Maestro como framework E2E móvil (en lugar de Detox) | Compatible con Expo SDK 55 sin `prebuild` complejo; selectores por `testID`/`accessibilityLabel` que el código ya expone; CI corre sobre Android emulator en `ubuntu-latest` (gratis) en vez de macOS |
 
 ### 1.8 Flujos Principales
 
@@ -296,7 +297,7 @@ El Notification Service consume eventos de dominio desde su cola SQS y envía em
 | OBJ-002 | Cobertura mínima automatizada ≥70% por capa (Backend, Web, Mobile)                                                                  | Funcional, caja blanca |
 | OBJ-003 | Quality Gate en CI/CD: unitarias + smoke API + cobertura en cada PR. Merge bloqueado si falla prueba o cobertura < 70%              | Automatizado           |
 | OBJ-004 | 10-12 pruebas de integración/API representativas entre servicios (escenarios positivos y negativos)                                 | Funcional, caja negra  |
-| OBJ-005 | E2E mínimo de flujos críticos: 2 flujos web (Playwright) + 1 flujo móvil (Detox)                                                    | Funcional, caja negra  |
+| OBJ-005 | E2E mínimo de flujos críticos: 2 flujos web (Playwright) + 1 flujo móvil (Maestro)                                                  | Funcional, caja negra  |
 | OBJ-006 | Verificación no funcional mínima: performance baseline, seguridad básica, i18n, a11y                                                | No funcional           |
 
 ### 3.2 TNT (Técnicas, Niveles y Tipos)
@@ -307,7 +308,7 @@ El Notification Service consume eventos de dominio desde su cola SQS y envía em
 | Unidad             | Funcional, caja blanca          | Unitarias por API (Pytest / Jest / RN TL) + cobertura ≥70%            | OBJ-002  |
 | Integración        | Funcional, caja negra           | Integración/API (10-12 pruebas representativas) + contratos básicos   | OBJ-004  |
 | Sistema            | Funcional, caja negra           | E2E Web (Playwright) — 2 flujos críticos                              | OBJ-005  |
-| Sistema            | Funcional, caja negra           | E2E Móvil (Detox) — 1 flujo crítico                                   | OBJ-005  |
+| Sistema            | Funcional, caja negra           | E2E Móvil (Maestro) — 1 flujo crítico                                 | OBJ-005  |
 | Sistema            | No funcional (Rendimiento)      | Baseline performance (búsqueda/reserva) vs metas del enunciado        | OBJ-006  |
 | Sistema            | No funcional (Seguridad)        | Checklist: TLS, tokenización, no almacenar tarjeta, auth/sesión/roles | OBJ-006  |
 | Sistema/Aceptación | No funcional (i18n)             | Smoke: moneda/fechas/zonas horarias en flujos MVP                     | OBJ-006  |
@@ -321,7 +322,7 @@ El Notification Service consume eventos de dominio desde su cola SQS y envía em
 | Frontend Web     | Vitest + React Testing Library       | Unitarias de componentes          |
 | Frontend Web     | Playwright                           | E2E web                           |
 | Mobile           | Jest + React Native Testing Library  | Unitarias móvil                   |
-| Mobile           | Detox                                | E2E móvil                         |
+| Mobile           | Maestro                              | E2E móvil                         |
 | Performance      | Herramientas de medición de tiempos  | Baseline vs SLAs                  |
 | Accesibilidad    | axe / Lighthouse                     | Auditoría a11y web                |
 | CI/CD            | GitHub Actions                       | Ejecución automatizada en cada PR |

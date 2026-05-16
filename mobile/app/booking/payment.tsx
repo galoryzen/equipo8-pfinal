@@ -229,6 +229,7 @@ export default function PaymentScreen() {
             <Button
               title={t('booking.success.viewBookings')}
               onPress={() => router.replace('/trips')}
+              testID="success-view-bookings"
             />
             <Button
               title={t('booking.success.home')}
@@ -320,6 +321,7 @@ export default function PaymentScreen() {
               error={errors.cardNumber}
               editable={!isBusy}
               maxLength={23}
+              testID="payment-card-number"
             />
             <View style={styles.row}>
               <View style={styles.flex}>
@@ -336,6 +338,7 @@ export default function PaymentScreen() {
                   error={errors.expiry}
                   editable={!isBusy}
                   maxLength={5}
+                  testID="payment-card-expiry"
                 />
               </View>
               <View style={styles.flex}>
@@ -353,6 +356,7 @@ export default function PaymentScreen() {
                   error={errors.cvv}
                   editable={!isBusy}
                   maxLength={4}
+                  testID="payment-card-cvv"
                 />
               </View>
             </View>
@@ -367,6 +371,7 @@ export default function PaymentScreen() {
               autoCapitalize="words"
               error={errors.cardholderName}
               editable={!isBusy}
+              testID="payment-cardholder"
             />
           </View>
 
@@ -388,6 +393,7 @@ export default function PaymentScreen() {
             onPress={handlePay}
             loading={isBusy}
             disabled={payDisabled}
+            testID="payment-pay"
           />
         </View>
 

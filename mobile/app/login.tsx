@@ -190,6 +190,7 @@ export default function LoginScreen() {
               loading={submitting}
               disabled={submitting}
               style={styles.submitButton}
+              testID="login-submit"
             />
 
             <Pressable

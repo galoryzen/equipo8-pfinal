@@ -47,6 +47,7 @@ export default function WelcomeScreen() {
           style={styles.loginLink}
           accessibilityRole="button"
           accessibilityLabel={t("welcome.loginSignup")}
+          testID="welcome-login-cta"
         >
           <Text style={styles.loginLinkText}>{t("welcome.loginSignup")}</Text>
         </Pressable>

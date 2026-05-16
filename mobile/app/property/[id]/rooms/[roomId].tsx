@@ -373,6 +373,7 @@ export default function RoomDetailScreen() {
             disabled={!continuePayload || !continueExtras || submitting}
             loading={submitting}
             onPress={handleContinue}
+            testID="continue-to-booking"
           />
         </View>
 

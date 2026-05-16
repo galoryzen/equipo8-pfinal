@@ -163,12 +163,13 @@ export default function SelectRoomScreen() {
           )}
 
           <View style={styles.roomList}>
-            {bookableRoomTypes.map((room) => (
+            {bookableRoomTypes.map((room, idx) => (
               <RoomTypeCard
                 key={room.id}
                 room={room}
                 hasDates={hasDates}
                 onSelect={handleSelect}
+                testID={idx === 0 ? 'select-room-first' : `select-room-${idx}`}
               />
             ))}
           </View>

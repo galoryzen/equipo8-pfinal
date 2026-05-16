@@ -195,6 +195,7 @@ export default function PropertyDetailScreen() {
         <Button
           title={t('property.viewAvailability')}
           onPress={handleViewAvailability}
+          testID="reserve-cta"
         />
       </View>
     </View>
