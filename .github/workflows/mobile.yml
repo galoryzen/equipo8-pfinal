@@ -93,6 +93,11 @@ jobs:
           working-directory: mobile
           script: |
             adb install -r e2e/app-debug.apk
+            # Pixel Launcher routinely ANRs on slow emulators, and its dialog
+            # overlays the bottom tabs of our app. Disable + kill it before
+            # the test so it never gets a chance to pop up.
+            adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher || true
+            adb shell am force-stop com.google.android.apps.nexuslauncher || true
             adb shell am start -n com.travelhub.app/.MainActivity
             adb logcat -c
             bash -c 'maestro test .maestro/flows/ --format junit --output maestro-report.xml; M=$?; mkdir -p maestro-debug; cp -r ~/.maestro/tests/. maestro-debug/ 2>/dev/null || true; ls -lR maestro-debug || true; adb logcat -d > logcat.txt || true; echo "::group::Last 100 lines of logcat (com.travelhub.app)"; grep "com.travelhub" logcat.txt | tail -100 || true; echo "::endgroup::"; echo "::group::ReactNativeJS console output"; grep "ReactNativeJS" logcat.txt | tail -50 || true; echo "::endgroup::"; exit $M'

@@ -26,6 +26,15 @@ env:
 - launchApp:
     clearState: true
 
+# Dismiss Android system ANR dialogs (Pixel Launcher sometimes pops "isn't
+# responding" on slow emulators and covers the bottom tabs).
+- tapOn:
+    text: "Wait"
+    optional: true
+- tapOn:
+    text: "Close app"
+    optional: true
+
 # --- Login ---
 - runFlow: ../helpers/login.yaml
 
