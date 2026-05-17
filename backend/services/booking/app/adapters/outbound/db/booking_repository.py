@@ -87,6 +87,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
         status: str | None = None,
         date_from: date | None = None,
         date_to: date | None = None,
+        room_type_id: UUID | None = None,
         q: str | None = None,
         page: int = 1,
         page_size: int = 10,
@@ -98,6 +99,8 @@ class SqlAlchemyBookingRepository(BookingRepository):
             conditions.append(Booking.checkin >= date_from)
         if date_to is not None:
             conditions.append(Booking.checkout <= date_to)
+        if room_type_id is not None:
+            conditions.append(Booking.room_type_id == room_type_id)
 
         q_trim = (q or "").strip()
         if q_trim:

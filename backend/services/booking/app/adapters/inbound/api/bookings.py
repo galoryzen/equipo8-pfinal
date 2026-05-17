@@ -82,6 +82,7 @@ async def list_bookings(
             status=booking_status,
             date_from=date_from,
             date_to=date_to,
+            room_type_id=room_type_id,
             q=q_trim,
             page=page,
             page_size=page_size,
