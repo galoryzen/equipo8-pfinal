@@ -78,7 +78,15 @@ async def list_bookings(
     user_id = user_info.get("user_id")
     q_trim = q.strip() if q else None
     if role == "ADMIN":
-        return await use_case.execute_admin(status=booking_status, page=page, page_size=page_size)
+        return await use_case.execute_admin(
+            status=booking_status,
+            date_from=date_from,
+            date_to=date_to,
+            room_type_id=room_type_id,
+            q=q_trim,
+            page=page,
+            page_size=page_size,
+        )
     elif role in ("HOTEL", "MANAGER"):
         hotel_id_str = user_info.get("hotel_id")
         if not hotel_id_str:
@@ -114,23 +122,32 @@ async def export_hotel_bookings_csv(
     if date_from is not None and date_to is not None and date_from > date_to:
         raise HTTPException(status_code=422, detail="date_from must be on or before date_to")
     role = user_info.get("role")
-    if role not in ("HOTEL", "MANAGER"):
+    if role not in ("HOTEL", "MANAGER", "ADMIN"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo el hotel puede exportar el historial de reservas.",
+            detail="Solo el hotel o administradores pueden exportar el historial de reservas.",
         )
-    hotel_id_str = user_info.get("hotel_id")
-    if not hotel_id_str:
-        raise HTTPException(status_code=400, detail="hotel_id es requerido para este rol")
     q_trim = q.strip() if q else None
-    payload = await use_case.execute_hotel_export_csv(
-        UUID(hotel_id_str),
-        status=booking_status,
-        date_from=date_from,
-        date_to=date_to,
-        room_type_id=room_type_id,
-        q=q_trim,
-    )
+    if role == "ADMIN":
+        payload = await use_case.execute_admin_export_csv(
+            status=booking_status,
+            date_from=date_from,
+            date_to=date_to,
+            room_type_id=room_type_id,
+            q=q_trim,
+        )
+    else:
+        hotel_id_str = user_info.get("hotel_id")
+        if not hotel_id_str:
+            raise HTTPException(status_code=400, detail="hotel_id es requerido para este rol")
+        payload = await use_case.execute_hotel_export_csv(
+            UUID(hotel_id_str),
+            status=booking_status,
+            date_from=date_from,
+            date_to=date_to,
+            room_type_id=room_type_id,
+            q=q_trim,
+        )
     return Response(
         content=payload,
         media_type="text/csv",

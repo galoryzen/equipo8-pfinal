@@ -23,6 +23,7 @@ from app.application.use_cases.cancel_booking import CancelBookingUseCase
 from app.application.use_cases.checkout_booking import CheckoutBookingUseCase
 from app.application.use_cases.confirm_booking import ConfirmBookingUseCase
 from app.application.use_cases.create_cart_booking import CreateCartBookingUseCase
+from app.application.use_cases.get_admin_bookings_metrics import GetAdminBookingsMetricsUseCase
 from app.application.use_cases.get_admin_hotel_revenue_report import GetAdminHotelRevenueReportUseCase
 from app.application.use_cases.get_booking_detail import GetBookingDetailUseCase
 from app.application.use_cases.list_booking_guests import ListBookingGuestsUseCase
@@ -271,6 +272,13 @@ def get_hotel_bookings_metrics_use_case(
 ) -> GetHotelBookingsMetricsUseCase:
     repo = SqlAlchemyBookingRepository(session)
     return GetHotelBookingsMetricsUseCase(repo)
+
+
+def get_admin_bookings_metrics_use_case(
+    session: AsyncSession = Depends(get_db_session),
+) -> GetAdminBookingsMetricsUseCase:
+    repo = SqlAlchemyBookingRepository(session)
+    return GetAdminBookingsMetricsUseCase(repo)
 
 
 def get_hotel_revenue_report_use_case(

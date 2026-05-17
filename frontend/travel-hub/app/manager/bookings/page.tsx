@@ -4,6 +4,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 
 import Link from 'next/link';
 
+import { getMe } from '@/app/lib/api/auth';
 import {
   BookingApiError,
   type HotelBookingsMetrics,
@@ -11,7 +12,7 @@ import {
   fetchHotelBookingsMetrics,
   listPartnerBookings,
 } from '@/app/lib/api/booking';
-import { getHotelRoomTypes, getManagerHotels } from '@/app/lib/api/manager';
+import { getHotelRoomTypes, getHotels } from '@/app/lib/api/manager';
 import type { BookingListItem } from '@/app/lib/types/booking';
 import { tokens } from '@/lib/theme/tokens';
 import AddIcon from '@mui/icons-material/Add';
@@ -241,6 +242,7 @@ function BookingsStatCard({
 
 export default function ManagerBookingsPage() {
   const { t } = useTranslation();
+  const [user, setUser] = useState<{ email: string; role: string } | null>(null);
   const [tab, setTab] = useState<TabKey>('all');
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<BookingListItem[]>([]);
@@ -314,6 +316,12 @@ export default function ManagerBookingsPage() {
   const pageSize = 10;
 
   useEffect(() => {
+    getMe()
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, []);
+
+  useEffect(() => {
     const id = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 400);
     return () => window.clearTimeout(id);
   }, [searchInput]);
@@ -322,11 +330,11 @@ export default function ManagerBookingsPage() {
     let cancelled = false;
     void (async () => {
       try {
-        const hotels = await getManagerHotels(1, 100);
+        const hotels = await getHotels(1, 100);
         const map = new Map<string, string>();
         for (const h of hotels.items) {
           try {
-            const rt = await getHotelRoomTypes(h.id, 1, 200);
+            const rt = await getHotelRoomTypes(h.id, 1, 100);
             for (const r of rt.items) map.set(r.id, r.name);
           } catch {
             /* skip property */
@@ -348,7 +356,9 @@ export default function ManagerBookingsPage() {
     setMetricsLoading(true);
     setMetricsError(null);
     try {
-      const m = await fetchHotelBookingsMetrics();
+      const isAdmin = user?.role === 'ADMIN';
+      console.log('isAdmin', isAdmin);
+      const m = await fetchHotelBookingsMetrics(isAdmin);
       setMetrics(m);
     } catch (e) {
       setMetrics(EMPTY_METRICS);
@@ -356,7 +366,7 @@ export default function ManagerBookingsPage() {
     } finally {
       setMetricsLoading(false);
     }
-  }, [t]);
+  }, [t, user?.role]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -413,8 +423,10 @@ export default function ManagerBookingsPage() {
   }, [load, loadKey]);
 
   useEffect(() => {
-    void loadMetrics();
-  }, [loadMetrics, loadKey]);
+    if (user) {
+      void loadMetrics();
+    }
+  }, [loadMetrics, loadKey, user]);
 
   useEffect(() => {
     setPage(1);
@@ -520,6 +532,7 @@ export default function ManagerBookingsPage() {
           </Typography>
         </Box>
         <Button
+          disabled
           component={Link}
           href="/traveler/search"
           variant="contained"
@@ -976,7 +989,9 @@ export default function ManagerBookingsPage() {
         onClose={handleMenuClose}
         slotProps={{ paper: { sx: { minWidth: 220, borderRadius: 2, mt: 0.5 } } }}
       >
-        {menuBooking?.can_register_check_in ? (
+        {menuBooking &&
+        (menuBooking.can_register_check_in ||
+          (user?.role === 'ADMIN' && bookingHasActionMenu(menuBooking))) ? (
           <MenuItem
             onClick={() => {
               setCheckInTarget(menuBooking);
@@ -989,7 +1004,9 @@ export default function ManagerBookingsPage() {
             {t('manager.bookings.actions.registerCheckIn')}
           </MenuItem>
         ) : null}
-        {menuBooking?.can_register_check_out ? (
+        {menuBooking &&
+        (menuBooking.can_register_check_out ||
+          (user?.role === 'ADMIN' && bookingHasActionMenu(menuBooking))) ? (
           <MenuItem
             onClick={() => {
               setCheckOutTarget(menuBooking);

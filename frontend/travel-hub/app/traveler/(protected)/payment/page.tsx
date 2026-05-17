@@ -1454,7 +1454,7 @@ function PaymentPageContent() {
                   data-testid="traveler-payment-submit"
                   sx={{ textTransform: 'none', fontWeight: 700, py: 1.5, borderRadius: 2 }}
                 >
-                  🔒 {t('payment.payButton')} {formatPrice(displayTotal)}
+                  🔒 {t('payment.payButton', { amount: formatPrice(displayTotal) })}
                 </Button>
 
                 <Typography

@@ -31,6 +31,8 @@ import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 
+import LanguageDropdown from '@/components/i18n/LanguageDropdown';
+
 import AuthGuard from '../components/AuthGuard';
 
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
@@ -111,9 +113,9 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   }
 
   function formatRole(role: string) {
-    if (role === 'ADMIN') return 'Super Admin';
-    if (role === 'HOTEL') return 'Hotel Partner';
-    if (role === 'AGENCY') return 'Agency Partner';
+    if (role === 'ADMIN') return t('manager.roles.superAdmin');
+    if (role === 'HOTEL') return t('manager.roles.hotelPartner');
+    if (role === 'AGENCY') return t('manager.roles.agencyPartner');
     return role;
   }
 
@@ -262,8 +264,11 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               alignItems: 'center',
               px: 3,
               py: 2,
+              gap: 2,
             }}
           >
+            <LanguageDropdown />
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
               <Box
                 sx={{
@@ -280,15 +285,15 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                   fontSize: '0.9rem',
                 }}
               >
-                {user ? formatDisplayName(user.email).slice(0, 2) : 'UA'}
+                {user ? formatDisplayName(user.email).slice(0, 2) : t('manager.fallback.initials')}
               </Box>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
                 <Typography sx={{ fontWeight: 700, color: th.text.primary, fontSize: '0.95rem' }}>
-                  {user ? formatDisplayName(user.email) : 'TravelHub Admin'}
+                  {user ? formatDisplayName(user.email) : t('manager.fallback.name')}
                 </Typography>
                 <Typography sx={{ fontWeight: 600, color: th.text.secondary, fontSize: '0.68rem' }}>
-                  {user ? formatRole(user.role) : 'Super Admin'}
+                  {user ? formatRole(user.role) : t('manager.fallback.role')}
                 </Typography>
               </Box>
             </Box>

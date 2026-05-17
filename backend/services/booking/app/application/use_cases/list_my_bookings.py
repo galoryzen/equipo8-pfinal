@@ -240,10 +240,16 @@ class ListMyBookingsUseCase:
     async def execute_admin(
         self,
         status: BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        room_type_id: UUID | None = None,
+        q: str | None = None,
         page: int = 1,
         page_size: int = 10,
     ) -> PaginatedBookingListOut:
-        bookings, total = await self._repo.list_all(status=status, page=page, page_size=page_size)
+        bookings, total = await self._repo.list_all(
+            status=status, date_from=date_from, date_to=date_to, room_type_id=room_type_id, q=q, page=page, page_size=page_size
+        )
         items = await self._enrich(bookings, for_hotel_portal=False, today=self._clock())
         total_pages = max(1, -(-total // page_size))
         return PaginatedBookingListOut(
@@ -300,4 +306,26 @@ class ListMyBookingsUseCase:
             page_size=None,
         )
         items = await self._enrich(bookings, for_hotel_portal=True, today=today)
+        return _hotel_bookings_history_csv(items)
+
+    async def execute_admin_export_csv(
+        self,
+        *,
+        status: BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        room_type_id: UUID | None = None,
+        q: str | None = None,
+    ) -> bytes:
+        today = self._clock()
+        bookings, _total = await self._repo.list_all(
+            status=status,
+            date_from=date_from,
+            date_to=date_to,
+            room_type_id=room_type_id,
+            q=q,
+            page=1,
+            page_size=None,
+        )
+        items = await self._enrich(bookings, for_hotel_portal=False, today=today)
         return _hotel_bookings_history_csv(items)
