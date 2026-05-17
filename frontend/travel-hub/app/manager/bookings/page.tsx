@@ -520,6 +520,7 @@ export default function ManagerBookingsPage() {
           </Typography>
         </Box>
         <Button
+          disabled
           component={Link}
           href="/traveler/search"
           variant="contained"
