@@ -4,12 +4,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.adapters.inbound.api.dependencies import (
+    get_admin_bookings_metrics_use_case,
     get_admin_hotel_revenue_report_use_case,
     get_current_user_info,
     get_hotel_bookings_metrics_use_case,
     get_hotel_dashboard_metrics_use_case,
     get_hotel_revenue_report_use_case,
 )
+from app.application.use_cases.get_admin_bookings_metrics import GetAdminBookingsMetricsUseCase
 from app.application.use_cases.get_admin_hotel_revenue_report import GetAdminHotelRevenueReportUseCase
 from app.application.use_cases.get_hotel_bookings_metrics import GetHotelBookingsMetricsUseCase
 from app.application.use_cases.get_hotel_dashboard_metrics import GetHotelDashboardMetricsUseCase
@@ -125,6 +127,31 @@ async def get_hotel_bookings_tab_metrics(
         ) from e
 
     payload = await use_case.execute(hotel_id=resolved_hotel_id)
+    return HotelBookingsMetricsOut.model_validate(payload)
+
+
+@router.get(
+    "/admin/bookings-metrics",
+    response_model=HotelBookingsMetricsOut,
+    response_model_by_alias=True,
+)
+async def get_admin_bookings_metrics(
+    user_info: dict = Depends(get_current_user_info),
+    use_case: GetAdminBookingsMetricsUseCase = Depends(get_admin_bookings_metrics_use_case),
+):
+    """Aggregates across all hotels for admin Bookings tab."""
+    role = user_info.get("role")
+    uid = user_info.get("user_id")
+    if not uid:
+        raise HTTPException(status_code=401, detail="user_id es requerido")
+
+    if role != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo administradores pueden acceder",
+        )
+
+    payload = await use_case.execute()
     return HotelBookingsMetricsOut.model_validate(payload)
 
 

@@ -53,8 +53,11 @@ export interface HotelBookingsMetrics {
 }
 
 /** Hotel-wide aggregates for the manager Bookings stat cards (not paginated). */
-export async function fetchHotelBookingsMetrics(): Promise<HotelBookingsMetrics> {
-  const res = await fetch(`${API_URL}/api/v1/booking/dashboard/bookings-metrics`, {
+export async function fetchHotelBookingsMetrics(isAdmin = false): Promise<HotelBookingsMetrics> {
+  const endpoint = isAdmin
+    ? `${API_URL}/api/v1/booking/dashboard/admin/bookings-metrics`
+    : `${API_URL}/api/v1/booking/dashboard/bookings-metrics`;
+  const res = await fetch(endpoint, {
     credentials: 'include',
   });
   if (!res.ok) {

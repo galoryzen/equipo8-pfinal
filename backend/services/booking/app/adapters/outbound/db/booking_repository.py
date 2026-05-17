@@ -265,6 +265,61 @@ class SqlAlchemyBookingRepository(BookingRepository):
             "cancelled_count": int(row[3]),
         }
 
+    async def count_admin_bookings_metrics(self, *, today: date) -> dict[str, int]:
+        excluded_checkin = (
+            BookingStatus.CANCELLED,
+            BookingStatus.REJECTED,
+            BookingStatus.EXPIRED,
+            BookingStatus.CART,
+        )
+        stmt = select(
+            sa_func.coalesce(
+                sa_func.sum(case((Booking.status == BookingStatus.CONFIRMED, 1), else_=0)),
+                0,
+            ),
+            sa_func.coalesce(
+                sa_func.sum(
+                    case(
+                        (
+                            Booking.status.in_(
+                                (BookingStatus.PENDING_CONFIRMATION, BookingStatus.PENDING_PAYMENT)
+                            ),
+                            1,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
+            ),
+            sa_func.coalesce(
+                sa_func.sum(
+                    case(
+                        (
+                            and_(
+                                Booking.checkin == today,
+                                Booking.status != BookingStatus.CHECKED_OUT,
+                                Booking.status.not_in(excluded_checkin),
+                            ),
+                            1,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
+            ),
+            sa_func.coalesce(
+                sa_func.sum(case((Booking.status == BookingStatus.CANCELLED, 1), else_=0)),
+                0,
+            ),
+        ).select_from(Booking)
+        row = (await self._session.execute(stmt)).one()
+        return {
+            "confirmed_count": int(row[0]),
+            "pending_count": int(row[1]),
+            "check_ins_today_count": int(row[2]),
+            "cancelled_count": int(row[3]),
+        }
+
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         stmt = select(Booking).where(Booking.id == booking_id, Booking.user_id == user_id)
         result = await self._session.execute(stmt)

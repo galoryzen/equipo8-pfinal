@@ -75,6 +75,14 @@ class BookingRepository(ABC):
         """
 
     @abstractmethod
+    async def count_admin_bookings_metrics(self, *, today: date) -> dict[str, int]:
+        """Aggregate counts across all hotels for admin (not paginated).
+
+        Keys: ``confirmed_count``, ``pending_count``, ``check_ins_today_count``,
+        ``cancelled_count``.
+        """
+
+    @abstractmethod
     async def get_by_id_for_user(self, booking_id: UUID, user_id: UUID) -> Booking | None:
         """Return booking if it exists and belongs to user_id."""
 
