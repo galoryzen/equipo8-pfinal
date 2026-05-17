@@ -205,7 +205,10 @@
       "selectRoom": "Selecciona una habitación para continuar",
       "signInToReserve": "Iniciar sesión para reservar",
       "youWillNotBeChargedYet": "No se te cobrará todavía",
-      "reserve": "Reservar"
+      "reserve": "Reservar",
+      "discount": "Descuento",
+      "price": "Precio ",
+      "priceWithDiscount": "Precio con descuento "
     }
   },
   "roomCard": {

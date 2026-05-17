@@ -22,6 +22,7 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
 import NotFoundView from '@/components/NotFoundView';
@@ -39,9 +40,9 @@ interface PropertyDetailViewProps {
   guests?: number;
 }
 
-function formatReviewCount(count: number): string {
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}k reviews`;
-  return `${count} reviews`;
+function formatReviewCount(count: number, t: TFunction): string {
+  if (count >= 1000) return t('propertyCard.reviewsShort', { count: (count / 1000).toFixed(1) });
+  return t('propertyCard.reviews', { count });
 }
 
 function computeMinPrice(detail: PropertyDetail): number | null {
@@ -239,7 +240,7 @@ export default function PropertyDetailView({
                     color="text.secondary"
                     sx={{ textDecoration: 'underline', textUnderlineOffset: 2 }}
                   >
-                    ({formatReviewCount(detail.review_count)})
+                    ({formatReviewCount(detail.review_count, t)})
                   </Typography>
                 </Box>
               ) : (
