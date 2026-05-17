@@ -124,9 +124,7 @@ describe('ManagerNotificationsPage', () => {
   it('shows "No pending requests" in footer when total is zero', async () => {
     vi.mocked(fetchPendingConfirmationBookings).mockResolvedValue(makePaginated([]));
     renderWithI18n(<ManagerNotificationsPage />);
-    expect(
-      await screen.findByText(/No pending requests|Sin solicitudes pendientes/i),
-    ).toBeTruthy();
+    expect(await screen.findByText(/No pending requests|Sin solicitudes pendientes/i)).toBeTruthy();
   });
 
   it('shows showing range in footer when bookings exist', async () => {
