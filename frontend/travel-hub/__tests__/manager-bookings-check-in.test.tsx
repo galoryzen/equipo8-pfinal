@@ -21,6 +21,10 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('@/app/lib/api/auth', () => ({
+  getMe: vi.fn().mockResolvedValue({ email: 'test@example.com', role: 'HOTEL' }),
+}));
+
 vi.mock('@/app/lib/api/booking', async () => {
   const actual =
     await vi.importActual<typeof import('@/app/lib/api/booking')>('@/app/lib/api/booking');
@@ -324,21 +328,22 @@ describe('ManagerBookingsPage — hotel check-in', () => {
     expect(await screen.findByText('Other')).toBeTruthy();
     expect(screen.getByText('Zoe Cancelled')).toBeTruthy();
     expect(
-      screen.getByTestId('bookings-stat-confirmed').previousElementSibling?.textContent
+      (await screen.findByTestId('bookings-stat-confirmed')).previousElementSibling?.textContent
     ).toMatch(/confirmed|confirmadas/i);
-    expect(screen.getByTestId('bookings-stat-pending').previousElementSibling?.textContent).toMatch(
-      /pending|pendientes/i
-    );
     expect(
-      screen.getByTestId('bookings-stat-checkins-today').previousElementSibling?.textContent
+      (await screen.findByTestId('bookings-stat-pending')).previousElementSibling?.textContent
+    ).toMatch(/pending|pendientes/i);
+    expect(
+      (await screen.findByTestId('bookings-stat-checkins-today')).previousElementSibling
+        ?.textContent
     ).toMatch(/check-ins \(today\)|check-ins \(hoy\)/i);
     expect(
-      screen.getByTestId('bookings-stat-cancelled').previousElementSibling?.textContent
+      (await screen.findByTestId('bookings-stat-cancelled')).previousElementSibling?.textContent
     ).toMatch(/cancelled|canceladas/i);
-    expect(screen.getByTestId('bookings-stat-confirmed').textContent).toBe('1');
-    expect(screen.getByTestId('bookings-stat-pending').textContent).toBe('1');
-    expect(screen.getByTestId('bookings-stat-checkins-today').textContent).toBe('2');
-    expect(screen.getByTestId('bookings-stat-cancelled').textContent).toBe('1');
+    expect((await screen.findByTestId('bookings-stat-confirmed')).textContent).toBe('1');
+    expect((await screen.findByTestId('bookings-stat-pending')).textContent).toBe('1');
+    expect((await screen.findByTestId('bookings-stat-checkins-today')).textContent).toBe('2');
+    expect((await screen.findByTestId('bookings-stat-cancelled')).textContent).toBe('1');
   });
 
   it('uses fetchHotelBookingsMetrics for stat card values, not row counts on the current page', async () => {
