@@ -226,7 +226,7 @@ export default function PriceCard({
 
       {/* Guests */}
       <TextField
-        label="Guests"
+        label={t('search.guests')}
         type="number"
         size="small"
         fullWidth
@@ -325,7 +325,7 @@ export default function PriceCard({
             {discountPercent != null && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2" color="text.secondary">
-                  Discount
+                  {t('propertyDetail.priceCard.discount')}
                 </Typography>
                 <Typography variant="body2" color="success.main" fontWeight={700}>
                   {Math.round(discountPercent)}%
@@ -359,11 +359,12 @@ export default function PriceCard({
                       textDecoration: 'line-through',
                     }}
                   >
-                    Price {formatPrice(Math.round(originalRoomTotal + taxes + serviceFee))}
+                    {t('propertyDetail.priceCard.price')}
+                    {formatPrice(Math.round(originalRoomTotal + taxes + serviceFee))}
                   </Typography>
                 )}
                 <Typography variant="body2" fontWeight={700}>
-                  {originalRoomTotal != null ? 'Price with discount ' : ''}
+                  {originalRoomTotal != null ? t('propertyDetail.priceCard.priceWithDiscount') : ''}
                   {formatPrice(Math.round(total))}
                 </Typography>
               </Box>

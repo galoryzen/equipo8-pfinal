@@ -200,7 +200,10 @@
       "selectRoom": "Select a room below to continue",
       "signInToReserve": "Sign in to Reserve",
       "youWillNotBeChargedYet": "You won't be charged yet",
-      "reserve": "Reserve"
+      "reserve": "Reserve",
+      "discount": "Discount",
+      "price": "Price ",
+      "priceWithDiscount": "Price with discount "
     }
   },
   "roomCard": {
