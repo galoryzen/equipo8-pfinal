@@ -58,7 +58,7 @@ export const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                 </span>
               </div>
               <h3 className="truncate text-2xl font-extrabold leading-tight text-slate-800">
-                Reservation Request: {booking.propertyName}
+                {t('manager.reservationRequest', { propertyName: booking.propertyName })}
               </h3>
               <p className="mt-2 text-sm text-slate-500">
                 {booking.guestName} · {booking.checkin} - {booking.checkout} ({booking.nights}{' '}
