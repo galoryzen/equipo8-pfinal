@@ -12,13 +12,21 @@ from app.application.exceptions import (
     RatePlanNotFoundError,
     RateUnavailableError,
 )
-from app.application.ports.outbound.rate_plan_repository import RatePlanRepository
+from app.application.ports.outbound.rate_plan_repository import (
+    EffectiveCancellationPolicy,
+    RatePlanRepository,
+)
 from app.application.use_cases.get_rate_plan_pricing import GetRatePlanPricingUseCase
 
 
 @pytest.fixture
 def mock_rate_plan_repo():
-    return AsyncMock(spec=RatePlanRepository)
+    repo = AsyncMock(spec=RatePlanRepository)
+    # Most tests don't care about the policy field; default to None so the
+    # use case skips the CancellationPolicyOut construction. Individual tests
+    # override this when asserting policy passthrough.
+    repo.get_effective_cancellation_policy.return_value = None
+    return repo
 
 
 def _row(day: date, price: Decimal, *, effective: Decimal | None = None, currency: str = "USD") -> dict:
@@ -164,3 +172,50 @@ class TestGetRatePlanPricingUseCase:
         # Per-night quantize-then-sum to avoid drift.
         assert result.nights[0].price == Decimal("83.33")
         assert result.subtotal == Decimal("166.66")
+
+    async def test_cancellation_policy_is_attached_when_repo_returns_one(self, mock_rate_plan_repo):
+        rate_plan_id = uuid4()
+        mock_rate_plan_repo.get_by_id.return_value = _active_plan()
+        mock_rate_plan_repo.get_pricing.return_value = [
+            _row(date(2026, 5, 1), Decimal("100.00")),
+        ]
+        policy_id = uuid4()
+        mock_rate_plan_repo.get_effective_cancellation_policy.return_value = (
+            EffectiveCancellationPolicy(
+                id=policy_id,
+                name="Flexible 24h",
+                type="FULL",
+                hours_limit=24,
+                refund_percent=100,
+            )
+        )
+
+        uc = GetRatePlanPricingUseCase(mock_rate_plan_repo)
+        result = await uc.execute(
+            rate_plan_id=rate_plan_id,
+            checkin=date(2026, 5, 1),
+            checkout=date(2026, 5, 2),
+        )
+
+        assert result.cancellation_policy is not None
+        assert result.cancellation_policy.id == policy_id
+        assert result.cancellation_policy.type == "FULL"
+        assert result.cancellation_policy.hours_limit == 24
+        assert result.cancellation_policy.refund_percent == 100
+
+    async def test_cancellation_policy_is_none_when_unconfigured(self, mock_rate_plan_repo):
+        # Default fixture already returns None — assert the field rather than the call.
+        rate_plan_id = uuid4()
+        mock_rate_plan_repo.get_by_id.return_value = _active_plan()
+        mock_rate_plan_repo.get_pricing.return_value = [
+            _row(date(2026, 5, 1), Decimal("100.00")),
+        ]
+
+        uc = GetRatePlanPricingUseCase(mock_rate_plan_repo)
+        result = await uc.execute(
+            rate_plan_id=rate_plan_id,
+            checkin=date(2026, 5, 1),
+            checkout=date(2026, 5, 2),
+        )
+
+        assert result.cancellation_policy is None

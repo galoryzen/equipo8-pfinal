@@ -13,12 +13,26 @@ class NightPrice:
 
 
 @dataclass(frozen=True)
+class CancellationPolicyInfo:
+    """The cancellation policy values to capture onto a booking at cart time.
+
+    ``type`` is the raw enum string (``FULL`` | ``PARTIAL`` | ``NON_REFUNDABLE``)
+    so it can be cast into the booking-side ``CancellationPolicyType`` enum.
+    """
+
+    type: str
+    hours_limit: int | None
+    refund_percent: int | None
+
+
+@dataclass(frozen=True)
 class PricingResult:
     rate_plan_id: UUID
     currency_code: str
     nights: list[NightPrice]
     subtotal: Decimal
     original_subtotal: Decimal | None = None
+    cancellation_policy: CancellationPolicyInfo | None = None
 
 
 class CatalogPricingPort(ABC):

@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.schemas.property import CancellationPolicyOut
+
 
 class NightPriceOut(BaseModel):
     day: date
@@ -20,3 +22,4 @@ class RatePlanPricingOut(BaseModel):
     taxes: Decimal
     service_fee: Decimal
     total: Decimal
+    cancellation_policy: CancellationPolicyOut | None = None
