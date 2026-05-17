@@ -10,7 +10,14 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) => {
+      if (key === 'manager.reservationRequest' && options?.propertyName != null) {
+        return `Reservation request: ${String(options.propertyName)}`;
+      }
+      return key;
+    },
+  }),
 }));
 
 const BASE_BOOKING = {
