@@ -121,13 +121,13 @@ export default function ManagerNotificationsPage(): React.ReactNode {
   const handleConfirmClick = async (id: string) => {
     try {
       await confirmBooking(id);
-      setSnack({ open: true, message: 'Booking confirmed successfully', severity: 'success' });
+      setSnack({ open: true, message: t('manager.confirmSuccess'), severity: 'success' });
       const remaining = bookings.filter((b) => b.id !== id).length;
       loadPage(remaining === 0 && page > 1 ? page - 1 : page);
     } catch (err) {
       setSnack({
         open: true,
-        message: err instanceof Error ? err.message : 'Could not confirm booking',
+        message: err instanceof Error ? err.message : t('manager.confirmError'),
         severity: 'error',
       });
     }
@@ -136,13 +136,13 @@ export default function ManagerNotificationsPage(): React.ReactNode {
   const handleDecline = async (id: string) => {
     try {
       await rejectBooking(id);
-      setSnack({ open: true, message: 'Booking declined successfully', severity: 'success' });
+      setSnack({ open: true, message: t('manager.declineSuccess'), severity: 'success' });
       const remaining = bookings.filter((b) => b.id !== id).length;
       loadPage(remaining === 0 && page > 1 ? page - 1 : page);
     } catch (err) {
       setSnack({
         open: true,
-        message: err instanceof Error ? err.message : 'Could not decline booking',
+        message: err instanceof Error ? err.message : t('manager.declineError'),
         severity: 'error',
       });
     }
@@ -208,7 +208,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
                   color: tokens.brand.accentOrangeFg,
                 }}
               >
-                Pending Requests
+                {t('manager.pendingRequests')}
               </Typography>
               <Box
                 aria-hidden="true"
@@ -229,7 +229,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
               component="p"
               sx={{ fontSize: '0.875rem', fontWeight: 600, color: tokens.text.muted }}
             >
-              Cargando...
+              {t('manager.loadingNotifications')}
             </Typography>
           )}
           {error && (
@@ -297,8 +297,8 @@ export default function ManagerNotificationsPage(): React.ReactNode {
       >
         <Typography component="span" sx={{ color: tokens.text.secondary, fontWeight: 500 }}>
           {total > 0
-            ? `Showing ${start}–${end} of ${total} pending requests`
-            : 'No pending requests'}
+            ? t('manager.notificationsPagination', { from: start, to: end, total })
+            : t('manager.notificationsPaginationEmpty')}
         </Typography>
 
         <Stack direction="row" spacing={1.5}>
@@ -320,7 +320,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
               },
             }}
           >
-            Previous
+            {t('manager.previous')}
           </Button>
           <Button
             type="button"
@@ -340,7 +340,7 @@ export default function ManagerNotificationsPage(): React.ReactNode {
               },
             }}
           >
-            Next
+            {t('manager.next')}
           </Button>
         </Stack>
       </Box>

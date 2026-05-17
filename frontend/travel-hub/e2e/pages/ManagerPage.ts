@@ -52,7 +52,11 @@ export class ManagerPage extends BasePage {
     const title = firstCard.locator('h3');
     if ((await title.count()) > 0) {
       const text = await title.textContent();
-      return text?.replace('Reservation Request: ', '') || null;
+      return (
+        text
+          ?.replace(/^Reservation [Rr]equest:\s*/i, '')
+          ?.replace(/^Solicitud de reserva:\s*/i, '') || null
+      );
     }
     return null;
   }
