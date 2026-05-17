@@ -30,9 +30,15 @@ class BookingRepository(ABC):
 
     @abstractmethod
     async def list_all(
-        self, status: str | None = None, page: int = 1, page_size: int = 10
+        self,
+        status: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        q: str | None = None,
+        page: int = 1,
+        page_size: int = 10,
     ) -> tuple[list[Booking], int]:
-        """Return (bookings_page, total_count) for all bookings, optionally filtered by status."""
+        """Return (bookings_page, total_count) for all bookings, optionally filtered by status, dates, and search query."""
 
     @abstractmethod
     async def list_by_hotel(
@@ -50,9 +56,9 @@ class BookingRepository(ABC):
         """Return (bookings_page, total_count) for a hotel's properties.
 
         Optional filters apply only when provided (AND semantics).
-        Stay dates use overlap semantics when both ``date_from`` and ``date_to``
-        are set: ``checkin <= date_to`` and ``checkout >= date_from``.
-        When only one bound is set, it constrains the corresponding edge.
+        Stay dates use strict range semantics when both ``date_from`` and ``date_to``
+        are set: ``checkin >= date_from`` and ``checkout <= date_to``.
+        Only bookings that fall completely within the date range are returned.
         ``page_size`` None disables pagination (all matching rows).
         """
 

@@ -240,10 +240,15 @@ class ListMyBookingsUseCase:
     async def execute_admin(
         self,
         status: BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        q: str | None = None,
         page: int = 1,
         page_size: int = 10,
     ) -> PaginatedBookingListOut:
-        bookings, total = await self._repo.list_all(status=status, page=page, page_size=page_size)
+        bookings, total = await self._repo.list_all(
+            status=status, date_from=date_from, date_to=date_to, q=q, page=page, page_size=page_size
+        )
         items = await self._enrich(bookings, for_hotel_portal=False, today=self._clock())
         total_pages = max(1, -(-total // page_size))
         return PaginatedBookingListOut(

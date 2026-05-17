@@ -78,7 +78,14 @@ async def list_bookings(
     user_id = user_info.get("user_id")
     q_trim = q.strip() if q else None
     if role == "ADMIN":
-        return await use_case.execute_admin(status=booking_status, page=page, page_size=page_size)
+        return await use_case.execute_admin(
+            status=booking_status,
+            date_from=date_from,
+            date_to=date_to,
+            q=q_trim,
+            page=page,
+            page_size=page_size,
+        )
     elif role in ("HOTEL", "MANAGER"):
         hotel_id_str = user_info.get("hotel_id")
         if not hotel_id_str:

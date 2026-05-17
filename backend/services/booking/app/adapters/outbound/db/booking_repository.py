@@ -83,11 +83,45 @@ class SqlAlchemyBookingRepository(BookingRepository):
         return result.scalars().one_or_none()
 
     async def list_all(
-        self, status: str | None = None, page: int = 1, page_size: int = 10
+        self,
+        status: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        q: str | None = None,
+        page: int = 1,
+        page_size: int = 10,
     ) -> tuple[list[Booking], int]:
         conditions = []
         if status:
             conditions.append(Booking.status == status)
+        if date_from is not None:
+            conditions.append(Booking.checkin >= date_from)
+        if date_to is not None:
+            conditions.append(Booking.checkout <= date_to)
+
+        q_trim = (q or "").strip()
+        if q_trim:
+            pat = _escape_ilike_pattern(q_trim)
+            guest_pred = or_(
+                Guest.full_name.ilike(pat, escape="\\"),
+                and_(Guest.email.isnot(None), Guest.email.ilike(pat, escape="\\")),
+            )
+            guest_exists = exists(
+                select(1).select_from(Guest).where(Guest.booking_id == Booking.id, guest_pred)
+            )
+            id_text = Booking.id.cast(String)
+            hex_compact = sa_func.replace(id_text, "-", "")
+            id_search = or_(
+                guest_exists,
+                id_text.ilike(pat, escape="\\"),
+                hex_compact.ilike(pat, escape="\\"),
+            )
+            ref_core = q_trim.lstrip("#").strip().upper()
+            if ref_core:
+                ref_pat = _escape_ilike_pattern(ref_core)
+                suffix = sa_func.upper(sa_func.right(hex_compact, 8))
+                id_search = or_(id_search, suffix.ilike(ref_pat, escape="\\"))
+            conditions.append(id_search)
 
         count_stmt = select(sa_func.count(Booking.id))
         if conditions:
@@ -123,9 +157,9 @@ class SqlAlchemyBookingRepository(BookingRepository):
         if status is not None:
             conditions.append(Booking.status == status)
         if date_from is not None:
-            conditions.append(Booking.checkout >= date_from)
+            conditions.append(Booking.checkin >= date_from)
         if date_to is not None:
-            conditions.append(Booking.checkin <= date_to)
+            conditions.append(Booking.checkout <= date_to)
         if room_type_id is not None:
             conditions.append(Booking.room_type_id == room_type_id)
 
