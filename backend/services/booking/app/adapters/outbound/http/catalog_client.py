@@ -14,6 +14,7 @@ from app.application.exceptions import (
 )
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
 from app.application.ports.outbound.catalog_pricing_port import (
+    CancellationPolicyInfo,
     CatalogPricingPort,
     NightPrice,
     PricingResult,
@@ -102,6 +103,16 @@ class HttpCatalogClient(CatalogInventoryPort, CatalogPricingPort):
             for n in body["nights"]
         ]
         original_subtotal = body.get("original_subtotal")
+        policy_raw = body.get("cancellation_policy")
+        policy = (
+            CancellationPolicyInfo(
+                type=policy_raw["type"],
+                hours_limit=policy_raw.get("hours_limit"),
+                refund_percent=policy_raw.get("refund_percent"),
+            )
+            if policy_raw is not None
+            else None
+        )
         return PricingResult(
             rate_plan_id=UUID(body["rate_plan_id"]),
             currency_code=body["currency_code"],
@@ -110,6 +121,7 @@ class HttpCatalogClient(CatalogInventoryPort, CatalogPricingPort):
             original_subtotal=(
                 Decimal(str(original_subtotal)) if original_subtotal is not None else None
             ),
+            cancellation_policy=policy,
         )
 
     async def _post(

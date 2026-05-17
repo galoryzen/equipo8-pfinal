@@ -7,9 +7,20 @@ from sqlalchemy import func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.ports.outbound.rate_plan_repository import (
+    EffectiveCancellationPolicy,
+)
+from app.application.ports.outbound.rate_plan_repository import (
     RatePlanRepository as RatePlanRepositoryPort,
 )
-from app.domain.models import DiscountType, Promotion, RateCalendar, RatePlan
+from app.domain.models import (
+    CancellationPolicy,
+    DiscountType,
+    Promotion,
+    Property,
+    RateCalendar,
+    RatePlan,
+    RoomType,
+)
 
 
 class SqlAlchemyRatePlanRepository(RatePlanRepositoryPort):
@@ -20,6 +31,37 @@ class SqlAlchemyRatePlanRepository(RatePlanRepositoryPort):
         stmt = select(RatePlan).where(RatePlan.id == rate_plan_id)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_effective_cancellation_policy(
+        self, rate_plan_id: UUID
+    ) -> EffectiveCancellationPolicy | None:
+        # Prefer the policy directly attached to the rate plan.
+        rp_stmt = (
+            select(CancellationPolicy)
+            .join(RatePlan, RatePlan.cancellation_policy_id == CancellationPolicy.id)
+            .where(RatePlan.id == rate_plan_id)
+        )
+        policy = (await self._session.execute(rp_stmt)).scalar_one_or_none()
+        if policy is None:
+            # Fall back to the property's default policy.
+            prop_stmt = (
+                select(CancellationPolicy)
+                .join(Property, Property.default_cancellation_policy_id == CancellationPolicy.id)
+                .join(RoomType, RoomType.property_id == Property.id)
+                .join(RatePlan, RatePlan.room_type_id == RoomType.id)
+                .where(RatePlan.id == rate_plan_id)
+            )
+            policy = (await self._session.execute(prop_stmt)).scalar_one_or_none()
+        if policy is None:
+            return None
+        ptype = policy.type.value if hasattr(policy.type, "value") else str(policy.type)
+        return EffectiveCancellationPolicy(
+            id=policy.id,
+            name=policy.name,
+            type=ptype,
+            hours_limit=policy.hours_limit,
+            refund_percent=policy.refund_percent,
+        )
 
     async def get_pricing(
         self,

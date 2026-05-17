@@ -17,6 +17,7 @@ from app.application.exceptions import (
 )
 from app.application.ports.outbound.catalog_inventory_port import CatalogInventoryPort
 from app.application.ports.outbound.catalog_pricing_port import (
+    CancellationPolicyInfo,
     CatalogPricingPort,
     NightPrice,
     PricingResult,
@@ -466,3 +467,64 @@ class TestCreateCartBookingUseCase:
         assert len(out.nights_breakdown) == 3
         assert out.nights_breakdown[1].day == date(2026, 6, 2)
         assert out.nights_breakdown[1].price == Decimal("150.00")
+
+    async def test_cancellation_policy_from_pricing_is_snapshotted_onto_booking(self):
+        """Catalog's policy must land verbatim on the booking row so cancellation
+        eligibility is evaluated against the rate at cart-creation time, not
+        whatever the hotel may change to later."""
+        captured: list[Booking] = []
+
+        async def fake_create(b: Booking) -> Booking:
+            captured.append(b)
+            return b
+
+        repo = AsyncMock()
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        repo.create.side_effect = fake_create
+        catalog = _catalog_mock()
+        pricing_result = PricingResult(
+            rate_plan_id=RATE_PLAN_ID,
+            currency_code="USD",
+            nights=[
+                NightPrice(day=CHECKIN, price=Decimal("100.00")),
+                NightPrice(day=date(2026, 6, 2), price=Decimal("100.00")),
+                NightPrice(day=date(2026, 6, 3), price=Decimal("100.00")),
+            ],
+            subtotal=Decimal("300.00"),
+            cancellation_policy=CancellationPolicyInfo(
+                type="PARTIAL", hours_limit=48, refund_percent=50
+            ),
+        )
+        pricing = _pricing_mock(pricing_result)
+
+        uc = CreateCartBookingUseCase(repo, catalog, pricing)
+        await uc.execute(user_id=USER_ID, payload=_payload())
+
+        booking = captured[0]
+        assert booking.policy_type_applied == CancellationPolicyType.PARTIAL
+        assert booking.policy_hours_limit_applied == 48
+        assert booking.policy_refund_percent_applied == 50
+
+    async def test_falls_back_to_full_when_catalog_returns_no_policy(self):
+        captured: list[Booking] = []
+
+        async def fake_create(b: Booking) -> Booking:
+            captured.append(b)
+            return b
+
+        repo = AsyncMock()
+        repo.find_active_cart.return_value = None
+        repo.find_any_active_cart_for_user.return_value = None
+        repo.create.side_effect = fake_create
+        catalog = _catalog_mock()
+        # _pricing_mock() default has cancellation_policy=None.
+        pricing = _pricing_mock()
+
+        uc = CreateCartBookingUseCase(repo, catalog, pricing)
+        await uc.execute(user_id=USER_ID, payload=_payload())
+
+        booking = captured[0]
+        assert booking.policy_type_applied == CancellationPolicyType.FULL
+        assert booking.policy_hours_limit_applied is None
+        assert booking.policy_refund_percent_applied is None

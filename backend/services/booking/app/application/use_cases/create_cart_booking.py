@@ -108,6 +108,22 @@ class CreateCartBookingUseCase:
             for night in pricing_result.nights
         ]
 
+        # Snapshot the cancellation policy onto the booking at cart creation —
+        # later changes to the catalog policy must not retroactively affect
+        # existing bookings (commercial non-waiver). When the catalog has no
+        # policy configured at all, fall back to FULL/no-time-limit (legacy
+        # default); evaluate_cancellation_policy still enforces NON_REFUNDABLE
+        # and any deadlines the catalog returns.
+        policy = pricing_result.cancellation_policy
+        if policy is not None:
+            policy_type = CancellationPolicyType(policy.type)
+            policy_hours = policy.hours_limit
+            policy_refund_percent = policy.refund_percent
+        else:
+            policy_type = _DEFAULT_POLICY
+            policy_hours = None
+            policy_refund_percent = None
+
         booking = Booking(
             id=uuid.uuid4(),
             user_id=user_id,
@@ -122,9 +138,9 @@ class CreateCartBookingUseCase:
             room_type_id=payload.room_type_id,
             rate_plan_id=payload.rate_plan_id,
             unit_price=avg_unit_price,
-            policy_type_applied=_DEFAULT_POLICY,
-            policy_hours_limit_applied=None,
-            policy_refund_percent_applied=None,
+            policy_type_applied=policy_type,
+            policy_hours_limit_applied=policy_hours,
+            policy_refund_percent_applied=policy_refund_percent,
             inventory_released=False,  # hold is live in Catalog; reconciler flips on release
             guests_count=payload.guests_count,
             nightly_breakdown=nightly_breakdown_json,

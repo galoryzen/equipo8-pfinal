@@ -10,6 +10,7 @@ from app.application.exceptions import (
     RateUnavailableError,
 )
 from app.application.ports.outbound.rate_plan_repository import RatePlanRepository
+from app.schemas.property import CancellationPolicyOut
 from app.schemas.rate_plan import NightPriceOut, RatePlanPricingOut
 
 _CENT = Decimal("0.01")
@@ -75,6 +76,20 @@ class GetRatePlanPricingUseCase:
 
         subtotal_q = _q(subtotal)
         taxes, service_fee = compute_fees(subtotal_q)
+
+        policy = await self._repo.get_effective_cancellation_policy(rate_plan_id)
+        policy_out = (
+            CancellationPolicyOut(
+                id=policy.id,
+                name=policy.name,
+                type=policy.type,
+                hours_limit=policy.hours_limit,
+                refund_percent=policy.refund_percent,
+            )
+            if policy is not None
+            else None
+        )
+
         return RatePlanPricingOut(
             rate_plan_id=rate_plan_id,
             currency_code=currency_code,
@@ -84,4 +99,5 @@ class GetRatePlanPricingUseCase:
             taxes=taxes,
             service_fee=service_fee,
             total=subtotal_q + taxes + service_fee,
+            cancellation_policy=policy_out,
         )
