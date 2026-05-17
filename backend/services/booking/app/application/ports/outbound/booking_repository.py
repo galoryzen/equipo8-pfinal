@@ -37,9 +37,12 @@ class BookingRepository(ABC):
         room_type_id: UUID | None = None,
         q: str | None = None,
         page: int = 1,
-        page_size: int = 10,
+        page_size: int | None = 10,
     ) -> tuple[list[Booking], int]:
-        """Return (bookings_page, total_count) for all bookings, optionally filtered by status, dates, room type, and search query."""
+        """Return (bookings_page, total_count) for all bookings, optionally filtered by status, dates, room type, and search query.
+
+        ``page_size`` None disables pagination (all matching rows).
+        """
 
     @abstractmethod
     async def list_by_hotel(

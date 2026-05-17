@@ -90,7 +90,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
         room_type_id: UUID | None = None,
         q: str | None = None,
         page: int = 1,
-        page_size: int = 10,
+        page_size: int | None = 10,
     ) -> tuple[list[Booking], int]:
         conditions = []
         if status:
@@ -134,7 +134,9 @@ class SqlAlchemyBookingRepository(BookingRepository):
         stmt = select(Booking)
         if conditions:
             stmt = stmt.where(*conditions)
-        stmt = stmt.order_by(Booking.checkin.desc()).offset((page - 1) * page_size).limit(page_size)
+        stmt = stmt.order_by(Booking.checkin.desc())
+        if page_size is not None:
+            stmt = stmt.offset((page - 1) * page_size).limit(page_size)
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
 

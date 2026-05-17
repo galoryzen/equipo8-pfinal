@@ -307,3 +307,25 @@ class ListMyBookingsUseCase:
         )
         items = await self._enrich(bookings, for_hotel_portal=True, today=today)
         return _hotel_bookings_history_csv(items)
+
+    async def execute_admin_export_csv(
+        self,
+        *,
+        status: BookingStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        room_type_id: UUID | None = None,
+        q: str | None = None,
+    ) -> bytes:
+        today = self._clock()
+        bookings, _total = await self._repo.list_all(
+            status=status,
+            date_from=date_from,
+            date_to=date_to,
+            room_type_id=room_type_id,
+            q=q,
+            page=1,
+            page_size=None,
+        )
+        items = await self._enrich(bookings, for_hotel_portal=False, today=today)
+        return _hotel_bookings_history_csv(items)
