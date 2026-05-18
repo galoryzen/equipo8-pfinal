@@ -427,9 +427,13 @@ export default function ManagerReportsPage() {
                     borderRadius: 2,
                     textTransform: 'none',
                     fontWeight: 700,
-                    bgcolor: tokens.brand.accentOrange,
-                    color: '#111827',
-                    '&:hover': { bgcolor: tokens.brand.accentOrange, filter: 'brightness(0.95)' },
+                    bgcolor: tokens.brand.accentOrangeSoft,
+                    color: tokens.brand.accentOrangeFg,
+                    '&:hover': {
+                      bgcolor: tokens.brand.accentOrange,
+                      filter: 'brightness(0.95)',
+                      color: 'white',
+                    },
                   }}
                 >
                   {t('manager.reports.actions.generate')}
