@@ -96,9 +96,9 @@ class SqlAlchemyBookingRepository(BookingRepository):
         if status:
             conditions.append(Booking.status == status)
         if date_from is not None:
-            conditions.append(Booking.checkin >= date_from)
+            conditions.append(Booking.created_at >= date_from)
         if date_to is not None:
-            conditions.append(Booking.checkout <= date_to)
+            conditions.append(Booking.created_at <= date_to)
         if room_type_id is not None:
             conditions.append(Booking.room_type_id == room_type_id)
 
@@ -162,9 +162,9 @@ class SqlAlchemyBookingRepository(BookingRepository):
         if status is not None:
             conditions.append(Booking.status == status)
         if date_from is not None:
-            conditions.append(Booking.checkin >= date_from)
+            conditions.append(Booking.created_at >= date_from)
         if date_to is not None:
-            conditions.append(Booking.checkout <= date_to)
+            conditions.append(Booking.created_at <= date_to)
         if room_type_id is not None:
             conditions.append(Booking.room_type_id == room_type_id)
 
@@ -473,7 +473,7 @@ class SqlAlchemyBookingRepository(BookingRepository):
 
         revenue_stmt = select(sa_func.coalesce(sa_func.sum(Booking.total_amount), Decimal("0"))).where(
             Booking.property_id == property_id,
-            Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN)),
+            Booking.status.in_((BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT)),
             Booking.created_at >= month_start,
         )
         revenue_result = await self._session.execute(revenue_stmt)

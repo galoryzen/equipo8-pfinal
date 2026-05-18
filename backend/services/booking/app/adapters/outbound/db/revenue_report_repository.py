@@ -44,8 +44,8 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               SELECT b.id, b.checkin, b.checkout, b.currency_code, b.total_amount
               FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
-                AND b.status IN ('PENDING_CONFIRMATION', 'CHECKED_IN', 'CHECKED_OUT')
-                AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
+                AND b.status IN ('PENDING_CONFIRMATION', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT')
+                AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
             ),
             daily_occupied AS (
               SELECT eb.checkin::date AS day, COUNT(*)::float AS occupied_units
@@ -150,12 +150,12 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
                 AND rt.status = 'ACTIVE'
             ),
             eligible_bookings AS (
-              -- Eje temporal único para trends: fecha de check-in.
-              SELECT b.id, b.checkin::date AS day, b.total_amount
+              -- Eje temporal único para trends: fecha de creación de la reserva.
+              SELECT b.id, b.created_at::date AS day, b.total_amount
               FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
-                AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
-                AND b.status IN ('PENDING_CONFIRMATION', 'CHECKED_IN', 'CHECKED_OUT')
+                AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
+                AND b.status IN ('PENDING_CONFIRMATION', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT')
             ),
             daily_revenue AS (
               SELECT
@@ -244,7 +244,7 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               WHERE p.hotel_id = CAST(:hotel_id AS uuid)
             ),
             eligible_bookings AS (
-              -- Fuente de revenue: reservas pending, checked-in o checked-out en la ventana.
+              -- Fuente de revenue: reservas pending, confirmed, checked-in o checked-out en la ventana.
               SELECT
                 b.id,
                 b.total_amount,
@@ -252,8 +252,8 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
                 b.room_type_id
               FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
-                AND b.status IN ('PENDING_CONFIRMATION', 'CHECKED_IN', 'CHECKED_OUT')
-                AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
+                AND b.status IN ('PENDING_CONFIRMATION', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT')
+                AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
             )
             SELECT
               COALESCE(rt.name, 'Unknown') AS room_type,

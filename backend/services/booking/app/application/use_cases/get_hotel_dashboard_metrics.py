@@ -61,7 +61,7 @@ class GetHotelDashboardMetricsUseCase:
 
         metrics = build_dashboard_metrics(current, previous)
         active_cancellations = await self._repo.count_active_cancellations(
-            hotel_id, date_from, period_end_exclusive=period_end_exclusive
+            hotel_id, date_from, date_to
         )
         trends = await self._repo.list_booking_trends(hotel_id, date_from, date_to)
         activities = await self._repo.list_recent_activity(

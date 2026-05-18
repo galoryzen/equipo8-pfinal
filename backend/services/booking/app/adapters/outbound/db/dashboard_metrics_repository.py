@@ -37,8 +37,7 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
                 FROM booking.booking b
                 WHERE b.property_id IN (SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid))
                   AND b.status NOT IN ('CART', 'EXPIRED')
-                  AND b.checkin < CAST(:period_end_exclusive AS date)
-                  AND b.checkout > CAST(:date_from AS date)
+                  AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
               ) AS total_bookings,
               (
                 SELECT COALESCE(SUM(x.overlap_nights * x.qty), 0)::float
@@ -81,8 +80,7 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
                 INNER JOIN booking.booking b ON b.id = p.booking_id
                 WHERE b.property_id IN (SELECT pr.id FROM catalog.property pr WHERE pr.hotel_id = CAST(:hotel_id AS uuid))
                   AND p.status = 'CAPTURED'
-                  AND COALESCE(p.processed_at::date, p.created_at::date)
-                      BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
+                  AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
               ) AS revenue_captured,
               (
                 SELECT AVG(r.rating::float)
@@ -134,7 +132,7 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
         )
 
     async def count_active_cancellations(
-        self, hotel_id: UUID, date_from: date, *, period_end_exclusive: date
+        self, hotel_id: UUID, date_from: date, date_to: date
     ) -> int:
         sql = text(
             """
@@ -144,11 +142,10 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
               AND b.property_id IN (
                 SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid)
               )
-              AND b.checkin < CAST(:period_end_exclusive AS date)
-              AND b.checkout > CAST(:date_from AS date)
+              AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
             """
         )
-        row = (await self._session.execute(sql, {"hotel_id": str(hotel_id), "date_from": date_from, "period_end_exclusive": period_end_exclusive})).one()
+        row = (await self._session.execute(sql, {"hotel_id": str(hotel_id), "date_from": date_from, "date_to": date_to})).one()
         return int(row.cancelled_count or 0)
 
     async def list_booking_trends(
@@ -156,14 +153,14 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
     ) -> list[BookingTrendPoint]:
         sql = text(
             """
-            SELECT b.checkin::date AS day, COUNT(*)::int AS bookings
+            SELECT b.created_at::date AS day, COUNT(*)::int AS bookings
             FROM booking.booking b
             WHERE b.property_id IN (
               SELECT p.id FROM catalog.property p WHERE p.hotel_id = CAST(:hotel_id AS uuid)
             )
               AND b.status NOT IN ('CART', 'EXPIRED')
-              AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
-            GROUP BY b.checkin::date
+              AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
+            GROUP BY b.created_at::date
             ORDER BY day ASC
             """
         )
