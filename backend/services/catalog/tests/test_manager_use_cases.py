@@ -8,6 +8,7 @@ from uuid import uuid4
 import pytest
 
 from app.application.exceptions import PromotionError, PropertyNotFoundError
+from app.application.ports.outbound.cache_port import CachePort
 from app.application.ports.outbound.manager_repository import ManagerRepository
 from app.application.use_cases.add_property_image import AddPropertyImageUseCase
 from app.application.use_cases.create_promotion import CreatePromotionUseCase
@@ -35,6 +36,11 @@ from app.schemas.manager import (
 @pytest.fixture
 def mock_manager_repo():
     return AsyncMock(spec=ManagerRepository)
+
+
+@pytest.fixture
+def mock_cache():
+    return AsyncMock(spec=CachePort)
 
 
 class TestListManagerHotelsUseCase:
@@ -350,19 +356,20 @@ class TestGetHotelProfileUseCase:
 
 
 class TestUpdateHotelProfileUseCase:
-    async def test_delegates_to_repo(self, mock_manager_repo):
+    async def test_delegates_to_repo(self, mock_manager_repo, mock_cache):
         prop_id = uuid4()
         hotel_id = uuid4()
         body = UpdateHotelProfileIn(description="d", amenity_codes=["WIFI"], policy="p")
         mock_manager_repo.update_hotel_profile.return_value = {
             "id": prop_id, "name": "X", "amenity_codes": ["WIFI"], "policy": "p", "images": []
         }
-        uc = UpdateHotelProfileUseCase(mock_manager_repo)
+        uc = UpdateHotelProfileUseCase(mock_manager_repo, mock_cache)
 
         out = await uc.execute(property_id=prop_id, hotel_id=hotel_id, data=body)
 
         assert out["amenity_codes"] == ["WIFI"]
         mock_manager_repo.update_hotel_profile.assert_awaited_once_with(prop_id, hotel_id, body)
+        mock_cache.delete_pattern.assert_awaited_once_with(f"property_detail:{prop_id}:*")
 
 
 class TestAddPropertyImageUseCase:
@@ -397,12 +404,12 @@ class TestDeletePropertyImageUseCase:
 
 
 class TestSetPrimaryPropertyImageUseCase:
-    async def test_delegates_to_repo(self, mock_manager_repo):
+    async def test_delegates_to_repo(self, mock_manager_repo, mock_cache):
         prop_id = uuid4()
         hotel_id = uuid4()
         img_id = uuid4()
         mock_manager_repo.set_primary_property_image.return_value = []
-        uc = SetPrimaryPropertyImageUseCase(mock_manager_repo)
+        uc = SetPrimaryPropertyImageUseCase(mock_manager_repo, mock_cache)
 
         out = await uc.execute(property_id=prop_id, hotel_id=hotel_id, image_id=img_id)
 
@@ -410,3 +417,6 @@ class TestSetPrimaryPropertyImageUseCase:
         mock_manager_repo.set_primary_property_image.assert_awaited_once_with(
             prop_id, hotel_id, img_id
         )
+        assert mock_cache.delete_pattern.await_count == 2
+        mock_cache.delete_pattern.assert_any_await("search:*")
+        mock_cache.delete_pattern.assert_any_await(f"property_detail:{prop_id}:*")

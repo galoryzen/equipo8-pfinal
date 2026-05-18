@@ -22,4 +22,5 @@ class DeleteSeasonalTariffUseCase:
             await self._sync_use_case.execute(room_type_id)
 
             if property_id:
+                await self._cache.delete_pattern("search:*")
                 await self._cache.delete_pattern(f"property_detail:{property_id}:*")
