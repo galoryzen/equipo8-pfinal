@@ -31,7 +31,9 @@ class TestUpdateBaseTariffCacheInvalidation:
 
         repo.update_base_tariff.assert_awaited_once_with(room_type_id, TariffBaseIn(base_price=150, weekend_premium=10))
         sync_use_case.execute.assert_awaited_once_with(room_type_id)
-        cache.delete_pattern.assert_awaited_once_with(f"property_detail:{property_id}:*")
+        assert cache.delete_pattern.await_count == 2
+        cache.delete_pattern.assert_any_await("search:*")
+        cache.delete_pattern.assert_any_await(f"property_detail:{property_id}:*")
 
     @pytest.mark.asyncio
     async def test_skips_cache_invalidation_when_property_not_found(self):
@@ -87,7 +89,9 @@ class TestAddSeasonalTariffCacheInvalidation:
             ),
         )
 
-        cache.delete_pattern.assert_awaited_once_with(f"property_detail:{property_id}:*")
+        assert cache.delete_pattern.await_count == 2
+        cache.delete_pattern.assert_any_await("search:*")
+        cache.delete_pattern.assert_any_await(f"property_detail:{property_id}:*")
 
 
 class TestDeleteSeasonalTariffCacheInvalidation:
