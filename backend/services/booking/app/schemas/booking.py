@@ -88,6 +88,7 @@ class BookingListItemOut(BaseModel):
     can_register_check_in: bool = False
     actual_checkout_at: datetime | None = None
     can_register_check_out: bool = False
+    can_cancel: bool = False
 
 
 class GuestIn(BaseModel):
@@ -149,6 +150,7 @@ class BookingDetailOut(BaseModel):
     can_register_check_in: bool = False
     actual_checkout_at: datetime | None = None
     can_register_check_out: bool = False
+    can_cancel: bool = False
     created_at: datetime
     updated_at: datetime
 

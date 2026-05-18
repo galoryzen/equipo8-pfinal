@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from app.application.exceptions import BookingNotFoundError
-from app.application.hotel_booking_flags import hotel_can_register_check_out
+from app.application.hotel_booking_flags import hotel_can_register_check_out, traveler_can_cancel_booking
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
 from app.domain.models import (
@@ -178,6 +178,8 @@ def _to_detail(
         booking, today=today_eff, viewer_is_hotel=viewer_is_hotel
     )
 
+    can_cancel = traveler_can_cancel_booking(booking)
+
     if original_total is not None and original_total > 0 and booking.total_amount < original_total:
         discount_percent = (Decimal("1") - (booking.total_amount / original_total)) * Decimal("100")
         discount_percent = discount_percent.quantize(Decimal("0.01"))
@@ -228,6 +230,7 @@ def _to_detail(
         can_register_check_in=can_register_check_in,
         actual_checkout_at=actual_checkout_out,
         can_register_check_out=can_register_check_out,
+        can_cancel=can_cancel,
         created_at=booking.created_at,
         updated_at=booking.updated_at,
     )
