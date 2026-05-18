@@ -68,7 +68,7 @@ class ManagerRepository(ABC):
     async def update_hotel_profile(
         self, property_id: UUID, hotel_id: UUID, data: "UpdateHotelProfileIn"
     ) -> dict:
-        """Apply a partial update to description, amenity codes and the GENERAL policy.
+        """Apply a partial update to description, amenity codes and property policies (multi-category).
 
         Returns the same shape as ``get_hotel_profile``. Raises
         ``PropertyNotFoundError`` when the property is not owned by the hotel
