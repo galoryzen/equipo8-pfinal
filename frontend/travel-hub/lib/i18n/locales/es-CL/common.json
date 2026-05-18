@@ -70,7 +70,8 @@
     "refundIssued": "Reembolso emitido",
     "totalPaid": "Total pagado",
     "finalTotal": "Total final",
-    "refundTooltip": "Reembolso completo: incluye subtotal, impuestos y tarifa de servicio"
+    "refundTooltip": "Reembolso completo: incluye subtotal, impuestos y tarifa de servicio",
+    "cancellationNotAllowed": "Esta reserva no puede ser cancelada. Consulta la política de cancelación para más detalles."
   },
   "tripsEmptyState": {
     "title": "No tienes reservas registradas",

@@ -70,7 +70,8 @@
     "refundIssued": "Refund issued",
     "totalPaid": "Total paid",
     "finalTotal": "Final total",
-    "refundTooltip": "Full refund: includes subtotal, taxes, and service fee"
+    "refundTooltip": "Full refund: includes subtotal, taxes, and service fee",
+    "cancellationNotAllowed": "This reservation cannot be cancelled. Check the cancellation policy for details."
   },
   "tripsEmptyState": {
     "title": "No bookings yet",
