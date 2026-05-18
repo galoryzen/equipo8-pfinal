@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.domain.models import PolicyCategory
 from app.schemas.common import PaginatedResponse
 
 CancellationPolicyTypeStr = Literal["FULL", "PARTIAL", "NON_REFUNDABLE"]
@@ -112,6 +113,23 @@ class UpdateCancellationPolicyIn(BaseModel):
     refund_percent: int | None = None
 
 
+# ── Property policy (multi-category) ──────────────────────
+
+
+class PropertyPolicyItemIn(BaseModel):
+    """Single policy item in a property policy list."""
+
+    category: PolicyCategory
+    description: str
+
+
+class PropertyPolicyItemOut(BaseModel):
+    """Single policy item returned from property profile."""
+
+    category: str
+    description: str
+
+
 # ── Hotel profile (manager) ───────────────────────────────
 
 
@@ -133,7 +151,7 @@ class HotelProfileOut(BaseModel):
     city: str
     country: str
     amenity_codes: list[str]
-    policy: str
+    policies: list[PropertyPolicyItemOut]
     images: list[ManagerPropertyImageOut]
 
 
@@ -141,14 +159,13 @@ class UpdateHotelProfileIn(BaseModel):
     """Body for PATCH /manager/hotels/{property_id}/profile.
 
     Each field is optional. ``None`` means "leave unchanged"; an explicit value
-    (including an empty string or empty list) means "set". An empty string for
-    ``policy`` removes the single GENERAL policy row, and an empty
-    ``amenity_codes`` clears every amenity.
+    (including an empty list) means "set". An empty ``policies`` list removes
+    all property policy rows, and an empty ``amenity_codes`` clears every amenity.
     """
 
     description: str | None = None
     amenity_codes: list[str] | None = None
-    policy: str | None = None
+    policies: list[PropertyPolicyItemIn] | None = None
 
 
 class AddPropertyImageIn(BaseModel):

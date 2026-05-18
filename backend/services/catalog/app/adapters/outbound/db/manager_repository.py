@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 from decimal import Decimal
 
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import delete, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -480,14 +480,14 @@ class SqlAlchemyManagerRepository(ManagerRepository):
         result = await self._session.execute(stmt)
         return [row[0] for row in result.all()]
 
-    async def _load_general_policy_text(self, property_id: UUID) -> str:
-        stmt = select(PropertyPolicy).where(
-            PropertyPolicy.property_id == property_id,
-            PropertyPolicy.category == PolicyCategory.GENERAL,
-        )
+    async def _load_all_policies(self, property_id: UUID) -> list[dict]:
+        stmt = select(PropertyPolicy).where(PropertyPolicy.property_id == property_id)
         result = await self._session.execute(stmt)
-        row = result.scalar_one_or_none()
-        return row.description if row is not None else ""
+        rows = result.scalars().all()
+        return [
+            {"category": r.category.value, "description": r.description}
+            for r in rows
+        ]
 
     @staticmethod
     def _serialize_image(image: PropertyImage) -> dict:
@@ -500,7 +500,7 @@ class SqlAlchemyManagerRepository(ManagerRepository):
 
     async def _build_profile_payload(self, prop: Property) -> dict:
         amenity_codes = await self._load_property_amenity_codes(prop.id)
-        policy_text = await self._load_general_policy_text(prop.id)
+        policies = await self._load_all_policies(prop.id)
         images = await self._load_property_images(prop.id)
         city_name = prop.city.name if prop.city else ""
         country = prop.city.country if prop.city else ""
@@ -511,7 +511,7 @@ class SqlAlchemyManagerRepository(ManagerRepository):
             "city": city_name,
             "country": country,
             "amenity_codes": amenity_codes,
-            "policy": policy_text,
+            "policies": policies,
             "images": [self._serialize_image(img) for img in images],
         }
 
@@ -531,8 +531,8 @@ class SqlAlchemyManagerRepository(ManagerRepository):
         if data.amenity_codes is not None:
             await self._replace_property_amenities(property_id, data.amenity_codes)
 
-        if data.policy is not None:
-            await self._upsert_general_policy(property_id, data.policy, now)
+        if data.policies is not None:
+            await self._replace_all_policies(property_id, data.policies, now)
 
         await self._session.commit()
         return await self._build_profile_payload(prop)
@@ -571,34 +571,23 @@ class SqlAlchemyManagerRepository(ManagerRepository):
                 [{"property_id": property_id, "amenity_id": a.id} for a in amenities],
             )
 
-    async def _upsert_general_policy(
-        self, property_id: UUID, text: str, now: datetime
+    async def _replace_all_policies(
+        self, property_id: UUID, policies: list, now: datetime
     ) -> None:
-        stmt = select(PropertyPolicy).where(
-            PropertyPolicy.property_id == property_id,
-            PropertyPolicy.category == PolicyCategory.GENERAL,
+        await self._session.execute(
+            delete(PropertyPolicy).where(PropertyPolicy.property_id == property_id)
         )
-        existing = (await self._session.execute(stmt)).scalar_one_or_none()
-
-        if not text:
-            if existing is not None:
-                await self._session.delete(existing)
-            return
-
-        if existing is None:
+        for item in policies:
             self._session.add(
                 PropertyPolicy(
                     id=uuid.uuid4(),
                     property_id=property_id,
-                    category=PolicyCategory.GENERAL,
-                    description=text,
+                    category=item.category,
+                    description=item.description,
                     created_at=now,
                     updated_at=now,
                 )
             )
-        else:
-            existing.description = text
-            existing.updated_at = now
 
     async def add_property_image(
         self, property_id: UUID, hotel_id: UUID, data: AddPropertyImageIn

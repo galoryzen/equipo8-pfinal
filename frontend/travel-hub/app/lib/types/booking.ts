@@ -73,6 +73,8 @@ export interface BookingListItem {
   actual_checkout_at?: string | null;
   /** Server-computed; do not derive in the UI. */
   can_register_check_out?: boolean;
+  /** Server-computed; do not derive in the UI. */
+  can_cancel?: boolean;
 }
 
 export interface PendingConfirmationBookingItem extends BookingListItem {
@@ -146,6 +148,8 @@ export interface BookingDetail {
   can_register_check_in?: boolean;
   actual_checkout_at?: string | null;
   can_register_check_out?: boolean;
+  /** Server-computed; do not derive in the UI. */
+  can_cancel?: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -141,7 +141,7 @@ function BookingDetailContent() {
   }
 
   const status = statusChipProps(detail.status);
-  const canCancel = detail.status === 'CONFIRMED' || detail.status === 'CART';
+  const canCancel = detail.can_cancel ?? false;
   const hotel = propertyById[detail.property_id] ?? null;
   const roomName = hotel?.room_types?.find((r) => r.id === detail.room_type_id)?.name;
   const refundAmount = refund?.status === 'SUCCEEDED' ? parseFloat(refund.amount) : 0;
@@ -361,6 +361,12 @@ function BookingDetailContent() {
               })
             : ''}
         </Typography>
+      )}
+
+      {!canCancel && (
+        <Alert severity="info" sx={{ mt: 3 }}>
+          {t('tripDetail.cancellationNotAllowed')}
+        </Alert>
       )}
 
       {canCancel && (

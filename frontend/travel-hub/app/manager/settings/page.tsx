@@ -21,7 +21,13 @@ import {
   updateAdminHotelProfile,
   updateHotelProfile,
 } from '@/app/lib/api/manager';
-import { HotelProfile, ManagerHotelItem, ManagerPropertyImage } from '@/app/lib/types/manager';
+import {
+  HotelProfile,
+  ManagerHotelItem,
+  ManagerPropertyImage,
+  PolicyCategory,
+  PropertyPolicyItem,
+} from '@/app/lib/types/manager';
 import { tokens } from '@/lib/theme/tokens';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import CodeIcon from '@mui/icons-material/Code';
@@ -57,7 +63,11 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   Skeleton,
   Snackbar,
   Stack,
@@ -96,6 +106,31 @@ const AMENITY_ICON: Record<string, React.ReactNode> = {
   SPA: <SpaOutlinedIcon fontSize="small" />,
   FRONT_DESK_24H: <RoomServiceOutlinedIcon fontSize="small" />,
 };
+
+function getPolicyCategoryLabel(category: PolicyCategory): string {
+  const labels: Record<PolicyCategory, string> = {
+    CHECK_IN: 'Check-in',
+    CHECK_OUT: 'Check-out',
+    PETS: 'Pets',
+    SMOKING: 'Smoking',
+    CHILDREN: 'Children',
+    GENERAL: 'General',
+  };
+  return labels[category];
+}
+
+function getPolicyCategoryOptions(currentPolicies: PropertyPolicyItem[]): PolicyCategory[] {
+  const allCategories: PolicyCategory[] = [
+    'CHECK_IN',
+    'CHECK_OUT',
+    'PETS',
+    'SMOKING',
+    'CHILDREN',
+    'GENERAL',
+  ];
+  const usedCategories = new Set(currentPolicies.map((p) => p.category));
+  return allCategories.filter((cat) => !usedCategories.has(cat));
+}
 
 function SectionCard({
   title,
@@ -448,7 +483,9 @@ export default function ManagerSettingsPage() {
   const [amenityCatalog, setAmenityCatalog] = useState<AmenityCatalogItem[]>([]);
 
   const [description, setDescription] = useState('');
-  const [policy, setPolicy] = useState('');
+  const [policies, setPolicies] = useState<PropertyPolicyItem[]>([]);
+  const [newCategory, setNewCategory] = useState<PolicyCategory | ''>('');
+  const [newDescription, setNewDescription] = useState('');
   // Store backend codes (e.g. "pet_friendly") so PATCH /profile keeps working.
   const [selectedAmenityCodes, setSelectedAmenityCodes] = useState<Set<string>>(new Set());
   const [images, setImages] = useState<ManagerPropertyImage[]>([]);
@@ -492,12 +529,18 @@ export default function ManagerSettingsPage() {
     if (!profile) return false;
     const currentAmenityCodes = [...selectedAmenityCodes].sort();
     const profileAmenityCodes = [...(profile.amenity_codes ?? [])].sort();
+    const policiesJson = JSON.stringify(
+      policies.sort((a, b) => a.category.localeCompare(b.category))
+    );
+    const profilePoliciesJson = JSON.stringify(
+      (profile.policies ?? []).sort((a, b) => a.category.localeCompare(b.category))
+    );
     return (
       (profile.description ?? '') !== description ||
-      (profile.policy ?? '') !== policy ||
+      policiesJson !== profilePoliciesJson ||
       currentAmenityCodes.join('|') !== profileAmenityCodes.join('|')
     );
-  }, [description, policy, profile, selectedAmenityCodes]);
+  }, [description, policies, profile, selectedAmenityCodes]);
 
   const isAdmin = role === 'ADMIN';
 
@@ -581,7 +624,7 @@ export default function ManagerSettingsPage() {
 
         setProfile(queryProperty);
         setDescription(queryProperty.description ?? '');
-        setPolicy(queryProperty.policy ?? '');
+        setPolicies(queryProperty.policies ?? []);
         setSelectedAmenityCodes(new Set(queryProperty.amenity_codes ?? []));
         setImages(queryProperty.images ?? []);
       } catch {
@@ -604,7 +647,7 @@ export default function ManagerSettingsPage() {
   function resetEdits() {
     if (!profile) return;
     setDescription(profile.description ?? '');
-    setPolicy(profile.policy ?? '');
+    setPolicies(profile.policies ?? []);
     setSelectedAmenityCodes(new Set(profile.amenity_codes ?? []));
     setImages(profile.images ?? []);
   }
@@ -617,14 +660,14 @@ export default function ManagerSettingsPage() {
         ? await updateAdminHotelProfile(propertyID, {
             description,
             amenity_codes: [...selectedAmenityCodes],
-            policy,
+            policies,
           })
         : await updateHotelProfile(
             propertyID,
             {
               description,
               amenity_codes: [...selectedAmenityCodes],
-              policy,
+              policies,
             },
             hotelID
           );
@@ -1032,18 +1075,112 @@ export default function ManagerSettingsPage() {
             title={t('manager.settings.policy.title')}
             subtitle={t('manager.settings.policy.subtitle')}
           >
-            <RichTextToolbar tooltip={t('manager.settings.toolbar.comingSoon')} />
-            <TextField
-              value={policy}
-              onChange={(e) => setPolicy(e.target.value)}
-              placeholder={t('manager.settings.policy.placeholder')}
-              multiline
-              minRows={4}
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': { borderRadius: '0 0 8px 8px' },
-              }}
-            />
+            <Stack spacing={2}>
+              {/* Existing policies list */}
+              {policies.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t('manager.settings.policy.existingPolicies')}
+                  </Typography>
+                  <Stack spacing={1}>
+                    {policies.map((item) => (
+                      <Box
+                        key={item.category}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 1,
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: tokens.border.subtle,
+                          borderRadius: 1,
+                          bgcolor: tokens.surface.subtle,
+                        }}
+                      >
+                        <Box sx={{ flex: 1 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              color: tokens.text.primary,
+                              mb: 0.5,
+                            }}
+                          >
+                            {getPolicyCategoryLabel(item.category)}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: tokens.text.secondary }}>
+                            {item.description}
+                          </Typography>
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setPolicies((prev) => prev.filter((p) => p.category !== item.category));
+                          }}
+                          sx={{
+                            color: tokens.text.secondary,
+                            '&:hover': { color: 'error.main' },
+                          }}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+
+              {/* Add new policy form */}
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  {t('manager.settings.policy.addNew')}
+                </Typography>
+                <Stack spacing={1}>
+                  <FormControl size="small" fullWidth>
+                    <InputLabel>{t('manager.settings.policy.categoryLabel')}</InputLabel>
+                    <Select
+                      value={newCategory}
+                      label={t('manager.settings.policy.categoryLabel')}
+                      onChange={(e) => setNewCategory(e.target.value as PolicyCategory)}
+                    >
+                      {getPolicyCategoryOptions(policies).map((cat) => (
+                        <MenuItem key={cat} value={cat}>
+                          {getPolicyCategoryLabel(cat)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <TextField
+                    size="small"
+                    placeholder={t('manager.settings.policy.descriptionPlaceholder')}
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    multiline
+                    minRows={2}
+                    fullWidth
+                  />
+
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      if (newCategory && newDescription.trim()) {
+                        setPolicies((prev) => [
+                          ...prev,
+                          { category: newCategory, description: newDescription },
+                        ]);
+                        setNewCategory('');
+                        setNewDescription('');
+                      }
+                    }}
+                    disabled={!newCategory || !newDescription.trim()}
+                    startIcon={<AddOutlinedIcon />}
+                  >
+                    {t('manager.settings.policy.addButton')}
+                  </Button>
+                </Stack>
+              </Box>
+            </Stack>
           </SectionCard>
 
           <SectionCard

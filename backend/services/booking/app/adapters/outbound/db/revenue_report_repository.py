@@ -40,23 +40,17 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               WHERE rt.property_id IN (SELECT id FROM hotel_properties)
                 AND rt.status = 'ACTIVE'
             ),
-            captured_confirmed_bookings AS (
-              SELECT b.id, b.checkin, b.checkout, b.currency_code
+            eligible_bookings AS (
+              SELECT b.id, b.checkin, b.checkout, b.currency_code, b.total_amount
               FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
-                AND b.status IN ('CONFIRMED', 'CHECKED_IN')
+                AND b.status IN ('PENDING_CONFIRMATION', 'CHECKED_IN', 'CHECKED_OUT')
                 AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
-                AND EXISTS (
-                  SELECT 1
-                  FROM payments.payment p
-                  WHERE p.booking_id = b.id
-                    AND p.status = 'CAPTURED'
-                )
             ),
             daily_occupied AS (
-              SELECT ccb.checkin::date AS day, COUNT(*)::float AS occupied_units
-              FROM captured_confirmed_bookings ccb
-              GROUP BY ccb.checkin::date
+              SELECT eb.checkin::date AS day, COUNT(*)::float AS occupied_units
+              FROM eligible_bookings eb
+              GROUP BY eb.checkin::date
             ),
             daily_capacity AS (
               SELECT
@@ -72,15 +66,13 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
             )
             SELECT
               (
-                SELECT COALESCE(SUM(p.captured_amount), 0)
-                FROM payments.payment p
-                WHERE p.booking_id IN (SELECT id FROM captured_confirmed_bookings)
-                  AND p.status = 'CAPTURED'
+                SELECT COALESCE(SUM(eb.total_amount), 0)
+                FROM eligible_bookings eb
               ) AS total_revenue,
               (
-                -- ADR denominator: noches vendidas (reservas confirmadas o con check-in registrado).
-                SELECT COALESCE(SUM((ccb.checkout - ccb.checkin)::int), 0)::float
-                FROM captured_confirmed_bookings ccb
+                -- ADR denominator: noches vendidas (reservas pending, checked-in o checked-out).
+                SELECT COALESCE(SUM((eb.checkout - eb.checkin)::int), 0)::float
+                FROM eligible_bookings eb
               ) AS sold_room_nights,
               (
                 -- Ocupación para KPI: unidades confirmadas por check-in (misma base que trends).
@@ -108,23 +100,14 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               ) AS capacity_room_nights,
               (
                 -- "Sin período anterior" se define como ventana sin actividad de negocio
-                -- (ni pagos CAPTURED ni reservas confirmadas con solapamiento).
-                EXISTS (SELECT 1 FROM captured_confirmed_bookings)
+                -- (reservas pending, checked-in o checked-out en la ventana).
+                EXISTS (SELECT 1 FROM eligible_bookings)
               ) AS has_activity,
               COALESCE(
                 (
-                  SELECT p.currency_code
-                  FROM payments.payment p
-                  WHERE p.booking_id IN (SELECT id FROM captured_confirmed_bookings)
-                    AND p.status = 'CAPTURED'
-                  GROUP BY p.currency_code
-                  ORDER BY COUNT(*) DESC, MAX(COALESCE(p.processed_at, p.created_at)) DESC
-                  LIMIT 1
-                ),
-                (
-                  SELECT ccb.currency_code
-                  FROM captured_confirmed_bookings ccb
-                  ORDER BY ccb.checkin DESC
+                  SELECT eb.currency_code
+                  FROM eligible_bookings eb
+                  ORDER BY eb.checkin DESC
                   LIMIT 1
                 )
               ) AS currency_code
@@ -166,35 +149,27 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               WHERE rt.property_id IN (SELECT id FROM hotel_properties)
                 AND rt.status = 'ACTIVE'
             ),
-            captured_confirmed_bookings AS (
+            eligible_bookings AS (
               -- Eje temporal único para trends: fecha de check-in.
-              SELECT b.id, b.checkin::date AS day
+              SELECT b.id, b.checkin::date AS day, b.total_amount
               FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
                 AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
-                AND b.status IN ('CONFIRMED', 'CHECKED_IN')
-                AND EXISTS (
-                  SELECT 1
-                  FROM payments.payment p
-                  WHERE p.booking_id = b.id
-                    AND p.status = 'CAPTURED'
-                )
+                AND b.status IN ('PENDING_CONFIRMATION', 'CHECKED_IN', 'CHECKED_OUT')
             ),
             daily_revenue AS (
               SELECT
-                ccb.day,
-                COALESCE(SUM(p.captured_amount), 0) AS revenue
-              FROM captured_confirmed_bookings ccb
-              INNER JOIN payments.payment p ON p.booking_id = ccb.id
-              WHERE p.status = 'CAPTURED'
-              GROUP BY ccb.day
+                eb.day,
+                COALESCE(SUM(eb.total_amount), 0) AS revenue
+              FROM eligible_bookings eb
+              GROUP BY eb.day
             ),
             daily_occupied AS (
               SELECT
-                ccb.day AS day,
+                eb.day AS day,
                 COUNT(*)::float AS occupied_units
-              FROM captured_confirmed_bookings ccb
-              GROUP BY ccb.day
+              FROM eligible_bookings eb
+              GROUP BY eb.day
             ),
             daily_capacity AS (
               SELECT
@@ -268,27 +243,25 @@ class SqlAlchemyRevenueReportRepository(RevenueReportRepository):
               FROM catalog.property p
               WHERE p.hotel_id = CAST(:hotel_id AS uuid)
             ),
-            captured_per_booking AS (
-              -- Fuente de revenue: pagos CAPTURED en la ventana solicitada.
+            eligible_bookings AS (
+              -- Fuente de revenue: reservas pending, checked-in o checked-out en la ventana.
               SELECT
-                p.booking_id,
-                COALESCE(SUM(p.captured_amount), 0) AS total_revenue
-              FROM payments.payment p
-              INNER JOIN booking.booking b ON b.id = p.booking_id
+                b.id,
+                b.total_amount,
+                b.unit_price,
+                b.room_type_id
+              FROM booking.booking b
               WHERE b.property_id IN (SELECT id FROM hotel_properties)
-                AND b.status IN ('CONFIRMED', 'CHECKED_IN')
+                AND b.status IN ('PENDING_CONFIRMATION', 'CHECKED_IN', 'CHECKED_OUT')
                 AND b.checkin BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
-                AND p.status = 'CAPTURED'
-              GROUP BY p.booking_id
             )
             SELECT
               COALESCE(rt.name, 'Unknown') AS room_type,
               COUNT(*)::int AS units_sold,
-              COALESCE(AVG(b.unit_price), 0) AS avg_rate,
-              COALESCE(SUM(cpb.total_revenue), 0) AS total_revenue
-            FROM captured_per_booking cpb
-            INNER JOIN booking.booking b ON b.id = cpb.booking_id
-            LEFT JOIN catalog.room_type rt ON rt.id = b.room_type_id
+              COALESCE(AVG(eb.unit_price), 0) AS avg_rate,
+              COALESCE(SUM(eb.total_amount), 0) AS total_revenue
+            FROM eligible_bookings eb
+            LEFT JOIN catalog.room_type rt ON rt.id = eb.room_type_id
             GROUP BY COALESCE(rt.name, 'Unknown')
             ORDER BY total_revenue DESC, room_type ASC
             """

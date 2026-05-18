@@ -400,7 +400,7 @@ class TestManagerHotelProfileEndpoints:
             "city": "Miami",
             "country": "USA",
             "amenity_codes": ["WIFI", "POOL"],
-            "policy": "Check-in 3pm.",
+            "policies": [],
             "images": [
                 {
                     "id": str(img_id),

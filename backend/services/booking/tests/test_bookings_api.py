@@ -47,6 +47,7 @@ def _sample_list_row():
         created_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
         display_reference="#00000001",
         room_type_name="Standard Queen",
+        can_cancel=True,
     )
 
 
@@ -71,6 +72,7 @@ def _sample_detail():
         updated_at=datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC),
         can_register_check_in=False,
         actual_checkin_at=None,
+        can_cancel=True,
     )
 
 
@@ -510,3 +512,70 @@ class TestBookingsEndpoints:
         kw = mock_uc.execute.await_args.kwargs
         assert kw["hotel_id"] is None
         assert str(kw["actor_user_id"]) == admin_user_id
+
+    def test_detail_includes_can_cancel_flag(self, client_authenticated):
+        """Booking detail response includes can_cancel flag."""
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _sample_detail()
+        app.dependency_overrides[get_booking_detail_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.get(f"/api/v1/booking/bookings/{BOOKING_ID}")
+        finally:
+            app.dependency_overrides.pop(get_booking_detail_use_case, None)
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "can_cancel" in body
+        assert body["can_cancel"] is True
+
+    def test_detail_can_cancel_false_for_non_refundable(self, client_authenticated):
+        """Non-refundable booking returns can_cancel=False."""
+        detail = _sample_detail()
+        detail.policy_type_applied = "NON_REFUNDABLE"
+        detail.can_cancel = False
+
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = detail
+        app.dependency_overrides[get_booking_detail_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.get(f"/api/v1/booking/bookings/{BOOKING_ID}")
+        finally:
+            app.dependency_overrides.pop(get_booking_detail_use_case, None)
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["can_cancel"] is False
+
+    def test_detail_can_cancel_false_for_non_confirmed_status(self, client_authenticated):
+        """Booking not in CONFIRMED status returns can_cancel=False."""
+        detail = _sample_detail()
+        detail.status = "PENDING_CONFIRMATION"
+        detail.can_cancel = False
+
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = detail
+        app.dependency_overrides[get_booking_detail_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.get(f"/api/v1/booking/bookings/{BOOKING_ID}")
+        finally:
+            app.dependency_overrides.pop(get_booking_detail_use_case, None)
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["can_cancel"] is False
+
+    def test_list_includes_can_cancel_flag(self, client_authenticated):
+        """Booking list items include can_cancel flag."""
+        mock_uc = AsyncMock()
+        mock_uc.execute.return_value = _paginated([_sample_list_row()])
+        app.dependency_overrides[get_list_my_bookings_use_case] = lambda: mock_uc
+        try:
+            resp = client_authenticated.get("/api/v1/booking/bookings")
+        finally:
+            app.dependency_overrides.pop(get_list_my_bookings_use_case, None)
+
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) == 1
+        assert "can_cancel" in items[0]
+        assert items[0]["can_cancel"] is True

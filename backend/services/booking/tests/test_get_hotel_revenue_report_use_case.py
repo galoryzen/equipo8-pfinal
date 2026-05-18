@@ -15,6 +15,7 @@ from app.application.use_cases.get_hotel_revenue_report import GetHotelRevenueRe
 
 @pytest.mark.asyncio
 async def test_execute_returns_revenue_report_payload(monkeypatch):
+    """Test with PENDING_CONFIRMATION, CHECKED_IN, CHECKED_OUT bookings (no CAPTURED requirement)."""
     hotel = UUID("c0000000-0000-0000-0000-000000000001")
 
     async def fake_resolve(_uid):
@@ -29,42 +30,44 @@ async def test_execute_returns_revenue_report_payload(monkeypatch):
     repo.aggregate_hotel_period = AsyncMock(
         side_effect=[
             RevenuePeriodAggregate(
-                total_revenue=Decimal("1000"),
-                sold_room_nights=20.0,
-                occupied_room_nights=20.0,
-                capacity_room_nights=40.0,
+                total_revenue=Decimal("980"),
+                sold_room_nights=9.0,
+                occupied_room_nights=3.0,
+                capacity_room_nights=7.0,
                 has_activity=True,
                 currency_code="USD",
             ),
             RevenuePeriodAggregate(
-                total_revenue=Decimal("800"),
-                sold_room_nights=16.0,
-                occupied_room_nights=16.0,
-                capacity_room_nights=40.0,
-                has_activity=True,
-                currency_code="USD",
+                total_revenue=Decimal("0"),
+                sold_room_nights=0.0,
+                occupied_room_nights=0.0,
+                capacity_room_nights=7.0,
+                has_activity=False,
+                currency_code=None,
             ),
         ]
     )
     repo.list_revenue_trends = AsyncMock(
         return_value=[
-            RevenueTrendPoint(day=date(2026, 2, 1), revenue=Decimal("400"), occupancy_rate=50.0),
-            RevenueTrendPoint(day=date(2026, 2, 2), revenue=Decimal("600"), occupancy_rate=60.0),
+            RevenueTrendPoint(day=date(2026, 2, 1), revenue=Decimal("280"), occupancy_rate=14.3),
+            RevenueTrendPoint(day=date(2026, 2, 2), revenue=Decimal("300"), occupancy_rate=14.3),
+            RevenueTrendPoint(day=date(2026, 2, 3), revenue=Decimal("0"), occupancy_rate=0.0),
+            RevenueTrendPoint(day=date(2026, 2, 4), revenue=Decimal("400"), occupancy_rate=14.3),
         ]
     )
     repo.list_revenue_by_room_type = AsyncMock(
         return_value=[
             RevenueByRoomTypePoint(
-                room_type="Suite",
+                room_type="Standard",
                 units_sold=2,
-                avg_rate=Decimal("250"),
-                total_revenue=Decimal("700"),
+                avg_rate=Decimal("140"),
+                total_revenue=Decimal("680"),
             ),
             RevenueByRoomTypePoint(
-                room_type="Standard",
-                units_sold=3,
-                avg_rate=Decimal("100"),
-                total_revenue=Decimal("300"),
+                room_type="Deluxe",
+                units_sold=1,
+                avg_rate=Decimal("80"),
+                total_revenue=Decimal("400"),
             ),
         ]
     )
@@ -73,16 +76,16 @@ async def test_execute_returns_revenue_report_payload(monkeypatch):
     out = await uc.execute(
         hotel_id=hotel,
         date_from=date(2026, 2, 1),
-        date_to=date(2026, 2, 7),
+        date_to=date(2026, 2, 4),
     )
 
-    assert out["kpis"]["totalRevenue"]["value"] == 1000.0
-    assert out["kpis"]["totalRevenue"]["variation"] == 25.0
-    assert out["kpis"]["adr"]["value"] == 50.0
-    assert out["kpis"]["occupancyRate"]["value"] == 50.0
+    assert out["kpis"]["totalRevenue"]["value"] == 980.0
+    assert out["kpis"]["totalRevenue"]["variation"] == 0.0
+    assert out["kpis"]["adr"]["value"] == 108.8889
+    assert out["kpis"]["occupancyRate"]["value"] == 42.8571
     assert out["trends"][0]["date"] == "2026-02-01"
-    assert out["revenueByRoomType"][0]["roomType"] == "Suite"
-    assert out["totalAggregatedRevenue"] == 1000.0
+    assert out["revenueByRoomType"][0]["roomType"] == "Standard"
+    assert out["totalAggregatedRevenue"] == 1080.0
     assert out["metadata"]["currency"] == "USD"
     assert repo.aggregate_hotel_period.await_count == 2
 
@@ -141,6 +144,7 @@ async def test_execute_no_data_returns_zero_values(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_execute_without_previous_period_activity_sets_variation_zero(monkeypatch):
+    """No previous period activity → variations stay 0 even with current activity."""
     hotel = UUID("c0000000-0000-0000-0000-000000000001")
 
     async def fake_resolve(_uid):
@@ -155,10 +159,10 @@ async def test_execute_without_previous_period_activity_sets_variation_zero(monk
     repo.aggregate_hotel_period = AsyncMock(
         side_effect=[
             RevenuePeriodAggregate(
-                total_revenue=Decimal("450"),
-                sold_room_nights=9.0,
-                occupied_room_nights=9.0,
-                capacity_room_nights=18.0,
+                total_revenue=Decimal("680"),
+                sold_room_nights=8.0,
+                occupied_room_nights=2.0,
+                capacity_room_nights=5.0,
                 has_activity=True,
                 currency_code="USD",
             ),
@@ -166,7 +170,7 @@ async def test_execute_without_previous_period_activity_sets_variation_zero(monk
                 total_revenue=Decimal("0"),
                 sold_room_nights=0.0,
                 occupied_room_nights=0.0,
-                capacity_room_nights=18.0,
+                capacity_room_nights=5.0,
                 has_activity=False,
                 currency_code=None,
             ),

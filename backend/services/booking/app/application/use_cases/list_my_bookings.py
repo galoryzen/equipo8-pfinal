@@ -8,7 +8,7 @@ from uuid import UUID
 
 import httpx
 
-from app.application.hotel_booking_flags import hotel_can_register_check_out
+from app.application.hotel_booking_flags import hotel_can_register_check_out, traveler_can_cancel_booking
 from app.application.ports.outbound.booking_repository import BookingRepository
 from app.application.ports.outbound.guest_repository import GuestRepository
 from app.config import settings
@@ -132,6 +132,8 @@ def _map_booking_to_list_item(
         booking, today=today_eff, viewer_is_hotel=for_hotel_portal
     )
 
+    can_cancel = traveler_can_cancel_booking(booking)
+
     room_type_name = _room_type_name_from_property(prop_info, booking.room_type_id)
 
     return BookingListItemOut(
@@ -156,6 +158,7 @@ def _map_booking_to_list_item(
         can_register_check_in=can_register,
         actual_checkout_at=actual_checkout_out,
         can_register_check_out=can_co,
+        can_cancel=can_cancel,
     )
 
 

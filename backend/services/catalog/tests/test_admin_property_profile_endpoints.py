@@ -16,7 +16,7 @@ def sample_profile_payload():
         "city": "C",
         "country": "X",
         "amenity_codes": [],
-        "policy": "p",
+        "policies": [],
         "images": [],
     }
 
