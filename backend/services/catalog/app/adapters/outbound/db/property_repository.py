@@ -154,6 +154,20 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
 
         stats_map = await self._review_stats_map(property_ids)
 
+        # Batch load primary images (display_order = 0)
+        first_images: dict[UUID, PropertyImage] = {}
+        if property_ids:
+            img_q = (
+                select(PropertyImage)
+                .where(
+                    PropertyImage.property_id.in_(property_ids),
+                    PropertyImage.display_order == 0,
+                )
+            )
+            img_result = await self._session.execute(img_q)
+            for img in img_result.scalars():
+                first_images[img.property_id] = img
+
         items = []
         for prop, price, original_price in rows:
             img = first_images.get(prop.id)
@@ -373,14 +387,15 @@ class SqlAlchemyPropertyRepository(PropertyRepositoryPort):
         rows = result.unique().all()
         property_ids = [row[0].id for row in rows]
 
-        # Batch load first images
+        # Batch load primary images (display_order = 0)
         first_images: dict[UUID, PropertyImage] = {}
         if property_ids:
             img_q = (
                 select(PropertyImage)
-                .where(PropertyImage.property_id.in_(property_ids))
-                .order_by(PropertyImage.property_id, PropertyImage.display_order)
-                .distinct(PropertyImage.property_id)
+                .where(
+                    PropertyImage.property_id.in_(property_ids),
+                    PropertyImage.display_order == 0,
+                )
             )
             img_result = await self._session.execute(img_q)
             for img in img_result.scalars():

@@ -364,7 +364,8 @@ def get_hotel_profile_use_case(session: AsyncSession) -> GetHotelProfileUseCase:
 
 
 def get_update_hotel_profile_use_case(session: AsyncSession) -> UpdateHotelProfileUseCase:
-    return UpdateHotelProfileUseCase(get_manager_repository(session))
+    cache = get_cache()
+    return UpdateHotelProfileUseCase(get_manager_repository(session), cache)
 
 
 def get_add_property_image_use_case(session: AsyncSession) -> AddPropertyImageUseCase:
@@ -378,7 +379,8 @@ def get_delete_property_image_use_case(session: AsyncSession) -> DeletePropertyI
 def get_set_primary_property_image_use_case(
     session: AsyncSession,
 ) -> SetPrimaryPropertyImageUseCase:
-    return SetPrimaryPropertyImageUseCase(get_manager_repository(session))
+    cache = get_cache()
+    return SetPrimaryPropertyImageUseCase(get_manager_repository(session), cache)
 
 
 def get_sync_rate_calendar_use_case(session: AsyncSession) -> SyncRateCalendarUseCase:
