@@ -70,6 +70,13 @@ export interface UpdateCancellationPolicyPayload {
   refund_percent?: number;
 }
 
+export type PolicyCategory = 'CHECK_IN' | 'CHECK_OUT' | 'PETS' | 'SMOKING' | 'CHILDREN' | 'GENERAL';
+
+export interface PropertyPolicyItem {
+  category: PolicyCategory;
+  description: string;
+}
+
 export type ManagerPropertyImage = {
   id: string;
   url: string;
@@ -84,7 +91,7 @@ export type HotelProfile = {
   city: string;
   country: string;
   amenity_codes: string[];
-  policy: string;
+  policies: PropertyPolicyItem[];
   images: ManagerPropertyImage[];
 };
 

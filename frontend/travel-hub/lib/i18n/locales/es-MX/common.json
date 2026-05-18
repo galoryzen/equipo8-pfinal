@@ -859,7 +859,12 @@
       "policy": {
         "title": "Política del Hotel",
         "subtitle": "Define horarios de check-in/out, reglas sobre fumar y otras políticas de la propiedad.",
-        "placeholder": "ej. Check-in: 3:00 PM, Check-out: 11:00 AM. No se permite fumar dentro de las habitaciones..."
+        "placeholder": "ej. Check-in: 3:00 PM, Check-out: 11:00 AM. No se permite fumar dentro de las habitaciones...",
+        "existingPolicies": "Políticas Actuales",
+        "addNew": "Agregar Nueva Política",
+        "categoryLabel": "Categoría de Política",
+        "descriptionPlaceholder": "Ingresa la descripción de la política",
+        "addButton": "Agregar Política"
       },
       "gallery": {
         "title": "Gestión de Galería de Imágenes",

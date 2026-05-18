@@ -877,7 +877,12 @@
       "policy": {
         "title": "Hotel Policy",
         "subtitle": "Define check-in/out times, smoking rules, and other property policies.",
-        "placeholder": "e.g. Check-in: 3:00 PM, Check-out: 11:00 AM. No smoking allowed inside the rooms..."
+        "placeholder": "e.g. Check-in: 3:00 PM, Check-out: 11:00 AM. No smoking allowed inside the rooms...",
+        "existingPolicies": "Current Policies",
+        "addNew": "Add New Policy",
+        "categoryLabel": "Policy Category",
+        "descriptionPlaceholder": "Enter policy description",
+        "addButton": "Add Policy"
       },
       "gallery": {
         "title": "Image Gallery Management",
