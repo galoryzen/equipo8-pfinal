@@ -44,29 +44,32 @@ type DateRangeOption = 'last7' | 'last30' | 'currentMonth';
 type DashboardTranslate = ReturnType<typeof useTranslation>['t'];
 
 function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
 function calculateDateRange(option: DateRangeOption): { from: string; to: string } {
-  const today = new Date();
+  const now = new Date();
+  const utcYear = now.getUTCFullYear();
+  const utcMonth = now.getUTCMonth();
+  const utcDate = now.getUTCDate();
+
+  const today = new Date(Date.UTC(utcYear, utcMonth, utcDate));
   const to = formatLocalDate(today);
 
   if (option === 'last7') {
-    const fromDate = new Date(today);
-    fromDate.setDate(today.getDate() - 6);
+    const fromDate = new Date(Date.UTC(utcYear, utcMonth, utcDate - 6));
     return { from: formatLocalDate(fromDate), to };
   }
 
   if (option === 'last30') {
-    const fromDate = new Date(today);
-    fromDate.setDate(today.getDate() - 29);
+    const fromDate = new Date(Date.UTC(utcYear, utcMonth, utcDate - 29));
     return { from: formatLocalDate(fromDate), to };
   }
 
-  const fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  const fromDate = new Date(Date.UTC(utcYear, utcMonth, 1));
   return { from: formatLocalDate(fromDate), to };
 }
 

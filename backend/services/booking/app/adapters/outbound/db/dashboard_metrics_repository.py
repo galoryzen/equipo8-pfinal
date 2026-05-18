@@ -75,11 +75,10 @@ class SqlAlchemyDashboardMetricsRepository(DashboardMetricsRepository):
                 ) x
               ) AS active_room_nights,
               (
-                SELECT COALESCE(SUM(p.captured_amount), 0)
-                FROM payments.payment p
-                INNER JOIN booking.booking b ON b.id = p.booking_id
+                SELECT COALESCE(SUM(b.total_amount), 0)
+                FROM booking.booking b
                 WHERE b.property_id IN (SELECT pr.id FROM catalog.property pr WHERE pr.hotel_id = CAST(:hotel_id AS uuid))
-                  AND p.status = 'CAPTURED'
+                  AND b.status IN ('PENDING_CONFIRMATION', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT')
                   AND b.created_at::date BETWEEN CAST(:date_from AS date) AND CAST(:date_to AS date)
               ) AS revenue_captured,
               (
