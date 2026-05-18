@@ -369,7 +369,9 @@ class TestUpdateHotelProfileUseCase:
 
         assert out["amenity_codes"] == ["WIFI"]
         mock_manager_repo.update_hotel_profile.assert_awaited_once_with(prop_id, hotel_id, body)
-        mock_cache.delete_pattern.assert_awaited_once_with(f"property_detail:{prop_id}:*")
+        assert mock_cache.delete_pattern.await_count == 2
+        mock_cache.delete_pattern.assert_any_await("search:*")
+        mock_cache.delete_pattern.assert_any_await(f"property_detail:{prop_id}:*")
 
 
 class TestAddPropertyImageUseCase:

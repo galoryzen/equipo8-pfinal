@@ -14,5 +14,6 @@ class UpdateHotelProfileUseCase:
         self, property_id: UUID, hotel_id: UUID, data: UpdateHotelProfileIn
     ) -> dict:
         result = await self._repo.update_hotel_profile(property_id, hotel_id, data)
+        await self._cache.delete_pattern("search:*")
         await self._cache.delete_pattern(f"property_detail:{property_id}:*")
         return result
