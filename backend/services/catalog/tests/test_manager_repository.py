@@ -426,16 +426,18 @@ class TestGetHotelProfile:
         # Sequence of session.execute() calls inside get_hotel_profile:
         # 1) ownership SELECT  -> _ownership_result(prop)
         # 2) amenity codes SELECT -> _all_rows([(code,), ...])
-        # 3) GENERAL policy SELECT -> _scalar_one_or_none(policy_row)
+        # 3) policies SELECT -> _scalars_result([policy_row])
         # 4) images SELECT      -> _scalars_result([img1])
         policy_row = MagicMock()
+        policy_row.category = MagicMock()
+        policy_row.category.value = "CANCELLATION"
         policy_row.description = "Check-in 3pm."
         img = _make_image(display_order=0, url="https://example.com/a.jpg")
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _ownership_result(prop),
             _all_rows([("WIFI",), ("POOL",)]),
-            _scalar_one_or_none(policy_row),
+            _scalars_result([policy_row]),
             _scalars_result([img]),
         ])
         repo = SqlAlchemyManagerRepository(session)
@@ -447,7 +449,7 @@ class TestGetHotelProfile:
         assert out["city"] == "Miami"
         assert out["country"] == "USA"
         assert out["amenity_codes"] == ["WIFI", "POOL"]
-        assert out["policy"] == "Check-in 3pm."
+        assert out["policies"] == [{"category": "CANCELLATION", "description": "Check-in 3pm."}]
         assert len(out["images"]) == 1
         assert out["images"][0]["display_order"] == 0
 
@@ -480,15 +482,14 @@ class TestUpdateHotelProfile:
         # Calls inside the path with amenity_codes=[]:
         # 1) ownership
         # 2) DELETE FROM property_amenity WHERE property_id = ...
-        # Then policy is None, description is None — straight to commit
-        # 3..6) build_profile_payload re-reads (amenities, policy, images)
+        # 3..5) build_profile_payload re-reads (amenities, policies, images)
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _ownership_result(prop),
             MagicMock(),  # delete result
-            _all_rows([]),
-            _scalar_one_or_none(None),
-            _scalars_result([]),
+            _all_rows([]),  # amenities
+            _scalars_result([]),  # policies
+            _scalars_result([]),  # images
         ])
         session.commit = AsyncMock()
         repo = SqlAlchemyManagerRepository(session)
@@ -502,13 +503,13 @@ class TestUpdateHotelProfile:
     @pytest.mark.asyncio
     async def test_updates_description_only(self):
         prop = _make_property(description="old")
-        # Calls: ownership, then re-read for build_profile_payload (amenities, policy, images)
+        # Calls: ownership, then re-read for build_profile_payload (amenities, policies, images)
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _ownership_result(prop),
-            _all_rows([]),
-            _scalar_one_or_none(None),
-            _scalars_result([]),
+            _all_rows([]),  # amenities
+            _scalars_result([]),  # policies
+            _scalars_result([]),  # images
         ])
         session.commit = AsyncMock()
         repo = SqlAlchemyManagerRepository(session)
@@ -523,26 +524,23 @@ class TestUpdateHotelProfile:
     @pytest.mark.asyncio
     async def test_empty_policy_deletes_existing_row(self):
         prop = _make_property()
-        existing_policy = MagicMock(spec=PropertyPolicy)
-        # Calls: ownership, then policy SELECT inside _upsert_general_policy,
-        # then build_profile_payload reads (amenities, policy, images)
+        # Calls: ownership, then execute(delete(...)), then build_profile_payload reads
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _ownership_result(prop),
-            _scalar_one_or_none(existing_policy),
-            _all_rows([]),
-            _scalar_one_or_none(None),
-            _scalars_result([]),
+            MagicMock(),  # delete result
+            _all_rows([]),  # amenities
+            _scalars_result([]),  # policies
+            _scalars_result([]),  # images
         ])
-        session.delete = AsyncMock()
         session.commit = AsyncMock()
         repo = SqlAlchemyManagerRepository(session)
-        body = UpdateHotelProfileIn(policy="")
+        body = UpdateHotelProfileIn(policies=[])
 
         out = await repo.update_hotel_profile(prop.id, uuid4(), body)
 
-        session.delete.assert_awaited_once_with(existing_policy)
-        assert out["policy"] == ""
+        session.execute.assert_awaited()
+        assert out["policies"] == []
 
 
 class TestAddPropertyImage:

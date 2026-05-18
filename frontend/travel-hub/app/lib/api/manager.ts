@@ -8,6 +8,7 @@ import {
   ManagerHotelItem,
   ManagerPropertyImage,
   PromotionCreatedOut,
+  PropertyPolicyItem,
   RatePlanCancellationPolicy,
   RoomTariffs,
   RoomTypeManagerItem,
@@ -218,7 +219,11 @@ export async function getAdminHotelProfile(propertyId: string): Promise<HotelPro
 
 export async function updateAdminHotelProfile(
   propertyId: string,
-  payload: { description?: string | null; amenity_codes?: string[]; policy?: string }
+  payload: {
+    description?: string | null;
+    amenity_codes?: string[];
+    policies?: PropertyPolicyItem[];
+  }
 ): Promise<HotelProfile> {
   const res = await fetch(`${adminPropertyProfileBaseUrl(propertyId)}/profile`, {
     method: 'PATCH',
@@ -298,7 +303,11 @@ export async function getHotelProfile(propertyId: string, hotelId?: string): Pro
 
 export async function updateHotelProfile(
   propertyId: string,
-  payload: { description?: string | null; amenity_codes?: string[]; policy?: string },
+  payload: {
+    description?: string | null;
+    amenity_codes?: string[];
+    policies?: PropertyPolicyItem[];
+  },
   hotelId?: string
 ): Promise<HotelProfile> {
   const params = new URLSearchParams();
